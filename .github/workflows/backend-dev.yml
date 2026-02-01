@@ -1,0 +1,70 @@
+name: Deploy Backend to DEV
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-dev.yml'
+
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: us-central1
+  REPO_NAME: backend-ticket-registrator
+  SERVICE_NAME: dev-ticket-registrator
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 1. Autenticación con Google usando tu JSON Secret
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+
+      # 2. Configurar Docker para que pueda subir imágenes a Google
+      - name: 'Configure Docker Auth'
+        run: |-
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      # 3. Construir la imagen Docker y subirla (Build & Push)
+      - name: 'Build and Push Container'
+        run: |-
+          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }} ./backend
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }}
+
+      # 4. Desplegar en Cloud Run (DEV)
+      - id: 'deploy'
+        name: 'Deploy to Cloud Run'
+        uses: 'google-github-actions/deploy-cloudrun@v1'
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }}
+          # Aquí inyectamos las variables de entorno para NestJS
+          env_vars: |
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            MONGO_URI=${{ secrets.MONGO_URI_DEV }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            NODE_ENV=production
+          flags: |
+            --allow-unauthenticated 
+            --port=8080
+            --timeout=60s
+            --cpu-boost
+
+      # 5. Mostrar la URL final
+      - name: 'Show Deployment URL'
+        run: echo "Tu API está lista en ${{ steps.deploy.outputs.url }}"

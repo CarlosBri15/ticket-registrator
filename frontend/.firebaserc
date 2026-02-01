@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "ticket-registrator"
+  },
+  "targets": {
+    "ticket-registrator": {
+      "hosting": {
+        "dev": [
+          "ticket-registrator-dev"
+        ],
+        "pro": [
+          "ticket-registrator"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
