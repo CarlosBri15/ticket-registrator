@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { StorageService } from './storage.service';
 import { CreateStorageDto } from './dto/create-storage.dto';
 import { UpdateStorageDto } from './dto/update-storage.dto';
+import { finished } from 'stream';
 
 @Controller('storage')
 export class StorageController {
@@ -12,23 +13,34 @@ export class StorageController {
   //  return this.storageService.create(createStorageDto);
   //}
 
-  @Get()
-  findAll() {
-    return this.storageService.findAll();
+
+  @Get(':filename')
+  async findFile(@Param('filename') fileName: string) {
+    try{
+      const url = await this.storageService.findFile(fileName);
+      return {
+        url: url,
+        expiresIn: '15 minutes'
+      };
+    } catch (error){
+      throw new NotFoundException('Image not found');
+    }
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.storageService.findOne(+id);
-  }
+  @Delete(':filename')
+  async removeFile(@Param('filename') fileName: string) {
+    try{
+      await this.storageService.removeFile(fileName);
+      return {
+        message: 'File removed',
+        fileName: fileName
+      }
+    } catch (error) {
+      if (error.message.includes('Not found')){
+        throw new NotFoundException(error.message);
+      }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateStorageDto: UpdateStorageDto) {
-    return this.storageService.update(+id, updateStorageDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.storageService.remove(+id);
+      throw new InternalServerErrorException('Could not remove file');
+    }
   }
 }

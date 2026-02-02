@@ -4,6 +4,7 @@ import { UpdateStorageDto } from './dto/update-storage.dto';
 import { Storage } from '@google-cloud/storage';
 import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
+import { GetSignedUrlConfig } from 'node_modules/@google-cloud/storage/build/esm/src';
 
 @Injectable()
 export class StorageService {
@@ -41,19 +42,38 @@ export class StorageService {
     })
   }
 
-  findAll() {
-    return `This action returns all storage`;
+  async findFile(fileName: string) {
+    const bucket = this.storage.bucket(this.bucketName);
+    const file = bucket.file(fileName);
+
+    const [exists] = await file.exists();
+
+    if(!exists){
+      throw new Error("The file does not exists");
+    }
+
+    const options: GetSignedUrlConfig = {
+      version: 'v4',
+      action: 'read',
+      expires: Date.now() + 15 * 60 * 1000
+    }
+
+    const [url] = await file.getSignedUrl(options);
+    return url;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} storage`;
-  }
+  async removeFile(fileName: string) {
+    const bucket = this.storage.bucket(this.bucketName);
+    const file = bucket.file(fileName);
 
-  update(id: number, updateStorageDto: UpdateStorageDto) {
-    return `This action updates a #${id} storage`;
-  }
+    try{
+      await file.delete();
+    } catch (error) {
+      if (error.code === 404){
+        throw new Error('Not found');
+      }
 
-  remove(id: number) {
-    return `This action removes a #${id} storage`;
+      throw error;
+    }
   }
 }
