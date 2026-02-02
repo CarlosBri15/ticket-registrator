@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - 'backend/**'
-      - 'shared/**'
+      - 'packages/backend/**'
+      - 'packages/shared/**'
       - '.github/workflows/deploy-dev.yml'
 
 

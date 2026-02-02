@@ -1,27 +1,19 @@
-name: Deploy Frontend PREVIEW
+name: Deploy Frontend to DEV
 
 on:
-  pull_request:
+  push:
     branches:
       - main
     paths:
-      - 'frontend/**'
-      - 'shared/**'
+      - 'packages/frontend/**'
+      - 'packages/shared/**'
 
 jobs:
-  build_and_preview:
-    if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
+  build_and_deploy:
     runs-on: ubuntu-latest
-    
-    permissions:
-      contents: read
-      checks: write
-      pull-requests: write
-
     defaults:
       run:
         working-directory: ./frontend
-
     steps:
       - uses: actions/checkout@v3
       - name: Create .env file
@@ -34,11 +26,11 @@ jobs:
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL_DEV }}
           VITE_ENV: dev
-      
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_TICKET_REGISTRATOR }}'
           projectId: ticket-registrator
           target: dev
+          channelId: live
           entryPoint: "./frontend"
