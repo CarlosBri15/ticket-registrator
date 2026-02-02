@@ -1,6 +1,8 @@
 import { IsEmail, IsString, IsNotEmpty } from 'class-validator';
+import { ICreateUser } from '@ticket-registrator/shared';
 
-export class CreateUserDto {
+
+export class CreateUserDto implements ICreateUser {
   @IsString()
   @IsNotEmpty()
   name: string;

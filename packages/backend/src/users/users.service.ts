@@ -8,6 +8,7 @@ import { Report, ReportDocument } from '../reports/schemas/report.schema';
 import { Ticket, TicketDocument } from '../tickets/schemas/ticket.schema';
 import { MongoServerError } from 'mongodb';
 import * as bcrypt from 'bcrypt';
+import { IUser } from '@ticket-registrator/shared';
 
 @Injectable()
 export class UsersService {
@@ -22,7 +23,7 @@ export class UsersService {
     private ticketModel: Model<TicketDocument>,
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto) : Promise<IUser> {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     createUserDto.password = hashedPassword;
 
@@ -31,9 +32,13 @@ export class UsersService {
       const savedUser = await user.save();
 
       // Remove password before returning response 
-      const userObj = savedUser.toObject() as any;
-      delete userObj.password;
-      return userObj;
+      return {
+        id: savedUser._id.toString(),
+        name: savedUser.name,
+        surname: savedUser.surname,
+        email: savedUser.email,
+        username: savedUser.username,
+      };
 
     } catch (error) {
       if (error instanceof MongoServerError && error.code === 11000) {
