@@ -1,11 +1,11 @@
 import { useMutation } from "@tanstack/react-query"
-import type { ICreateUser } from "@ticket-registrator/shared"
-import { registerUser } from "../../api/users.api"
+import type { ICreateUser, IUser } from "@ticket-registrator/shared"
+import { registerUser } from "../../api/auth.api"
 
 export const useRegister = () => {
     return useMutation({
         mutationFn: (data: ICreateUser) => registerUser(data),
-        onSuccess: (data) => {
+        onSuccess: (data: IUser) => {
             console.log(data),
             alert('Registration successful')
         },
