@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { CreateStorageDto } from './dto/create-storage.dto';
-import { UpdateStorageDto } from './dto/update-storage.dto';
 import { Storage } from '@google-cloud/storage';
 import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
-import { GetSignedUrlConfig } from 'node_modules/@google-cloud/storage/build/esm/src';
+import { GetSignedUrlConfig } from '@google-cloud/storage';
 
 @Injectable()
 export class StorageService {

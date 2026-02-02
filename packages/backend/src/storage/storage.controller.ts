@@ -1,18 +1,9 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { StorageService } from './storage.service';
-import { CreateStorageDto } from './dto/create-storage.dto';
-import { UpdateStorageDto } from './dto/update-storage.dto';
-import { finished } from 'stream';
 
 @Controller('storage')
 export class StorageController {
   constructor(private readonly storageService: StorageService) {}
-
-  //@Post()
-  //create(@Body() createStorageDto: CreateStorageDto) {
-  //  return this.storageService.create(createStorageDto);
-  //}
-
 
   @Get(':filename')
   async findFile(@Param('filename') fileName: string) {

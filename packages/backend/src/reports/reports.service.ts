@@ -5,7 +5,6 @@ import { Report, ReportDocument } from './schemas/report.schema';
 import { CreateReportDto } from './dto/create-report.dto';
 import {UpdateReportFieldsDto, UpdateReportStatusDto} from './dto/update-report.dto';
 import { ReportStatus } from './report-status/report-status';
-import { ReportStatusType } from "./report-status/report-status";
 import { Ticket, TicketDocument } from '../tickets/schemas/ticket.schema';
 
 @Injectable()
