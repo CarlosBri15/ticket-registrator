@@ -1,6 +1,7 @@
+import { ILogin } from '@ticket-registrator/shared';
 import { IsEmail, IsString, MinLength } from 'class-validator';
 
-export class LoginDto {
+export class LoginDto implements ILogin {
   @IsEmail()
   email: string;
 
