@@ -7,6 +7,7 @@ import { TicketsModule } from './tickets/tickets.module';
 import { ReportsModule } from './reports/reports.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { AuthModule } from './auth/auth.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -32,6 +33,8 @@ import { AuthModule } from './auth/auth.module';
 
     GeminiModule,
 
-    AuthModule,],
+    AuthModule,
+
+    StorageModule,],
 })
 export class AppModule {}
