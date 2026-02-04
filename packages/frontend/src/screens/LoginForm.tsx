@@ -18,7 +18,7 @@ export const LoginForm = () => {
 
     const onSubmit = (data: LoginSchema) => {
         mutate(data);
-    }; 
+    };
 
     const serverErrorMessage = isError ? (error as any)?.response?.data?.message || 'Invalid credentials' : undefined;
 
