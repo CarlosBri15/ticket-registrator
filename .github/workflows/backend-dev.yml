@@ -59,6 +59,9 @@ jobs:
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             MONGO_URI=${{ secrets.MONGO_URI_DEV }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
+            GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
+            GCP_BUCKET_NAME=${{ secrets.GCP_BUCKET_NAME }}
+            GCP_KEY_FILE_PATH=${{ secrets.GCP_KEY_FILE_PATH }}
             NODE_ENV=production
           flags: |
             --allow-unauthenticated 

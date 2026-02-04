@@ -1,25 +1,5 @@
-import { IsEmail, IsString, IsNotEmpty } from 'class-validator';
-import { ICreateUser } from '@ticket-registrator/shared';
+import { registerSchema } from '@ticket-registrator/shared';
+import { createZodDto } from 'nestjs-zod';
 
 
-export class CreateUserDto implements ICreateUser {
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  @IsString()
-  @IsNotEmpty()
-  surname: string;
-
-  @IsEmail()
-  @IsNotEmpty()
-  email: string;
-
-  @IsString()
-  @IsNotEmpty()
-  username: string;
-
-  @IsString()
-  @IsNotEmpty()
-  password: string;
-}
+export class CreateUserDto extends createZodDto(registerSchema) {}
