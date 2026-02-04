@@ -24,7 +24,7 @@ export class GeminiService {
         responseMimeType: 'application/json',
         responseSchema: receiptSchema,
       },
-    });
+    }); 
 
     const result = await model.generateContent([
       {
