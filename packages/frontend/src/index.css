@@ -1,8 +1,25 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand: #4f46e5; 
-  --color-brand-hover: #4338ca;
+  /* 1. COLOR PRINCIPAL (#336b87) - "Acero Azul"
+     Uso: Botones principales, enlaces activos, bordes de foco. */
+  --color-brand: #336b87;
+  --color-brand-hover: #28556b; /* Un poco más oscuro para interacción */
+
+  /* 2. SECUNDARIO (#90afc5) - "Niebla Azul"
+     Uso: Fondos de tarjetas destacadas, bordes sutiles, iconos secundarios. */
+  --color-secondary: #90afc5;
+  --color-secondary-light: #e0e9ef; /* Versión muy clara para fondos (bg) */
+
+  /* 3. TEXTO / OSCURO (#2a3132) - "Carbón"
+     Uso: Títulos, texto principal. Sustituye al negro puro. */
+  --color-dark: #2a3132;
   
-  --color-surface: #f8fafc; 
+  /* 4. ACENTO (#763626) - "Óxido / Cuero"
+     Uso: Botones de alerta, "Vender", notificaciones importantes o detalles pequeños. */
+  --color-accent: #763626;
+  --color-accent-hover: #5e2b1e;
+
+  /* EXTRAS: Superficies limpias */
+  --color-surface: #f8fafc; /* Blanco humo para el fondo general */
 }

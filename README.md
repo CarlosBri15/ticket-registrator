@@ -49,7 +49,7 @@ To create and run NestJS projects, install the Nest CLI globally:
 
 ## Setup Secrets
 1. Create a .env file in the root of the backend folder (same level as docker-compose.yml) with your configuration
-2. Define JWT_SECRET, GEMINI_API_KEY and  MONGO_URI=mongodb://<user>:<password>@localhost:27017/ticket_registrator_db?authSource=admin
+2. Define JWT_SECRET, GEMINI_API_KEY, MONGO_URI=mongodb://(user):(password)@localhost:27017/ticket_registrator_db?authSource=admin and DB_PASSWORD
 3. Create a .env file in the root of the frontend folder (same level as package.json) with your configuration
 4. Define VITE_API_URL=http://localhost:8080
 
@@ -92,6 +92,21 @@ npm install
 4. Start frontend (frontend runs on port 4001):
 ```bash
 npm run dev
+```
+
+## Shared
+1. Open a new terminal
+2. Go to the frontend folder:
+```bash
+cd shared
+```
+3. Install dependencies (this will install everything listed in package.json):
+```bash
+npm install
+```
+4. Start frontend (frontend runs on port 4001):
+```bash
+npm run build
 ```
 
 ## Why React, Vite, and TypeScript?

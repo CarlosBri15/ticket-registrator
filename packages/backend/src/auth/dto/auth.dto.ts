@@ -1,11 +1,4 @@
-import { ILogin } from '@ticket-registrator/shared';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { loginSchema } from '@ticket-registrator/shared';
+import { createZodDto } from 'nestjs-zod';
 
-export class LoginDto implements ILogin {
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  @MinLength(10)
-  password: string;
-}
+export class LoginDto extends createZodDto(loginSchema) { }

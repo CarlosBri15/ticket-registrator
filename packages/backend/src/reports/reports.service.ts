@@ -6,6 +6,7 @@ import { CreateReportDto } from './dto/create-report.dto';
 import {UpdateReportFieldsDto, UpdateReportStatusDto} from './dto/update-report.dto';
 import { ReportStatus } from './report-status/report-status';
 import { Ticket, TicketDocument } from '../tickets/schemas/ticket.schema';
+import { IReport } from '@ticket-registrator/shared';
 
 @Injectable()
 export class ReportsService {
@@ -44,19 +45,31 @@ export class ReportsService {
     return report.save();
     }
 
-  async findAll(userId: string) {
+  async findAll(userId: string) : Promise<IReport[]> {
     return this.reportModel
       .find({ user_id: new Types.ObjectId(userId) });
   }
 
-  async findOne(userId: string, reportId: string) {
+  async findOne(userId: string, reportId: string) : Promise<IReport> {
     const report = await this.reportModel.findOne({
       _id: new Types.ObjectId(reportId),
       user_id: new Types.ObjectId(userId),
     });
 
     if (!report) throw new NotFoundException('Report not found');
-    return report;
+    
+    return {
+      id: report._id.toString(),
+      user_id: report.user_id.toString(),
+      name: report.name,
+      start_date: report.start_date,
+      end_date: report.end_date,
+      currency: report.currency,
+      type: report.type,
+      requested_amount: report.requested_amount,
+      approved_amount: report.approved_amount,
+      status: report.status
+    }
   }
 
   async update(
