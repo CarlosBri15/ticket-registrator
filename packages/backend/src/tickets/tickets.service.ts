@@ -168,7 +168,12 @@ export class TicketsService {
       update.cgs_bucket_link_justification = dto.cgs_bucket_link_justification;
     if (dto.last_four_digits !== undefined) update.last_four_digits = dto.last_four_digits;
     if (dto.items !== undefined) {
-      update.items = dto.items.map(item => ({ ...item, status: ItemStatus.PENDING }));
+      update.items = dto.items.map(item => ({ 
+        name: item.name as string,
+        amount: item.amount as number,
+        currency: item.currency as string,
+        status: ItemStatus.PENDING 
+      }));
       invalidateApproval = true;
     }
 
