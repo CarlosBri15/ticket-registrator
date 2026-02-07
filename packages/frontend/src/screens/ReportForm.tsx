@@ -23,10 +23,11 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
   });
 
   const { register, handleSubmit, formState: { errors } } = useForm<CreateReportSchema>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(createReportSchema) as any,
+    resolver: zodResolver(createReportSchema),
     defaultValues: {
       name: "",
+      start_date: new Date(),
+      end_date: new Date(),
       currency: "EUR",
       type: ""
     }

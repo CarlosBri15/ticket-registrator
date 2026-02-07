@@ -10,10 +10,10 @@
   ],
   "scripts": {
     "install:all": "npm install",
-    "build:shared": "npm run build -w shared",
+    "build:shared": "npm run build -w @ticket-registrator/shared",
     "dev:backend": "npm run start:dev -w backend",
     "dev:frontend": "npm run dev -w frontend",
-    "build:all": "npm run build -w shared && npm run build -w backend && npm run build -w frontend"
+    "build:all": "npm run build -w @ticket-registrator/shared && npm run build -w backend && npm run build -w frontend"
   },
   "author": "",
   "license": "ISC"
