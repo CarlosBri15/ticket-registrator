@@ -4,9 +4,8 @@ import { Model, Types } from 'mongoose';
 import { Report, ReportDocument } from './schemas/report.schema';
 import { CreateReportDto } from './dto/create-report.dto';
 import {UpdateReportFieldsDto, UpdateReportStatusDto} from './dto/update-report.dto';
-import { ReportStatus } from './report-status/report-status';
 import { Ticket, TicketDocument } from '../tickets/schemas/ticket.schema';
-import { IReport } from '@ticket-registrator/shared';
+import { IReport, ReportStatus } from '@ticket-registrator/shared';
 
 @Injectable()
 export class ReportsService {
@@ -17,33 +16,47 @@ export class ReportsService {
     private ticketModel: Model<TicketDocument>,
   ) {}
 
-  async create(userId: string, dto: CreateReportDto) {
+  async create(userId: string, dto: CreateReportDto): Promise<IReport> {
+    // 1️⃣ Check overlapping reports
     const overlapping = await this.reportModel.findOne({
-        user_id: new Types.ObjectId(userId),
-        $or: [
+      user_id: new Types.ObjectId(userId),
+      $or: [
         {
-            start_date: { $lte: dto.end_date },
-            end_date: { $gte: dto.start_date },
+          start_date: { $lte: dto.end_date },
+          end_date: { $gte: dto.start_date },
         },
-        ],
+      ],
     });
 
     if (overlapping) {
-        throw new ConflictException(
+      throw new ConflictException(
         'A report already exists for this trip date range',
-        );
+      );
     }
 
-    const report = new this.reportModel({
-        ...dto,
-        user_id: new Types.ObjectId(userId),
-        requested_amount: 0,
-        approved_amount: 0,
-        status: ReportStatus.CREATED,
+    // Create report
+    const report = await this.reportModel.create({
+      ...dto,
+      user_id: new Types.ObjectId(userId),
+      requested_amount: 0,
+      approved_amount: 0,
+      status: ReportStatus.CREATED,
     });
 
-    return report.save();
-    }
+    // Map Mongo document → IReport
+    return {
+      id: report._id.toString(),
+      user_id: report.user_id.toString(),
+      name: report.name,
+      start_date: report.start_date,
+      end_date: report.end_date,
+      currency: report.currency,
+      type: report.type ?? '',
+      requested_amount: report.requested_amount,
+      approved_amount: report.approved_amount,
+      status: report.status,
+    };
+  }
 
   async findAll(userId: string) : Promise<IReport[]> {
     return this.reportModel
@@ -77,13 +90,13 @@ export class ReportsService {
     reportId: string,
     updateReportDto: UpdateReportFieldsDto,
   ) {
-    // ✅ Allowed fields from the DTO
+    // Allowed fields from the DTO
     const allowedFields = ['name', 'start_date', 'end_date', 'type'];
 
-    // ✅ Keys present in the request body
+    // Keys present in the request body
     const bodyKeys = Object.keys(updateReportDto);
 
-    // 1️⃣ Check for invalid fields
+    // Check for invalid fields
     const invalidFields = bodyKeys.filter(
       key => !allowedFields.includes(key) && key !== 'reportId',
     );
@@ -94,7 +107,7 @@ export class ReportsService {
       );
     }
 
-    // 2️⃣ Build the update object dynamically
+    // Build the update object dynamically
     const updateFields: Record<string, any> = {};
 
     if (updateReportDto.name !== undefined) updateFields.name = updateReportDto.name;
@@ -104,12 +117,12 @@ export class ReportsService {
       updateFields.end_date = new Date(updateReportDto.end_date);
     if (updateReportDto.type !== undefined) updateFields.type = updateReportDto.type;
 
-    // 3️⃣ If no valid fields are provided
+    // If no valid fields are provided
     if (Object.keys(updateFields).length === 0) {
       throw new BadRequestException('No valid fields provided for update');
     }
 
-    // 4️⃣ Perform the update in the DB
+    // Perform the update in the DB
     const updatedReport = await this.reportModel.findOneAndUpdate(
       {
         _id: new Types.ObjectId(reportId),

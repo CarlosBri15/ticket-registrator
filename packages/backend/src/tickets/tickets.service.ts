@@ -7,17 +7,20 @@ import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket-user.dto';
 import { UpdateTicketStatusDto } from './dto/update-ticket-status.dto';
 import { ReportStatus } from '../reports/report-status/report-status';
-import { ItemStatus } from './status/item-status';
-import { TicketStatus } from './status/ticket-status';
+import { ITicket, IItem, TicketStatus, ItemStatus, TicketLifecycle } from '@ticket-registrator/shared';
+import { GeminiService } from 'src/gemini/gemini.service';
+import { StorageService } from 'src/storage/storage.service';
 
 @Injectable()
 export class TicketsService {
   constructor(
     @InjectModel(Ticket.name) private ticketModel: Model<TicketDocument>,
     @InjectModel(Report.name) private reportModel: Model<ReportDocument>,
+    private readonly geminiService: GeminiService,     
+    private readonly storageService: StorageService,
   ) {}
 
-  async create(userId: string, reportId: string, dto: CreateTicketDto) {
+  async create(userId: string, reportId: string, file: Express.Multer.File): Promise<ITicket> {
     const report = await this.reportModel.findOne({
       _id: reportId,
       user_id: new Types.ObjectId(userId),
@@ -26,25 +29,72 @@ export class TicketsService {
     if (!report) throw new NotFoundException('Report not found');
     if (report.status !== ReportStatus.CREATED)
       throw new ConflictException('Cannot add ticket to non-created report');
-
-     // Set item statuses to pending (if items exist)
-    const itemsWithStatus = dto.items?.map((item) => ({
-      ...item,
+    // Image to buffer to basse64 istring for Gemini
+    const imageBase64 = file.buffer.toString('base64');
+    
+    // Parallelize image upload and Gemini extraction
+    const [imageIdentifier, geminiData] = await Promise.all([
+      this.storageService.uploadFile(file),         // Upload image
+      this.geminiService.extractReceipt(imageBase64), // LLM extracts fields
+    ]);
+    console.log('🧠 Gemini LLM response:', JSON.stringify(geminiData, null, 2));
+    
+    const itemsWithStatus = geminiData.items?.map(item => ({
+      name: item.description ?? null,
+      amount: item.price ?? 0,
+      currency: report.currency ?? null,
       status: ItemStatus.PENDING,
     })) ?? [];
 
     const ticket = await this.ticketModel.create({
-      ...dto,
       report_id: new Types.ObjectId(reportId),
-
       status: TicketStatus.PENDING,
+      lifecycle: TicketLifecycle.DRAFT,
+      cgs_bucket_link: imageIdentifier,
       items: itemsWithStatus,
+      payment_type: geminiData.payment_method ?? null,
+      expense_type: geminiData.expense_type ?? null,
+      date: geminiData.date ? new Date(geminiData.date) : null,
+      location_name: geminiData.establishment ?? null,
+      location_address: geminiData.formatted_address ?? null,
+      amount: geminiData.total ?? null,
+      currency: report.currency ?? null,
+      converted_amount: geminiData.converted_amount ?? null,
+      converted_currency: geminiData.converted_currency ?? null,
+      cgs_bucket_link_justification:
+        geminiData.cgs_bucket_link_justification ?? null,
+      last_four_digits: geminiData.card_last_4 ?? null,
     });
 
-    //await this.updateRequestedAmount(reportId);
-    return ticket;
-  }
+    const mapTicketToITicket = (ticketDoc): ITicket => ({
+      id: ticketDoc._id.toString(),
+      report_id: ticketDoc.report_id.toString(),
+      status: ticketDoc.status,
+      cgs_bucket_link: ticketDoc.cgs_bucket_link,
+      payment_type: ticketDoc.payment_type,
+      expense_type: ticketDoc.expense_type,
+      date: ticketDoc.date,
+      location_name: ticketDoc.location_name,
+      location_address: ticketDoc.location_address,
+      amount: ticketDoc.amount,
+      currency: ticketDoc.currency,
+      converted_amount: ticketDoc.converted_amount,
+      converted_currency: ticketDoc.converted_currency,
+      cgs_bucket_link_justification: ticketDoc.cgs_bucket_link_justification,
+      last_four_digits: ticketDoc.last_four_digits,
+      items: ticketDoc.items?.map((item): IItem => ({
+        id: item._id?.toString() || '',
+        name: item.name,
+        amount: item.amount,
+        currency: item.currency,
+        status: item.status,
+      })) ?? [],
+      createdAt: ticketDoc.createdAt,
+      updatedAt: ticketDoc.updatedAt,
+    });
 
+    return mapTicketToITicket(ticket);
+  }
 
   async findAll(userId: string, reportId: string) {
     const report = await this.reportModel.findOne({
@@ -83,7 +133,7 @@ export class TicketsService {
     ticketId: string,
     dto: UpdateTicketDto,
   ) {
-    // 1️⃣ Verify report ownership & editable state
+    // Verify report ownership & editable state
     const report = await this.reportModel.findOne({
       _id: new Types.ObjectId(reportId),
       user_id: new Types.ObjectId(userId),
@@ -94,7 +144,7 @@ export class TicketsService {
       throw new ConflictException('Cannot edit tickets after submission');
     }
 
-    // 2️⃣ Build allow-listed update dynamically
+    // Build allow-listed update dynamically
     const update: Partial<Ticket> = {};
     let invalidateApproval = false;
 
@@ -128,7 +178,7 @@ export class TicketsService {
       update.approved_amount = 0;
     }
 
-    // 3️⃣ Single atomic DB update
+    // Single atomic DB update
     const updatedTicket = await this.ticketModel.findOneAndUpdate(
       {
         _id: new Types.ObjectId(ticketId),
@@ -140,7 +190,7 @@ export class TicketsService {
 
     if (!updatedTicket) throw new NotFoundException('Ticket not found');
 
-    // 4️⃣ Recalculate report totals
+    // Recalculate report totals
     //await this.updateRequestedAmount(reportId);
     await this.updateApprovedAmount(reportId);
 
@@ -155,7 +205,7 @@ export class TicketsService {
     const reportObjectId = new Types.ObjectId(reportId);
     const ticketObjectId = new Types.ObjectId(ticketId);
 
-    // 1️⃣ Ensure report is submitted
+    // Ensure report is submitted
     const report = await this.reportModel.findOne({
       _id: reportObjectId,
       status: ReportStatus.SUBMITTED,
@@ -165,7 +215,7 @@ export class TicketsService {
       throw new ConflictException('Tickets can only be reviewed after report submission');
     }
 
-    // 2️⃣ Atomic ticket update (only allowed fields)
+    //Atomic ticket update (only allowed fields)
     const updateFields: Partial<Ticket> = {
       status: dto.status,
       approved_amount: dto.approved_amount,
@@ -179,7 +229,7 @@ export class TicketsService {
 
     if (!updatedTicket) throw new NotFoundException('Ticket not found');
 
-    // 3️⃣ Update report approved amount
+    // Update report approved amount
     await this.updateApprovedAmount(reportId);
 
     return updatedTicket;
