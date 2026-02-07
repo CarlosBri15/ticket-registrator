@@ -23,7 +23,7 @@ export class AuthController {
       maxAge: 1000 * 60 * 60 * 24, // 1 day
     });
 
-    return { success: true };
+    return { access_token };
   }
 
   // Optional: logout endpoint

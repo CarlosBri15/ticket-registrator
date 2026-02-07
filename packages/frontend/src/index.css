@@ -1,25 +1,66 @@
 @import "tailwindcss";
 
 @theme {
-  /* 1. COLOR PRINCIPAL (#336b87) - "Acero Azul"
-     Uso: Botones principales, enlaces activos, bordes de foco. */
+  /* Tipografía */
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+
+  /* 1. COLOR PRINCIPAL (#336b87) - "Acero Azul" */
   --color-brand: #336b87;
-  --color-brand-hover: #28556b; /* Un poco más oscuro para interacción */
+  --color-brand-hover: #28556b;
+  --color-brand-light: #4a8cae;
 
-  /* 2. SECUNDARIO (#90afc5) - "Niebla Azul"
-     Uso: Fondos de tarjetas destacadas, bordes sutiles, iconos secundarios. */
+  /* 2. SECUNDARIO (#90afc5) - "Niebla Azul" */
   --color-secondary: #90afc5;
-  --color-secondary-light: #e0e9ef; /* Versión muy clara para fondos (bg) */
+  --color-secondary-light: #e0e9ef;
 
-  /* 3. TEXTO / OSCURO (#2a3132) - "Carbón"
-     Uso: Títulos, texto principal. Sustituye al negro puro. */
+  /* 3. TEXTO / OSCURO (#2a3132) - "Carbón" */
   --color-dark: #2a3132;
   
-  /* 4. ACENTO (#763626) - "Óxido / Cuero"
-     Uso: Botones de alerta, "Vender", notificaciones importantes o detalles pequeños. */
+  /* 4. ACENTO (#763626) - "Óxido / Cuero" */
   --color-accent: #763626;
   --color-accent-hover: #5e2b1e;
 
-  /* EXTRAS: Superficies limpias */
-  --color-surface: #f8fafc; /* Blanco humo para el fondo general */
+  /* EXTRAS: Superficies */
+  --color-surface: #f8fafc;
+}
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    @apply antialiased text-dark bg-surface;
+  }
+}
+
+@layer utilities {
+  .bg-grid-pattern {
+    background-size: 40px 40px;
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  }
+  
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+}
+
+/* Animaciones personalizadas */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.3; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s ease-in-out infinite;
 }

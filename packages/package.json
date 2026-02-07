@@ -5,7 +5,8 @@
   "workspaces": [
     "backend",
     "frontend",
-    "shared"
+    "shared",
+    "mobile"
   ],
   "scripts": {
     "install:all": "npm install",

@@ -1,13 +1,20 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "react-router-dom";
-import { registerSchema, type RegisterSchema } from "@ticket-registrator/shared";
-import { useRegister } from "../hooks/mutations/useRegister";
+import { Link, useNavigate } from "react-router-dom";
+import { registerSchema, type RegisterSchema, useRegisterMutation } from "@ticket-registrator/shared";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
+import { Sparkles, PieChart, TrendingUp, CheckCircle2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export const RegisterForm = () => {
-    const { mutate, isPending, isError, error } = useRegister();
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const { mutate, isPending, isError, error } = useRegisterMutation({
+        onSuccess: () => {
+            navigate('/login');
+        }
+    });
 
     const { register, handleSubmit, formState: { errors } } = useForm<RegisterSchema>({
         resolver: zodResolver(registerSchema),
@@ -24,116 +31,138 @@ export const RegisterForm = () => {
         mutate(rest);
     };
 
-    const serverErrorMessage = isError ? (error as any)?.response?.data?.message || 'Error creating account' : null;
+    const serverErrorMessage = isError ? (error as any)?.response?.data?.message || t('common.error') : null;
 
     return (
-        <div className="min-h-screen w-full grid lg:grid-cols-2">
+        <div className="min-h-screen w-full grid lg:grid-cols-2 bg-surface">
             
-            <div className="bg-surface flex flex-col justify-center items-center p-6 sm:p-12 lg:p-24 order-2 lg:order-1">
-                <div className="w-full max-w-md space-y-8">
-                    
-                    <div className="text-center lg:text-left">
-                        <h2 className="text-3xl font-bold text-dark tracking-tight">
-                            Crear Cuenta
-                        </h2>
-                        <p className="mt-2 text-gray-500">
-                            Únete para gestionar tus finanzas de forma inteligente.
+            {/* PANEL IZQUIERDO: Visual / Branding */}
+            <div className="hidden lg:flex relative flex-col justify-between bg-dark p-16 overflow-hidden">
+                <div className="absolute inset-0 bg-grid-pattern opacity-20" />
+                <div className="absolute -top-24 -left-24 w-[600px] h-[600px] bg-brand/30 rounded-full blur-[120px]" />
+                <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-secondary/20 rounded-full blur-[100px]" />
+
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md">
+                    <div className="relative z-10 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 shadow-2xl animate-float">
+                         <div className="flex justify-between items-center mb-6">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 bg-brand/20 rounded-lg text-brand-light">
+                                    <PieChart className="w-5 h-5 text-white" />
+                                </div>
+                                <span className="text-white font-medium text-sm">{t('register.monthlyExpenses')}</span>
+                            </div>
+                            <span className="text-green-400 text-xs font-mono">+12.5%</span>
+                         </div>
+                         <div className="flex items-end justify-between h-32 gap-2">
+                             {[40, 70, 45, 90, 60, 80].map((h, i) => (
+                                 <div key={i} className="w-full bg-white/10 rounded-t-sm hover:bg-brand/50 transition-colors duration-500" style={{ height: `${h}%` }}></div>
+                             ))}
+                         </div>
+                    </div>
+
+                    <div className="absolute -bottom-6 -right-6 bg-surface text-dark px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 animate-pulse-slow">
+                        <div className="bg-green-100 p-1.5 rounded-full text-green-600">
+                            <TrendingUp className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase">{t('register.estimatedSavings')}</p>
+                            <p className="font-bold text-sm">24% {t('register.yearly')}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="relative z-10 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center shadow-lg shadow-brand/30 border border-white/10">
+                        <Sparkles className="text-white w-5 h-5" />
+                    </div>
+                    <span className="text-white font-bold text-xl tracking-wide">TicketReg AI</span>
+                </div>
+
+                <div className="relative z-10 space-y-4">
+                    <h3 className="text-white font-semibold text-lg mb-2">{t('register.benefitsTitle')}</h3>
+                    {[
+                        t('register.benefit1'),
+                        t('register.benefit2'),
+                        t('register.benefit3')
+                    ].map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-3 text-gray-300">
+                            <CheckCircle2 className="w-5 h-5 text-brand" />
+                            <span>{item}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* PANEL DERECHO: Formulario */}
+            <div className="flex flex-col justify-center items-center p-6 sm:p-12 lg:p-24 bg-surface">
+                <div className="w-full max-w-md animate-in slide-in-from-bottom-4 duration-500">
+                    <div className="text-center lg:text-left mb-8">
+                        <h1 className="text-3xl lg:text-4xl font-bold text-dark tracking-tight mb-3">
+                            {t('register.title')}
+                        </h1>
+                        <p className="text-gray-500">
+                            {t('register.subtitle')}
                         </p>
                     </div>
 
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                         <Input 
-                            label="Nombre Completo"
-                            placeholder="Juan Pérez"
+                            label={t('register.nameLabel')}
+                            placeholder="Ej: Ana García"
                             {...register("name")}
                             error={errors.name?.message} 
                         />
 
                         <Input 
-                            label="Correo Electrónico"
+                            label={t('register.emailLabel')}
                             type="email" 
-                            placeholder="usuario@empresa.com"
+                            placeholder="ana@empresa.com"
                             {...register("email")}
                             error={errors.email?.message} 
                         />
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <Input 
-                                label="Contraseña"
+                                label={t('auth.passwordLabel')}
                                 type="password" 
-                                placeholder="Mínimo 10 caracteres"
+                                placeholder="••••••••••"
                                 {...register("password")}
                                 error={errors.password?.message} 
                             />
 
                             <Input 
-                                label="Confirmar Contraseña"
+                                label={t('register.confirmPasswordLabel')}
                                 type="password" 
-                                placeholder="Repite la contraseña"
+                                placeholder="••••••••••"
                                 {...register("confirmPassword")}
                                 error={errors.confirmPassword?.message} 
                             />
                         </div>
 
                         {serverErrorMessage && (
-                            <div className="p-4 rounded-xl bg-accent/5 border border-accent/20 flex items-start gap-3">
-                                <span className="text-accent text-lg mt-0.5">⚠️</span>
-                                <p className="text-sm font-medium text-accent">
+                            <div className="p-4 rounded-xl bg-red-50 border border-red-100 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                                <span className="text-red-500 mt-0.5">⚠️</span>
+                                <p className="text-sm font-medium text-red-700">
                                    {serverErrorMessage}
                                 </p>
                             </div>
                         )}
 
-                        <Button type="submit" isLoading={isPending} className="mt-6">
-                            Registrarse
+                        <Button type="submit" isLoading={isPending} className="mt-4 text-lg">
+                            {t('register.submitButton')}
                         </Button>
-
-                        <div className="text-center mt-6">
-                            <p className="text-sm text-gray-500">
-                                ¿Ya tienes una cuenta?{' '}
-                                <Link to="/login" className="font-semibold text-brand hover:text-brand-hover hover:underline">
-                                    Inicia sesión aquí
-                                </Link>
-                            </p>
-                        </div>
-
                     </form>
-                </div>
-            </div>
 
-            <div className="hidden lg:flex flex-col justify-center bg-dark p-12 relative overflow-hidden order-1 lg:order-2 text-right">
-                <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
-                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-brand blur-[100px]"></div>
-                </div>
-
-                <div className="relative z-10 flex flex-col items-end">
-                    <div className="w-16 h-16 bg-white/5 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/10 mb-6 shadow-2xl">
-                        <span className="text-white font-bold text-2xl">TR</span>
+                    <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+                        <p className="text-sm text-gray-500">
+                            {t('register.hasAccount')}{' '}
+                            <Link to="/login" className="font-bold text-brand hover:text-brand-hover transition-colors">
+                                {t('register.loginLink')}
+                            </Link>
+                        </p>
                     </div>
-                    
-                    <h1 className="text-4xl font-bold text-white mb-6 leading-tight">
-                        Empieza tu viaje <br/>
-                        <span className="text-secondary">hacia el control total.</span>
-                    </h1>
-                    
-                    <ul className="space-y-4 text-gray-300 text-lg mb-8">
-                        <li className="flex items-center justify-end gap-3">
-                            <span>Métricas en tiempo real</span>
-                            <span className="text-brand text-xl">✓</span>
-                        </li>
-                        <li className="flex items-center justify-end gap-3">
-                            <span>Reportes automatizados</span>
-                            <span className="text-brand text-xl">✓</span>
-                        </li>
-                        <li className="flex items-center justify-end gap-3">
-                            <span>Seguridad de grado bancario</span>
-                            <span className="text-brand text-xl">✓</span>
-                        </li>
-                    </ul>
                 </div>
             </div>
-
         </div>
     );
 };

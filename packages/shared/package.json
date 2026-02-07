@@ -6,10 +6,20 @@
   "scripts": {
     "build": "tsc"
   },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "axios": "^1.0.0",
+    "react": "*"
+  },
   "devDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "axios": "^1.0.0",
+    "react": "^18.2.0",
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "i18next": "^25.8.4",
+    "react-i18next": "^16.5.4",
     "zod": "^4.3.6"
   }
 }
