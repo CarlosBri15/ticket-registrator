@@ -5,7 +5,7 @@ interface StatCardProps {
   value: string;
   icon: ReactNode;
   trend?: string;
-  trendUp?: boolean; // true = positivo (verde/azul), false = negativo (rojo/óxido)
+  trendUp?: boolean;
 }
 
 export const StatCard = ({ title, value, icon, trend, trendUp }: StatCardProps) => {

@@ -28,34 +28,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 1. Autenticación con Google usando tu JSON Secret
+      # 1. Autenticación con Google
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
 
-      # 2. Configurar Docker para que pueda subir imágenes a Google
+      # 2. Configurar Docker
       - name: 'Configure Docker Auth'
         run: |-
           gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
-      # 3. Construir la imagen Docker y subirla (Build & Push)
+      # 3. Construir e imprimir la imagen
       - name: 'Build and Push Container'
         run: |-
           docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }} -f packages/backend/Dockerfile .
           docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }}
 
-      # 4. Desplegar en Cloud Run (DEV)
+      # 4. Desplegar en Cloud Run
       - id: 'deploy'
         name: 'Deploy to Cloud Run'
-        uses: 'google-github-actions/deploy-cloudrun@v1'
+        uses: 'google-github-actions/deploy-cloudrun@v2'
         with:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ env.REGION }}
           image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }}
-          # Aquí inyectamos las variables de entorno para NestJS
-          env_vars: |
+          env_vars: |-
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             MONGO_URI=${{ secrets.MONGO_URI_DEV }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
@@ -63,11 +62,7 @@ jobs:
             GCP_BUCKET_NAME=${{ secrets.GCP_BUCKET_NAME }}
             GCP_KEY_FILE_PATH=${{ secrets.GCP_KEY_FILE_PATH }}
             NODE_ENV=production
-          flags: |
-            --allow-unauthenticated 
-            --port=8080
-            --timeout=60s
-            --cpu-boost
+          flags: '--allow-unauthenticated --port=8080 --timeout=60s --cpu-boost'
 
       # 5. Mostrar la URL final
       - name: 'Show Deployment URL'

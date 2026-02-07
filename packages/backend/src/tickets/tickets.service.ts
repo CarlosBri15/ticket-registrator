@@ -35,7 +35,7 @@ export class TicketsService {
     // Parallelize image upload and Gemini extraction
     const [imageIdentifier, geminiData] = await Promise.all([
       this.storageService.uploadFile(file),         // Upload image
-      this.geminiService.extractReceipt(imageBase64), // LLM extracts fields
+      this.geminiService.extractReceipt(imageBase64),
     ]);
     console.log('🧠 Gemini LLM response:', JSON.stringify(geminiData, null, 2));
     

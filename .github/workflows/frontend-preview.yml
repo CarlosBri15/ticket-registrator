@@ -7,6 +7,7 @@ on:
     paths:
       - 'packages/frontend/**'
       - 'packages/shared/**'
+      - '.github/workflows/frontend-preview.yml'
 
 jobs:
   build_and_preview:
@@ -25,7 +26,7 @@ jobs:
       - name: Install and Build
         run: |
           npm ci
-          npm run build -w shared
+          npm run build -w @ticket-registrator/shared
           npm run build -w frontend
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL_DEV }}
@@ -37,4 +38,4 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_TICKET_REGISTRATOR }}'
           projectId: ticket-registrator
           target: dev
-          entryPoint: "./frontend"
+          entryPoint: "./packages/frontend"
