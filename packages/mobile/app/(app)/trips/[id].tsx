@@ -1,25 +1,56 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useReportQuery, useTicketsQuery, useUploadTicketMutation } from '@ticket-registrator/shared';
+import { 
+    useReportQuery, 
+    useTicketsQuery, 
+    useUploadTicketMutation, 
+    useUpdateTicketMutation, 
+    useDeleteTicketMutation 
+} from '@ticket-registrator/shared';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
+import { TicketConfirmationForm } from '../../../src/components/TicketConfirmationForm';
+import { ITicket } from '@ticket-registrator/shared';
 
 export default function TripDetailScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [extractedTicket, setExtractedTicket] = useState<ITicket | null>(null);
+
   const { data: report, isLoading: loadingReport } = useReportQuery(id);
   const { data: tickets, isLoading: loadingTickets } = useTicketsQuery(id!);
   
   const { mutate: uploadTicket, isPending: isUploading } = useUploadTicketMutation({
-    onSuccess: () => {
-        Alert.alert(t('common.success'), "Ticket procesado correctamente por la IA.");
+    onSuccess: (ticket: ITicket) => {
+        setExtractedTicket(ticket);
+        setIsModalOpen(true);
     },
     onError: (error: any) => {
         Alert.alert(t('common.error'), error?.response?.data?.message || "Error al subir el ticket");
+    }
+  });
+
+  const { mutate: updateTicket, isPending: isConfirming } = useUpdateTicketMutation({
+    onSuccess: () => {
+        setIsModalOpen(false);
+        setExtractedTicket(null);
+        Alert.alert(t('common.success'), "Ticket confirmado correctamente.");
+    },
+    onError: (error: any) => {
+        Alert.alert(t('common.error'), "Error al confirmar el ticket");
+    }
+  });
+
+  const { mutate: deleteTicket, isPending: isDeleting } = useDeleteTicketMutation({
+    onSuccess: () => {
+        setIsModalOpen(false);
+        setExtractedTicket(null);
     }
   });
 
@@ -48,15 +79,29 @@ export default function TripDetailScreen() {
     
     // Preparar archivo para FormData en React Native
     const match = /\.(\w+)$/.exec(filename);
-    const type = match ? `image/${match[1]}` : `image`;
+    const type = match ? `image/${match[1]}` : `image/jpeg`;
 
-    formData.append('file', {
+    formData.append('image', {
       uri,
       name: filename,
       type,
     } as any);
 
     uploadTicket({ reportId: id!, formData });
+  };
+
+  const handleConfirm = async (updatedData: Partial<ITicket>) => {
+    if (!extractedTicket) return;
+    updateTicket({ 
+        reportId: id!, 
+        ticketId: extractedTicket.id, 
+        data: updatedData 
+    });
+  };
+
+  const handleDiscard = () => {
+    if (!extractedTicket) return;
+    deleteTicket({ reportId: id!, ticketId: extractedTicket.id });
   };
 
   if (loadingReport) {
@@ -114,7 +159,10 @@ export default function TripDetailScreen() {
             className="bg-brand py-5 rounded-[2rem] flex-row items-center justify-center shadow-xl shadow-brand/30 mb-8"
         >
             {isUploading ? (
-                <ActivityIndicator color="white" />
+                <View className="flex-row items-center">
+                    <ActivityIndicator color="white" className="mr-3" />
+                    <Text className="text-white font-bold text-lg">Procesando con IA...</Text>
+                </View>
             ) : (
                 <>
                     <Feather name="camera" size={20} color="white" />
@@ -131,18 +179,28 @@ export default function TripDetailScreen() {
                 <ActivityIndicator color="#336b87" />
             ) : tickets && tickets.length > 0 ? (
                 tickets.map((ticket, idx) => (
-                    <View key={ticket.id || `ticket-${idx}`} className="bg-white p-4 rounded-2xl border border-gray-100 flex-row justify-between items-center mb-3">
+                    <TouchableOpacity 
+                        key={ticket.id || `ticket-${idx}`} 
+                        onPress={() => router.push({
+                            pathname: "/(app)/trips/ticket/[ticketId]",
+                            params: { ticketId: ticket.id, reportId: id }
+                        })}
+                        className="bg-white p-4 rounded-2xl border border-gray-100 flex-row justify-between items-center mb-3 shadow-sm active:opacity-70"
+                    >
                         <View className="flex-row items-center gap-3">
                             <View className="w-10 h-10 bg-gray-50 rounded-xl items-center justify-center">
-                                <Feather name="file-text" size={20} color="#9ca3af" />
+                                <Feather name="file-text" size={20} color="#336b87" />
                             </View>
                             <View>
-                                <Text className="font-bold text-dark text-sm">{ticket.location_name || 'Ticket'}</Text>
-                                <Text className="text-[10px] text-gray-400">{new Date(ticket.date).toLocaleDateString()}</Text>
+                                <Text className="font-bold text-dark text-sm" numberOfLines={1}>{ticket.location_name || 'Ticket'}</Text>
+                                <Text className="text-[10px] text-gray-400">{ticket.date ? new Date(ticket.date).toLocaleDateString() : '---'}</Text>
                             </View>
                         </View>
-                        <Text className="font-bold text-dark">{ticket.amount} {ticket.currency}</Text>
-                    </View>
+                        <View className="items-end">
+                            <Text className="font-bold text-dark">{ticket.amount} {ticket.currency}</Text>
+                            <Text className="text-[8px] font-bold text-brand uppercase mt-1">{ticket.status}</Text>
+                        </View>
+                    </TouchableOpacity>
                 ))
             ) : (
                 <View className="items-center py-10">
@@ -151,8 +209,39 @@ export default function TripDetailScreen() {
                 </View>
             )}
         </View>
-
       </ScrollView>
+
+      {/* Confirmation Modal */}
+      <Modal
+        visible={isModalOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleDiscard}
+      >
+        <SafeAreaView className="flex-1 bg-white">
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                className="flex-1"
+            >
+                <View className="px-6 py-4 flex-row items-center justify-between border-b border-gray-100">
+                    <Text className="text-xl font-bold text-dark">Confirmar Ticket</Text>
+                    <TouchableOpacity onPress={handleDiscard} disabled={isConfirming || isDeleting}>
+                        <Feather name="x" size={24} color="#94a3b8" />
+                    </TouchableOpacity>
+                </View>
+                
+                {extractedTicket && (
+                    <TicketConfirmationForm 
+                        ticket={extractedTicket}
+                        onConfirm={handleConfirm}
+                        onCancel={handleDiscard}
+                        isLoading={isConfirming || isDeleting}
+                    />
+                )}
+            </KeyboardAvoidingView>
+        </SafeAreaView>
+      </Modal>
+
     </SafeAreaView>
   );
 }

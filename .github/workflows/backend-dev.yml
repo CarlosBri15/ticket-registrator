@@ -7,7 +7,7 @@ on:
     paths:
       - 'packages/backend/**'
       - 'packages/shared/**'
-      - '.github/workflows/deploy-dev.yml'
+      - '.github/workflows/backend-dev.yml'
 
 
 env:

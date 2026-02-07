@@ -4,6 +4,7 @@ import { createReportSchema, type CreateReportSchema, useCreateReportMutation } 
 import { Button } from "../components/Button";
 import { Input } from "../components/Input";
 import { Banknote, Tag } from "lucide-react";
+import { AxiosError } from "axios";
 
 interface ReportFormProps {
   onSuccess: () => void;
@@ -15,13 +16,14 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
     onSuccess: () => {
         onSuccess();
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message: string }>) => {
         const message = error?.response?.data?.message || 'Error al crear el viaje';
         alert(message);
     }
   });
 
   const { register, handleSubmit, formState: { errors } } = useForm<CreateReportSchema>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(createReportSchema) as any,
     defaultValues: {
       name: "",

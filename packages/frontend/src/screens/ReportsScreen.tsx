@@ -4,7 +4,7 @@ import { Button } from "../components/Button";
 import { StatusBadge } from "../components/StatusBadge";
 import { Modal } from "../components/Modal";
 import { ReportForm } from "./ReportForm";
-import { Plus, Calendar, ArrowUpRight, Clock, CheckCircle, Plane, Wallet, ChevronRight, AlertCircle } from "lucide-react";
+import { Plus, Calendar, ArrowUpRight, Clock, CheckCircle, Plane, Wallet, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
@@ -98,7 +98,7 @@ export const ReportsScreen = () => {
 
             {currentTrip ? (
                 <div 
-                    onClick={() => navigate(`/trips/${currentTrip.id || (currentTrip as any)._id}`)}
+                    onClick={() => navigate(`/trips/${currentTrip.id || currentTrip._id}`)}
                     className="group relative bg-white rounded-[3rem] border border-brand/10 p-8 lg:p-10 shadow-xl shadow-brand/5 hover:shadow-2xl hover:shadow-brand/10 transition-all duration-500 cursor-pointer overflow-hidden min-h-[300px] flex flex-col justify-between"
                 >
                     <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-brand/10 transition-colors duration-700" />
@@ -107,7 +107,7 @@ export const ReportsScreen = () => {
                         <div className="flex justify-between items-start mb-6">
                             <StatusBadge status={currentTrip.status} />
                             <span className="bg-white/80 backdrop-blur px-3 py-1 rounded-full text-xs font-mono text-gray-400 border border-gray-100">
-                                #{ (currentTrip.id || (currentTrip as any)._id || "").substring(0,8) }
+                                #{ (currentTrip.id || currentTrip._id || "").substring(0,8) }
                             </span>
                         </div>
 
@@ -192,8 +192,8 @@ export const ReportsScreen = () => {
                 </div>
                 {completedReports.slice(0, 3).map((report) => (
                     <div 
-                        key={report.id || (report as any)._id}
-                        onClick={() => navigate(`/trips/${report.id || (report as any)._id}`)}
+                        key={report.id || report._id}
+                        onClick={() => navigate(`/trips/${report.id || report._id}`)}
                         className="p-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center justify-between group"
                     >
                         <div>

@@ -13,7 +13,7 @@ import {
 import { Button } from "../components/Button";
 import { StatCard } from "../components/StatCard";
 import { StatusBadge } from "../components/StatusBadge";
-import { useReportsQuery, useUserQuery } from "@ticket-registrator/shared";
+import { useReportsQuery, useUserQuery, ReportStatus } from "@ticket-registrator/shared";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -34,9 +34,9 @@ export const DashboardPage = () => {
   const currentTrip = activeReports.length > 0 ? activeReports[0] : null;
 
   const stats = {
-    pendingAmount: reports?.reduce((acc, r) => acc + (r.status === 'SUBMITTED' || r.status === 'PENDING' ? r.requested_amount : 0), 0) || 0,
+    pendingAmount: reports?.reduce((acc, r) => acc + (r.status === ReportStatus.SUBMITTED ? r.requested_amount : 0), 0) || 0,
     activeCount: activeReports.length,
-    rejectedCount: reports?.filter(r => r.status === 'REJECTED').length || 0
+    rejectedCount: reports?.filter(r => r.status === ReportStatus.DECLINED).length || 0
   };
 
   if (isLoading) {
@@ -117,7 +117,7 @@ export const DashboardPage = () => {
           
           {currentTrip ? (
             <div 
-                onClick={() => navigate(`/trips/${currentTrip.id || (currentTrip as any)._id}`)}
+                onClick={() => navigate(`/trips/${currentTrip.id || currentTrip._id}`)}
                 className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-brand/10 relative overflow-hidden group cursor-pointer hover:shadow-2xl transition-all duration-500"
             >
                 <div className="absolute top-0 right-0 w-48 h-48 bg-brand/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110 duration-700"></div>
@@ -127,7 +127,7 @@ export const DashboardPage = () => {
                     <div className="flex items-center gap-3">
                     <StatusBadge status={currentTrip.status} />
                     <span className="text-[10px] font-black text-gray-300 tracking-widest uppercase">
-                        #{(currentTrip.id || (currentTrip as any)._id || "").substring(0,8)}
+                        #{(currentTrip.id || currentTrip._id || "").substring(0,8)}
                     </span>
                     </div>
                     <h3 className="text-3xl font-black text-dark leading-tight group-hover:text-brand transition-colors">
@@ -189,16 +189,17 @@ export const DashboardPage = () => {
           <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
             {completedReports.slice(0, 5).map((report) => (
               <div 
-                key={report.id || (report as any)._id} 
-                onClick={() => navigate(`/trips/${report.id || (report as any)._id}`)}
+                key={report.id || report._id} 
+                onClick={() => navigate(`/trips/${report.id || report._id}`)}
                 className="p-5 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-all group"
               >
                 <div className="flex items-center gap-4 min-w-0">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs ${
-                      report.status === 'APPROVED' ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-400'
+                      report.status === ReportStatus.APPROVED ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-400'
                   }`}>
                     {report.name.substring(0, 1).toUpperCase()}
                   </div>
+
                   <div className="min-w-0">
                     <p className="font-bold text-dark text-sm truncate group-hover:text-brand transition-colors">
                       {report.name}

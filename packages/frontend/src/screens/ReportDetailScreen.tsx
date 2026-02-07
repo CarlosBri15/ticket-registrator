@@ -4,7 +4,8 @@ import { ArrowLeft, ScanLine, FileText, Calendar, Wallet, Banknote, Tag, History
 import { Button } from "../components/Button";
 import { StatusBadge } from "../components/StatusBadge";
 import { TicketUploadModal } from "../components/TicketUploadModal";
-import { useReportQuery } from "@ticket-registrator/shared";
+import { TicketDetailModal } from "../components/TicketDetailModal";
+import { useReportQuery, useTicketsQuery, type ITicket } from "@ticket-registrator/shared";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
@@ -14,10 +15,18 @@ export const ReportDetailScreen = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<ITicket | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   
   const { data: report, isLoading, isError } = useReportQuery(id);
+  const { data: tickets, isLoading: isLoadingTickets } = useTicketsQuery(id!);
 
   const dateLocale = i18n.language.startsWith('es') ? es : enUS;
+
+  const handleTicketClick = (ticket: ITicket) => {
+    setSelectedTicket(ticket);
+    setIsDetailModalOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -60,7 +69,7 @@ export const ReportDetailScreen = () => {
             <div className="relative z-10 flex flex-col gap-4">
                 <div className="flex flex-wrap items-center gap-3">
                     <h1 className="text-3xl font-bold text-dark tracking-tight">{report.name}</h1>
-                    <StatusBadge status={report.status as any} />
+                    <StatusBadge status={report.status} />
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-gray-500">
@@ -98,7 +107,9 @@ export const ReportDetailScreen = () => {
               <div className="flex items-center justify-between px-1">
                 <h2 className="text-xl font-bold text-dark flex items-center gap-2">
                     {t('reportDetail.ticketsTitle')}
-                    <span className="text-xs font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">0</span>
+                    <span className="text-xs font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                        {tickets?.length || 0}
+                    </span>
                 </h2>
                 <div className="flex items-center gap-1 text-xs font-bold text-brand hover:underline cursor-pointer">
                     <History className="w-3.5 h-3.5" />
@@ -106,25 +117,60 @@ export const ReportDetailScreen = () => {
                 </div>
               </div>
               
-              <div className="bg-white/40 backdrop-blur-sm rounded-[3rem] border border-dashed border-gray-300 p-20 text-center group hover:bg-white hover:border-brand/30 transition-all duration-500">
-                  <div className="relative w-24 h-24 mx-auto mb-8">
-                      <div className="absolute inset-0 bg-brand/5 rounded-full group-hover:scale-110 transition-transform duration-500" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                          <FileText className="w-10 h-10 text-gray-300 group-hover:text-brand/40 transition-colors" />
-                      </div>
-                      <div className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-xl shadow-lg flex items-center justify-center border border-gray-100 group-hover:rotate-12 transition-transform">
-                          <Plus className="w-4 h-4 text-brand" />
-                      </div>
-                  </div>
-                  <h3 className="text-2xl font-bold text-dark mb-3 tracking-tight">{t('reportDetail.startDigitalizing')}</h3>
-                  <p className="text-gray-500 text-base mb-10 max-w-sm mx-auto leading-relaxed">
-                      {t('reportDetail.digitalizeDesc')}
-                  </p>
-                  <Button variant="secondary" onClick={() => setIsUploadModalOpen(true)} className="w-auto px-10 rounded-2xl border-2 border-gray-100 hover:border-brand/20">
-                      <ScanLine className="w-5 h-5 mr-2" />
-                      {t('reportDetail.scanFirstTicket')}
-                  </Button>
-              </div>
+              {isLoadingTickets ? (
+                <div className="flex justify-center py-12">
+                    <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : tickets && tickets.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4">
+                    {tickets.map((ticket) => (
+                        <div 
+                            key={ticket.id}
+                            onClick={() => handleTicketClick(ticket)}
+                            className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md hover:border-brand/20 transition-all cursor-pointer group flex items-center justify-between"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center group-hover:bg-brand/5 transition-colors">
+                                    <FileText className="w-6 h-6 text-gray-300 group-hover:text-brand transition-colors" />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-dark group-hover:text-brand transition-colors">{ticket.location_name || "Ticket"}</h4>
+                                    <p className="text-xs text-gray-400 font-medium">
+                                        {ticket.date ? format(new Date(ticket.date), "PPP", { locale: dateLocale }) : "---"}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-6">
+                                <div className="text-right">
+                                    <p className="font-bold text-dark text-lg">{ticket.amount} <span className="text-[10px] text-gray-400">{ticket.currency}</span></p>
+                                    <StatusBadge status={ticket.status} />
+                                </div>
+                                <ArrowLeft className="w-4 h-4 text-gray-200 group-hover:text-brand rotate-180 transition-all group-hover:translate-x-1" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="bg-white/40 backdrop-blur-sm rounded-[3rem] border border-dashed border-gray-300 p-20 text-center group hover:bg-white hover:border-brand/30 transition-all duration-500">
+                    <div className="relative w-24 h-24 mx-auto mb-8">
+                        <div className="absolute inset-0 bg-brand/5 rounded-full group-hover:scale-110 transition-transform duration-500" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <FileText className="w-10 h-10 text-gray-300 group-hover:text-brand/40 transition-colors" />
+                        </div>
+                        <div className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-xl shadow-lg flex items-center justify-center border border-gray-100 group-hover:rotate-12 transition-transform">
+                            <Plus className="w-4 h-4 text-brand" />
+                        </div>
+                    </div>
+                    <h3 className="text-2xl font-bold text-dark mb-3 tracking-tight">{t('reportDetail.startDigitalizing')}</h3>
+                    <p className="text-gray-500 text-base mb-10 max-w-sm mx-auto leading-relaxed">
+                        {t('reportDetail.digitalizeDesc')}
+                    </p>
+                    <Button variant="secondary" onClick={() => setIsUploadModalOpen(true)} className="w-auto px-10 rounded-2xl border-2 border-gray-100 hover:border-brand/20">
+                        <ScanLine className="w-5 h-5 mr-2" />
+                        {t('reportDetail.scanFirstTicket')}
+                    </Button>
+                </div>
+              )}
           </div>
 
           <div className="space-y-6">
@@ -191,6 +237,13 @@ export const ReportDetailScreen = () => {
         isOpen={isUploadModalOpen} 
         onClose={() => setIsUploadModalOpen(false)} 
         reportId={id!} 
+      />
+
+      <TicketDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        ticket={selectedTicket}
+        reportId={id!}
       />
     </div>
   );

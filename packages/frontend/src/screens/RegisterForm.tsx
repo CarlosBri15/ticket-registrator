@@ -6,6 +6,7 @@ import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { Sparkles, PieChart, TrendingUp, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { AxiosError } from "axios";
 
 export const RegisterForm = () => {
     const { t } = useTranslation();
@@ -27,11 +28,12 @@ export const RegisterForm = () => {
     });
 
     const onSubmit = (data: RegisterSchema) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { confirmPassword, ...rest } = data; 
         mutate(rest);
     };
 
-    const serverErrorMessage = isError ? (error as any)?.response?.data?.message || t('common.error') : null;
+    const serverErrorMessage = isError ? (error as AxiosError<{ message: string }>)?.response?.data?.message || t('common.error') : null;
 
     return (
         <div className="min-h-screen w-full grid lg:grid-cols-2 bg-surface">

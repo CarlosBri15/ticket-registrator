@@ -2,17 +2,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "../components/Button";
 import { Input } from "../components/Input";
-import { loginSchema, type LoginSchema, useLoginMutation } from "@ticket-registrator/shared";
+import { loginSchema, type LoginSchema, useLoginMutation, type ILoginResponse } from "@ticket-registrator/shared";
 import { Link, useNavigate } from "react-router-dom";
 import { Scan, ShieldCheck, Sparkles } from "lucide-react";
 import { tokenProvider } from "../api/client";
 import { useTranslation } from "react-i18next";
+import { AxiosError } from "axios";
 
 export const LoginForm = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { mutate, isPending, isError, error } = useLoginMutation({
-        onSuccess: (data: any) => {
+        onSuccess: (data: ILoginResponse) => {
             tokenProvider.setToken(data.access_token);
             navigate('/home');
         }
@@ -30,7 +31,7 @@ export const LoginForm = () => {
         mutate(data);
     };
 
-    const serverErrorMessage = isError ? (error as any)?.response?.data?.message || t('common.error') : undefined;
+    const serverErrorMessage = isError ? (error as AxiosError<{ message: string }>)?.response?.data?.message || t('common.error') : undefined;
 
     return (
         <div className="min-h-screen w-full grid lg:grid-cols-2 bg-surface">

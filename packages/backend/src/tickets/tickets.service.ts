@@ -56,7 +56,7 @@ export class TicketsService {
       expense_type: geminiData.expense_type ?? null,
       date: geminiData.date ? new Date(geminiData.date) : null,
       location_name: geminiData.establishment ?? null,
-      location_address: geminiData.formatted_address ?? null,
+      location_address: geminiData.address?.formatted_address ?? null,
       amount: geminiData.total ?? null,
       currency: report.currency ?? null,
       converted_amount: geminiData.converted_amount ?? null,
@@ -280,5 +280,16 @@ export class TicketsService {
     await this.reportModel.findByIdAndUpdate(reportId, {
       approved_amount: sum[0]?.total || 0,
     });
+  }
+
+  async getTicketImageUrl(userId: string, reportId: string, ticketId: string): Promise<{ url: string }> {
+    const ticket = await this.findOne(userId, reportId, ticketId);
+    
+    if (!ticket.cgs_bucket_link) {
+      throw new NotFoundException('No image found for this ticket');
+    }
+
+    const url = await this.storageService.findFile(ticket.cgs_bucket_link);
+    return { url };
   }
 }
