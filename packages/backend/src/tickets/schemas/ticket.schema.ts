@@ -1,81 +1,95 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
-import { ItemStatus } from "../status/item-status";
-import type { ItemStatusType } from "../status/item-status";
-import { TicketStatus } from "../status/ticket-status";
-import type { TicketStatusType } from "../status/ticket-status";
+import { TicketStatus } from '@ticket-registrator/shared';
+import type {TicketStatusType} from '@ticket-registrator/shared';
+import { ItemStatus } from '@ticket-registrator/shared';
+import type { ItemStatusType } from '@ticket-registrator/shared';
+import { TicketLifecycle } from '@ticket-registrator/shared';
+import type { TicketLifecycleType } from "@ticket-registrator/shared";
 
-
-@Schema({ timestamps: true })
+@Schema({ _id: false })
 export class Item {
-  @Prop({ required: true })
-  name: string;
+  @Prop({ type: String, default: null })
+  name: string | null;
 
-  @Prop({ required: true })
-  amount: number;
+  @Prop({ type: Number, default: null })
+  amount: number | null;
 
-  @Prop({ required: true })
-  currency: string;
+  @Prop({ type: String, default: null })
+  currency: string | null;
 
-  @Prop({ enum: ItemStatus, default: ItemStatus.PENDING })
+  @Prop({
+    enum: Object.values(ItemStatus),
+    default: ItemStatus.PENDING,
+  })
   status: ItemStatusType;
 }
 
 export const ItemSchema = SchemaFactory.createForClass(Item);
 
-export type TicketDocument = HydratedDocument<Ticket>;
 
 @Schema({ timestamps: true })
 export class Ticket {
   @Prop({ type: Types.ObjectId, ref: 'Report', required: true })
   report_id: Types.ObjectId;
 
-  @Prop({ required: true })
-  cgs_bucket_link: string;
-
-  @Prop({ required: true })
-  payment_type: string;
-
-  @Prop({ required: true })
-  expense_type: string;
-
-  @Prop({ required: true })
-  date: Date;
-
-  @Prop({ required: true })
-  location_name: string;
-
-  @Prop({ required: true })
-  location_address: string;
-
-  @Prop({ required: true })
-  amount: number;
-
-  @Prop({ required: true })
-  currency: string;
-
-  @Prop({ required: true })
-  converted_amount: number;
-
-  @Prop({ required: true })
-  converted_currency: string;
-
-  @Prop({ required: true })
-  cgs_bucket_link_justification: string;
-
-  @Prop({ required: true })
-  last_four_digits: string;
-
+  // -----------------------------
+  // Lifecycle control
+  // -----------------------------
   @Prop({
-    required: true,
+    enum: Object.values(TicketLifecycle),
+    default: TicketLifecycle.DRAFT,
+  })
+  lifecycle: TicketLifecycleType;
+
+  // -----------------------------
+  // Extracted / user-editable fields
+  // -----------------------------
+  @Prop({ type: String, default: null })
+  cgs_bucket_link: string | null;
+
+  @Prop({ type: String, default: null })
+  payment_type: string | null;
+
+  @Prop({ type: String, default: null })
+  expense_type: string | null;
+
+  @Prop({ type: Date, default: null })
+  date: Date | null;
+
+  @Prop({ type: String, default: null })
+  location_name: string | null;
+
+  @Prop({ type: String, default: null })
+  location_address: string | null;
+
+  @Prop({ type: Number, default: null })
+  amount: number | null;
+
+  @Prop({ type: String, default: null })
+  currency: string | null;
+
+  @Prop({ type: Number, default: null })
+  converted_amount: number | null;
+
+  @Prop({ type: String, default: null })
+  converted_currency: string | null;
+
+  @Prop({ type: String, default: null })
+  cgs_bucket_link_justification: string | null;
+
+  @Prop({ type: String, default: null })
+  last_four_digits: string | null;
+
+  // -----------------------------
+  // Status & finance
+  // -----------------------------
+  @Prop({
     enum: Object.values(TicketStatus),
     default: TicketStatus.PENDING,
   })
   status: TicketStatusType;
 
-  // -----------------------------
-  // LLM fields (defaults)
-  // -----------------------------
   @Prop({ type: Number, default: null })
   llm_appproved_percentage: number | null;
 
@@ -84,12 +98,11 @@ export class Ticket {
 
   @Prop({ type: Number, default: null })
   llm_suggested_amount: number | null;
-  
+
   @Prop({ type: String, default: null })
   llm_suggested_currency: string | null;
 
-  // approved amount for finance approval
-  @Prop({ default: 0 })
+  @Prop({ type: Number, default: 0 })
   approved_amount: number;
 
   @Prop({ type: [ItemSchema], default: [] })
@@ -97,3 +110,5 @@ export class Ticket {
 }
 
 export const TicketSchema = SchemaFactory.createForClass(Ticket);
+export type TicketDocument = HydratedDocument<Ticket>;
+

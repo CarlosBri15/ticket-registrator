@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
-import { ReportStatus } from "../report-status/report-status";
-import type { ReportStatusType } from "../report-status/report-status";
+import type { ReportStatusType } from "@ticket-registrator/shared";
+import { ReportStatus } from "@ticket-registrator/shared";
 
 export type ReportDocument = HydratedDocument<Report>;
 

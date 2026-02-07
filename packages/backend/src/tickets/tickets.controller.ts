@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket-user.dto';
@@ -6,15 +6,27 @@ import { UpdateTicketStatusDto } from './dto/update-ticket-status.dto';
 import type { UpdateTicketUnionDto } from './dto/update-ticket-user.dto';
 import { isStatusDto } from './dto/update-ticket-user.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @UseGuards(AuthGuard('jwt'))
-@Controller('reports/:reportId/tickets')
+@Controller('tickets')
 export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 
-  @Post()
-  create(@Req() req, @Param('reportId') reportId: string, @Body() dto: CreateTicketDto) {
-    return this.ticketsService.create(req.user.userId, reportId, dto);
+  @Post(':reportId')
+  @UseInterceptors(FileInterceptor('image'))
+  create(
+    @Req() req,
+    @Param('reportId') reportId: string,
+    //@Body() dto: CreateTicketDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.ticketsService.create(
+      req.user.userId,
+      reportId,
+      //dto,
+      file,
+    );
   }
 
   @Get()

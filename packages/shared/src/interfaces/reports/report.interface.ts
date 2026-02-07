@@ -1,3 +1,4 @@
+import type { ReportStatusType } from '../../statuses/report-status';
 export interface IReport {
     id: string;
     user_id: string;
@@ -8,5 +9,5 @@ export interface IReport {
     type: string;
     requested_amount: number;
     approved_amount: number;
-    status: string;
+    status: ReportStatusType;
 }
