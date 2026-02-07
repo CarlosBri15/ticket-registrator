@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode } from 'react';
 
 interface ButtonProps extends ComponentProps<'button'> {
   isLoading?: boolean;
-  variant?: 'primary' | 'secondary' | 'accent' | 'outline';
+  variant?: 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost';
   children: ReactNode;
 }
 
@@ -16,18 +16,19 @@ export const Button = ({
     }: ButtonProps) => {
   
     const variants = {
-      primary: "bg-brand hover:bg-brand-hover text-white shadow-brand/30",
-      secondary: "bg-secondary/20 hover:bg-secondary/30 text-brand font-bold",
-      accent: "bg-accent hover:bg-accent-hover text-white shadow-accent/30",
-      outline: "border-2 border-brand text-brand hover:bg-brand/5 bg-transparent shadow-none"
+      primary: "bg-brand hover:bg-brand-hover text-white shadow-lg shadow-brand/20 border border-transparent",
+      secondary: "bg-white text-dark hover:bg-gray-50 border border-gray-200 shadow-sm",
+      accent: "bg-accent hover:bg-accent-hover text-white shadow-lg shadow-accent/20 border border-transparent",
+      outline: "bg-transparent border-2 border-brand text-brand hover:bg-brand/5",
+      ghost: "bg-transparent text-gray-500 hover:text-brand hover:bg-brand/5 border border-transparent shadow-none"
     };
 
     return (
       <button
         disabled={isLoading || disabled}
         className={`
-          relative w-full flex justify-center items-center px-4 py-3 rounded-xl
-          font-semibold text-sm tracking-wide shadow-lg transition-all duration-200
+          relative w-full flex justify-center items-center px-6 py-3.5 rounded-xl
+          font-bold text-sm tracking-wide transition-all duration-300
           active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:shadow-none
           ${variants[variant]} 
           ${className}
@@ -36,11 +37,11 @@ export const Button = ({
       >
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-[2.5px] border-current border-t-transparent rounded-full animate-spin" />
           </div>
         )}
         
-        <span className={isLoading ? 'invisible' : ''}>
+        <span className={`flex items-center justify-center gap-2 ${isLoading ? 'invisible' : ''}`}>
           {children}
         </span>
       </button>

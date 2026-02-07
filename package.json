@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "backend",
-    "frontend",
-    "shared"
+    "packages/backend",
+    "packages/frontend",
+    "packages/shared",
+    "packages/mobile"
   ],
   "scripts": {
     "install:all": "npm install",

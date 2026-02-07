@@ -3,7 +3,7 @@ import React, { useState } from "react";
 export default function UploadTicket() {
   const url = import.meta.env.VITE_API_URL;
   const [file, setFile] = useState<File | null>(null);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<Record<string, unknown> | null>(null);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {

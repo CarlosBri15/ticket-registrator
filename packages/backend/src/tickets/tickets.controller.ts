@@ -29,12 +29,12 @@ export class TicketsController {
     );
   }
 
-  @Get()
+  @Get('report/:reportId')
   findAll(@Req() req, @Param('reportId') reportId: string) {
     return this.ticketsService.findAll(req.user.userId, reportId);
   }
 
-   @Patch(':ticketId')
+   @Patch(':ticketId/report/:reportId')
     update(
       @Req() req,
       @Param('reportId') reportId: string,
@@ -48,13 +48,22 @@ export class TicketsController {
     }
     }
 
-  @Delete(':ticketId')
+  @Delete(':ticketId/report/:reportId')
   remove(
     @Req() req,
     @Param('reportId') reportId: string,
     @Param('ticketId') ticketId: string,
   ) {
     return this.ticketsService.remove(req.user.userId, reportId, ticketId);
+  }
+
+  @Get(':ticketId/report/:reportId/image')
+  getImage(
+    @Req() req,
+    @Param('reportId') reportId: string,
+    @Param('ticketId') ticketId: string,
+  ) {
+    return this.ticketsService.getTicketImageUrl(req.user.userId, reportId, ticketId);
   }
 
 }

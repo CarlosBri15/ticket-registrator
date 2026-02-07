@@ -1,5 +1,6 @@
 import  type {TicketStatusType} from '../../statuses/ticket-status';
 import { IItem } from './item.interface';
+
 export interface ITicket {
   id: string;
   report_id: string;

@@ -1,0 +1,25 @@
+const { getDefaultConfig } = require('expo/metro-config');
+const path = require('path');
+
+const projectRoot = __dirname;
+const workspaceRoot = path.resolve(projectRoot, '..');
+
+const config = getDefaultConfig(projectRoot);
+
+// Configuración para Monorepo
+config.watchFolders = [workspaceRoot];
+config.resolver.nodeModulesPaths = [
+  path.resolve(projectRoot, 'node_modules'),
+  path.resolve(workspaceRoot, 'node_modules'),
+];
+config.resolver.disableHierarchicalLookup = true;
+
+config.resolver.extraNodeModules = {
+  'react': path.resolve(projectRoot, 'node_modules/react'),
+  'react-native': path.resolve(workspaceRoot, 'node_modules/react-native'),
+  'expo': path.resolve(workspaceRoot, 'node_modules/expo'),
+  'expo-router': path.resolve(workspaceRoot, 'node_modules/expo-router'),
+  '@tanstack/react-query': path.resolve(workspaceRoot, 'node_modules/@tanstack/react-query'),
+};
+
+module.exports = config;

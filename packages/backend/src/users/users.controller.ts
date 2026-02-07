@@ -22,6 +22,12 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Get('me')
+  getMe(@Req() req) {
+    return this.usersService.findOne(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);

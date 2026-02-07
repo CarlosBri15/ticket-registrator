@@ -1,34 +1,24 @@
-import axios from "axios";
+import { createApiClient, type TokenProvider, setApiClient } from '@ticket-registrator/shared';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export const client = axios.create({
-    baseURL: API_URL,
-    headers: {
-        'Content-Type': 'application/json',
+const tokenProvider: TokenProvider = {
+    getToken: () => {
+        return localStorage.getItem('access_token');
     },
-});
-
-client.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('access_token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
+    setToken: (token: string) => {
+        localStorage.setItem('access_token', token);
     },
-    (error) => {
-        return Promise.reject(error);
+    removeToken: () => {
+        localStorage.removeItem('access_token');
+    },
+    onUnauthorized: () => {
+        window.location.href = '/login';
     }
-);
+};
 
-client.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response.status === 401) {
-            localStorage.removeItem('access_token');
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
+// Inicializamos la instancia global de la API para los hooks de shared
+const client = createApiClient(API_URL, tokenProvider);
+setApiClient(client);
+
+export { client, tokenProvider };
