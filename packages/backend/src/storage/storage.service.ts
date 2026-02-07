@@ -10,10 +10,17 @@ export class StorageService {
   private bucketName;
 
   constructor(private configService: ConfigService){
-    this.storage = new Storage({
+    const storageOptions: any = {
       projectId: configService.get<string>('GCP_PROJECT_ID'),
-      keyFilename: join(process.cwd(), this.configService.get<string>('GCP_KEY_FILE_PATH')!)
-    });
+    };
+
+    const keyPath = this.configService.get<string>('GCP_KEY_FILE_PATH');
+    // Solo intentamos cargar el archivo si la variable existe y no es el string 'undefined' o el contenido de un JSON
+    if (keyPath && keyPath.length < 100 && keyPath !== 'undefined') {
+      storageOptions.keyFilename = join(process.cwd(), keyPath);
+    }
+
+    this.storage = new Storage(storageOptions);
     this.bucketName = configService.get<string>('GCP_BUCKET_NAME');
   }
 
