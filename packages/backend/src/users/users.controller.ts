@@ -14,7 +14,6 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  // Protected routes
   @UseGuards(AuthGuard('jwt'))
   @Get()
   findAll() {

@@ -2,22 +2,36 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException }
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Report, ReportDocument } from './schemas/report.schema';
-import { CreateReportDto } from './dto/create-report.dto';
-import {UpdateReportFieldsDto, UpdateReportStatusDto} from './dto/update-report.dto';
 import { Ticket, TicketDocument } from '../tickets/schemas/ticket.schema';
+import { User, UserDocument } from 'src/users/schemas/user.schema';
 import { IReport, ReportStatus } from '@ticket-registrator/shared';
+import { CreateReportDto } from './dto/create-report.dto';
+import {UpdateReportFieldsDto, UpdateReportStatusDto} from './dto/update-report.dto'
+import { mapReportToIReport } from './mapper/report.mapper';
 
 @Injectable()
 export class ReportsService {
   constructor(
+    @InjectModel(User.name)
+    private userModel: Model<UserDocument>,
     @InjectModel(Report.name)
     private reportModel: Model<ReportDocument>,
     @InjectModel(Ticket.name)
     private ticketModel: Model<TicketDocument>,
   ) {}
 
+  // Helper to check if user exists and is visible
+  private async getVisibleUser(userId: string) {
+    const user = await this.userModel.findOne({
+      _id: new Types.ObjectId(userId),
+      isVisible: true,
+    });
+    if (!user) throw new NotFoundException('User not found or not visible');
+    return user;
+  }
+
   async create(userId: string, dto: CreateReportDto): Promise<IReport> {
-    // 1️⃣ Check overlapping reports
+    await this.getVisibleUser(userId);  // Ensure user exists and is visible
     const overlapping = await this.reportModel.findOne({
       user_id: new Types.ObjectId(userId),
       $or: [
@@ -36,164 +50,148 @@ export class ReportsService {
 
     // Create report
     const report = await this.reportModel.create({
-      ...dto,
       user_id: new Types.ObjectId(userId),
       requested_amount: 0,
       approved_amount: 0,
       status: ReportStatus.CREATED,
+      name:dto.name,
+      start_date: dto.start_date,
+      end_date: dto.end_date,
+      currency: dto.currency,
+      type: dto.type ?? '',
+      isVisible: dto.isVisible,
     });
 
-    // Map Mongo document → IReport
-    return {
-      id: report._id.toString(),
-      user_id: report.user_id.toString(),
-      name: report.name,
-      start_date: report.start_date,
-      end_date: report.end_date,
-      currency: report.currency,
-      type: report.type ?? '',
-      requested_amount: report.requested_amount,
-      approved_amount: report.approved_amount,
-      status: report.status,
-    };
+    return mapReportToIReport(report);
   }
 
-  async findAll(userId: string) : Promise<IReport[]> {
-    return this.reportModel
-      .find({ user_id: new Types.ObjectId(userId) });
+  async findAll(userId: string): Promise<IReport[]> {
+    await this.getVisibleUser(userId);  // Ensure user exists and is visible
+    const reports = await this.reportModel.find({
+      user_id: new Types.ObjectId(userId),
+      isVisible: true,
+    });
+
+    return reports.map(report => mapReportToIReport(report));
   }
 
-  async findOne(userId: string, reportId: string) : Promise<IReport> {
+  async findOne(userId: string, reportId: string): Promise<IReport> {
+    await this.getVisibleUser(userId);
     const report = await this.reportModel.findOne({
       _id: new Types.ObjectId(reportId),
       user_id: new Types.ObjectId(userId),
+      isVisible: true, // optional: only show visible reports
     });
 
     if (!report) throw new NotFoundException('Report not found');
-    
-    return {
-      id: report._id.toString(),
-      user_id: report.user_id.toString(),
-      name: report.name,
-      start_date: report.start_date,
-      end_date: report.end_date,
-      currency: report.currency,
-      type: report.type,
-      requested_amount: report.requested_amount,
-      approved_amount: report.approved_amount,
-      status: report.status
-    }
+
+    return mapReportToIReport(report);
   }
 
-  async update(
-    userId: string,
-    reportId: string,
-    updateReportDto: UpdateReportFieldsDto,
-  ) {
-    // Allowed fields from the DTO
-    const allowedFields = ['name', 'start_date', 'end_date', 'type'];
 
-    // Keys present in the request body
-    const bodyKeys = Object.keys(updateReportDto);
+  async update(userId: string,reportId: string,updateReportDto: UpdateReportFieldsDto): Promise<IReport> {
+    await this.getVisibleUser(userId);
+    // Only allow updates if report is still in CREATED status
+    const report = await this.reportModel.findOne({
+      _id: new Types.ObjectId(reportId),
+      user_id: new Types.ObjectId(userId),
+      isVisible: true,
+      status: ReportStatus.CREATED,
+    });
 
-    // Check for invalid fields
-    const invalidFields = bodyKeys.filter(
-      key => !allowedFields.includes(key) && key !== 'reportId',
-    );
-
-    if (invalidFields.length > 0) {
-      throw new BadRequestException(
-        `Invalid fields provided: ${invalidFields.join(', ')}`,
+    if (!report) {
+      throw new NotFoundException(
+        'Report not found or cannot be updated (status must be CREATED)',
       );
     }
 
-    // Build the update object dynamically
-    const updateFields: Record<string, any> = {};
+    // Update allowed fields from DTO
+    const allowedFields = ['name', 'start_date', 'end_date', 'type', 'isVisible'] as const;
 
-    if (updateReportDto.name !== undefined) updateFields.name = updateReportDto.name;
-    if (updateReportDto.start_date !== undefined)
-      updateFields.start_date = new Date(updateReportDto.start_date);
-    if (updateReportDto.end_date !== undefined)
-      updateFields.end_date = new Date(updateReportDto.end_date);
-    if (updateReportDto.type !== undefined) updateFields.type = updateReportDto.type;
+    let hasUpdates = false;
+    allowedFields.forEach(field => {
+      if (updateReportDto[field] !== undefined) {
+        (report as any)[field] = updateReportDto[field];
+        hasUpdates = true;
+      }
+    });
 
-    // If no valid fields are provided
-    if (Object.keys(updateFields).length === 0) {
+    if (!hasUpdates) {
       throw new BadRequestException('No valid fields provided for update');
     }
 
-    // Perform the update in the DB
+    // Save changes
+    await report.save();
+
+    // Map to IReport using your mapper
+    return mapReportToIReport(report);
+  }
+
+  async updateStatus(reportId: string, dto: UpdateReportStatusDto): Promise<IReport> {
+    // Only reports with status SUBMITTED can be updated
     const updatedReport = await this.reportModel.findOneAndUpdate(
       {
         _id: new Types.ObjectId(reportId),
-        user_id: new Types.ObjectId(userId), // ensures ownership
+        status: ReportStatus.SUBMITTED,
+        isVisible: true,
       },
-      { $set: updateFields },
+      { $set: { status: dto.status } },
       { new: true, runValidators: true },
     );
 
     if (!updatedReport) {
-      throw new NotFoundException(
-        'Report not found or you do not have permission',
+      throw new ConflictException(
+        'Report not found or cannot be reviewed (status must be SUBMITTED)',
       );
     }
 
-    return updatedReport;
+    // Use mapper for consistent formatting
+    return mapReportToIReport(updatedReport);
   }
 
-
-  async submitReport(userId: string, reportId: string) {
-  const updatedReport = await this.reportModel.findOneAndUpdate(
-    {
-      _id: new Types.ObjectId(reportId),
-      user_id: new Types.ObjectId(userId),
-      status: ReportStatus.CREATED, // Make sure it matches the enum exactly
-    },
-    { $set: { status: ReportStatus.SUBMITTED } },
-    { new: true, runValidators: true }
-  );
-
-  if (!updatedReport) {
-    throw new ConflictException(
-      'Report not found or cannot be submitted (status must be CREATED)'
-    );
-  }
-
-  return updatedReport;
-}
-
-  async updateStatus(reportId: string, dto: UpdateReportStatusDto) {
-    // Only submitted reports can be reviewed
+  async submitReport(userId: string, reportId: string): Promise<IReport> {
+    await this.getVisibleUser(userId);
     const updatedReport = await this.reportModel.findOneAndUpdate(
-      { _id: reportId, status: ReportStatus.SUBMITTED },
-      { $set: { status: dto.status } },
-      { new: true, runValidators: true }
+      {
+        _id: new Types.ObjectId(reportId),
+        user_id: new Types.ObjectId(userId),
+        status: ReportStatus.CREATED,
+        isVisible: true,
+      },
+      { $set: { status: ReportStatus.SUBMITTED } },
+      { new: true, runValidators: true },
     );
 
     if (!updatedReport) {
       throw new ConflictException(
-        'Report not found or cannot be reviewed (status must be SUBMITTED)'
+        'Report not found or cannot be submitted (status must be CREATED)',
       );
     }
 
-    return updatedReport;
+    // Map Mongoose document to IReport using the mapper
+    return mapReportToIReport(updatedReport);
   }
 
   async remove(userId: string, reportId: string) {
-    // Delete the report in a single call if owned by the user
-    const report = await this.reportModel.findOneAndDelete({
+    await this.getVisibleUser(userId);
+    const report = await this.reportModel.findOne({
       _id: new Types.ObjectId(reportId),
       user_id: new Types.ObjectId(userId),
     });
-
     if (!report) throw new NotFoundException('Report not found');
-
-    // Cascade delete tickets
-    await this.ticketModel.deleteMany({
-      report_id: new Types.ObjectId(reportId),
-    });
-
+    if (report.status !== ReportStatus.CREATED) {
+      throw new ConflictException('Cannot remove a report after submission');
+    }
+    // Instead of hard delete, mark report as invisible
+    report.isVisible = false;
+    await report.save();
+    // Cascade: hide all tickets belonging to this report
+    await this.ticketModel.updateMany(
+      { report_id: new Types.ObjectId(reportId) },
+      { $set: { isVisible: false } }
+    );
     return { deleted: true };
   }
+
 
 }

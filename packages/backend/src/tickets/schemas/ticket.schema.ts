@@ -30,6 +30,9 @@ export const ItemSchema = SchemaFactory.createForClass(Item);
 
 @Schema({ timestamps: true })
 export class Ticket {
+  createdAt: Date;
+  updatedAt: Date;
+
   @Prop({ type: Types.ObjectId, ref: 'Report', required: true })
   report_id: Types.ObjectId;
 
@@ -41,6 +44,9 @@ export class Ticket {
     default: TicketLifecycle.DRAFT,
   })
   lifecycle: TicketLifecycleType;
+
+    @Prop({ type: Number, default: 0 })
+  version: number;
 
   // -----------------------------
   // Extracted / user-editable fields
@@ -107,6 +113,10 @@ export class Ticket {
 
   @Prop({ type: [ItemSchema], default: [] })
   items: Item[];
+
+  @Prop({ type: Boolean, default: true })
+  isVisible: boolean;
+
 }
 
 export const TicketSchema = SchemaFactory.createForClass(Ticket);

@@ -17,6 +17,7 @@ export const createTicketSchema = z.object({
   cgs_bucket_link_justification: z.string().optional(),
   last_four_digits: z.string().optional(),
   items: z.array(createItemSchema).optional(),
+  isVisible: z.boolean().optional()
 });
 
 export type CreateTicketSchema = z.infer<typeof createTicketSchema>;

@@ -19,6 +19,9 @@ export class User {
 
     @Prop({ required: true })
     password: string;
+
+    @Prop({ type: Boolean, default: true })
+    isVisible: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

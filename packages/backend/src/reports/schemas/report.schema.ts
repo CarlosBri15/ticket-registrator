@@ -7,6 +7,10 @@ export type ReportDocument = HydratedDocument<Report>;
 
 @Schema({ timestamps: true })
 export class Report {
+
+    createdAt: Date;
+    updatedAt: Date;
+    
     @Prop({ type: Types.ObjectId, ref: 'User', required: true })
     user_id: Types.ObjectId;
 
@@ -37,6 +41,9 @@ export class Report {
         default: ReportStatus.CREATED,
     })
     status: ReportStatusType;
+
+    @Prop({ type: Boolean, default: true })
+      isVisible: boolean;
 }
 
 export const ReportSchema = SchemaFactory.createForClass(Report);

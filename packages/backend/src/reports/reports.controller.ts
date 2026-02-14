@@ -1,8 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, BadRequestException } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
-import type { UpdateReportUnionDto} from './dto/update-report.dto';
-import { isStatusDto } from './dto/update-report.dto';
+import { updateReportFieldsSchema, updateReportStatusSchema} from '@ticket-registrator/shared';
 import { AuthGuard } from '@nestjs/passport';
 
 @UseGuards(AuthGuard('jwt'))
@@ -29,14 +28,35 @@ export class ReportsController {
   update(
     @Req() req,
     @Param('id') id: string,
-    @Body() updateReportDto: UpdateReportUnionDto,
+    @Body() body: unknown,
   ) {
-    if (isStatusDto(updateReportDto)) {
-    return this.reportsService.updateStatus(id, updateReportDto);
-  } else {
-    return this.reportsService.update(req.user.userId, id, updateReportDto);
+    // status update
+    if (typeof body === 'object' && body !== null && 'status' in body) {
+      const parsed = updateReportStatusSchema.safeParse(body);
+
+      if (!parsed.success) {
+        throw new BadRequestException(parsed.error.format());
+      }
+
+      // parsed.data is exactly UpdateReportStatusDto shape
+      return this.reportsService.updateStatus(id, parsed.data);
+    }
+
+    // field update
+    const parsed = updateReportFieldsSchema.safeParse(body);
+
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.format());
+    }
+
+    // parsed.data is exactly UpdateReportFieldsDto shape
+    return this.reportsService.update(
+      req.user.userId,
+      id,
+      parsed.data,
+    );
   }
-  }
+
 
   @Patch(':id/submit')
   submitReport(@Req() req, @Param('id') id: string) {

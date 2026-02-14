@@ -4,11 +4,14 @@ export interface IReport {
     _id?: string;
     user_id: string;
     name: string;
-    start_date: Date;
-    end_date: Date;
+    start_date: string;
+    end_date: string;
     currency: string;
     type: string;
     requested_amount: number;
     approved_amount: number;
     status: ReportStatusType;
+    createdAt: string;
+    updatedAt: string;
+    isVisible: boolean;
 }

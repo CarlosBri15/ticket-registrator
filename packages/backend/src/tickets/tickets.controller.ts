@@ -1,19 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
-import { UpdateTicketDto } from './dto/update-ticket-user.dto';
-import { UpdateTicketStatusDto } from './dto/update-ticket-status.dto';
-import type { UpdateTicketUnionDto } from './dto/update-ticket-user.dto';
-import { isStatusDto } from './dto/update-ticket-user.dto';
+import { updateTicketFieldsSchema, updateTicketStatusSchema, updateTicketLlmSchema } from '@ticket-registrator/shared';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @UseGuards(AuthGuard('jwt'))
-@Controller('tickets')
+@Controller('reports/:reportId/tickets')
 export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 
-  @Post(':reportId')
+  @Post()
   @UseInterceptors(FileInterceptor('image'))
   create(
     @Req() req,
@@ -39,16 +36,47 @@ export class TicketsController {
       @Req() req,
       @Param('reportId') reportId: string,
       @Param('ticketId') ticketId: string,
-      @Body() updateTicketDto: UpdateTicketUnionDto,
+      @Body() body: unknown,
     ) {
-      if (isStatusDto(updateTicketDto)) {
-      return this.ticketsService.updateStatus(reportId, ticketId, updateTicketDto);
-    } else {
-      return this.ticketsService.update(req.user.userId, reportId, ticketId, updateTicketDto);
-    }
+      // Status update
+      if (typeof body === 'object' && body !== null && 'status' in body) {
+        const parsed = updateTicketStatusSchema.safeParse(body);
+        if (!parsed.success) {
+          throw new BadRequestException(parsed.error.format());
+        }
+        return this.ticketsService.updateStatus(reportId, ticketId, parsed.data);
+      }
+
+      // LLM update
+      if (
+        typeof body === 'object' &&
+        body !== null &&
+        ('llm_appproved_percentage' in body ||
+        'llm_suggested_amount' in body ||
+        'llm_recomendation' in body)
+      ) {
+        const parsed = updateTicketLlmSchema.safeParse(body);
+        if (!parsed.success) {
+          throw new BadRequestException(parsed.error.format());
+        }
+        //return this.ticketsService.updateLlm(reportId, ticketId, parsed.data);
+      }
+
+      // Fields update
+      const parsed = updateTicketFieldsSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new BadRequestException(parsed.error.format());
+      }
+      return this.ticketsService.update(
+        req.user.userId,
+        reportId,
+        ticketId,
+        parsed.data,
+      );
     }
 
-  @Delete(':ticketId/report/:reportId')
+
+  @Delete(':ticketId')
   remove(
     @Req() req,
     @Param('reportId') reportId: string,

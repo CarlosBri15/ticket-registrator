@@ -6,6 +6,7 @@ export const createReportSchema = z.object({
     end_date: z.coerce.date(),
     currency: z.string().min(1, 'Currency is required'),
     type: z.string().optional(),
+    isVisible: z.boolean().optional()
 })
 
 export type CreateReportSchema = z.infer<typeof createReportSchema>
