@@ -26,12 +26,12 @@ export class TicketsController {
     );
   }
 
-  @Get('report/:reportId')
+  @Get()
   findAll(@Req() req, @Param('reportId') reportId: string) {
     return this.ticketsService.findAll(req.user.userId, reportId);
   }
 
-   @Patch(':ticketId/report/:reportId')
+   @Patch(':ticketId')
     update(
       @Req() req,
       @Param('reportId') reportId: string,
@@ -85,7 +85,7 @@ export class TicketsController {
     return this.ticketsService.remove(req.user.userId, reportId, ticketId);
   }
 
-  @Get(':ticketId/report/:reportId/image')
+  @Get(':ticketId/image')
   getImage(
     @Req() req,
     @Param('reportId') reportId: string,

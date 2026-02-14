@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Ticket, TicketDocument } from './schemas/ticket.schema';
 import { Report, ReportDocument } from '../reports/schemas/report.schema';
-import {mapTicketToITicket} from './mapper/ticket.mapper';
+import { mapTicketToITicket } from './mapper/ticket.mapper';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketFieldsDto, UpdateTicketStatusDto } from './dto/update-ticket-user.dto';
 import { ITicket, TicketStatus, ItemStatus, TicketLifecycle, ReportStatus } from '@ticket-registrator/shared';
@@ -181,11 +181,14 @@ export class TicketsService {
 
     if (dto.items !== undefined) {
       update.items = dto.items.map(item => ({
-        ...item,
+        name: item.name ?? null,
+        amount: item.amount ?? null,
+        currency: item.currency ?? null,
         status: ItemStatus.PENDING,
       }));
       meaningfulChange = true;
     }
+
 
     if (Object.keys(update).length === 0) {
       throw new BadRequestException('No valid fields provided for update');
