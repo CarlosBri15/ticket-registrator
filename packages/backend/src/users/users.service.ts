@@ -10,6 +10,8 @@ import { MongoServerError } from 'mongodb';
 import * as bcrypt from 'bcrypt';
 import { IUser } from '@ticket-registrator/shared';
 import { mapUserToIUser } from './mapper/users.mapper';
+import { AuthService } from '../auth/auth.service';
+import { Inject, forwardRef } from '@nestjs/common';
 
 @Injectable()
 export class UsersService {
@@ -22,10 +24,16 @@ export class UsersService {
 
     @InjectModel(Ticket.name)
     private ticketModel: Model<TicketDocument>,
-  ) {}
+
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
+) {}
 
   async create(createUserDto: CreateUserDto) : Promise<IUser> {
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+    if (!createUserDto.password) {
+      throw new ConflictException('Password is required');
+    }
+    const hashedPassword = await this.authService.hashPassword(createUserDto.password);
     createUserDto.password = hashedPassword;
 
     try {
@@ -65,7 +73,7 @@ export class UsersService {
   async update(id: string, updateUserDto: UpdateUserDto): Promise<IUser> {
     // Hash password if present
     if (updateUserDto.password) {
-      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+      updateUserDto.password = await this.authService.hashPassword(updateUserDto.password);
     }
 
     try {

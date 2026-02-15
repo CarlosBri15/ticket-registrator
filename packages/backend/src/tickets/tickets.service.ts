@@ -9,12 +9,14 @@ import { UpdateTicketFieldsDto, UpdateTicketStatusDto } from './dto/update-ticke
 import { ITicket, TicketStatus, ItemStatus, TicketLifecycle, ReportStatus } from '@ticket-registrator/shared';
 import { GeminiService } from 'src/gemini/gemini.service';
 import { StorageService } from 'src/storage/storage.service';
+import {TicketHistory, TicketHistoryDocument} from "../history/schema/history.schema";
 
 @Injectable()
 export class TicketsService {
   constructor(
     @InjectModel(Ticket.name) private ticketModel: Model<TicketDocument>,
     @InjectModel(Report.name) private reportModel: Model<ReportDocument>,
+    @InjectModel(TicketHistory.name) private ticketHistoryModel: Model<TicketHistoryDocument>,
     private readonly geminiService: GeminiService,     
     private readonly storageService: StorageService,
   ) {}
@@ -193,17 +195,49 @@ export class TicketsService {
     if (Object.keys(update).length === 0) {
       throw new BadRequestException('No valid fields provided for update');
     }
+    const currentTicket = await this.ticketModel.findOne({
+      _id: new Types.ObjectId(ticketId),
+      report_id: new Types.ObjectId(reportId),
+      isVisible: true,
+    });
+
+    if (!currentTicket) throw new NotFoundException('Ticket not found');
+
+    const oldSnapshot: Record<string, any> = {};
+    const newSnapshot: Record<string, any> = {};
+
+    for (const key of Object.keys(update)) {
+      oldSnapshot[key] = currentTicket[key as keyof Ticket];
+      newSnapshot[key] = update[key as keyof Ticket];
+    }
 
     const updateQuery: any = {
       $set: update,
     };
 
     if (meaningfulChange) {
+      oldSnapshot.lifecycle = currentTicket.lifecycle;
+      oldSnapshot.status = currentTicket.status;
+      oldSnapshot.approved_amount = currentTicket.approved_amount;
+
+      newSnapshot.lifecycle = TicketLifecycle.SUBMITTED;
+      newSnapshot.status = TicketStatus.PENDING;
+      newSnapshot.approved_amount = 0;
+
       updateQuery.$set.lifecycle = TicketLifecycle.SUBMITTED;
       updateQuery.$set.status = TicketStatus.PENDING;
       updateQuery.$set.approved_amount = 0;
       updateQuery.$inc = { version: 1 };
     }
+
+    // --- SAVE HISTORY ---
+    await this.ticketHistoryModel.create({
+      ticketId: currentTicket._id,
+      reportId: currentTicket.report_id,
+      version: currentTicket.version,
+      oldSnapshot,
+      newSnapshot,
+    });
 
     const updatedTicket = await this.ticketModel.findOneAndUpdate(
       {
@@ -237,6 +271,33 @@ export class TicketsService {
         'Tickets can only be reviewed after report submission',
       );
     }
+    const currentTicket = await this.ticketModel.findOne({
+      _id: ticketObjectId,
+      report_id: reportObjectId,
+      isVisible: true,
+    });
+
+    if (!currentTicket) {
+      throw new NotFoundException('Ticket not found');
+    }
+    //snapshots for history
+    const oldSnapshot = {
+      status: currentTicket.status,
+      approved_amount: currentTicket.approved_amount,
+    };
+    const newSnapshot = {
+      status: dto.status,
+      approved_amount: dto.approved_amount,
+    };
+
+    // update history
+    await this.ticketHistoryModel.create({
+      ticketId: currentTicket._id,
+      reportId: currentTicket.report_id,
+      version: currentTicket.version,
+      oldSnapshot,
+      newSnapshot,
+    });
 
     // Only allowed fields
     const updateFields: Partial<Ticket> = {
@@ -275,7 +336,25 @@ export class TicketsService {
     if (!ticket) {
       throw new NotFoundException('Ticket not found');
     }
+    // snapshots
+    const oldSnapshot = {
+      isVisible: ticket.isVisible,
+    };
+    const newSnapshot = {
+      isVisible: false,
+    };
+
+    // --- SAVE HISTORY ---
+    await this.ticketHistoryModel.create({
+      ticketId: ticket._id,
+      reportId: ticket.report_id,
+      version: ticket.version,
+      oldSnapshot,
+      newSnapshot,
+    });
+
     ticket.isVisible = false;
+    ticket.version += 1;
     await ticket.save();
 
     return { deleted: true };

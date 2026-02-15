@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schemas/user.schema';
 import { Report, ReportSchema } from '../reports/schemas/report.schema';
 import { Ticket, TicketSchema } from '../tickets/schemas/ticket.schema';
+import {AuthModule} from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { Ticket, TicketSchema } from '../tickets/schemas/ticket.schema';
       { name: Report.name, schema: ReportSchema },
       { name: Ticket.name, schema: TicketSchema },
     ]),
+    forwardRef(() => AuthModule), // <-- circular dependency
   ],
 
   controllers: [UsersController],
