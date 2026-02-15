@@ -31,7 +31,12 @@ export class TicketsController {
     return this.ticketsService.findAll(req.user.userId, reportId);
   }
 
-   @Patch(':ticketId')
+  @Get(':ticketId')
+  findOne(@Req() req, @Param('ticketId') id: string) {
+    return this.ticketsService.findOne(req.user.userId, req.params.reportId, id);
+  }
+
+  @Patch(':ticketId')
     update(
       @Req() req,
       @Param('reportId') reportId: string,
@@ -73,7 +78,7 @@ export class TicketsController {
         ticketId,
         parsed.data,
       );
-    }
+  }
 
 
   @Delete(':ticketId')
