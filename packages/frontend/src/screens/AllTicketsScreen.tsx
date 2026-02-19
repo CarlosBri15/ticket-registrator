@@ -97,7 +97,7 @@ const ReportTicketGroup = ({
 };
 
 export const AllTicketsScreen = () => {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { data: reports, isLoading } = useReportsQuery();
   const [selectedTicket, setSelectedTicket] = useState<ITicket | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<string>("");
