@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ScanLine, FileText, Calendar, Wallet, Banknote, Tag, History, Plus } from "lucide-react";
+import { ArrowLeft, ScanLine, FileText, Calendar, Wallet, Banknote, Tag, History, Plus, Send, CheckCircle } from "lucide-react";
 import { Button } from "../components/Button";
 import { StatusBadge } from "../components/StatusBadge";
 import { TicketUploadModal } from "../components/TicketUploadModal";
 import { TicketDetailModal } from "../components/TicketDetailModal";
-import { useReportQuery, useTicketsQuery, type ITicket } from "@ticket-registrator/shared";
+import { useReportQuery, useTicketsQuery, useSubmitReportMutation, type ITicket } from "@ticket-registrator/shared";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
@@ -17,9 +17,11 @@ export const ReportDetailScreen = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<ITicket | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  
+  const [submitConfirm, setSubmitConfirm] = useState(false);
+
   const { data: report, isLoading, isError } = useReportQuery(id);
   const { data: tickets, isLoading: isLoadingTickets } = useTicketsQuery(id!);
+  const submitMutation = useSubmitReportMutation();
 
   const dateLocale = i18n.language.startsWith('es') ? es : enUS;
 
@@ -91,16 +93,68 @@ export const ReportDetailScreen = () => {
                 </div>
             </div>
             
-            <Button 
-                onClick={() => setIsUploadModalOpen(true)} 
-                className="w-full md:w-auto px-8 py-4 text-lg shadow-2xl shadow-brand/20 group relative overflow-hidden"
-            >
-                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                <ScanLine className="w-5 h-5 mr-2 relative z-10" />
-                <span className="relative z-10">{t('reportDetail.scanTicket')}</span>
-            </Button>
+            <div className="flex gap-3 w-full md:w-auto flex-wrap">
+                {report.status === 'CREATED' && (
+                    <Button
+                        variant="outline"
+                        onClick={() => setSubmitConfirm(true)}
+                        isLoading={submitMutation.isPending}
+                        className="w-full md:w-auto px-6 py-4 border-green-200 text-green-700 hover:bg-green-50"
+                    >
+                        <Send className="w-4 h-4 mr-2" />
+                        {t('reportDetail.submitReport')}
+                    </Button>
+                )}
+                {report.status === 'SUBMITTED' && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-2xl border border-amber-200 text-amber-700 text-sm font-semibold">
+                        <CheckCircle className="w-4 h-4" />
+                        Enviado · En revisión
+                    </div>
+                )}
+                <Button
+                    onClick={() => setIsUploadModalOpen(true)}
+                    disabled={report.status !== 'CREATED'}
+                    className="w-full md:w-auto px-8 py-4 text-lg shadow-2xl shadow-brand/20 group relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                    <ScanLine className="w-5 h-5 mr-2 relative z-10" />
+                    <span className="relative z-10">{t('reportDetail.scanTicket')}</span>
+                </Button>
+            </div>
         </div>
       </div>
+
+      {/* Submit confirmation dialog */}
+      {submitConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="w-14 h-14 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+              <Send className="w-7 h-7" />
+            </div>
+            <h3 className="text-xl font-bold text-dark text-center mb-3">{t('reportDetail.submitReport')}</h3>
+            <p className="text-gray-500 text-sm text-center leading-relaxed mb-8">
+              {t('reportDetail.confirmSubmit')}
+            </p>
+            <div className="flex gap-3">
+              <Button variant="ghost" onClick={() => setSubmitConfirm(false)} className="flex-1">
+                {t('common.cancel')}
+              </Button>
+              <Button
+                onClick={() => {
+                  submitMutation.mutate(id!, {
+                    onSuccess: () => setSubmitConfirm(false),
+                  });
+                }}
+                isLoading={submitMutation.isPending}
+                className="flex-1 bg-green-600 hover:bg-green-700 shadow-xl shadow-green-600/20"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                {t('reportDetail.submitReport')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">

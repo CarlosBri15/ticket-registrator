@@ -28,8 +28,8 @@ export const AppLayout = () => {
 
   const MENU_ITEMS = [
     { path: "/home", label: t('home.summary'), icon: LayoutDashboard, description: t('home.summary') },
-    { path: "/trips", label: t('trips.title'), icon: Plane, description: "Gestión de gastos" },
-    { path: "/tickets", label: "Todos los Tickets", icon: Receipt, description: "Histórico completo" },
+    { path: "/trips", label: t('trips.title'), icon: Plane, description: "Gestion de gastos" },
+    { path: "/tickets", label: "Todos los Tickets", icon: Receipt, description: "Historico completo" },
   ];
 
   const closeMobile = () => setIsMobileOpen(false);

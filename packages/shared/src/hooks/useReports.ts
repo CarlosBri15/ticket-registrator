@@ -30,3 +30,29 @@ export const useCreateReportMutation = (options?: any) => {
         }
     });
 };
+
+export const useSubmitReportMutation = (options?: any) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => api.reports().submit(id),
+        onSuccess: (data, id) => {
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
+            queryClient.invalidateQueries({ queryKey: ['reports', id] });
+            if (options?.onSuccess) options.onSuccess(data);
+        },
+        onError: (error: any) => {
+            if (options?.onError) options.onError(error);
+        }
+    });
+};
+
+export const useDeleteReportMutation = (options?: any) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => api.reports().delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
+            if (options?.onSuccess) options.onSuccess();
+        },
+    });
+};
