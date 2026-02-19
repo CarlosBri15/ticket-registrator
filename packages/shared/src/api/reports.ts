@@ -13,5 +13,12 @@ export const reportsApi = (client: AxiosInstance) => ({
     create: async (data: CreateReportSchema): Promise<IReport> => {
         const response = await client.post<IReport>('/reports', data);
         return response.data;
-    }
+    },
+    submit: async (id: string): Promise<IReport> => {
+        const response = await client.patch<IReport>(`/reports/${id}/submit`);
+        return response.data;
+    },
+    delete: async (id: string): Promise<void> => {
+        await client.delete(`/reports/${id}`);
+    },
 });
