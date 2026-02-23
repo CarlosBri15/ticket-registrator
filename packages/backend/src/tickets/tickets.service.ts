@@ -9,7 +9,7 @@ import { UpdateTicketFieldsDto, UpdateTicketStatusDto } from './dto/update-ticke
 import { ITicket, TicketStatus, ItemStatus, TicketLifecycle, ReportStatus } from '@ticket-registrator/shared';
 import { GeminiService } from 'src/gemini/gemini.service';
 import { StorageService } from 'src/storage/storage.service';
-import {TicketHistory, TicketHistoryDocument} from "../history/schema/history.schema";
+import {TicketHistory, TicketHistoryDocument} from "../history/history.schema";
 
 @Injectable()
 export class TicketsService {

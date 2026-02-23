@@ -1,5 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
+import { HydratedDocument, Types } from "mongoose";
+import type { RoleType } from "@ticket-registrator/shared";
+import { Roles } from "@ticket-registrator/shared";
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -19,6 +21,15 @@ export class User {
 
     @Prop({ required: true })
     password: string;
+
+    @Prop({required: true, enum: Object.values(Roles)})
+    role: RoleType;
+
+    @Prop({ type: Types.ObjectId, ref: 'Company', required: true })
+    companyId: Types.ObjectId;
+
+    @Prop({ type: Types.ObjectId, ref: 'Department', required: true })
+    departmentId: Types.ObjectId;
 
     @Prop({ type: Boolean, default: true })
     isVisible: boolean;

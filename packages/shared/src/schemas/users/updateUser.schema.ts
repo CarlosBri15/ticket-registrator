@@ -7,7 +7,9 @@ export const updateUserSchema = z.object({
   username: z.string().min(1).optional(),
   password: z.string().min(10).optional(),
   confirmPassword: z.string().optional(),
-})
+  role: z.string().optional(),
+  departmentId: z.string().optional(),
+}).strict()
 .refine((data) => !data.password || data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
