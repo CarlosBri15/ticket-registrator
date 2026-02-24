@@ -195,13 +195,11 @@ export class UsersService {
     const isSelfUpdate = user._id.toString() === requester.id;
     const requesterHierarchy = ROLE_HIERARCHY[requester.role];
 
-    // === SELF-UPDATE ===
+    //self-update
     if (isSelfUpdate) {
       if (!requester.permissions.includes('edit_own_user_info')) {
         throw new ForbiddenException('You cannot update your own info');
       }
-
-      // Only allow name, surname, username, email, password
       const forbiddenFields = ['role', 'departmentId', 'companyId'];
       for (const field of forbiddenFields) {
         if (field in updateUserDto) {
@@ -209,19 +207,14 @@ export class UsersService {
         }
       }
     } 
-    // === UPDATE OTHER USERS ===
+    // update other users
     else {
-      // Employees and Managers cannot edit other users
       if (requester.role === Roles.EMPLOYEE || requester.role === Roles.MANAGER) {
         throw new ForbiddenException('You cannot update other users');
       }
-
-      // Company check for all updates (Admin and SuperAdmin)
       if (user.companyId.toString() !== requester.companyId) {
         throw new ForbiddenException('Cannot update users outside your company');
       }
-
-      // Admin logic: can only edit department of lower hierarchy users
       if (requester.role === Roles.ADMIN) {
         const forbiddenFields = ['name', 'surname', 'email', 'username', 'password', 'role', 'companyId'];
         for (const field of forbiddenFields) {
@@ -235,23 +228,25 @@ export class UsersService {
           throw new ForbiddenException('Cannot update users with equal or higher role');
         }
       }
-
-      // SuperAdmin logic: can update everything except companyId
       if (requester.role === Roles.SUPERADMIN) {
         if ('companyId' in updateUserDto) {
           delete updateUserDto.companyId;
         }
-
-        // Role assignment must be below hierarchy
         if (updateUserDto.role) {
           const requestedRoleHierarchy = ROLE_HIERARCHY[updateUserDto.role];
           if (requestedRoleHierarchy >= requesterHierarchy) {
             throw new ForbiddenException('Cannot assign a role equal or higher than your own role');
           }
+          const newPermissions = ROLE_DEFAULT_PERMISSIONS[updateUserDto.role];
+          await this.permissionModel.findOneAndUpdate(
+            { userId: new Types.ObjectId(user._id) },
+            { permissions: newPermissions, isActive: true },
+            { upsert: true, new: true }
+          );
         }
       }
 
-      // === DEPARTMENT VALIDATION FOR ANY ROLE THAT ALLOWS IT ===
+      //department validation
       if (updateUserDto.departmentId) {
         const department = await this.departmentModel.findOne({
           _id: new Types.ObjectId(updateUserDto.departmentId),
@@ -267,8 +262,6 @@ export class UsersService {
     if (updateUserDto.password) {
       updateUserDto.password = await this.authService.hashPassword(updateUserDto.password);
     }
-
-    // Never allow company changes
     if ('companyId' in updateUserDto) {
       delete updateUserDto.companyId;
     }
@@ -291,7 +284,7 @@ export class UsersService {
       throw error;
     }
   }
-  
+
   async remove(
     userId: string,
     requester: {

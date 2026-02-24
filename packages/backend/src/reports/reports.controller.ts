@@ -11,18 +11,47 @@ export class ReportsController {
 
   @Post()
   create(@Req() req, @Body() createReportDto: CreateReportDto) {
-    return this.reportsService.create(req.user.userId, createReportDto);
+    console.log('Creating report for user:', req.user)
+    return this.reportsService.create(req.user.id, createReportDto);
   }
 
   @Get()
   findAll(@Req() req) {
-    return this.reportsService.findAll(req.user.userId);
+    const requester = {
+      id: req.user.id,
+      role: req.user.role,
+      companyId: req.user.companyId,         
+      departmentId: req.user.departmentId, 
+      permissions: req.user.permissions,
+    };
+    return this.reportsService.findAllReports(requester);
   }
 
   @Get(':id')
   findOne(@Req() req, @Param('id') id: string) {
-    return this.reportsService.findOne(req.user.userId, id);
+    const requester = {
+      id: req.user.id,
+      role: req.user.role,
+      companyId: req.user.companyId,         
+      departmentId: req.user.departmentId, 
+      permissions: req.user.permissions,
+    }
+    return this.reportsService.findOne(requester, id);
   }
+
+  @Get('user/:userId')
+  findUserReports(@Req() req, @Param('userId') userId?: string) {
+    const requester = {
+      id: req.user.id,
+      role: req.user.role,
+      companyId: req.user.companyId,
+      departmentId: req.user.departmentId,
+      permissions: req.user.permissions,
+    };
+
+    return this.reportsService.findUserReports(requester, userId ?? req.user.id);
+  }
+
 
   @Patch(':id')
   update(
