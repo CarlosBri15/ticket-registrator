@@ -21,7 +21,7 @@ const ReportTicketGroup = ({
   dateLocale: Locale;
   search: string;
 }) => {
-  const { data: tickets, isLoading } = useTicketsQuery(report.id || report._id!);
+  const { data: tickets, isLoading } = useTicketsQuery(report.id);
   const navigate = useNavigate();
 
   const filtered = tickets?.filter((t) => {
@@ -48,7 +48,7 @@ const ReportTicketGroup = ({
     <div className="space-y-2">
       {/* Report label */}
       <button
-        onClick={() => navigate(`/trips/${report.id || report._id}`)}
+        onClick={() => navigate(`/trips/${report.id}`)}
         className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-brand transition-colors group ml-1"
       >
         <span>{report.name}</span>
@@ -58,7 +58,7 @@ const ReportTicketGroup = ({
       {filtered.map((ticket) => (
         <div
           key={ticket.id}
-          onClick={() => onTicketClick(ticket, report.id || report._id!)}
+          onClick={() => onTicketClick(ticket, report.id)}
           className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md hover:border-brand/20 transition-all cursor-pointer group flex items-center justify-between"
         >
           <div className="flex items-center gap-4">
@@ -158,7 +158,7 @@ export const AllTicketsScreen = () => {
         <div className="space-y-8">
           {reports.map((report) => (
             <ReportTicketGroup
-              key={report.id || report._id}
+              key={report.id}
               report={report}
               onTicketClick={handleTicketClick}
               dateLocale={dateLocale}

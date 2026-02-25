@@ -29,7 +29,7 @@ const ActiveTripCard = ({ currentTrip, navigate, dateLocale, t }: {
   dateLocale: Locale;
   t: (key: string, opts?: any) => string;
 }) => {
-  const tripId = currentTrip.id || currentTrip._id;
+  const tripId = currentTrip.id;
   const { data: tickets } = useTicketsQuery(tripId);
   const ticketCount = tickets?.length ?? 0;
   const totalAmount = tickets?.reduce((acc: number, tk: any) => acc + (tk.amount || 0), 0) ?? 0;
@@ -174,9 +174,8 @@ export const DashboardPage = () => {
           icon={<Plane className="w-5 h-5" />}
           subtitle={stats.activeCount === 1 ? "viaje en curso" : "viajes en curso"}
         />
-        <div className={`relative overflow-hidden rounded-[2rem] p-6 flex flex-col gap-4 border shadow-sm transition-all duration-300 ${
-          stats.rejectedCount > 0 ? "bg-accent/5 border-accent/20" : "bg-white border-gray-100"
-        }`}>
+        <div className={`relative overflow-hidden rounded-[2rem] p-6 flex flex-col gap-4 border shadow-sm transition-all duration-300 ${stats.rejectedCount > 0 ? "bg-accent/5 border-accent/20" : "bg-white border-gray-100"
+          }`}>
           {stats.rejectedCount > 0 && (
             <div className="absolute top-0 right-0 w-36 h-36 bg-accent/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
           )}
@@ -248,15 +247,14 @@ export const DashboardPage = () => {
               <div className="divide-y divide-gray-50">
                 {completedReports.slice(0, 5).map((report) => (
                   <div
-                    key={report.id || report._id}
-                    onClick={() => navigate(`/trips/${report.id || report._id}`)}
+                    key={report.id}
+                    onClick={() => navigate(`/trips/${report.id}`)}
                     className="p-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
-                        report.status === ReportStatus.APPROVED ? 'bg-green-50 text-green-600' :
-                        report.status === ReportStatus.DECLINED ? 'bg-red-50 text-accent' : 'bg-gray-50 text-gray-400'
-                      }`}>
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${report.status === ReportStatus.APPROVED ? 'bg-green-50 text-green-600' :
+                          report.status === ReportStatus.DECLINED ? 'bg-red-50 text-accent' : 'bg-gray-50 text-gray-400'
+                        }`}>
                         {report.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">

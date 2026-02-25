@@ -104,7 +104,7 @@ export const ReportDetailScreen = () => {
   const handleDeleteTicket = (e: React.MouseEvent, ticket: ITicket) => {
     e.stopPropagation();
     if (!id) return;
-    const ticketId = ticket.id || (ticket as any)._id;
+    const ticketId = ticket.id;
     deleteTicketMutation.mutate({ reportId: id, ticketId });
   };
 
@@ -306,7 +306,7 @@ export const ReportDetailScreen = () => {
             <div className="space-y-3">
               {tickets.map((ticket) => (
                 <div
-                  key={ticket.id || (ticket as any)._id}
+                  key={ticket.id}
                   onClick={() => handleTicketClick(ticket)}
                   className="group bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-lg hover:shadow-brand/8 hover:border-brand/15 transition-all duration-300 cursor-pointer p-5 flex items-center justify-between"
                 >

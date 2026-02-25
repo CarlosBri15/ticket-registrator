@@ -155,11 +155,10 @@ export const ReportsScreen = () => {
               <div className="space-y-4">
                 {activeReports.map((report, idx) => (
                   <div
-                    key={report.id || report._id}
-                    onClick={() => navigate(`/trips/${report.id || report._id}`)}
-                    className={`group relative bg-white rounded-[2.5rem] border p-8 shadow-sm hover:shadow-xl hover:shadow-brand/8 transition-all duration-500 cursor-pointer overflow-hidden ${
-                      idx === 0 ? "border-brand/20" : "border-gray-100"
-                    }`}
+                    key={report.id}
+                    onClick={() => navigate(`/trips/${report.id}`)}
+                    className={`group relative bg-white rounded-[2.5rem] border p-8 shadow-sm hover:shadow-xl hover:shadow-brand/8 transition-all duration-500 cursor-pointer overflow-hidden ${idx === 0 ? "border-brand/20" : "border-gray-100"
+                      }`}
                   >
                     {idx === 0 && (
                       <div className="absolute top-0 right-0 w-56 h-56 bg-brand/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-brand/8 transition-colors duration-700 pointer-events-none" />
@@ -169,13 +168,12 @@ export const ReportsScreen = () => {
                       <div className="flex justify-between items-start mb-5">
                         <StatusBadge status={report.status} size="md" />
                         <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[10px] font-mono text-gray-400 border border-gray-100">
-                          #{(report.id || report._id || "").substring(0, 8)}
+                          #{(report.id || "").substring(0, 8)}
                         </span>
                       </div>
 
-                      <h3 className={`font-black text-dark mb-4 leading-tight group-hover:text-brand transition-colors duration-300 ${
-                        idx === 0 ? "text-2xl md:text-3xl" : "text-xl"
-                      }`}>
+                      <h3 className={`font-black text-dark mb-4 leading-tight group-hover:text-brand transition-colors duration-300 ${idx === 0 ? "text-2xl md:text-3xl" : "text-xl"
+                        }`}>
                         {report.name}
                       </h3>
 
@@ -207,7 +205,7 @@ export const ReportsScreen = () => {
                       </div>
                       <Button
                         className="w-full sm:w-auto px-8 rounded-2xl"
-                        onClick={(e) => { e.stopPropagation(); navigate(`/trips/${report.id || report._id}`); }}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/trips/${report.id}`); }}
                       >
                         {t("home.scanTicket")}
                         <ArrowUpRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -291,11 +289,10 @@ export const ReportsScreen = () => {
                     <>
                       {completedReports.slice(0, 4).map((report, idx) => (
                         <div
-                          key={report.id || report._id}
-                          onClick={() => navigate(`/trips/${report.id || report._id}`)}
-                          className={`px-5 py-4 hover:bg-gray-50/80 cursor-pointer transition-colors flex items-center gap-3 group ${
-                            idx < Math.min(completedReports.length, 4) - 1 ? "border-b border-gray-50" : ""
-                          }`}
+                          key={report.id}
+                          onClick={() => navigate(`/trips/${report.id}`)}
+                          className={`px-5 py-4 hover:bg-gray-50/80 cursor-pointer transition-colors flex items-center gap-3 group ${idx < Math.min(completedReports.length, 4) - 1 ? "border-b border-gray-50" : ""
+                            }`}
                         >
                           <div className="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-brand/10 transition-colors">
                             <Plane className="w-3.5 h-3.5 text-gray-400 group-hover:text-brand transition-colors" />
