@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import UploadTicket from "./screens/UploadTicket";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RegisterForm } from "./screens/RegisterForm";
 import { LoginForm } from "./screens/LoginForm";
@@ -34,7 +33,6 @@ function App() {
              <Route path="/tickets" element={<AllTicketsScreen />} />
              <Route path="/settings" element={<SettingsScreen />} />
           </Route>
-          <Route path="/upload" element={<ProtectedRoute><UploadTicket /></ProtectedRoute>} />
           <Route path="/register" element={<RegisterForm />} />
           <Route path="/login" element={<LoginForm />} />
         </Routes>

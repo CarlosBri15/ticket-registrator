@@ -166,7 +166,7 @@ export const RegisterForm = () => {
                             </div>
                         )}
 
-                        <Button type="submit" isLoading={isPending} className="mt-4 text-lg">
+                        <Button type="submit" isLoading={isPending} className="w-full mt-4 text-lg">
                             {t('register.submitButton')}
                         </Button>
                     </form>

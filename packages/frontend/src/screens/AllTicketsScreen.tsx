@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FileText, Receipt, ArrowRight, Calendar, Search } from "lucide-react";
 import { useReportsQuery, useTicketsQuery, type ITicket, type IReport } from "@ticket-registrator/shared";
+import type { Locale } from "date-fns";
 import { StatusBadge } from "../components/StatusBadge";
 import { TicketDetailModal } from "../components/TicketDetailModal";
 import { format } from "date-fns";
