@@ -49,20 +49,19 @@ To create and run NestJS projects, install the Nest CLI globally:
 
 ## Setup Secrets
 1. Create a .env file in the root of the backend folder (same level as docker-compose.yml) with your configuration
-2. Define JWT_SECRET, GEMINI_API_KEY, MONGO_URI=mongodb://(user):(password)@localhost:27017/ticket_registrator_db?authSource=admin and DB_PASSWORD
+2. Define JWT_SECRET, GEMINI_API_KEY, DATABASE_URL=postgres://root:rootpassword@localhost:5432/ticket_registrator and DB_PASSWORD
 3. Create a .env file in the root of the frontend folder (same level as package.json) with your configuration
 4. Define VITE_API_URL=http://localhost:8080
 
 ## Docker Workflow (DB)
-This method runs the Database (MongoDB) together in containers.
+This method runs the Database (PostgreSQL) together in containers.
 1. Start Database
-  - Run: ```docker-compose up -d```
-2. Connect to Database (MongoDB Compass)
-  - Download MongoDB Compass: https://www.mongodb.com/try/download/compass
-  - Open MongoDB Compass
-  - Click New Connection
-  - Paste this connection string: mongodb://root:rootpassword@localhost:27017/?authSource=admin
+  - Run: ```docker-compose up -d postgres```
+2. Connect to Database (using pgAdmin, DBeaver, or another client)
+  - Use connection string: postgres://root:rootpassword@localhost:5432/ticket_registrator
   - (Replace rootpassword with the value from your .env file)
+3. Run Database Migrations (Drizzle ORM)
+  - From the `backend` folder, run: `npx drizzle-kit push`
   
 ## Manual Backend Setup (NestJS) (More information on the README.md file in the backend folder)
 1. Open a terminal
@@ -171,7 +170,7 @@ JWT allows the API to verify that a user is logged in and authorized to access p
 ### 1.Sign up
   - User creates an account
   - Password is hashed with bcrypt before saving to the database
-  - User is saved in MongoDB
+  - User is saved in PostgreSQL Database
   - Password is never returned in API responses
 ### 2.Login
   - User logs in using email (or username we need to decide on this) and password
