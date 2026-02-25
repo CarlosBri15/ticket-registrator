@@ -13,7 +13,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   // Getter ensures pepper is always a string at runtime
   private get pepper(): string {
@@ -36,10 +36,10 @@ export class AuthService {
 
     if (!isValid) throw new UnauthorizedException('Invalid credentials');
 
-    const permissionDoc = await this.usersService.getUserPermissions(user._id.toString());
+    const permissionDoc = await this.usersService.getUserPermissions(user.id);
 
     const payload = {
-      sub: user._id,
+      sub: user.id,
       username: user.username,
       role: user.role,
       companyId: user.companyId,

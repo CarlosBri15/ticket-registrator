@@ -1,124 +1,52 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Types } from "mongoose";
-import { TicketStatus } from '@ticket-registrator/shared';
-import type {TicketStatusType} from '@ticket-registrator/shared';
-import { ItemStatus } from '@ticket-registrator/shared';
-import type { ItemStatusType } from '@ticket-registrator/shared';
-import { TicketLifecycle } from '@ticket-registrator/shared';
-import type { TicketLifecycleType } from "@ticket-registrator/shared";
+import { pgTable, uuid, varchar, boolean, timestamp, integer, jsonb } from "drizzle-orm/pg-core";
+import { reports } from "../../reports/schemas/report.schema";
+import { TicketStatus, TicketLifecycle, ItemStatus } from '@ticket-registrator/shared';
+import type { TicketStatusType, TicketLifecycleType, ItemStatusType } from '@ticket-registrator/shared';
 
-@Schema({ _id: false })
-export class Item {
-  @Prop({ type: String, default: null })
-  name: string | null;
+export const tickets = pgTable("tickets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  reportId: uuid("report_id")
+    .references(() => reports.id, { onDelete: "cascade" })
+    .notNull(),
 
-  @Prop({ type: Number, default: null })
-  amount: number | null;
-
-  @Prop({ type: String, default: null })
-  currency: string | null;
-
-  @Prop({
-    enum: Object.values(ItemStatus),
-    default: ItemStatus.PENDING,
-  })
-  status: ItemStatusType;
-}
-
-export const ItemSchema = SchemaFactory.createForClass(Item);
-
-
-@Schema({ timestamps: true })
-export class Ticket {
-  createdAt: Date;
-  updatedAt: Date;
-
-  @Prop({ type: Types.ObjectId, ref: 'Report', required: true })
-  report_id: Types.ObjectId;
-
-  // -----------------------------
   // Lifecycle control
-  // -----------------------------
-  @Prop({
-    enum: Object.values(TicketLifecycle),
-    default: TicketLifecycle.DRAFT,
-  })
-  lifecycle: TicketLifecycleType;
+  lifecycle: varchar("lifecycle", { length: 50 }).default(TicketLifecycle.DRAFT).notNull(), // TicketLifecycleType
+  version: integer("version").default(0).notNull(),
 
-    @Prop({ type: Number, default: 0 })
-  version: number;
-
-  // -----------------------------
   // Extracted / user-editable fields
-  // -----------------------------
-  @Prop({ type: String, default: null })
-  cgs_bucket_link: string | null;
+  cgsBucketLink: varchar("cgs_bucket_link", { length: 255 }),
+  paymentType: varchar("payment_type", { length: 50 }),
+  expenseType: varchar("expense_type", { length: 50 }),
+  date: timestamp("date"),
+  locationName: varchar("location_name", { length: 255 }),
+  locationAddress: varchar("location_address", { length: 255 }),
+  amount: integer("amount"),
+  currency: varchar("currency", { length: 10 }),
+  convertedAmount: integer("converted_amount"),
+  convertedCurrency: varchar("converted_currency", { length: 10 }),
+  cgsBucketLinkJustification: varchar("cgs_bucket_link_justification", { length: 255 }),
+  lastFourDigits: varchar("last_four_digits", { length: 4 }),
 
-  @Prop({ type: String, default: null })
-  payment_type: string | null;
-
-  @Prop({ type: String, default: null })
-  expense_type: string | null;
-
-  @Prop({ type: Date, default: null })
-  date: Date | null;
-
-  @Prop({ type: String, default: null })
-  location_name: string | null;
-
-  @Prop({ type: String, default: null })
-  location_address: string | null;
-
-  @Prop({ type: Number, default: null })
-  amount: number | null;
-
-  @Prop({ type: String, default: null })
-  currency: string | null;
-
-  @Prop({ type: Number, default: null })
-  converted_amount: number | null;
-
-  @Prop({ type: String, default: null })
-  converted_currency: string | null;
-
-  @Prop({ type: String, default: null })
-  cgs_bucket_link_justification: string | null;
-
-  @Prop({ type: String, default: null })
-  last_four_digits: string | null;
-
-  // -----------------------------
   // Status & finance
-  // -----------------------------
-  @Prop({
-    enum: Object.values(TicketStatus),
-    default: TicketStatus.PENDING,
-  })
-  status: TicketStatusType;
+  status: varchar("status", { length: 50 }).default(TicketStatus.PENDING).notNull(), // TicketStatusType
+  llmApprovedPercentage: integer("llm_approved_percentage"),
+  llmRecommendation: varchar("llm_recommendation", { length: 255 }),
+  llmSuggestedAmount: integer("llm_suggested_amount"),
+  llmSuggestedCurrency: varchar("llm_suggested_currency", { length: 10 }),
+  approvedAmount: integer("approved_amount").default(0).notNull(),
 
-  @Prop({ type: Number, default: null })
-  llm_appproved_percentage: number | null;
+  // Items as JSONB
+  items: jsonb("items").$type<{
+    name: string | null;
+    amount: number | null;
+    currency: string | null;
+    status: ItemStatusType;
+  }[]>().default([]).notNull(),
 
-  @Prop({ type: String, default: null })
-  llm_recomendation: string | null;
+  isVisible: boolean("is_visible").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
-  @Prop({ type: Number, default: null })
-  llm_suggested_amount: number | null;
-
-  @Prop({ type: String, default: null })
-  llm_suggested_currency: string | null;
-
-  @Prop({ type: Number, default: 0 })
-  approved_amount: number;
-
-  @Prop({ type: [ItemSchema], default: [] })
-  items: Item[];
-
-  @Prop({ type: Boolean, default: true })
-  isVisible: boolean;
-
-}
-
-export const TicketSchema = SchemaFactory.createForClass(Ticket);
-export type TicketDocument = HydratedDocument<Ticket>;
-
+export type Ticket = typeof tickets.$inferSelect;
+export type InsertTicket = typeof tickets.$inferInsert;

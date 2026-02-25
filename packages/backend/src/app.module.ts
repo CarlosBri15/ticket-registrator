@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TestModule } from './test/test.module';
-import { MongooseModule } from '@nestjs/mongoose';
+import { DbModule } from './db/db.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { TicketsModule } from './tickets/tickets.module';
@@ -16,13 +16,7 @@ import { OrganizationModule } from './organization/organization.module';
       isGlobal: true,
     }),
 
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGO_URI'),
-      }),
-      inject: [ConfigService],
-    }),
+    DbModule,
 
     TestModule,
 
@@ -40,4 +34,4 @@ import { OrganizationModule } from './organization/organization.module';
 
     OrganizationModule],
 })
-export class AppModule {}
+export class AppModule { }

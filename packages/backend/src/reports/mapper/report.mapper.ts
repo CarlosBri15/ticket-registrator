@@ -1,19 +1,19 @@
 import { IReport } from '@ticket-registrator/shared';
-import { ReportDocument } from '../schemas/report.schema';
+import { Report } from '../schemas/report.schema';
 
 export const mapReportToIReport = (
-  reportDoc: ReportDocument
+  reportDoc: Report
 ): IReport => ({
-  id: reportDoc._id.toString(),
-  user_id: reportDoc.user_id.toString(),
+  id: reportDoc.id,
+  user_id: reportDoc.userId,
   name: reportDoc.name,
-  start_date: reportDoc.start_date.toISOString(),
-  end_date: reportDoc.end_date.toISOString(),
+  start_date: reportDoc.startDate.toISOString(),
+  end_date: reportDoc.endDate.toISOString(),
   currency: reportDoc.currency,
   type: reportDoc.type ?? '',
-  requested_amount: reportDoc.requested_amount,
-  approved_amount: reportDoc.approved_amount,
-  status: reportDoc.status,
+  requested_amount: reportDoc.requestedAmount,
+  approved_amount: reportDoc.approvedAmount,
+  status: reportDoc.status as any, // Cast to any if there's an enum mismatch, or cast to ReportStatusType
   isVisible: reportDoc.isVisible,
   createdAt: reportDoc.createdAt.toISOString(),
   updatedAt: reportDoc.updatedAt.toISOString(),

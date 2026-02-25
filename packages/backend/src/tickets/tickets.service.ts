@@ -1,32 +1,31 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { Ticket, TicketDocument } from './schemas/ticket.schema';
-import { Report, ReportDocument } from '../reports/schemas/report.schema';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, Inject } from '@nestjs/common';
+import { DB_CONNECTION } from '../db/db.module';
+import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import * as schema from '../db/schema';
+import { eq, and, sum } from 'drizzle-orm';
 import { mapTicketToITicket } from './mapper/ticket.mapper';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketFieldsDto, UpdateTicketStatusDto } from './dto/update-ticket-user.dto';
 import { ITicket, TicketStatus, ItemStatus, TicketLifecycle, ReportStatus } from '@ticket-registrator/shared';
 import { GeminiService } from 'src/gemini/gemini.service';
 import { StorageService } from 'src/storage/storage.service';
-import {TicketHistory, TicketHistoryDocument} from "../history/history.schema";
 
 @Injectable()
 export class TicketsService {
   constructor(
-    @InjectModel(Ticket.name) private ticketModel: Model<TicketDocument>,
-    @InjectModel(Report.name) private reportModel: Model<ReportDocument>,
-    @InjectModel(TicketHistory.name) private ticketHistoryModel: Model<TicketHistoryDocument>,
-    private readonly geminiService: GeminiService,     
+    @Inject(DB_CONNECTION) private db: PostgresJsDatabase<typeof schema>,
+    private readonly geminiService: GeminiService,
     private readonly storageService: StorageService,
-  ) {}
+  ) { }
 
   async create(userId: string, reportId: string, file: Express.Multer.File): Promise<ITicket> {
 
-    const report = await this.reportModel.findOne({
-      _id: reportId,
-      user_id: new Types.ObjectId(userId),
-      isVisible: true,
+    const report = await this.db.query.reports.findFirst({
+      where: and(
+        eq(schema.reports.id, reportId),
+        eq(schema.reports.userId, userId),
+        eq(schema.reports.isVisible, true)
+      )
     });
 
     if (!report) throw new NotFoundException('Report not found');
@@ -47,140 +46,112 @@ export class TicketsService {
       currency: report.currency ?? null,
       status: ItemStatus.PENDING,
     })) ?? [];
+
     // --- SAFE DATE PARSING ---
     let parsedDate: Date | null = null;
-
     if (
       geminiData.date &&
       geminiData.date !== '0000-00-00'
     ) {
       const d = new Date(geminiData.date);
-
       if (!isNaN(d.getTime())) {
         parsedDate = d;
       }
     };
-    
-    const ticket = await this.ticketModel.create({
-      report_id: new Types.ObjectId(reportId),
+
+    const [ticket] = await this.db.insert(schema.tickets).values({
+      reportId: reportId,
       status: TicketStatus.PENDING,
       lifecycle: TicketLifecycle.DRAFT,
-      cgs_bucket_link: imageIdentifier,
+      cgsBucketLink: imageIdentifier,
       items: itemsWithStatus,
-      payment_type: geminiData.payment_method ?? null,
-      expense_type: geminiData.expense_type ?? null,
+      paymentType: geminiData.payment_method ?? null,
+      expenseType: geminiData.expense_type ?? null,
       date: parsedDate,
-      location_name: geminiData.establishment ?? null,
-      location_address: geminiData.address?.formatted_address ?? null,
+      locationName: geminiData.establishment ?? null,
+      locationAddress: geminiData.address?.formatted_address ?? null,
       amount: geminiData.total ?? null,
       currency: report.currency ?? null,
-      converted_amount: geminiData.converted_amount ?? null,
-      converted_currency: geminiData.converted_currency ?? null,
-      cgs_bucket_link_justification:
-        geminiData.cgs_bucket_link_justification ?? null,
-      last_four_digits: geminiData.card_last_4 ?? null,
-    });
+      convertedAmount: geminiData.converted_amount ?? null,
+      convertedCurrency: geminiData.converted_currency ?? null,
+      cgsBucketLinkJustification: geminiData.cgs_bucket_link_justification ?? null,
+      lastFourDigits: geminiData.card_last_4 ?? null,
+    }).returning();
 
-    return mapTicketToITicket(ticket);
+    return mapTicketToITicket(ticket as any);
   }
 
   async findAll(userId: string, reportId: string): Promise<ITicket[]> {
-    const report = await this.reportModel.findOne({
-      _id: new Types.ObjectId(reportId),
-      user_id: new Types.ObjectId(userId),
-      isVisible: true,
+    const report = await this.db.query.reports.findFirst({
+      where: and(
+        eq(schema.reports.id, reportId),
+        eq(schema.reports.userId, userId),
+        eq(schema.reports.isVisible, true)
+      )
     });
 
     if (!report) throw new NotFoundException('Report not found');
 
-    const tickets = await this.ticketModel.find({
-      report_id: new Types.ObjectId(reportId),
-      isVisible: true,
+    const ticketsList = await this.db.query.tickets.findMany({
+      where: and(
+        eq(schema.tickets.reportId, reportId),
+        eq(schema.tickets.isVisible, true)
+      )
     });
 
-    return tickets.map(ticket => mapTicketToITicket(ticket));
+    return ticketsList.map(t => mapTicketToITicket(t as any));
   }
 
   async findOne(userId: string, reportId: string, ticketId: string): Promise<ITicket> {
-    const report = await this.reportModel.findOne({
-      _id: new Types.ObjectId(reportId),
-      user_id: new Types.ObjectId(userId),
-      isVisible: true,
+    const report = await this.db.query.reports.findFirst({
+      where: and(
+        eq(schema.reports.id, reportId),
+        eq(schema.reports.userId, userId),
+        eq(schema.reports.isVisible, true)
+      )
     });
 
     if (!report) throw new NotFoundException('Report not found');
 
-    const ticket = await this.ticketModel.findOne({
-      _id: new Types.ObjectId(ticketId),
-      report_id: new Types.ObjectId(reportId),
-      isVisible: true,
+    const ticket = await this.db.query.tickets.findFirst({
+      where: and(
+        eq(schema.tickets.id, ticketId),
+        eq(schema.tickets.reportId, reportId),
+        eq(schema.tickets.isVisible, true)
+      )
     });
 
     if (!ticket) throw new NotFoundException('Ticket not found');
 
-    return mapTicketToITicket(ticket);
+    return mapTicketToITicket(ticket as any);
   }
 
   async update(userId: string, reportId: string, ticketId: string, dto: UpdateTicketFieldsDto): Promise<ITicket> {
 
-    const report = await this.reportModel.findOne({
-      _id: new Types.ObjectId(reportId),
-      user_id: new Types.ObjectId(userId),
-      isVisible: true,
+    const report = await this.db.query.reports.findFirst({
+      where: and(
+        eq(schema.reports.id, reportId),
+        eq(schema.reports.userId, userId),
+        eq(schema.reports.isVisible, true)
+      )
     });
 
-    if (!report)
-      throw new NotFoundException('Report not found');
-
+    if (!report) throw new NotFoundException('Report not found');
     if (report.status !== ReportStatus.CREATED)
       throw new ConflictException('Cannot edit tickets after submission');
 
-    const update: Partial<Ticket> = {};
+    const update: any = {};
     let meaningfulChange = false;
 
-    if (dto.payment_type !== undefined) {
-      update.payment_type = dto.payment_type;
-      meaningfulChange = true;
-    }
-
-    if (dto.expense_type !== undefined) {
-      update.expense_type = dto.expense_type;
-      meaningfulChange = true;
-    }
-
-    if (dto.date !== undefined) {
-      update.date = dto.date ? new Date(dto.date) : null;
-      meaningfulChange = true;
-    }
-
-    if (dto.location_name !== undefined) {
-      update.location_name = dto.location_name;
-      meaningfulChange = true;
-    }
-
-    if (dto.location_address !== undefined) {
-      update.location_address = dto.location_address;
-      meaningfulChange = true;
-    }
-
-    if (dto.amount !== undefined) {
-      update.amount = dto.amount;
-      meaningfulChange = true;
-    }
-
-    if (dto.currency !== undefined) {
-      update.currency = dto.currency;
-      meaningfulChange = true;
-    }
-
-    if (dto.cgs_bucket_link_justification !== undefined) {
-      update.cgs_bucket_link_justification = dto.cgs_bucket_link_justification;
-    }
-
-    if (dto.last_four_digits !== undefined) {
-      update.last_four_digits = dto.last_four_digits;
-    }
-
+    if (dto.payment_type !== undefined) { update.paymentType = dto.payment_type; meaningfulChange = true; }
+    if (dto.expense_type !== undefined) { update.expenseType = dto.expense_type; meaningfulChange = true; }
+    if (dto.date !== undefined) { update.date = dto.date ? new Date(dto.date) : null; meaningfulChange = true; }
+    if (dto.location_name !== undefined) { update.locationName = dto.location_name; meaningfulChange = true; }
+    if (dto.location_address !== undefined) { update.locationAddress = dto.location_address; meaningfulChange = true; }
+    if (dto.amount !== undefined) { update.amount = dto.amount; meaningfulChange = true; }
+    if (dto.currency !== undefined) { update.currency = dto.currency; meaningfulChange = true; }
+    if (dto.cgs_bucket_link_justification !== undefined) { update.cgsBucketLinkJustification = dto.cgs_bucket_link_justification; }
+    if (dto.last_four_digits !== undefined) { update.lastFourDigits = dto.last_four_digits; }
     if (dto.items !== undefined) {
       update.items = dto.items.map(item => ({
         name: item.name ?? null,
@@ -191,14 +162,16 @@ export class TicketsService {
       meaningfulChange = true;
     }
 
-
     if (Object.keys(update).length === 0) {
       throw new BadRequestException('No valid fields provided for update');
     }
-    const currentTicket = await this.ticketModel.findOne({
-      _id: new Types.ObjectId(ticketId),
-      report_id: new Types.ObjectId(reportId),
-      isVisible: true,
+
+    const currentTicket = await this.db.query.tickets.findFirst({
+      where: and(
+        eq(schema.tickets.id, ticketId),
+        eq(schema.tickets.reportId, reportId),
+        eq(schema.tickets.isVisible, true)
+      )
     });
 
     if (!currentTicket) throw new NotFoundException('Ticket not found');
@@ -207,63 +180,58 @@ export class TicketsService {
     const newSnapshot: Record<string, any> = {};
 
     for (const key of Object.keys(update)) {
-      oldSnapshot[key] = currentTicket[key as keyof Ticket];
-      newSnapshot[key] = update[key as keyof Ticket];
+      // Key is camelCase now 
+      oldSnapshot[key] = (currentTicket as any)[key];
+      newSnapshot[key] = update[key];
     }
-
-    const updateQuery: any = {
-      $set: update,
-    };
 
     if (meaningfulChange) {
       oldSnapshot.lifecycle = currentTicket.lifecycle;
       oldSnapshot.status = currentTicket.status;
-      oldSnapshot.approved_amount = currentTicket.approved_amount;
+      oldSnapshot.approvedAmount = currentTicket.approvedAmount;
 
       newSnapshot.lifecycle = TicketLifecycle.SUBMITTED;
       newSnapshot.status = TicketStatus.PENDING;
-      newSnapshot.approved_amount = 0;
+      newSnapshot.approvedAmount = 0;
 
-      updateQuery.$set.lifecycle = TicketLifecycle.SUBMITTED;
-      updateQuery.$set.status = TicketStatus.PENDING;
-      updateQuery.$set.approved_amount = 0;
-      updateQuery.$inc = { version: 1 };
+      update.lifecycle = TicketLifecycle.SUBMITTED;
+      update.status = TicketStatus.PENDING;
+      update.approvedAmount = 0;
+      update.version = currentTicket.version + 1;
     }
 
+    update.updatedAt = new Date();
+
     // --- SAVE HISTORY ---
-    await this.ticketHistoryModel.create({
-      ticketId: currentTicket._id,
-      reportId: currentTicket.report_id,
+    await this.db.insert(schema.ticketHistories).values({
+      ticketId: currentTicket.id,
+      reportId: currentTicket.reportId,
       version: currentTicket.version,
-      oldSnapshot,
-      newSnapshot,
+      oldSnapshot: JSON.parse(JSON.stringify(oldSnapshot)),
+      newSnapshot: JSON.parse(JSON.stringify(newSnapshot)),
     });
 
-    const updatedTicket = await this.ticketModel.findOneAndUpdate(
-      {
-        _id: new Types.ObjectId(ticketId),
-        report_id: new Types.ObjectId(reportId),
-        isVisible: true,
-      },
-      updateQuery,
-      { new: true, runValidators: true },
-    );
+    const [updatedTicket] = await this.db.update(schema.tickets)
+      .set(update)
+      .where(and(
+        eq(schema.tickets.id, ticketId),
+        eq(schema.tickets.reportId, reportId),
+        eq(schema.tickets.isVisible, true)
+      ))
+      .returning();
 
-    if (!updatedTicket)
-      throw new NotFoundException('Ticket not found');
+    if (!updatedTicket) throw new NotFoundException('Ticket not found');
 
-    return mapTicketToITicket(updatedTicket);
+    return mapTicketToITicket(updatedTicket as any);
   }
 
   async updateStatus(reportId: string, ticketId: string, dto: UpdateTicketStatusDto): Promise<ITicket> {
-    const reportObjectId = new Types.ObjectId(reportId);
-    const ticketObjectId = new Types.ObjectId(ticketId);
-
-    // Ensure report is submitted
-    const report = await this.reportModel.findOne({
-      _id: reportObjectId,
-      status: ReportStatus.SUBMITTED,
-      isVisible: true,
+    const report = await this.db.query.reports.findFirst({
+      where: and(
+        eq(schema.reports.id, reportId),
+        eq(schema.reports.status, ReportStatus.SUBMITTED),
+        eq(schema.reports.isVisible, true)
+      )
     });
 
     if (!report) {
@@ -271,120 +239,129 @@ export class TicketsService {
         'Tickets can only be reviewed after report submission',
       );
     }
-    const currentTicket = await this.ticketModel.findOne({
-      _id: ticketObjectId,
-      report_id: reportObjectId,
-      isVisible: true,
+
+    const currentTicket = await this.db.query.tickets.findFirst({
+      where: and(
+        eq(schema.tickets.id, ticketId),
+        eq(schema.tickets.reportId, reportId),
+        eq(schema.tickets.isVisible, true)
+      )
     });
 
     if (!currentTicket) {
       throw new NotFoundException('Ticket not found');
     }
+
     //snapshots for history
     const oldSnapshot = {
       status: currentTicket.status,
-      approved_amount: currentTicket.approved_amount,
+      approvedAmount: currentTicket.approvedAmount,
     };
     const newSnapshot = {
       status: dto.status,
-      approved_amount: dto.approved_amount,
+      approvedAmount: dto.approved_amount, // dto still uses snake_case, map it to our snapshot
     };
 
-    // update history
-    await this.ticketHistoryModel.create({
-      ticketId: currentTicket._id,
-      reportId: currentTicket.report_id,
+    await this.db.insert(schema.ticketHistories).values({
+      ticketId: currentTicket.id,
+      reportId: currentTicket.reportId,
       version: currentTicket.version,
       oldSnapshot,
       newSnapshot,
     });
 
-    // Only allowed fields
-    const updateFields: Partial<Ticket> = {
-      status: dto.status,
-      approved_amount: dto.approved_amount,
-    };
-
-    const updatedTicket = await this.ticketModel.findOneAndUpdate(
-      { _id: ticketObjectId, report_id: reportObjectId, isVisible: true },
-      { $set: updateFields },
-      { new: true, runValidators: true },
-    );
+    const [updatedTicket] = await this.db.update(schema.tickets)
+      .set({
+        status: dto.status as any,
+        approvedAmount: dto.approved_amount,
+        updatedAt: new Date(),
+      })
+      .where(and(
+        eq(schema.tickets.id, ticketId),
+        eq(schema.tickets.reportId, reportId),
+        eq(schema.tickets.isVisible, true)
+      ))
+      .returning();
 
     if (!updatedTicket) throw new NotFoundException('Ticket not found');
 
-    return mapTicketToITicket(updatedTicket);
+    return mapTicketToITicket(updatedTicket as any);
   }
 
   // Make ticket invisible instead of deleting, only if report is still in CREATED status
   async remove(userId: string, reportId: string, ticketId: string) {
-    const report = await this.reportModel.findOne({
-      _id: new Types.ObjectId(reportId),
-      user_id: new Types.ObjectId(userId),
-      isVisible: true,
+    const report = await this.db.query.reports.findFirst({
+      where: and(
+        eq(schema.reports.id, reportId),
+        eq(schema.reports.userId, userId),
+        eq(schema.reports.isVisible, true)
+      )
     });
 
     if (!report) throw new NotFoundException('Report not found');
     if (report.status !== ReportStatus.CREATED) {
       throw new ConflictException('Cannot hide tickets after submission');
     }
-    const ticket = await this.ticketModel.findOne({
-      _id: new Types.ObjectId(ticketId),
-      report_id: new Types.ObjectId(reportId),
-      isVisible: true,
-    });
-    if (!ticket) {
-      throw new NotFoundException('Ticket not found');
-    }
-    // snapshots
-    const oldSnapshot = {
-      isVisible: ticket.isVisible,
-    };
-    const newSnapshot = {
-      isVisible: false,
-    };
 
-    // --- SAVE HISTORY ---
-    await this.ticketHistoryModel.create({
-      ticketId: ticket._id,
-      reportId: ticket.report_id,
+    const ticket = await this.db.query.tickets.findFirst({
+      where: and(
+        eq(schema.tickets.id, ticketId),
+        eq(schema.tickets.reportId, reportId),
+        eq(schema.tickets.isVisible, true)
+      )
+    });
+
+    if (!ticket) throw new NotFoundException('Ticket not found');
+
+    const oldSnapshot = { isVisible: ticket.isVisible };
+    const newSnapshot = { isVisible: false };
+
+    await this.db.insert(schema.ticketHistories).values({
+      ticketId: ticket.id,
+      reportId: ticket.reportId,
       version: ticket.version,
       oldSnapshot,
       newSnapshot,
     });
 
-    ticket.isVisible = false;
-    ticket.version += 1;
-    await ticket.save();
+    await this.db.update(schema.tickets)
+      .set({
+        isVisible: false,
+        version: ticket.version + 1,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.tickets.id, ticket.id));
 
     return { deleted: true };
   }
 
   private async updateRequestedAmount(reportId: string) {
-    const sum = await this.ticketModel.aggregate([
-      { $match: { report_id: new Types.ObjectId(reportId) } },
-      { $group: { _id: null, total: { $sum: '$amount' } } },
-    ]);
+    const result = await this.db.select({ total: sum(schema.tickets.amount) })
+      .from(schema.tickets)
+      .where(eq(schema.tickets.reportId, reportId));
 
-    await this.reportModel.findByIdAndUpdate(reportId, {
-      requested_amount: sum[0]?.total || 0,
-    });
+    const sumVal = Number(result[0]?.total ?? 0);
+
+    await this.db.update(schema.reports)
+      .set({ requestedAmount: sumVal, updatedAt: new Date() })
+      .where(eq(schema.reports.id, reportId));
   }
 
   private async updateApprovedAmount(reportId: string) {
-    const sum = await this.ticketModel.aggregate([
-      { $match: { report_id: new Types.ObjectId(reportId) } },
-      { $group: { _id: null, total: { $sum: '$approved_amount' } } },
-    ]);
+    const result = await this.db.select({ total: sum(schema.tickets.approvedAmount) })
+      .from(schema.tickets)
+      .where(eq(schema.tickets.reportId, reportId));
 
-    await this.reportModel.findByIdAndUpdate(reportId, {
-      approved_amount: sum[0]?.total || 0,
-    });
+    const sumVal = Number(result[0]?.total ?? 0);
+
+    await this.db.update(schema.reports)
+      .set({ approvedAmount: sumVal, updatedAt: new Date() })
+      .where(eq(schema.reports.id, reportId));
   }
 
   async getTicketImageUrl(userId: string, reportId: string, ticketId: string): Promise<{ url: string }> {
     const ticket = await this.findOne(userId, reportId, ticketId);
-    
+
     if (!ticket.cgs_bucket_link) {
       throw new NotFoundException('No image found for this ticket');
     }

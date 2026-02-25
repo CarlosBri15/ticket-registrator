@@ -1,25 +1,23 @@
-// ticket-history.schema.ts
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Types } from "mongoose";
+import { pgTable, uuid, integer, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { reports } from "../reports/schemas/report.schema";
+import { tickets } from "../tickets/schemas/ticket.schema";
 
-@Schema({ timestamps: true })
-export class TicketHistory {
-  @Prop({ type: Types.ObjectId, ref: 'Report', required: true })
-  reportId: Types.ObjectId;
+export const ticketHistories = pgTable("ticket_histories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  reportId: uuid("report_id")
+    .references(() => reports.id, { onDelete: "cascade" })
+    .notNull(),
+  // Note: Since tickets table is referenced before definition in this file or requires a circular import,
+  // we might want to be careful. Drizzle handles this fine if they are in separate files.
+  ticketId: uuid("ticket_id")
+    .references(() => tickets.id, { onDelete: "cascade" })
+    .notNull(),
+  version: integer("version").notNull(),
+  oldSnapshot: jsonb("old_snapshot").notNull(),
+  newSnapshot: jsonb("new_snapshot").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
-  @Prop({ type: Types.ObjectId, ref: 'Ticket', required: true })
-  ticketId: Types.ObjectId;
-
-  @Prop({ type: Number, required: true })
-  version: number; 
-
-  @Prop({ type: Object, required: true })
-  oldSnapshot: Record<string, any>;
-
-  @Prop({ type: Object, required: true })
-  newSnapshot: Record<string, any>;
-
-}
-
-export const TicketHistorySchema = SchemaFactory.createForClass(TicketHistory);
-export type TicketHistoryDocument = HydratedDocument<TicketHistory>;
+export type TicketHistory = typeof ticketHistories.$inferSelect;
+export type InsertTicketHistory = typeof ticketHistories.$inferInsert;
