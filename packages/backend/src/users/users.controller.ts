@@ -8,41 +8,69 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // Public - sign up
+  // Protected user creation
+  @UseGuards(AuthGuard('jwt'))
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  create(@Body() createUserDto: CreateUserDto, @Req() req) {
+    const creator = {
+      role: req.user.role,
+      companyId: req.user.companyId,         
+      departmentId: req.user.departmentId, 
+      permissions: req.user.permissions,
+    };
+
+    return this.usersService.create(createUserDto, creator);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Req() req) {
+    const requester = {
+      id: req.user.id,
+      role: req.user.role,
+      companyId: req.user.companyId,         
+      departmentId: req.user.departmentId, 
+      permissions: req.user.permissions,
+    };
+    return this.usersService.findAll(requester);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
-  getMe(@Req() req) {
-    return this.usersService.findOne(req.user.userId);
+  findMe(@Req() req) {
+    return this.usersService.findMe(req.user.id);
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @Patch()
+  @Patch(':id')
   update(
-    @Req() req, @Body() updateUserDto: UpdateUserDto,
+    @Req() req,
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
   ) {
-    return this.usersService.update(req.user['userId'], updateUserDto);
+    const requester = {
+      id: req.user.id,
+      role: req.user.role,
+      companyId: req.user.companyId,
+      departmentId: req.user.departmentId,
+      permissions: req.user.permissions,
+    };
+
+    return this.usersService.update(id, updateUserDto, requester);
   }
 
+
   @UseGuards(AuthGuard('jwt'))
-  @Delete()
-  remove(@Req() req) {
-    return this.usersService.remove(req.user['userId']);
+  @Delete(':id')
+  remove(@Param('id') userId: string, @Req() req) {
+    const requester = {
+      id: req.user.id,            
+      role: req.user.role,
+      companyId: req.user.companyId,         
+      departmentId: req.user.departmentId, 
+      permissions: req.user.permissions,
+    };
+
+    return this.usersService.remove(userId, requester);
   }
 }

@@ -9,5 +9,9 @@ export const mapUserToIUser = (
   surname: userDoc.surname,
   email: userDoc.email,
   username: userDoc.username,
+  role: userDoc.role,
   isVisible: userDoc.isVisible,
+  companyId: userDoc.companyId.toString(),
+  departmentId: userDoc.departmentId.toString(),
 });
+

@@ -28,9 +28,6 @@ export * from './statuses/item-status';
 export * from './statuses/report-status';
 export * from './statuses/ticket-lifecycle';
 
-// Tickets
-export * from './interfaces/tickets/ticket.interface';
-
 // API & Hooks
 export * from './api/baseClient';
 export * from './api/clientContainer';
@@ -40,3 +37,8 @@ export * from './hooks/useTickets';
 
 // I18n
 export * from './i18n';
+
+//Roles and Permissions
+export * from './user-roles/roles'
+export * from './user-roles/permissions'
+export * from './user-roles/role-default-permissions'

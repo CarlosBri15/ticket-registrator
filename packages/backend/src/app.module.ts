@@ -8,6 +8,7 @@ import { ReportsModule } from './reports/reports.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { AuthModule } from './auth/auth.module';
 import { StorageModule } from './storage/storage.module';
+import { OrganizationModule } from './organization/organization.module';
 
 @Module({
   imports: [
@@ -35,6 +36,8 @@ import { StorageModule } from './storage/storage.module';
 
     AuthModule,
 
-    StorageModule,],
+    StorageModule,
+
+    OrganizationModule],
 })
 export class AppModule {}

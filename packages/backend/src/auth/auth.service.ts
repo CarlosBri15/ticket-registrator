@@ -29,16 +29,29 @@ export class AuthService {
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    // Append pepper to the password before comparing
-    const isValid = await bcrypt.compare(loginDto.password + this.pepper, user.password);
+    const isValid = await bcrypt.compare(
+      loginDto.password + this.pepper,
+      user.password,
+    );
+
     if (!isValid) throw new UnauthorizedException('Invalid credentials');
 
-    const payload = { sub: user._id, username: user.username };
+    const permissionDoc = await this.usersService.getUserPermissions(user._id.toString());
+
+    const payload = {
+      sub: user._id,
+      username: user.username,
+      role: user.role,
+      companyId: user.companyId,
+      departmentId: user.departmentId,
+      permissions: permissionDoc.permissions,
+    };
 
     return {
       access_token: this.jwtService.sign(payload),
     };
   }
+
 
   // Hash password with pepper before saving
   async hashPassword(password: string): Promise<string> {
