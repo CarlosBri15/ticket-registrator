@@ -1,5 +1,8 @@
 import { pgTable, uuid, varchar, boolean, timestamp, integer } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { users } from "../../users/schemas/user.schema";
+import { tickets } from "../../tickets/schemas/ticket.schema";
+import { ticketHistories } from "../../history/history.schema";
 import type { ReportStatusType } from "@ticket-registrator/shared";
 import { ReportStatus } from "@ticket-registrator/shared";
 
@@ -22,6 +25,15 @@ export const reports = pgTable("reports", {
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const reportRelations = relations(reports, ({ one, many }) => ({
+    user: one(users, {
+        fields: [reports.userId],
+        references: [users.id],
+    }),
+    tickets: many(tickets),
+    ticketHistories: many(ticketHistories),
+}));
 
 export type Report = typeof reports.$inferSelect;
 export type InsertReport = typeof reports.$inferInsert;

@@ -1,6 +1,9 @@
 import { pgTable, uuid, varchar, boolean, timestamp } from "drizzle-orm/pg-core";
 import { companies } from "../../organization/schema/organization.schema";
 import { departments } from "../../department/department.schema";
+import { relations } from "drizzle-orm";
+import { permissions } from "../../permissions/schema/permissions.schema";
+import { reports } from "../../reports/schemas/report.schema";
 import { Roles } from "@ticket-registrator/shared";
 import type { RoleType } from "@ticket-registrator/shared";
 
@@ -24,6 +27,19 @@ export const users = pgTable("users", {
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const userRelations = relations(users, ({ one, many }) => ({
+    company: one(companies, {
+        fields: [users.companyId],
+        references: [companies.id],
+    }),
+    department: one(departments, {
+        fields: [users.departmentId],
+        references: [departments.id],
+    }),
+    permissions: many(permissions),
+    reports: many(reports),
+}));
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;

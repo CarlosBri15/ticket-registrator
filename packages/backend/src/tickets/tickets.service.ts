@@ -64,7 +64,6 @@ export class TicketsService {
       status: TicketStatus.PENDING,
       lifecycle: TicketLifecycle.DRAFT,
       cgsBucketLink: imageIdentifier,
-      items: itemsWithStatus,
       paymentType: geminiData.payment_method ?? null,
       expenseType: geminiData.expense_type ?? null,
       date: parsedDate,
@@ -78,6 +77,16 @@ export class TicketsService {
       lastFourDigits: geminiData.card_last_4 ?? null,
     }).returning();
 
+    if (itemsWithStatus.length > 0) {
+      await this.db.insert(schema.items).values(
+        itemsWithStatus.map(item => ({
+          ...item,
+          ticketId: ticket.id,
+        }))
+      );
+    }
+
+    (ticket as any).items = itemsWithStatus;
     return mapTicketToITicket(ticket as any);
   }
 
@@ -96,7 +105,8 @@ export class TicketsService {
       where: and(
         eq(schema.tickets.reportId, reportId),
         eq(schema.tickets.isVisible, true)
-      )
+      ),
+      with: { items: true }
     });
 
     return ticketsList.map(t => mapTicketToITicket(t as any));
@@ -118,7 +128,8 @@ export class TicketsService {
         eq(schema.tickets.id, ticketId),
         eq(schema.tickets.reportId, reportId),
         eq(schema.tickets.isVisible, true)
-      )
+      ),
+      with: { items: true }
     });
 
     if (!ticket) throw new NotFoundException('Ticket not found');
@@ -152,8 +163,9 @@ export class TicketsService {
     if (dto.currency !== undefined) { update.currency = dto.currency; meaningfulChange = true; }
     if (dto.cgs_bucket_link_justification !== undefined) { update.cgsBucketLinkJustification = dto.cgs_bucket_link_justification; }
     if (dto.last_four_digits !== undefined) { update.lastFourDigits = dto.last_four_digits; }
+    let updatedItemsData: any[] | undefined = undefined;
     if (dto.items !== undefined) {
-      update.items = dto.items.map(item => ({
+      updatedItemsData = dto.items.map(item => ({
         name: item.name ?? null,
         amount: item.amount ?? null,
         currency: item.currency ?? null,
@@ -221,6 +233,25 @@ export class TicketsService {
       .returning();
 
     if (!updatedTicket) throw new NotFoundException('Ticket not found');
+
+    if (updatedItemsData !== undefined) {
+      await this.db.delete(schema.items).where(eq(schema.items.ticketId, ticketId));
+      if (updatedItemsData.length > 0) {
+        await this.db.insert(schema.items).values(
+          updatedItemsData.map(item => ({
+            ...item,
+            ticketId: ticketId
+          }))
+        );
+      }
+      (updatedTicket as any).items = updatedItemsData;
+    } else {
+      // Re-fetch to get original items if they weren't updated
+      const fetchedItems = await this.db.query.items.findMany({
+        where: eq(schema.items.ticketId, ticketId)
+      });
+      (updatedTicket as any).items = fetchedItems;
+    }
 
     return mapTicketToITicket(updatedTicket as any);
   }

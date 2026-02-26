@@ -5,3 +5,4 @@ export * from '../permissions/schema/permissions.schema';
 export * from '../reports/schemas/report.schema';
 export * from '../tickets/schemas/ticket.schema';
 export * from '../history/history.schema';
+export * from '../items/schemas/item.schema';
