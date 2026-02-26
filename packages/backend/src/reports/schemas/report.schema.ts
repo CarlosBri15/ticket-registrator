@@ -14,13 +14,11 @@ export const reports = pgTable("reports", {
     name: varchar("name", { length: 255 }).notNull(),
     startDate: timestamp("start_date").notNull(),
     endDate: timestamp("end_date").notNull(),
-    // For monetary amounts, consider using numeric/decimal. Using integer (cents) or real as a quick replacement.
-    // Mongoose was using Number. Let's use real (float) or decimal for now. 
     requestedAmount: integer("requested_amount").default(0).notNull(),
     approvedAmount: integer("approved_amount").default(0).notNull(),
     currency: varchar("currency", { length: 10 }).notNull(),
     type: varchar("type", { length: 50 }).notNull(),
-    status: varchar("status", { length: 50 }).default(ReportStatus.CREATED).notNull(), // ReportStatusType
+    status: varchar("status", { length: 50 }).default(ReportStatus.CREATED).notNull(),
     isVisible: boolean("is_visible").default(true).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

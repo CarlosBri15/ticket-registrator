@@ -1,13 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, BadRequestException } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
-import { updateReportFieldsSchema, updateReportStatusSchema} from '@ticket-registrator/shared';
+import { updateReportFieldsSchema, updateReportStatusSchema, permissions } from '@ticket-registrator/shared';
 import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequireAnyPermission } from '../auth/decorators/permissions.decorator';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('reports')
 export class ReportsController {
-  constructor(private readonly reportsService: ReportsService) {}
+  constructor(private readonly reportsService: ReportsService) { }
 
   @Post()
   create(@Req() req, @Body() createReportDto: CreateReportDto) {
@@ -20,11 +22,47 @@ export class ReportsController {
     const requester = {
       id: req.user.id,
       role: req.user.role,
-      companyId: req.user.companyId,         
-      departmentId: req.user.departmentId, 
+      companyId: req.user.companyId,
+      departmentId: req.user.departmentId,
       permissions: req.user.permissions,
     };
     return this.reportsService.findAllReports(requester);
+  }
+
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(
+    permissions.VIEW_OWN_REPORTS,
+    permissions.VIEW_TEAM_REPORTS,
+    permissions.VIEW_ALL_REPORTS
+  )
+  @Get('paginated')
+  findAllPaginated(
+    @Req() req,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('userId') userId?: string,
+    @Query('name') name?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('status') status?: string,
+  ) {
+    const requester = {
+      id: req.user.id,
+      role: req.user.role,
+      companyId: req.user.companyId,
+      departmentId: req.user.departmentId,
+      permissions: req.user.permissions,
+    };
+
+    return this.reportsService.findAllReportsPaginated(requester, {
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 10,
+      userId,
+      name,
+      startDate,
+      endDate,
+      status: status as any,
+    });
   }
 
   @Get(':id')
@@ -32,8 +70,8 @@ export class ReportsController {
     const requester = {
       id: req.user.id,
       role: req.user.role,
-      companyId: req.user.companyId,         
-      departmentId: req.user.departmentId, 
+      companyId: req.user.companyId,
+      departmentId: req.user.departmentId,
       permissions: req.user.permissions,
     }
     return this.reportsService.findOne(requester, id);
@@ -90,7 +128,7 @@ export class ReportsController {
   @Patch(':id/submit')
   submitReport(@Req() req, @Param('id') id: string) {
     return this.reportsService.submitReport(req.user.userId, id);
-  } 
+  }
 
   @Delete(':id')
   remove(@Req() req, @Param('id') id: string) {

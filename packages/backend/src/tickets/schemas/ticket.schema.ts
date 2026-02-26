@@ -12,11 +12,9 @@ export const tickets = pgTable("tickets", {
     .references(() => reports.id, { onDelete: "cascade" })
     .notNull(),
 
-  // Lifecycle control
   lifecycle: varchar("lifecycle", { length: 50 }).default(TicketLifecycle.DRAFT).notNull(), // TicketLifecycleType
   version: integer("version").default(0).notNull(),
 
-  // Extracted / user-editable fields
   cgsBucketLink: varchar("cgs_bucket_link", { length: 255 }),
   paymentType: varchar("payment_type", { length: 50 }),
   expenseType: varchar("expense_type", { length: 50 }),
@@ -30,7 +28,6 @@ export const tickets = pgTable("tickets", {
   cgsBucketLinkJustification: varchar("cgs_bucket_link_justification", { length: 255 }),
   lastFourDigits: varchar("last_four_digits", { length: 4 }),
 
-  // Status & finance
   status: varchar("status", { length: 50 }).default(TicketStatus.PENDING).notNull(), // TicketStatusType
   llmApprovedPercentage: integer("llm_approved_percentage"),
   llmRecommendation: varchar("llm_recommendation", { length: 255 }),
@@ -38,7 +35,6 @@ export const tickets = pgTable("tickets", {
   llmSuggestedCurrency: varchar("llm_suggested_currency", { length: 10 }),
   approvedAmount: integer("approved_amount").default(0).notNull(),
 
-  // Items are now separated into the `items` relation table.
 
   isVisible: boolean("is_visible").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

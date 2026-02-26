@@ -8,6 +8,13 @@
       "when": 1772048362101,
       "tag": "0000_lucky_wraith",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772125738145,
+      "tag": "0001_rich_nemesis",
+      "breakpoints": true
     }
   ]
 }

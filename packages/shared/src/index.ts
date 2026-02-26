@@ -42,3 +42,6 @@ export * from './i18n';
 export * from './user-roles/roles'
 export * from './user-roles/permissions'
 export * from './user-roles/role-default-permissions'
+
+// Pagination
+export * from './interfaces/pagination/pagination.interface';

@@ -8,8 +8,6 @@ export const ticketHistories = pgTable("ticket_histories", {
   reportId: uuid("report_id")
     .references(() => reports.id, { onDelete: "cascade" })
     .notNull(),
-  // Note: Since tickets table is referenced before definition in this file or requires a circular import,
-  // we might want to be careful. Drizzle handles this fine if they are in separate files.
   ticketId: uuid("ticket_id")
     .references(() => tickets.id, { onDelete: "cascade" })
     .notNull(),

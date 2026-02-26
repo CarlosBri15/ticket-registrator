@@ -2,8 +2,8 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException, 
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, and, or, inArray, gte, lte } from 'drizzle-orm';
-import { IReport, ReportStatus, ROLE_HIERARCHY, Roles } from '@ticket-registrator/shared';
+import { eq, and, or, inArray, gte, lte, ilike, count, desc, SQL } from 'drizzle-orm';
+import { IReport, ReportStatus, ROLE_HIERARCHY, Roles, PaginatedList } from '@ticket-registrator/shared';
 import type { RoleType, PermissionType, ReportStatusType } from '@ticket-registrator/shared';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportFieldsDto, UpdateReportStatusDto } from './dto/update-report.dto';
@@ -181,6 +181,135 @@ export class ReportsService {
     });
 
     return reportsList.map(report => mapReportToIReport(report));
+  }
+
+  async findAllReportsPaginated(
+    requester: {
+      id: string;
+      role: RoleType;
+      companyId: string;
+      departmentId: string;
+      permissions: PermissionType[];
+    },
+    filters: {
+      userId?: string;
+      name?: string;
+      startDate?: string;
+      endDate?: string;
+      status?: ReportStatusType;
+      page?: number;
+      limit?: number;
+    }
+  ): Promise<PaginatedList<IReport>> {
+    await this.getVisibleUser(requester.id);
+
+    const {
+      page = 1,
+      limit = 10,
+      userId,
+      name,
+      startDate,
+      endDate,
+      status
+    } = filters;
+
+    const offset = (page - 1) * limit;
+
+    const requesterHierarchy = ROLE_HIERARCHY[requester.role];
+    let authorityWhere: SQL<unknown> | undefined = undefined;
+
+    if (requester.permissions.includes('view_all_reports')) {
+      if (requester.role === Roles.SUPERADMIN) {
+        // SuperAdmin sees all
+        authorityWhere = eq(schema.users.isVisible, true);
+      } else {
+        // Admin sees all in company below them
+        const allowedRoles = (Object.keys(ROLE_HIERARCHY) as RoleType[]).filter(
+          role => ROLE_HIERARCHY[role] < requesterHierarchy
+        );
+        authorityWhere = and(
+          eq(schema.users.companyId, requester.companyId),
+          inArray(schema.users.role, allowedRoles),
+          eq(schema.users.isVisible, true)
+        );
+      }
+    } else if (requester.permissions.includes('view_team_reports')) {
+      // Manager sees their department below them
+      const allowedRoles = (Object.keys(ROLE_HIERARCHY) as RoleType[]).filter(
+        role => ROLE_HIERARCHY[role] < requesterHierarchy
+      );
+      authorityWhere = and(
+        eq(schema.users.companyId, requester.companyId),
+        eq(schema.users.departmentId, requester.departmentId),
+        inArray(schema.users.role, allowedRoles),
+        eq(schema.users.isVisible, true)
+      );
+    } else {
+      // User sees only themselves
+      authorityWhere = eq(schema.users.id, requester.id);
+    }
+
+    // Include the requester so they can see their own reports in addition to others
+    const finalAuthorityWhere = or(
+      authorityWhere,
+      eq(schema.users.id, requester.id)
+    );
+
+    // 2. Build User-provided Query Filters
+    const queryFilters = [
+      eq(schema.reports.isVisible, true)
+    ];
+
+    if (userId) {
+      queryFilters.push(eq(schema.reports.userId, userId));
+    }
+    if (name) {
+      queryFilters.push(ilike(schema.reports.name, `%${name}%`));
+    }
+    if (status) {
+      queryFilters.push(eq(schema.reports.status, status as string));
+    }
+    if (startDate) {
+      queryFilters.push(gte(schema.reports.startDate, new Date(startDate)));
+    }
+    if (endDate) {
+      queryFilters.push(lte(schema.reports.endDate, new Date(endDate)));
+    }
+
+    const reportWhere = and(...queryFilters);
+
+    // 3. Execute efficient Join Query
+    // Drizzle let us join cleanly
+    const baseQuery = this.db.select({
+      report: schema.reports
+    })
+      .from(schema.reports)
+      .innerJoin(schema.users, eq(schema.reports.userId, schema.users.id))
+      .where(and(reportWhere, finalAuthorityWhere));
+
+    // Get Total Count
+    const totalCountQuery = await this.db.select({ count: count() })
+      .from(schema.reports)
+      .innerJoin(schema.users, eq(schema.reports.userId, schema.users.id))
+      .where(and(reportWhere, finalAuthorityWhere));
+
+    const total = Number(totalCountQuery[0]?.count ?? 0);
+
+    // Get Paginated Data
+    const results = await baseQuery
+      .orderBy(desc(schema.reports.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const reports = results.map(row => mapReportToIReport(row.report));
+
+    return {
+      data: reports,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
   async findOne(
