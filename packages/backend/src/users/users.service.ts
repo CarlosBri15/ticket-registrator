@@ -97,13 +97,13 @@ export class UsersService {
       const savedUser = await this.db.transaction(async (tx) => {
         const [user] = await tx.insert(schema.users).values(userToCreate as any).returning();
 
-        const defaultPermissions = ROLE_DEFAULT_PERMISSIONS[user.role as RoleType];
-
-        await tx.insert(schema.permissions).values({
-          userId: user.id,
-          permissions: defaultPermissions,
-          isActive: true,
-        });
+        // TODO: Re-enable once new roles/permissions system is complete
+        // const defaultPermissions = ROLE_DEFAULT_PERMISSIONS[user.role as RoleType];
+        // await tx.insert(schema.permissions).values({
+        //   userId: user.id,
+        //   permissions: defaultPermissions,
+        //   isActive: true,
+        // });
 
         return user;
       });
@@ -210,7 +210,9 @@ export class UsersService {
           }
         }
 
-        const targetHierarchy = ROLE_HIERARCHY[user.role as RoleType];
+        // TODO: Re-enable once new roles/permissions system is complete
+        // const targetHierarchy = ROLE_HIERARCHY[user.role as RoleType];
+        const targetHierarchy = 0; // placeholder
         if (targetHierarchy >= requesterHierarchy) {
           throw new ForbiddenException('Cannot update users with equal or higher role');
         }
@@ -224,23 +226,9 @@ export class UsersService {
           if (requestedRoleHierarchy >= requesterHierarchy) {
             throw new ForbiddenException('Cannot assign a role equal or higher than your own role');
           }
-          const newPermissions = ROLE_DEFAULT_PERMISSIONS[updateUserDto.role];
-
-          await this.db.insert(schema.permissions)
-            .values({ userId: user.id, permissions: newPermissions, isActive: true })
-            .onConflictDoUpdate({
-              target: schema.permissions.id, // we don't have unique constraint on userId in drizzle, wait
-              // Ah, we should have added unique on userId in Permissions schema, let's update where userId = user.id if it exists
-              // it's simpler to just do an update query since we know it exists if the user exists
-              set: { permissions: newPermissions, isActive: true }
-            });
-          // Actually Drizzle upsert relies on unique columns. If no unique on userId, we do:
-          const existingPerm = await this.db.query.permissions.findFirst({ where: eq(schema.permissions.userId, user.id) });
-          if (existingPerm) {
-            await this.db.update(schema.permissions).set({ permissions: newPermissions, isActive: true }).where(eq(schema.permissions.userId, user.id));
-          } else {
-            await this.db.insert(schema.permissions).values({ userId: user.id, permissions: newPermissions, isActive: true });
-          }
+          // TODO: Re-enable once new roles/permissions system is complete
+          // const newPermissions = ROLE_DEFAULT_PERMISSIONS[updateUserDto.role];
+          // ... update permissions in DB ...
         }
       }
 
@@ -307,7 +295,9 @@ export class UsersService {
     }
 
     const requesterHierarchy = ROLE_HIERARCHY[requester.role];
-    const targetHierarchy = ROLE_HIERARCHY[user.role as RoleType];
+    // TODO: Re-enable once new roles/permissions system is complete
+    // const targetHierarchy = ROLE_HIERARCHY[user.role as RoleType];
+    const targetHierarchy = 0; // placeholder
 
     // Cannot delete equal or higher role
     if (targetHierarchy >= requesterHierarchy) {
@@ -349,10 +339,10 @@ export class UsersService {
         .where(inArray(schema.tickets.reportId, reportIds));
     }
 
-    // Soft delete permissions
-    await this.db.update(schema.permissions)
-      .set({ isActive: false, updatedAt: new Date() })
-      .where(eq(schema.permissions.userId, user.id));
+    // TODO: Re-enable once new roles/permissions system is complete
+    // await this.db.update(schema.permissions)
+    //   .set({ isActive: false, updatedAt: new Date() })
+    //   .where(eq(schema.permissions.userId, user.id));
 
     return { deleted: true };
   }
@@ -363,14 +353,6 @@ export class UsersService {
     });
   }
 
-  async getUserPermissions(userId: string) {
-    const permissionsDoc = await this.db.query.permissions.findFirst({
-      where: and(
-        eq(schema.permissions.userId, userId),
-        eq(schema.permissions.isActive, true)
-      )
-    });
-    if (!permissionsDoc) throw new NotFoundException('Permissions not found');
-    return permissionsDoc;
-  }
+  // TODO: Re-enable once new roles/permissions system is complete
+  // async getUserPermissions(userId: string) { ... }
 }

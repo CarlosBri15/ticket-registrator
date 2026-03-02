@@ -36,15 +36,16 @@ export class AuthService {
 
     if (!isValid) throw new UnauthorizedException('Invalid credentials');
 
-    const permissionDoc = await this.usersService.getUserPermissions(user.id);
+    // TODO: Re-enable once new roles/permissions system is complete
+    // const permissionDoc = await this.usersService.getUserPermissions(user.id);
 
     const payload = {
       sub: user.id,
       username: user.username,
-      role: user.role,
+      role: user.roleId, // TODO: replace with role name lookup once roles module is ready
       companyId: user.companyId,
       departmentId: user.departmentId,
-      permissions: permissionDoc.permissions,
+      permissions: [], // TODO: resolve permissions from roleId once roles module is ready
     };
 
     return {

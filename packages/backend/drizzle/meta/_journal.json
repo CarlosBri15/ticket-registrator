@@ -15,6 +15,13 @@
       "when": 1772125738145,
       "tag": "0001_rich_nemesis",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772299055725,
+      "tag": "0002_small_phil_sheldon",
+      "breakpoints": true
     }
   ]
 }

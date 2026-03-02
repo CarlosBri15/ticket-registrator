@@ -1,6 +1,6 @@
 import { pgTable, uuid, varchar, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import { companies } from "../organization/schema/organization.schema";
+import { companies } from "../../organization/schema/organization.schema";
 
 export const departments = pgTable("departments", {
   id: uuid("id").primaryKey().defaultRandom(),

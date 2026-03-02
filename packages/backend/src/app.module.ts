@@ -10,6 +10,8 @@ import { AuthModule } from './auth/auth.module';
 import { StorageModule } from './storage/storage.module';
 import { OrganizationModule } from './organization/organization.module';
 import { ItemsModule } from './items/items.module';
+import { DepartmentModule } from './department/department.module';
+import { RolesModule } from './roles/roles.module';
 
 @Module({
   imports: [
@@ -35,6 +37,10 @@ import { ItemsModule } from './items/items.module';
 
     OrganizationModule,
 
-    ItemsModule],
+    ItemsModule,
+
+    DepartmentModule,
+
+    RolesModule],
 })
 export class AppModule { }

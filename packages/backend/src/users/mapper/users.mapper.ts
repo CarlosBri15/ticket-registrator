@@ -9,7 +9,7 @@ export const mapUserToIUser = (
   surname: userDoc.surname,
   email: userDoc.email,
   username: userDoc.username,
-  role: userDoc.role,
+  role: userDoc.roleId as any, // TODO: replace with role name lookup once roles module is ready
   isVisible: userDoc.isVisible,
   companyId: userDoc.companyId,
   departmentId: userDoc.departmentId,

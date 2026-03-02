@@ -43,5 +43,14 @@ export * from './user-roles/roles'
 export * from './user-roles/permissions'
 export * from './user-roles/role-default-permissions'
 
+// Organization
+export * from './schemas/organization/createOrganization.schema';
+
+// Department
+export * from './schemas/department/createDepartment.schema';
+
 // Pagination
 export * from './interfaces/pagination/pagination.interface';
+
+// Roles
+export * from './schemas/roles/createRole.schema';

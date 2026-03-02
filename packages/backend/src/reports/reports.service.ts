@@ -76,7 +76,9 @@ export class ReportsService {
     const targetUser = await this.getVisibleUser(targetUserId);
 
     const requesterHierarchy = ROLE_HIERARCHY[requester.role];
-    const targetHierarchy = ROLE_HIERARCHY[targetUser.role as RoleType];
+    // TODO: Re-enable once new roles/permissions system is complete
+    // const targetHierarchy = ROLE_HIERARCHY[targetUser.role as RoleType];
+    const targetHierarchy = 0; // placeholder
 
     // Permission checks
     if (requester.id === targetUserId) {
@@ -151,14 +153,17 @@ export class ReportsService {
         const allowedRoles = (Object.keys(ROLE_HIERARCHY) as RoleType[]).filter(
           role => ROLE_HIERARCHY[role] < requesterHierarchy
         );
-        userFilters.push(inArray(schema.users.role, allowedRoles));
+        // TODO: Re-enable role filter once new roles/permissions system is complete
+        // userFilters.push(inArray(schema.users.role, allowedRoles));
+        void allowedRoles; // suppress unused variable warning
       }
     } else if (requester.permissions.includes("view_team_reports")) {
       userFilters.push(eq(schema.users.departmentId, requester.departmentId));
       const allowedRoles = (Object.keys(ROLE_HIERARCHY) as RoleType[]).filter(
         role => ROLE_HIERARCHY[role] < requesterHierarchy
       );
-      userFilters.push(inArray(schema.users.role, allowedRoles));
+      // TODO: Re-enable role filter once new roles/permissions system is complete
+      // userFilters.push(inArray(schema.users.role, allowedRoles));
     } else {
       userFilters.push(eq(schema.users.id, requester.id));
     }
@@ -229,7 +234,8 @@ export class ReportsService {
         );
         authorityWhere = and(
           eq(schema.users.companyId, requester.companyId),
-          inArray(schema.users.role, allowedRoles),
+          // TODO: Re-enable role filter once new roles/permissions system is complete
+          // inArray(schema.users.role, allowedRoles),
           eq(schema.users.isVisible, true)
         );
       }
@@ -238,10 +244,12 @@ export class ReportsService {
       const allowedRoles = (Object.keys(ROLE_HIERARCHY) as RoleType[]).filter(
         role => ROLE_HIERARCHY[role] < requesterHierarchy
       );
+      void allowedRoles; // suppress unused variable warning
       authorityWhere = and(
         eq(schema.users.companyId, requester.companyId),
         eq(schema.users.departmentId, requester.departmentId),
-        inArray(schema.users.role, allowedRoles),
+        // TODO: Re-enable role filter once new roles/permissions system is complete
+        // inArray(schema.users.role, allowedRoles),
         eq(schema.users.isVisible, true)
       );
     } else {
@@ -334,7 +342,9 @@ export class ReportsService {
 
     const reportOwner = await this.getVisibleUser(report.userId);
     const requesterHierarchy = ROLE_HIERARCHY[requester.role];
-    const targetHierarchy = ROLE_HIERARCHY[reportOwner.role as RoleType];
+    // TODO: Re-enable once new roles/permissions system is complete
+    // const targetHierarchy = ROLE_HIERARCHY[reportOwner.role as RoleType];
+    const targetHierarchy = 0; // placeholder
 
     if (reportOwner.id === requester.id) {
       if (!requester.permissions.includes('view_own_reports')) {
