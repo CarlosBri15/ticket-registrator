@@ -16,6 +16,7 @@ CREATE TABLE "roles" (
 );
 --> statement-breakpoint
 ALTER TABLE "users" RENAME COLUMN "role" TO "role_id";--> statement-breakpoint
+ALTER TABLE "users" ALTER COLUMN "role_id" TYPE uuid USING role_id::uuid;--> statement-breakpoint
 ALTER TABLE "permissions" DROP CONSTRAINT "permissions_user_id_users_id_fk";
 --> statement-breakpoint
 ALTER TABLE "permissions" ADD COLUMN "name" varchar(150) NOT NULL;--> statement-breakpoint
