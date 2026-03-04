@@ -12,6 +12,7 @@ import { OrganizationModule } from './organization/organization.module';
 import { ItemsModule } from './items/items.module';
 import { DepartmentModule } from './department/department.module';
 import { RolesModule } from './roles/roles.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -41,6 +42,8 @@ import { RolesModule } from './roles/roles.module';
 
     DepartmentModule,
 
-    RolesModule],
+    RolesModule,
+    SeedModule
+  ],
 })
 export class AppModule { }

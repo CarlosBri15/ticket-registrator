@@ -1,4 +1,4 @@
-import type { PermissionType} from '../../user-roles/permissions';
+import type { PermissionType } from '../../user-roles/permissions';
 import type { RoleType } from '../../user-roles/roles';
 
 export interface IUser {
@@ -9,6 +9,6 @@ export interface IUser {
     username: string;
     isVisible: boolean;
     role: RoleType;
-    companyId: string;
-    departmentId: string;
+    companyId: string | null;
+    departmentId: string | null;
 }
