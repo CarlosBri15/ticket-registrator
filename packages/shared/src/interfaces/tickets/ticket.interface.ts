@@ -1,4 +1,4 @@
-import  type {TicketStatusType} from '../../statuses/ticket-status';
+import type { TicketStatusType } from '../../statuses/ticket-status';
 import type { TicketLifecycleType } from 'src/statuses/ticket-lifecycle';
 import { IItem } from './item.interface';
 
@@ -23,6 +23,5 @@ export interface ITicket {
   items?: IItem[];
   createdAt: string;
   updatedAt: string;
-  isVisible: boolean;
 }
 

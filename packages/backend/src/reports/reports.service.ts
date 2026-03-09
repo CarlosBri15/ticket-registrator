@@ -2,8 +2,8 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException, 
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, and, or, inArray, gte, lte, ilike, count, desc, SQL } from 'drizzle-orm';
-import { IReport, ReportStatus, ROLE_HIERARCHY, Roles, PaginatedList } from '@ticket-registrator/shared';
+import { eq, and, or, inArray, gte, lte, ilike, count, desc, SQL, isNull, sql } from 'drizzle-orm';
+import { IReport, ReportStatus, ROLE_HIERARCHY, Roles, PaginatedList, permissions, AUTHORITY_LEVELS } from '@ticket-registrator/shared';
 import type { RoleType, PermissionType, ReportStatusType } from '@ticket-registrator/shared';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportFieldsDto, UpdateReportStatusDto } from './dto/update-report.dto';
@@ -15,17 +15,21 @@ export class ReportsService {
     @Inject(DB_CONNECTION) private db: PostgresJsDatabase<typeof schema>,
   ) { }
 
-  // Helper to check if user exists and is visible
+  // Helper to check if user exists and is visible, including relations
   private async getVisibleUser(id: string) {
     const user = await this.db.query.users.findFirst({
-      where: and(eq(schema.users.id, id), eq(schema.users.isVisible, true))
+      where: and(eq(schema.users.id, id), isNull(schema.users.deletedAt)),
+      with: {
+        usersToRoles: { with: { role: true } },
+        usersToDepartments: true
+      }
     });
     if (!user) throw new NotFoundException('User not found or not visible');
     return user;
   }
 
   async create(id: string, dto: CreateReportDto): Promise<IReport> {
-    await this.getVisibleUser(id);  // Ensure user exists and is visible
+    await this.getVisibleUser(id);
 
     const overlapping = await this.db.query.reports.findFirst({
       where: and(
@@ -40,12 +44,9 @@ export class ReportsService {
     });
 
     if (overlapping) {
-      throw new ConflictException(
-        'A report already exists for this trip date range',
-      );
+      throw new ConflictException('A report already exists for this trip date range');
     }
 
-    // Create report
     const [report] = await this.db.insert(schema.reports).values({
       userId: id,
       requestedAmount: 0,
@@ -62,110 +63,61 @@ export class ReportsService {
     return mapReportToIReport(report);
   }
 
-  async findUserReports(
-    requester: {
-      id: string;
-      role: RoleType;
-      companyId: string;
-      departmentId?: string;
-      permissions: PermissionType[];
-    },
-    targetUserId: string
-  ): Promise<IReport[]> {
-    await this.getVisibleUser(requester.id);
+  async findUserReports(requester: any, targetUserId: string): Promise<IReport[]> {
     const targetUser = await this.getVisibleUser(targetUserId);
 
-    const requesterHierarchy = ROLE_HIERARCHY[requester.role];
-    // TODO: Re-enable once new roles/permissions system is complete
-    // const targetHierarchy = ROLE_HIERARCHY[targetUser.role as RoleType];
-    const targetHierarchy = 0; // placeholder
-
-    // Permission checks
-    if (requester.id === targetUserId) {
-      if (!requester.permissions.includes('view_own_reports')) {
-        throw new ForbiddenException('You do not have permission to view your own reports');
-      }
-    } else {
+    if (requester.id !== targetUserId) {
       let allowed = false;
+      const requesterHierarchy = Math.max(...requester.roleHierarchies);
 
-      // Manager: can view reports of users in their department
-      if (
-        requester.role === Roles.MANAGER &&
-        requester.permissions.includes('view_team_reports') &&
-        targetUser.companyId === requester.companyId &&
-        targetUser.departmentId === requester.departmentId
-      ) {
+      const targetRoles = targetUser.usersToRoles.map(ur => ur.role);
+      const targetHierarchy = targetRoles.length > 0 ? Math.max(...targetRoles.map(r => r.hierarchy)) : 0;
+      const targetDeptIds = targetUser.usersToDepartments.map(ud => ud.departmentId);
+
+      if (requesterHierarchy >= AUTHORITY_LEVELS.GLOBAL) {
+        allowed = true;
+      } else if (requesterHierarchy >= AUTHORITY_LEVELS.COMPANY && targetUser.companyId === requester.companyId && targetHierarchy < requesterHierarchy) {
+        allowed = true;
+      } else if (requesterHierarchy >= AUTHORITY_LEVELS.DEPARTMENT && targetUser.companyId === requester.companyId && targetDeptIds.some(id => requester.departmentIds.includes(id)) && targetHierarchy < requesterHierarchy) {
         allowed = true;
       }
 
-      // Admin/SuperAdmin: can view reports in company, but only lower hierarchy
-      if (
-        (requester.role === Roles.ADMIN || requester.role === Roles.SUPERADMIN) &&
-        requester.permissions.includes('view_all_reports') &&
-        targetUser.companyId === requester.companyId &&
-        targetHierarchy < requesterHierarchy
-      ) {
-        allowed = true;
-      }
-
-      if (!allowed) {
-        throw new ForbiddenException('You do not have permission to view this user\'s reports');
-      }
+      if (!allowed) throw new ForbiddenException('You do not have permission to view this user\'s reports');
     }
 
     const reports = await this.db.query.reports.findMany({
-      where: and(
-        eq(schema.reports.userId, targetUserId),
-        eq(schema.reports.isVisible, true)
-      )
+      where: and(eq(schema.reports.userId, targetUserId), eq(schema.reports.isVisible, true))
     });
 
-    console.log('Reports found:', reports);
     return reports.map(report => mapReportToIReport(report));
   }
 
-  async findAllReports(requester: {
-    id: string;
-    role: RoleType;
-    companyId: string;
-    departmentId: string;
-    permissions: PermissionType[];
-  }): Promise<IReport[]> {
+  async findAllReports(requester: any): Promise<IReport[]> {
+    const maxHierarchy = Math.max(...requester.roleHierarchies);
+    let userFilters = [isNull(schema.users.deletedAt)];
 
-    await this.getVisibleUser(requester.id);
+    if (maxHierarchy < AUTHORITY_LEVELS.GLOBAL) {
+      userFilters.push(eq(schema.users.companyId, requester.companyId));
 
-    if (
-      !requester.permissions.includes("view_own_reports") &&
-      !requester.permissions.includes("view_team_reports") &&
-      !requester.permissions.includes("view_all_reports")
-    ) {
-      throw new ForbiddenException('You are not allowed to view reports');
+      if (maxHierarchy >= AUTHORITY_LEVELS.DEPARTMENT && maxHierarchy < AUTHORITY_LEVELS.COMPANY) {
+        userFilters.push(sql`EXISTS (
+          SELECT 1 FROM ${schema.usersToDepartments} ud 
+          WHERE ud.user_id = ${schema.users.id} 
+          AND ud.department_id = ANY(${requester.departmentIds}::uuid[])
+        )`);
+      } else if (maxHierarchy < AUTHORITY_LEVELS.DEPARTMENT) {
+        userFilters.push(eq(schema.users.id, requester.id));
+      }
     }
 
-    const requesterHierarchy = ROLE_HIERARCHY[requester.role];
-    let userFilters = [
-      eq(schema.users.companyId, requester.companyId),
-      eq(schema.users.isVisible, true)
-    ];
-
-    if (requester.permissions.includes("view_all_reports")) {
-      if (requester.role !== Roles.SUPERADMIN) {
-        const allowedRoles = (Object.keys(ROLE_HIERARCHY) as RoleType[]).filter(
-          role => ROLE_HIERARCHY[role] < requesterHierarchy
-        );
-        // TODO: Re-enable role filter once new roles/permissions system is complete
-        // userFilters.push(inArray(schema.users.role, allowedRoles));
-        void allowedRoles; // suppress unused variable warning
-      }
-    } else if (requester.permissions.includes("view_team_reports")) {
-      userFilters.push(eq(schema.users.departmentId, requester.departmentId));
-      const allowedRoles = (Object.keys(ROLE_HIERARCHY) as RoleType[]).filter(
-        role => ROLE_HIERARCHY[role] < requesterHierarchy
-      );
-      // TODO: Re-enable role filter once new roles/permissions system is complete
-      // userFilters.push(inArray(schema.users.role, allowedRoles));
-    } else {
-      userFilters.push(eq(schema.users.id, requester.id));
+    if (maxHierarchy < AUTHORITY_LEVELS.GLOBAL) {
+      userFilters.push(sql`EXISTS (
+          SELECT 1 FROM ${schema.usersToRoles} ur
+          JOIN ${schema.roles} r ON r.id = ur.role_id
+          WHERE ur.user_id = ${schema.users.id}
+          GROUP BY ur.user_id
+          HAVING MAX(r.hierarchy) < ${maxHierarchy}
+      ) OR ${schema.users.id} = ${requester.id}`);
     }
 
     const users = await this.db.query.users.findMany({
@@ -173,146 +125,62 @@ export class ReportsService {
       columns: { id: true }
     });
 
-    let visibleUserIds = users.map(u => u.id);
-    if (!visibleUserIds.includes(requester.id)) {
-      visibleUserIds.push(requester.id);
-    }
+    const visibleUserIds = [...new Set([...users.map(u => u.id), requester.id])];
 
     const reportsList = await this.db.query.reports.findMany({
-      where: and(
-        inArray(schema.reports.userId, visibleUserIds),
-        eq(schema.reports.isVisible, true)
-      )
+      where: and(inArray(schema.reports.userId, visibleUserIds), eq(schema.reports.isVisible, true))
     });
 
     return reportsList.map(report => mapReportToIReport(report));
   }
 
-  async findAllReportsPaginated(
-    requester: {
-      id: string;
-      role: RoleType;
-      companyId: string;
-      departmentId: string;
-      permissions: PermissionType[];
-    },
-    filters: {
-      userId?: string;
-      name?: string;
-      startDate?: string;
-      endDate?: string;
-      status?: ReportStatusType;
-      page?: number;
-      limit?: number;
-    }
-  ): Promise<PaginatedList<IReport>> {
-    await this.getVisibleUser(requester.id);
-
-    const {
-      page = 1,
-      limit = 10,
-      userId,
-      name,
-      startDate,
-      endDate,
-      status
-    } = filters;
-
+  async findAllReportsPaginated(requester: any, filters: any): Promise<PaginatedList<IReport>> {
+    const { page = 1, limit = 10, userId, name, startDate, endDate, status } = filters;
     const offset = (page - 1) * limit;
+    const maxHierarchy = Math.max(...requester.roleHierarchies);
 
-    const requesterHierarchy = ROLE_HIERARCHY[requester.role];
     let authorityWhere: SQL<unknown> | undefined = undefined;
 
-    if (requester.permissions.includes('view_all_reports')) {
-      if (requester.role === Roles.SUPERADMIN) {
-        // SuperAdmin sees all
-        authorityWhere = eq(schema.users.isVisible, true);
-      } else {
-        // Admin sees all in company below them
-        const allowedRoles = (Object.keys(ROLE_HIERARCHY) as RoleType[]).filter(
-          role => ROLE_HIERARCHY[role] < requesterHierarchy
-        );
-        authorityWhere = and(
-          eq(schema.users.companyId, requester.companyId),
-          // TODO: Re-enable role filter once new roles/permissions system is complete
-          // inArray(schema.users.role, allowedRoles),
-          eq(schema.users.isVisible, true)
-        );
-      }
-    } else if (requester.permissions.includes('view_team_reports')) {
-      // Manager sees their department below them
-      const allowedRoles = (Object.keys(ROLE_HIERARCHY) as RoleType[]).filter(
-        role => ROLE_HIERARCHY[role] < requesterHierarchy
-      );
-      void allowedRoles; // suppress unused variable warning
+    if (maxHierarchy >= AUTHORITY_LEVELS.GLOBAL) {
+      authorityWhere = isNull(schema.users.deletedAt);
+    } else if (maxHierarchy >= AUTHORITY_LEVELS.COMPANY) {
+      authorityWhere = and(eq(schema.users.companyId, requester.companyId), isNull(schema.users.deletedAt));
+    } else if (maxHierarchy >= AUTHORITY_LEVELS.DEPARTMENT) {
       authorityWhere = and(
         eq(schema.users.companyId, requester.companyId),
-        eq(schema.users.departmentId, requester.departmentId),
-        // TODO: Re-enable role filter once new roles/permissions system is complete
-        // inArray(schema.users.role, allowedRoles),
-        eq(schema.users.isVisible, true)
+        sql`EXISTS (SELECT 1 FROM ${schema.usersToDepartments} ud WHERE ud.user_id = ${schema.users.id} AND ud.department_id = ANY(${requester.departmentIds}::uuid[]))`,
+        isNull(schema.users.deletedAt)
       );
     } else {
-      // User sees only themselves
       authorityWhere = eq(schema.users.id, requester.id);
     }
 
-    // Include the requester so they can see their own reports in addition to others
-    const finalAuthorityWhere = or(
-      authorityWhere,
-      eq(schema.users.id, requester.id)
-    );
+    const finalAuthorityWhere = or(authorityWhere, eq(schema.users.id, requester.id));
+    const queryFilters = [eq(schema.reports.isVisible, true)];
 
-    // 2. Build User-provided Query Filters
-    const queryFilters = [
-      eq(schema.reports.isVisible, true)
-    ];
+    if (userId) queryFilters.push(eq(schema.reports.userId, userId));
+    if (name) queryFilters.push(ilike(schema.reports.name, `%${name}%`));
+    if (status) queryFilters.push(eq(schema.reports.status, status as string));
+    if (startDate) queryFilters.push(gte(schema.reports.startDate, new Date(startDate)));
+    if (endDate) queryFilters.push(lte(schema.reports.endDate, new Date(endDate)));
 
-    if (userId) {
-      queryFilters.push(eq(schema.reports.userId, userId));
-    }
-    if (name) {
-      queryFilters.push(ilike(schema.reports.name, `%${name}%`));
-    }
-    if (status) {
-      queryFilters.push(eq(schema.reports.status, status as string));
-    }
-    if (startDate) {
-      queryFilters.push(gte(schema.reports.startDate, new Date(startDate)));
-    }
-    if (endDate) {
-      queryFilters.push(lte(schema.reports.endDate, new Date(endDate)));
-    }
-
-    const reportWhere = and(...queryFilters);
-
-    // 3. Execute efficient Join Query
-    // Drizzle let us join cleanly
-    const baseQuery = this.db.select({
-      report: schema.reports
-    })
+    const results = await this.db.select({ report: schema.reports })
       .from(schema.reports)
       .innerJoin(schema.users, eq(schema.reports.userId, schema.users.id))
-      .where(and(reportWhere, finalAuthorityWhere));
-
-    // Get Total Count
-    const totalCountQuery = await this.db.select({ count: count() })
-      .from(schema.reports)
-      .innerJoin(schema.users, eq(schema.reports.userId, schema.users.id))
-      .where(and(reportWhere, finalAuthorityWhere));
-
-    const total = Number(totalCountQuery[0]?.count ?? 0);
-
-    // Get Paginated Data
-    const results = await baseQuery
+      .where(and(...queryFilters, finalAuthorityWhere))
       .orderBy(desc(schema.reports.createdAt))
       .limit(limit)
       .offset(offset);
 
-    const reports = results.map(row => mapReportToIReport(row.report));
+    const countRes = await this.db.select({ count: count() })
+      .from(schema.reports)
+      .innerJoin(schema.users, eq(schema.reports.userId, schema.users.id))
+      .where(and(...queryFilters, finalAuthorityWhere));
+
+    const total = Number(countRes[0]?.count ?? 0);
 
     return {
-      data: reports,
+      data: results.map(row => mapReportToIReport(row.report)),
       total,
       page,
       limit,
@@ -320,164 +188,69 @@ export class ReportsService {
     };
   }
 
-  async findOne(
-    requester: {
-      id: string;
-      role: RoleType;
-      companyId: string;
-      departmentId: string;
-      permissions: PermissionType[];
-    },
-    reportId: string
-  ): Promise<IReport> {
-    await this.getVisibleUser(requester.id);
-
-    const report = await this.db.query.reports.findFirst({
-      where: eq(schema.reports.id, reportId)
-    });
-
-    if (!report || !report.isVisible) {
-      throw new NotFoundException('Report not found');
-    }
+  async findOne(requester: any, reportId: string): Promise<IReport> {
+    const report = await this.db.query.reports.findFirst({ where: eq(schema.reports.id, reportId) });
+    if (!report || !report.isVisible) throw new NotFoundException('Report not found');
 
     const reportOwner = await this.getVisibleUser(report.userId);
-    const requesterHierarchy = ROLE_HIERARCHY[requester.role];
-    // TODO: Re-enable once new roles/permissions system is complete
-    // const targetHierarchy = ROLE_HIERARCHY[reportOwner.role as RoleType];
-    const targetHierarchy = 0; // placeholder
+    if (reportOwner.id === requester.id) return mapReportToIReport(report);
 
-    if (reportOwner.id === requester.id) {
-      if (!requester.permissions.includes('view_own_reports')) {
-        throw new ForbiddenException('You do not have permission to view your own reports');
-      }
-      return mapReportToIReport(report);
+    const requesterHierarchy = Math.max(...requester.roleHierarchies);
+    const targetRoles = reportOwner.usersToRoles.map(ur => ur.role);
+    const targetHierarchy = targetRoles.length > 0 ? Math.max(...targetRoles.map(r => r.hierarchy)) : 0;
+    const targetDeptIds = reportOwner.usersToDepartments.map(ud => ud.departmentId);
+
+    let allowed = false;
+    if (requesterHierarchy >= AUTHORITY_LEVELS.GLOBAL) {
+      allowed = true;
+    } else if (requesterHierarchy >= AUTHORITY_LEVELS.COMPANY && reportOwner.companyId === requester.companyId && targetHierarchy < requesterHierarchy) {
+      allowed = true;
+    } else if (requesterHierarchy >= AUTHORITY_LEVELS.DEPARTMENT && reportOwner.companyId === requester.companyId && targetDeptIds.some(id => requester.departmentIds.includes(id)) && targetHierarchy < requesterHierarchy) {
+      allowed = true;
     }
 
-    // Manager
-    if (
-      requester.permissions.includes('view_team_reports') &&
-      reportOwner.companyId === requester.companyId &&
-      reportOwner.departmentId === requester.departmentId
-    ) {
-      return mapReportToIReport(report);
-    }
-
-    // Admin/SuperAdmin
-    if (
-      requester.permissions.includes('view_all_reports') &&
-      reportOwner.companyId === requester.companyId &&
-      targetHierarchy < requesterHierarchy
-    ) {
-      return mapReportToIReport(report);
-    }
-
+    if (allowed) return mapReportToIReport(report);
     throw new ForbiddenException('You do not have permission to view this report');
   }
 
-  async update(userId: string, reportId: string, updateReportDto: UpdateReportFieldsDto): Promise<IReport> {
-    await this.getVisibleUser(userId);
-
+  async update(userId: string, reportId: string, dto: UpdateReportFieldsDto): Promise<IReport> {
     const report = await this.db.query.reports.findFirst({
-      where: and(
-        eq(schema.reports.id, reportId),
-        eq(schema.reports.userId, userId),
-        eq(schema.reports.isVisible, true),
-        eq(schema.reports.status, ReportStatus.CREATED)
-      )
+      where: and(eq(schema.reports.id, reportId), eq(schema.reports.userId, userId), eq(schema.reports.isVisible, true), eq(schema.reports.status, ReportStatus.CREATED))
     });
+    if (!report) throw new NotFoundException('Report not found or cannot be updated');
 
-    if (!report) {
-      throw new NotFoundException(
-        'Report not found or cannot be updated (status must be CREATED)',
-      );
-    }
+    const updateData: any = { updatedAt: new Date() };
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.start_date !== undefined) updateData.startDate = new Date(dto.start_date);
+    if (dto.end_date !== undefined) updateData.endDate = new Date(dto.end_date);
+    if (dto.type !== undefined) updateData.type = dto.type;
+    if (dto.isVisible !== undefined) updateData.isVisible = dto.isVisible;
 
-    const updateData: any = {};
-    if (updateReportDto.name !== undefined) updateData.name = updateReportDto.name;
-    if (updateReportDto.start_date !== undefined) updateData.startDate = new Date(updateReportDto.start_date);
-    if (updateReportDto.end_date !== undefined) updateData.endDate = new Date(updateReportDto.end_date);
-    if (updateReportDto.type !== undefined) updateData.type = updateReportDto.type;
-    if (updateReportDto.isVisible !== undefined) updateData.isVisible = updateReportDto.isVisible;
-
-    if (Object.keys(updateData).length === 0) {
-      throw new BadRequestException('No valid fields provided for update');
-    }
-
-    updateData.updatedAt = new Date();
-
-    const [updatedReport] = await this.db.update(schema.reports)
-      .set(updateData)
-      .where(eq(schema.reports.id, report.id))
-      .returning();
-
-    return mapReportToIReport(updatedReport);
+    const [updated] = await this.db.update(schema.reports).set(updateData).where(eq(schema.reports.id, report.id)).returning();
+    return mapReportToIReport(updated);
   }
 
   async updateStatus(reportId: string, dto: UpdateReportStatusDto): Promise<IReport> {
-    const [updatedReport] = await this.db.update(schema.reports)
-      .set({ status: dto.status as string, updatedAt: new Date() })
-      .where(and(
-        eq(schema.reports.id, reportId),
-        eq(schema.reports.status, ReportStatus.SUBMITTED),
-        eq(schema.reports.isVisible, true)
-      ))
-      .returning();
-
-    if (!updatedReport) {
-      throw new ConflictException(
-        'Report not found or cannot be reviewed (status must be SUBMITTED)',
-      );
-    }
-
-    return mapReportToIReport(updatedReport);
+    const [updated] = await this.db.update(schema.reports).set({ status: dto.status as string, updatedAt: new Date() }).where(and(eq(schema.reports.id, reportId), eq(schema.reports.status, ReportStatus.SUBMITTED), eq(schema.reports.isVisible, true))).returning();
+    if (!updated) throw new ConflictException('Report not found or cannot be reviewed');
+    return mapReportToIReport(updated);
   }
 
   async submitReport(userId: string, reportId: string): Promise<IReport> {
-    await this.getVisibleUser(userId);
-
-    const [updatedReport] = await this.db.update(schema.reports)
-      .set({ status: ReportStatus.SUBMITTED, updatedAt: new Date() })
-      .where(and(
-        eq(schema.reports.id, reportId),
-        eq(schema.reports.userId, userId),
-        eq(schema.reports.status, ReportStatus.CREATED),
-        eq(schema.reports.isVisible, true)
-      ))
-      .returning();
-
-    if (!updatedReport) {
-      throw new ConflictException(
-        'Report not found or cannot be submitted (status must be CREATED)',
-      );
-    }
-
-    return mapReportToIReport(updatedReport);
+    const [updated] = await this.db.update(schema.reports).set({ status: ReportStatus.SUBMITTED, updatedAt: new Date() }).where(and(eq(schema.reports.id, reportId), eq(schema.reports.userId, userId), eq(schema.reports.status, ReportStatus.CREATED), eq(schema.reports.isVisible, true))).returning();
+    if (!updated) throw new ConflictException('Report not found or cannot be submitted');
+    return mapReportToIReport(updated);
   }
 
   async remove(userId: string, reportId: string) {
-    await this.getVisibleUser(userId);
-
-    const report = await this.db.query.reports.findFirst({
-      where: and(
-        eq(schema.reports.id, reportId),
-        eq(schema.reports.userId, userId)
-      )
-    });
-
+    const report = await this.db.query.reports.findFirst({ where: and(eq(schema.reports.id, reportId), eq(schema.reports.userId, userId)) });
     if (!report) throw new NotFoundException('Report not found');
-    if (report.status !== ReportStatus.CREATED) {
-      throw new ConflictException('Cannot remove a report after submission');
-    }
+    if (report.status !== ReportStatus.CREATED) throw new ConflictException('Cannot remove a report after submission');
 
-    await this.db.update(schema.reports)
-      .set({ isVisible: false, updatedAt: new Date() })
-      .where(eq(schema.reports.id, report.id));
-
-    // Cascade: hide tickets
-    await this.db.update(schema.tickets)
-      .set({ isVisible: false, updatedAt: new Date() })
-      .where(eq(schema.tickets.reportId, report.id));
-
+    await this.db.transaction(async (tx) => {
+      await tx.update(schema.reports).set({ isVisible: false, updatedAt: new Date() }).where(eq(schema.reports.id, reportId));
+      await tx.update(schema.tickets).set({ isVisible: false, updatedAt: new Date() }).where(eq(schema.tickets.reportId, reportId));
+    });
     return { deleted: true };
   }
 }

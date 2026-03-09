@@ -6,35 +6,34 @@ import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequireAnyPermission } from '../auth/decorators/permissions.decorator';
 
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @Controller('reports')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) { }
 
+  @RequireAnyPermission(permissions.CREATE_REPORTS)
   @Post()
   create(@Req() req, @Body() createReportDto: CreateReportDto) {
     console.log('Creating report for user:', req.user)
     return this.reportsService.create(req.user.id, createReportDto);
   }
 
+  @RequireAnyPermission(permissions.VIEW_REPORTS)
   @Get()
   findAll(@Req() req) {
     const requester = {
       id: req.user.id,
-      role: req.user.role,
+      roles: req.user.roles,
+      roleHierarchies: req.user.roleHierarchies,
       companyId: req.user.companyId,
-      departmentId: req.user.departmentId,
+      departmentIds: req.user.departmentIds,
       permissions: req.user.permissions,
     };
     return this.reportsService.findAllReports(requester);
   }
 
   @UseGuards(PermissionsGuard)
-  @RequireAnyPermission(
-    permissions.VIEW_OWN_REPORTS,
-    permissions.VIEW_TEAM_REPORTS,
-    permissions.VIEW_ALL_REPORTS
-  )
+  @RequireAnyPermission(permissions.VIEW_REPORTS)
   @Get('paginated')
   findAllPaginated(
     @Req() req,
@@ -48,9 +47,10 @@ export class ReportsController {
   ) {
     const requester = {
       id: req.user.id,
-      role: req.user.role,
+      roles: req.user.roles,
+      roleHierarchies: req.user.roleHierarchies,
       companyId: req.user.companyId,
-      departmentId: req.user.departmentId,
+      departmentIds: req.user.departmentIds,
       permissions: req.user.permissions,
     };
 
@@ -65,25 +65,29 @@ export class ReportsController {
     });
   }
 
+  @RequireAnyPermission(permissions.VIEW_REPORTS)
   @Get(':id')
   findOne(@Req() req, @Param('id') id: string) {
     const requester = {
       id: req.user.id,
-      role: req.user.role,
+      roles: req.user.roles,
+      roleHierarchies: req.user.roleHierarchies,
       companyId: req.user.companyId,
-      departmentId: req.user.departmentId,
+      departmentIds: req.user.departmentIds,
       permissions: req.user.permissions,
     }
     return this.reportsService.findOne(requester, id);
   }
 
+  @RequireAnyPermission(permissions.VIEW_REPORTS)
   @Get('user/:userId')
   findUserReports(@Req() req, @Param('userId') userId?: string) {
     const requester = {
       id: req.user.id,
-      role: req.user.role,
+      roles: req.user.roles,
+      roleHierarchies: req.user.roleHierarchies,
       companyId: req.user.companyId,
-      departmentId: req.user.departmentId,
+      departmentIds: req.user.departmentIds,
       permissions: req.user.permissions,
     };
 
@@ -91,6 +95,7 @@ export class ReportsController {
   }
 
 
+  @RequireAnyPermission(permissions.EDIT_REPORTS)
   @Patch(':id')
   update(
     @Req() req,
@@ -125,11 +130,13 @@ export class ReportsController {
   }
 
 
+  @RequireAnyPermission(permissions.SUBMIT_REPORTS)
   @Patch(':id/submit')
   submitReport(@Req() req, @Param('id') id: string) {
     return this.reportsService.submitReport(req.user.userId, id);
   }
 
+  @RequireAnyPermission(permissions.DELETE_REPORTS)
   @Delete(':id')
   remove(@Req() req, @Param('id') id: string) {
     return this.reportsService.remove(req.user.userId, id);

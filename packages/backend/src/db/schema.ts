@@ -1,6 +1,8 @@
 export * from '../organization/schema/organization.schema';
 export * from '../department/schema/department.schema';
 export * from '../users/schemas/user.schema';
+export * from '../users/schemas/user-relations.schema';
+
 //export * from '../permissions/schema/permissions.schema';
 export * from '../reports/schemas/report.schema';
 export * from '../tickets/schemas/ticket.schema';

@@ -19,7 +19,6 @@ export const mapTicketToITicket = (ticketDoc: Ticket): ITicket => ({
   converted_currency: ticketDoc.convertedCurrency,
   cgs_bucket_link_justification: ticketDoc.cgsBucketLinkJustification,
   last_four_digits: ticketDoc.lastFourDigits,
-  isVisible: ticketDoc.isVisible ?? true,
   createdAt: ticketDoc.createdAt?.toISOString() ?? new Date().toISOString(),
   updatedAt: ticketDoc.updatedAt?.toISOString() ?? new Date().toISOString(),
 });

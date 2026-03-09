@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Roles} from "../../user-roles/roles";
+import { Roles } from "../../user-roles/roles";
 
 const objectIdRegex = /^[0-9a-fA-F]{24}$/;
 export const registerSchema = z.object({
@@ -9,13 +9,13 @@ export const registerSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(10, "Password must be at least 10 characters"),
   confirmPassword: z.string().min(1, "Confirm password is required"),
-  role: z.nativeEnum(Roles),
-  departmentId: z.string().regex(objectIdRegex, "Invalid department ID"),
+  roles: z.array(z.nativeEnum(Roles)).min(1, "At least one role is required"),
+  departmentIds: z.array(z.string().uuid("Invalid department UUID")).min(1, "At least one department is required"),
 })
-.strict()
-.refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
+  .strict()
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 export type RegisterSchema = z.infer<typeof registerSchema>;

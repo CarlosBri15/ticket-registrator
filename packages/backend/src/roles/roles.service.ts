@@ -2,7 +2,7 @@ import { Injectable, ConflictException, Inject, NotFoundException, ForbiddenExce
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, and, isNull, or } from 'drizzle-orm';
+import { eq, and, isNull, or, inArray } from 'drizzle-orm';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { permissions, Roles, ROLE_HIERARCHY, ROLE_DEFAULT_PERMISSIONS } from '@ticket-registrator/shared';
 
@@ -207,6 +207,37 @@ export class RolesService {
             .where(eq(schema.roles.id, roleId));
 
         return { deleted: true };
+    }
+
+    async getPermissionsForRole(roleName: string, companyId: string | null): Promise<string[]> {
+        return this.getPermissionsForRoles([roleName], companyId);
+    }
+
+    async getPermissionsForRoles(roleNames: string[], companyId: string | null): Promise<string[]> {
+        const roles = await this.db.query.roles.findMany({
+            where: and(
+                inArray(schema.roles.name, roleNames),
+                eq(schema.roles.isVisible, true),
+                or(
+                    companyId ? eq(schema.roles.companyId, companyId) : isNull(schema.roles.companyId),
+                    isNull(schema.roles.companyId)
+                )
+            ),
+        });
+
+        if (roles.length === 0) return [];
+
+        const roleIds = roles.map(r => r.id);
+
+        const mappings = await this.db.query.rolePermissions.findMany({
+            where: inArray(schema.rolePermissions.roleId, roleIds),
+            with: {
+                permission: true
+            }
+        });
+
+        // Use Set to ensure unique permissions
+        return [...new Set(mappings.map(m => m.permission.name))];
     }
 }
 

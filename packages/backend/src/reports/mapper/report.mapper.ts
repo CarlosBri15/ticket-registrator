@@ -14,7 +14,6 @@ export const mapReportToIReport = (
   requested_amount: reportDoc.requestedAmount,
   approved_amount: reportDoc.approvedAmount,
   status: reportDoc.status as any, // Cast to any if there's an enum mismatch, or cast to ReportStatusType
-  isVisible: reportDoc.isVisible,
   createdAt: reportDoc.createdAt.toISOString(),
   updatedAt: reportDoc.updatedAt.toISOString(),
 });

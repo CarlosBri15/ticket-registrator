@@ -2,9 +2,10 @@ import { Injectable, ConflictException, Inject, NotFoundException } from '@nestj
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull, inArray, sql } from 'drizzle-orm';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { DEFAULT_DEPARTMENTS } from '@ticket-registrator/shared';
+import { UNASSIGNED_DEPARTMENT_NAME } from '../seed/seed.service';
 
 @Injectable()
 export class DepartmentService {
@@ -17,7 +18,7 @@ export class DepartmentService {
         const company = await this.db.query.companies.findFirst({
             where: and(
                 eq(schema.companies.id, companyId),
-                eq(schema.companies.isVisible, true),
+                isNull(schema.companies.deletedAt),
             ),
         });
         if (!company) throw new NotFoundException('Company not found');
@@ -27,7 +28,7 @@ export class DepartmentService {
             where: and(
                 eq(schema.departments.companyId, companyId),
                 eq(schema.departments.departmentName, dto.name as string),
-                eq(schema.departments.isVisible, true),
+                isNull(schema.departments.deletedAt),
             ),
         });
         if (existing) {
@@ -46,7 +47,7 @@ export class DepartmentService {
         return this.db.query.departments.findMany({
             where: and(
                 eq(schema.departments.companyId, companyId),
-                eq(schema.departments.isVisible, true),
+                isNull(schema.departments.deletedAt),
             ),
         });
     }
@@ -56,11 +57,37 @@ export class DepartmentService {
             where: and(
                 eq(schema.departments.id, departmentId),
                 eq(schema.departments.companyId, companyId),
-                eq(schema.departments.isVisible, true),
+                isNull(schema.departments.deletedAt),
             ),
         });
         if (!department) throw new NotFoundException('Department not found');
         return department;
+    }
+
+    async update(companyId: string, departmentId: string, dto: { name?: string }) {
+        const department = await this.db.query.departments.findFirst({
+            where: and(
+                eq(schema.departments.id, departmentId),
+                eq(schema.departments.companyId, companyId),
+                isNull(schema.departments.deletedAt),
+            ),
+        });
+        if (!department) throw new NotFoundException('Department not found');
+
+        if (!dto.name) {
+            return department;
+        }
+
+        const [updatedDept] = await this.db
+            .update(schema.departments)
+            .set({
+                departmentName: dto.name,
+                updatedAt: new Date()
+            })
+            .where(eq(schema.departments.id, departmentId))
+            .returning();
+
+        return updatedDept;
     }
 
     async softDelete(companyId: string, departmentId: string) {
@@ -71,12 +98,51 @@ export class DepartmentService {
             ),
         });
         if (!department) throw new NotFoundException('Department not found');
-        if (!department.isVisible) throw new ConflictException('Department already deleted');
+        if (department.deletedAt) throw new ConflictException('Department already deleted');
 
-        await this.db
-            .update(schema.departments)
-            .set({ isVisible: false })
-            .where(eq(schema.departments.id, departmentId));
+        const unassignedDept = await this.db.query.departments.findFirst({
+            where: eq(schema.departments.departmentName, UNASSIGNED_DEPARTMENT_NAME),
+        });
+        if (!unassignedDept) throw new ConflictException('Global Unassigned department not found');
+
+        await this.db.transaction(async (tx) => {
+            // 1. Soft delete the department
+            await tx.update(schema.departments)
+                .set({ deletedAt: new Date(), updatedAt: new Date() })
+                .where(eq(schema.departments.id, departmentId));
+
+            // 2. Find all users associated with this department via junction table
+            const deptUsers = await tx.query.usersToDepartments.findMany({
+                where: eq(schema.usersToDepartments.departmentId, departmentId),
+                columns: { userId: true }
+            });
+            const userIds = deptUsers.map(u => u.userId);
+
+            if (userIds.length > 0) {
+                // 3. Remove department association from junction table
+                await tx.delete(schema.usersToDepartments)
+                    .where(and(
+                        inArray(schema.usersToDepartments.userId, userIds),
+                        eq(schema.usersToDepartments.departmentId, departmentId)
+                    ));
+
+                // 4. For each user, check if they have any departments left
+                for (const userId of userIds) {
+                    const remainingDepts = await tx.query.usersToDepartments.findMany({
+                        where: eq(schema.usersToDepartments.userId, userId)
+                    });
+
+                    if (remainingDepts.length === 0) {
+                        // Assign to Unassigned
+                        await tx.insert(schema.usersToDepartments).values({
+                            userId: userId,
+                            departmentId: unassignedDept.id
+                        });
+                    }
+                }
+            }
+        });
+
 
         return { deleted: true };
     }

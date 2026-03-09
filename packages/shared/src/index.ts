@@ -44,10 +44,13 @@ export * from './user-roles/permissions'
 export * from './user-roles/role-default-permissions'
 
 // Organization
-export * from './schemas/organization/createOrganization.schema';
+export * from './schemas/organization/onboardOrganization.schema';
+export * from './schemas/organization/updateOrganization.schema';
+
 
 // Department
 export * from './schemas/department/createDepartment.schema';
+export * from './schemas/department/updateDepartment.schema';
 
 // Pagination
 export * from './interfaces/pagination/pagination.interface';
