@@ -1,16 +1,32 @@
 import { IUser } from '@ticket-registrator/shared';
-import { User } from '../schemas/user.schema';
 
 export const mapUserToIUser = (
-  userDoc: User,
-): IUser => ({
-  id: userDoc.id,
-  name: userDoc.name,
-  surname: userDoc.surname,
-  email: userDoc.email,
-  username: userDoc.username,
-  role: userDoc.roleId as any, // TODO: replace with role name lookup once roles module is ready
-  isVisible: userDoc.isVisible,
-  companyId: userDoc.companyId,
-  departmentId: userDoc.departmentId,
-});
+  user: any,
+): IUser => {
+  // Map roles from junction table (usersToRoles -> role)
+  const roles = user.usersToRoles
+    ? user.usersToRoles.map((ur: any) => ur.role.name)
+    : [];
+
+  // Map roleIds
+  const roleIds = user.usersToRoles
+    ? user.usersToRoles.map((ur: any) => ur.roleId)
+    : [];
+
+  // Map departmentIds from junction table (usersToDepartments -> department)
+  const departmentIds = user.usersToDepartments
+    ? user.usersToDepartments.map((ud: any) => ud.departmentId)
+    : [];
+
+  return {
+    id: user.id,
+    name: user.name ?? '',
+    surname: user.surname ?? '',
+    email: user.email ?? '',
+    username: user.username ?? '',
+    roleIds,
+    roles,
+    companyId: user.companyId ?? '',
+    departmentIds,
+  };
+};

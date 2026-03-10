@@ -1,57 +1,35 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
-import { updateReportFieldsSchema, updateReportStatusSchema, permissions } from '@ticket-registrator/shared';
+import { UpdateReportFieldsDto, UpdateReportStatusDto } from './dto/update-report.dto';
+import { permissions } from '@ticket-registrator/shared';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequireAnyPermission } from '../auth/decorators/permissions.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { UserPayload } from '../auth/decorators/current-user.decorator';
 
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @Controller('reports')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) { }
 
-  @UseGuards(PermissionsGuard)
-  @RequireAnyPermission(permissions.CREATE_OWN_REPORTS)
+  @RequireAnyPermission(permissions.CREATE_REPORTS)
   @Post()
-  create(@Req() req, @Body() createReportDto: CreateReportDto) {
-    const requester = {
-      id: req.user.id,
-      role: req.user.role,
-      companyId: req.user.companyId,
-      departmentId: req.user.departmentId,
-      permissions: req.user.permissions,
-    };
-    return this.reportsService.create(requester, createReportDto);
+  create(@CurrentUser() user: UserPayload, @Body() createReportDto: CreateReportDto) {
+    return this.reportsService.create(user, createReportDto);
   }
 
-  @UseGuards(PermissionsGuard)
-  @RequireAnyPermission(
-    permissions.VIEW_OWN_REPORTS,
-    permissions.VIEW_TEAM_REPORTS,
-    permissions.VIEW_ALL_REPORTS
-  )
+  @RequireAnyPermission(permissions.VIEW_REPORTS)
   @Get()
-  findAll(@Req() req) {
-    const requester = {
-      id: req.user.id,
-      role: req.user.role,
-      companyId: req.user.companyId,
-      departmentId: req.user.departmentId,
-      permissions: req.user.permissions,
-    };
-    return this.reportsService.findAllReports(requester);
+  findAll(@CurrentUser() user: UserPayload) {
+    return this.reportsService.findAllReports(user);
   }
 
-  @UseGuards(PermissionsGuard)
-  @RequireAnyPermission(
-    permissions.VIEW_OWN_REPORTS,
-    permissions.VIEW_TEAM_REPORTS,
-    permissions.VIEW_ALL_REPORTS
-  )
+  @RequireAnyPermission(permissions.VIEW_REPORTS)
   @Get('paginated')
   findAllPaginated(
-    @Req() req,
+    @CurrentUser() user: UserPayload,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('userId') userId?: string,
@@ -60,15 +38,7 @@ export class ReportsController {
     @Query('endDate') endDate?: string,
     @Query('status') status?: string,
   ) {
-    const requester = {
-      id: req.user.id,
-      role: req.user.role,
-      companyId: req.user.companyId,
-      departmentId: req.user.departmentId,
-      permissions: req.user.permissions,
-    };
-
-    return this.reportsService.findAllReportsPaginated(requester, {
+    return this.reportsService.findAllReportsPaginated(user, {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 10,
       userId,
@@ -79,108 +49,47 @@ export class ReportsController {
     });
   }
 
-  @UseGuards(PermissionsGuard)
-  @RequireAnyPermission(
-    permissions.VIEW_OWN_REPORTS,
-    permissions.VIEW_TEAM_REPORTS,
-    permissions.VIEW_ALL_REPORTS
-  )
+  @RequireAnyPermission(permissions.VIEW_REPORTS)
   @Get('user/:userId')
-  findUserReports(@Req() req, @Param('userId') userId?: string) {
-    const requester = {
-      id: req.user.id,
-      role: req.user.role,
-      companyId: req.user.companyId,
-      departmentId: req.user.departmentId,
-      permissions: req.user.permissions,
-    };
-
-    return this.reportsService.findUserReports(requester, userId ?? req.user.id);
+  findUserReports(@CurrentUser() user: UserPayload, @Param('userId') userId?: string) {
+    return this.reportsService.findUserReports(user, userId ?? user.id);
   }
 
-  @UseGuards(PermissionsGuard)
-  @RequireAnyPermission(
-    permissions.VIEW_OWN_REPORTS,
-    permissions.VIEW_TEAM_REPORTS,
-    permissions.VIEW_ALL_REPORTS
-  )
+  @RequireAnyPermission(permissions.VIEW_REPORTS)
   @Get(':id')
-  findOne(@Req() req, @Param('id') id: string) {
-    const requester = {
-      id: req.user.id,
-      role: req.user.role,
-      companyId: req.user.companyId,
-      departmentId: req.user.departmentId,
-      permissions: req.user.permissions,
-    };
-    return this.reportsService.findOne(requester, id);
+  findOne(@CurrentUser() user: UserPayload, @Param('id') id: string) {
+    return this.reportsService.findOne(user, id);
   }
 
-  @UseGuards(PermissionsGuard)
-  @RequireAnyPermission(
-    permissions.EDIT_OWN_REPORTS,
-    permissions.APPROVE_REPORTS
-  )
+  @RequireAnyPermission(permissions.EDIT_REPORTS)
   @Patch(':id')
   update(
-    @Req() req,
+    @CurrentUser() user: UserPayload,
     @Param('id') id: string,
-    @Body() body: unknown,
+    @Body() dto: UpdateReportFieldsDto,
   ) {
-    const requester = {
-      id: req.user.id,
-      role: req.user.role,
-      companyId: req.user.companyId,
-      departmentId: req.user.departmentId,
-      permissions: req.user.permissions,
-    };
-
-    // status update
-    if (typeof body === 'object' && body !== null && 'status' in body) {
-      const parsed = updateReportStatusSchema.safeParse(body);
-
-      if (!parsed.success) {
-        throw new BadRequestException(parsed.error.format());
-      }
-
-      return this.reportsService.updateStatus(requester, id, parsed.data);
-    }
-
-    // field update
-    const parsed = updateReportFieldsSchema.safeParse(body);
-
-    if (!parsed.success) {
-      throw new BadRequestException(parsed.error.format());
-    }
-
-    return this.reportsService.update(requester, id, parsed.data);
+    return this.reportsService.update(user, id, dto);
   }
 
-  @UseGuards(PermissionsGuard)
-  @RequireAnyPermission(permissions.SUBMIT_OWN_REPORTS)
+  @RequireAnyPermission(permissions.APPROVE_REPORTS)
+  @Patch(':id/status')
+  updateStatus(
+    @CurrentUser() user: UserPayload,
+    @Param('id') id: string,
+    @Body() dto: UpdateReportStatusDto,
+  ) {
+    return this.reportsService.updateStatus(user, id, dto);
+  }
+
+  @RequireAnyPermission(permissions.SUBMIT_REPORTS)
   @Patch(':id/submit')
-  submitReport(@Req() req, @Param('id') id: string) {
-    const requester = {
-      id: req.user.id,
-      role: req.user.role,
-      companyId: req.user.companyId,
-      departmentId: req.user.departmentId,
-      permissions: req.user.permissions,
-    };
-    return this.reportsService.submitReport(requester, id);
+  submitReport(@CurrentUser() user: UserPayload, @Param('id') id: string) {
+    return this.reportsService.submitReport(user, id);
   }
 
-  @UseGuards(PermissionsGuard)
-  @RequireAnyPermission(permissions.DELETE_OWN_REPORTS)
+  @RequireAnyPermission(permissions.DELETE_REPORTS)
   @Delete(':id')
-  remove(@Req() req, @Param('id') id: string) {
-    const requester = {
-      id: req.user.id,
-      role: req.user.role,
-      companyId: req.user.companyId,
-      departmentId: req.user.departmentId,
-      permissions: req.user.permissions,
-    };
-    return this.reportsService.remove(requester, id);
+  remove(@CurrentUser() user: UserPayload, @Param('id') id: string) {
+    return this.reportsService.remove(user, id);
   }
 }

@@ -17,10 +17,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       id: payload.sub,
       username: payload.username,
-      role: payload.role,
+      roles: payload.roles,
+      roleHierarchies: payload.roleHierarchies,
       companyId: payload.companyId,
-      departmentId: payload.departmentId,
-      permissions: payload.permissions,
+      departmentIds: payload.departmentIds,
     };
   }
 

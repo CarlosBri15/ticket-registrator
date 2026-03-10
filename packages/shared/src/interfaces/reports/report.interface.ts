@@ -12,5 +12,4 @@ export interface IReport {
     status: ReportStatusType;
     createdAt: string;
     updatedAt: string;
-    isVisible: boolean;
 }
