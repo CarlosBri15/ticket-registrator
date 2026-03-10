@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { GeminiService } from './gemini.service';
 import { GeminiController } from './gemini.controller';
-import { StorageService } from 'src/storage/storage.service';
+import { StorageModule } from '../storage/storage.module';
 
 @Module({
+  imports: [StorageModule],
   controllers: [GeminiController],
-  providers: [GeminiService, StorageService],
+  providers: [GeminiService],
   exports: [GeminiService],
 })
 export class GeminiModule {}

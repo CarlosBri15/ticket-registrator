@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 import { PermissionType } from '@ticket-registrator/shared';
@@ -8,6 +8,7 @@ import { RolesService } from '../../roles/roles.service';
 export class PermissionsGuard implements CanActivate {
     constructor(
         private reflector: Reflector,
+        @Inject(forwardRef(() => RolesService))
         private rolesService: RolesService
     ) { }
 

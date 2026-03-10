@@ -6,6 +6,8 @@ import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
 import { eq, isNull } from 'drizzle-orm';
 import { Roles } from '@ticket-registrator/shared';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import { join } from 'path';
 
 export const UNASSIGNED_DEPARTMENT_NAME = 'Unassigned';
 
@@ -18,6 +20,20 @@ export class SeedService implements OnApplicationBootstrap {
     ) { }
 
     async onApplicationBootstrap() {
+        console.log('--- AUTO MIGRATIONS START ---');
+        try {
+            // Use process.cwd() as the base to find the drizzle folder reliably
+            await migrate(this.db, {
+                migrationsFolder: join(process.cwd(), 'drizzle'),
+            });
+            console.log('--- AUTO MIGRATIONS FINISHED ---');
+        } catch (error) {
+            console.error('--- MIGRATIONS FAILED ---');
+            console.error(error);
+            // If migrations fail, we should probably stop the seeding
+            return;
+        }
+
         console.log('--- AUTO SEEDING START ---');
         try {
             const seedResult = await this.rolesService.seedSystemAll();

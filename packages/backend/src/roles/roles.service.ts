@@ -1,83 +1,89 @@
-import { Injectable, ConflictException, Inject, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { DB_CONNECTION } from '../db/db.module';
-import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import * as schema from '../db/schema';
-import { eq, and, isNull, or, inArray } from 'drizzle-orm';
+import { Injectable, Logger } from '@nestjs/common';
+import { RolesRepository } from './roles.repository';
+import { RolesAuthorizationService } from './roles-authorization.service';
+import {
+    permissions,
+    Roles,
+    ROLE_HIERARCHY,
+    ROLE_DEFAULT_PERMISSIONS,
+    PermissionType,
+    RoleType
+} from '@ticket-registrator/shared';
+import {
+    RoleNotFoundException,
+    RoleConflictException,
+    RoleSystemModificationException
+} from './exceptions/roles.exceptions';
 import { CreateRoleDto } from './dto/create-role.dto';
-import { permissions, Roles, ROLE_HIERARCHY, ROLE_DEFAULT_PERMISSIONS } from '@ticket-registrator/shared';
+import { UserPayload } from '../auth/decorators/current-user.decorator';
+import { InsertRolePermission } from './schemas/role-permission.schema';
+import { PermissionsService } from '../permissions/permissions.service';
 
 @Injectable()
 export class RolesService {
+    private readonly logger = new Logger(RolesService.name);
+
     constructor(
-        @Inject(DB_CONNECTION) private db: PostgresJsDatabase<typeof schema>,
+        private readonly rolesRepository: RolesRepository,
+        private readonly rolesAuthService: RolesAuthorizationService,
+        private readonly permissionsService: PermissionsService,
     ) { }
 
-    /**
-     * Seeds all default system permissions (Global, no companyId).
-     */
     async seedDefaultPermissions() {
-        const permValues = Object.values(permissions);
-        const existingPerms = await this.db.query.permissions.findMany();
-        const existingNames = existingPerms.map(p => p.name);
-
-        const newPerms = permValues.filter(p => !existingNames.includes(p));
-
-        if (newPerms.length === 0) return { message: 'All permissions already seeded' };
-
-        await this.db.insert(schema.permissions).values(
-            newPerms.map(p => ({
-                name: p,
-                description: `System permission: ${p}`,
-            }))
-        );
-
-        return { message: `Seeded ${newPerms.length} permissions` };
+        return this.permissionsService.seedDefaultPermissions();
     }
 
-    /**
-     * Seeds all default system roles (Global, no companyId).
-     */
     async seedDefaultRoles() {
         const rolesToSeed = Object.values(Roles);
-        const existingRoles = await this.db.query.roles.findMany({
-            where: isNull(schema.roles.companyId)
-        });
-        const existingNames = existingRoles.map(r => r.name);
+        const existingRoles = await this.rolesRepository.findAllSystemRoles();
+        const existingMap = new Map(existingRoles.map(r => [r.name, r]));
 
-        const newRoles = rolesToSeed.filter(r => !existingNames.includes(r));
+        let seededCount = 0;
+        let updatedCount = 0;
 
-        if (newRoles.length === 0) return { message: 'All default roles already seeded' };
+        for (const roleName of rolesToSeed) {
+            const existing = existingMap.get(roleName);
+            const hierarchy = ROLE_HIERARCHY[roleName as keyof typeof ROLE_HIERARCHY];
+            const description = `System default role: ${roleName}`;
 
-        await this.db.insert(schema.roles).values(
-            newRoles.map(r => ({
-                name: r,
-                hierarchy: ROLE_HIERARCHY[r as keyof typeof ROLE_HIERARCHY],
-                isSystem: true,
-                companyId: null, // Global roles
-                description: `System default role: ${r}`
-            }))
-        );
+            if (existing) {
+                // Update if changed
+                if (existing.hierarchy !== hierarchy || existing.description !== description) {
+                    await this.rolesRepository.update(existing.id, {
+                        hierarchy,
+                        description,
+                        isVisible: true
+                    });
+                    updatedCount++;
+                }
+            } else {
+                // Insert new
+                await this.rolesRepository.create({
+                    name: roleName,
+                    hierarchy,
+                    isSystem: true,
+                    companyId: null,
+                    description,
+                });
+                seededCount++;
+            }
+        }
 
-        return { message: `Seeded ${newRoles.length} system roles` };
+        this.logger.log(`Seeding roles: ${seededCount} new, ${updatedCount} updated`);
+        return { message: `Processed ${rolesToSeed.length} system roles (${seededCount} new, ${updatedCount} updated)` };
     }
 
-    /**
-     * Seeds all default role-permission combinations (Global, no companyId).
-     */
     async seedDefaultRolePermissions() {
-        // Fetch existing roles and permissions to map by ID
-        const allRoles = await this.db.query.roles.findMany({ where: isNull(schema.roles.companyId) });
-        const allPerms = await this.db.query.permissions.findMany();
+        const allRoles = await this.rolesRepository.findAllSystemRoles();
+        const allPerms = await this.rolesRepository.findAllPermissions();
 
         const roleMap = new Map(allRoles.map(r => [r.name, r.id]));
         const permMap = new Map(allPerms.map(p => [p.name, p.id]));
 
-        const existingMappings = await this.db.query.rolePermissions.findMany({
-            where: isNull(schema.rolePermissions.companyId)
-        });
+        const existingMappings = await this.rolesRepository.findAllRolePermissions(null);
         const existingSet = new Set(existingMappings.map(rp => `${rp.roleId}-${rp.permissionId}`));
 
-        const valuesToInsert: (typeof schema.rolePermissions.$inferInsert)[] = [];
+        const valuesToInsert: InsertRolePermission[] = [];
 
         for (const [roleName, assignedPerms] of Object.entries(ROLE_DEFAULT_PERMISSIONS)) {
             const roleId = roleMap.get(roleName);
@@ -91,7 +97,7 @@ export class RolesService {
                     valuesToInsert.push({
                         roleId,
                         permissionId: permId,
-                        companyId: null // Global mapping
+                        companyId: null
                     });
                 }
             }
@@ -99,15 +105,11 @@ export class RolesService {
 
         if (valuesToInsert.length === 0) return { message: 'All default role-permissions already seeded' };
 
-        await this.db.insert(schema.rolePermissions).values(valuesToInsert);
-
+        await this.rolesRepository.bulkInsertRolePermissions(valuesToInsert);
+        this.logger.log(`Seeded ${valuesToInsert.length} role-permissions mappings`);
         return { message: `Seeded ${valuesToInsert.length} role-permissions mappings` };
     }
 
-    /**
-     * Combined seed method to initialize the entire permissions/roles system.
-     * To be called once by the SuperAdmin to setup the base of the app.
-     */
     async seedSystemAll() {
         const permsResult = await this.seedDefaultPermissions();
         const rolesResult = await this.seedDefaultRoles();
@@ -120,125 +122,72 @@ export class RolesService {
         };
     }
 
-    /**
-     * Creates a custom role for a company.
-     */
-    async create(companyId: string, dto: CreateRoleDto, requesterHierarchy: number) {
-        if (dto.hierarchy! >= requesterHierarchy) {
-            throw new ForbiddenException('Cannot create a role with a hierarchy equal or higher than your own');
-        }
+    async create(companyId: string, dto: CreateRoleDto, requester: UserPayload) {
+        this.rolesAuthService.validateHierarchy(requester.role, dto.hierarchy!);
 
-        const existing = await this.db.query.roles.findFirst({
-            where: and(
-                eq(schema.roles.companyId, companyId),
-                eq(schema.roles.name, dto.name as string),
-                eq(schema.roles.isVisible, true),
-            )
-        });
-
+        const existing = await this.rolesRepository.findByNameAndCompany(dto.name!, companyId);
         if (existing) {
-            throw new ConflictException(`Role "${dto.name}" already exists in your company`);
+            throw new RoleConflictException(`Role "${dto.name}" already exists in your company`);
         }
 
-        const [role] = await this.db.insert(schema.roles).values({
-            name: dto.name as string,
-            hierarchy: dto.hierarchy as number,
-            description: dto.description as string,
+        const role = await this.rolesRepository.create({
+            name: dto.name!,
+            hierarchy: dto.hierarchy!,
+            description: dto.description ?? null,
             companyId,
             isSystem: false,
-        }).returning();
+        });
 
+        this.logger.log(`Role created: ${role.id} by user ${requester.id}`);
         return role;
     }
 
-    /**
-     * Retrieves all roles viewable by the requester.
-     */
     async findAll(companyId: string | null) {
         if (companyId) {
-            const results = await this.db.query.roles.findMany({
-                orderBy: (roles, { desc }) => [desc(roles.hierarchy)],
-            });
-            return results.filter(r => r.isVisible && (r.companyId === companyId || r.companyId === null));
+            return this.rolesRepository.findAllCompanyRoles(companyId);
         }
-
-        return this.db.query.roles.findMany({
-            where: eq(schema.roles.isVisible, true),
-            orderBy: (roles, { desc }) => [desc(roles.hierarchy)],
-        });
+        return this.rolesRepository.findAllSystemRoles();
     }
 
     async findOne(roleId: string, companyId: string | null) {
-        const role = await this.db.query.roles.findFirst({
-            where: and(
-                eq(schema.roles.id, roleId),
-                eq(schema.roles.isVisible, true),
-            )
-        });
+        const role = await this.rolesRepository.findById(roleId);
+        if (!role) throw new RoleNotFoundException(roleId);
 
-        if (!role) throw new NotFoundException('Role not found');
-
-        if (companyId && role.companyId !== companyId && role.companyId !== null) {
-            throw new ForbiddenException('You cannot access roles outside your company');
+        if (companyId) {
+            this.rolesAuthService.validateCompanyAccess(companyId, role.companyId);
         }
 
         return role;
     }
 
-    async softDelete(roleId: string, companyId: string, requesterHierarchy: number) {
-        const role = await this.db.query.roles.findFirst({
-            where: and(
-                eq(schema.roles.id, roleId),
-                eq(schema.roles.companyId, companyId), // Must belong to company (prevents deleting SuperAdmin or other defaults)
-            )
-        });
-
-        if (!role) throw new NotFoundException('Role not found or you have no permission to delete it');
-        if (!role.isVisible) throw new ConflictException('Role already deleted');
-        if (role.isSystem) throw new ForbiddenException('System roles cannot be deleted');
-
-        if (role.hierarchy >= requesterHierarchy) {
-            throw new ForbiddenException('Cannot delete a role with equal or higher hierarchy than your own');
+    async softDelete(roleId: string, companyId: string, requester: UserPayload) {
+        const role = await this.rolesRepository.findById(roleId);
+        if (!role || role.companyId !== companyId) {
+            throw new RoleNotFoundException(roleId);
         }
 
-        await this.db
-            .update(schema.roles)
-            .set({ isVisible: false, updatedAt: new Date() })
-            .where(eq(schema.roles.id, roleId));
+        if (role.isSystem) {
+            throw new RoleSystemModificationException('System roles cannot be deleted');
+        }
 
+        this.rolesAuthService.validateHierarchy(requester.role, role.hierarchy);
+
+        await this.rolesRepository.update(roleId, { isVisible: false });
+
+        this.logger.log(`Role soft deleted: ${roleId} by user ${requester.id}`);
         return { deleted: true };
     }
 
-    async getPermissionsForRole(roleName: string, companyId: string | null): Promise<string[]> {
-        return this.getPermissionsForRoles([roleName], companyId);
-    }
-
     async getPermissionsForRoles(roleNames: string[], companyId: string | null): Promise<string[]> {
-        const roles = await this.db.query.roles.findMany({
-            where: and(
-                inArray(schema.roles.name, roleNames),
-                eq(schema.roles.isVisible, true),
-                or(
-                    companyId ? eq(schema.roles.companyId, companyId) : isNull(schema.roles.companyId),
-                    isNull(schema.roles.companyId)
-                )
-            ),
-        });
+        const rolesWithPermissions = await this.rolesRepository.getRolePermissionsByNames(roleNames, companyId);
 
-        if (roles.length === 0) return [];
-
-        const roleIds = roles.map(r => r.id);
-
-        const mappings = await this.db.query.rolePermissions.findMany({
-            where: inArray(schema.rolePermissions.roleId, roleIds),
-            with: {
-                permission: true
+        const permissionNames = new Set<string>();
+        for (const role of rolesWithPermissions) {
+            for (const rp of role.rolePermissions) {
+                permissionNames.add(rp.permission.name);
             }
-        });
+        }
 
-        // Use Set to ensure unique permissions
-        return [...new Set(mappings.map(m => m.permission.name))];
+        return [...permissionNames];
     }
 }
-
-

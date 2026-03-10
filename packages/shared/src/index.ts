@@ -57,3 +57,12 @@ export * from './interfaces/pagination/pagination.interface';
 
 // Roles
 export * from './schemas/roles/createRole.schema';
+
+// Permissions
+export * from './interfaces/permissions/permission.interface';
+export * from './interfaces/permissions/rolePermission.interface';
+export * from './interfaces/permissions/userPermission.interface';
+export * from './schemas/permissions/createPermission.schema';
+export * from './schemas/permissions/updatePermission.schema';
+export * from './schemas/permissions/assignPermission.schema';
+export * from './schemas/permissions/userPermissionOverride.schema';

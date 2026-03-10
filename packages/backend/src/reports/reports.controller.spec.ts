@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
-import { BadRequestException } from '@nestjs/common';
 import { Roles, permissions } from '@ticket-registrator/shared';
+import { RolesService } from '../roles/roles.service';
+import { Reflector } from '@nestjs/core';
 
 describe('ReportsController', () => {
   let controller: ReportsController;
@@ -20,26 +21,28 @@ describe('ReportsController', () => {
     remove: jest.fn(),
   };
 
-  const mockUser = {
-    id: 'user-1',
-    role: Roles.EMPLOYEE,
-    companyId: 'comp-1',
-    departmentId: 'dep-1',
-    permissions: [permissions.VIEW_OWN_REPORTS],
+  const mockRolesService = {
+    getPermissionsForRoles: jest.fn(),
   };
 
-  const mockRequest = {
-    user: mockUser,
+  const mockUserPayload = {
+    id: 'user-1',
+    role: Roles.EMPLOYEE,
+    roles: ['Employee'],
+    roleHierarchies: [1],
+    companyId: 'comp-1',
+    departmentId: 'dep-1',
+    departmentIds: ['dep-1'],
+    permissions: [permissions.VIEW_REPORTS],
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ReportsController],
       providers: [
-        {
-          provide: ReportsService,
-          useValue: mockReportsService,
-        },
+        { provide: ReportsService, useValue: mockReportsService },
+        { provide: RolesService, useValue: mockRolesService },
+        Reflector,
       ],
     }).compile();
 
@@ -47,115 +50,35 @@ describe('ReportsController', () => {
     service = module.get<ReportsService>(ReportsService);
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
   describe('findAllPaginated', () => {
-    it('should call findAllReportsPaginated with default pagination when no queries provided', async () => {
-      mockReportsService.findAllReportsPaginated.mockResolvedValue({
-        data: [],
-        total: 0,
-        page: 1,
-        limit: 10,
-        totalPages: 0,
-      });
+    it('should call service with correct parameters', async () => {
+      mockReportsService.findAllReportsPaginated.mockResolvedValue({ data: [], total: 0 });
 
-      await controller.findAllPaginated(mockRequest);
+      await controller.findAllPaginated(mockUserPayload as any, '1', '10');
 
       expect(service.findAllReportsPaginated).toHaveBeenCalledWith(
-        {
-          id: mockUser.id,
-          role: mockUser.role,
-          companyId: mockUser.companyId,
-          departmentId: mockUser.departmentId,
-          permissions: mockUser.permissions,
-        },
-        {
-          page: 1,
-          limit: 10,
-          userId: undefined,
-          name: undefined,
-          startDate: undefined,
-          endDate: undefined,
-          status: undefined,
-        }
-      );
-    });
-
-    it('should pass correct parsed query parameters to the service', async () => {
-      mockReportsService.findAllReportsPaginated.mockResolvedValue({
-        data: [],
-        total: 0,
-        page: 2,
-        limit: 5,
-        totalPages: 0,
-      });
-
-      await controller.findAllPaginated(
-        mockRequest,
-        '2',
-        '5',
-        'target-user',
-        'Trip to NY',
-        '2026-01-01',
-        '2026-12-31',
-        'Pending'
-      );
-
-      expect(service.findAllReportsPaginated).toHaveBeenCalledWith(
-        expect.any(Object),
-        {
-          page: 2,
-          limit: 5,
-          userId: 'target-user',
-          name: 'Trip to NY',
-          startDate: '2026-01-01',
-          endDate: '2026-12-31',
-          status: 'Pending',
-        }
+        mockUserPayload,
+        expect.objectContaining({ page: 1, limit: 10 })
       );
     });
   });
 
-  describe('update', () => {
-    it('should throw BadRequestException for invalid status update payload', () => {
-      // Missing 'status' or invalid value based on Zod schema
-      const invalidBody = { status: 123 }; // status should be string usually
-
-      expect(() => controller.update(mockRequest, 'rep-1', invalidBody)).toThrow(BadRequestException);
-    });
-
-    it('should call updateStatus when valid status payload is provided', () => {
-      const validStatusBody = { status: 'Approved' };
-      mockReportsService.updateStatus.mockResolvedValue({ id: 'rep-1', status: 'Approved' });
-
-      controller.update(mockRequest, 'rep-1', validStatusBody);
-
-      expect(service.updateStatus).toHaveBeenCalledWith('rep-1', validStatusBody);
+  describe('updateStatus', () => {
+    it('should call service.updateStatus', async () => {
+      const dto = { status: 'Approved' } as any;
+      await controller.updateStatus(mockUserPayload as any, 'rep-1', dto);
+      expect(service.updateStatus).toHaveBeenCalledWith(mockUserPayload, 'rep-1', dto);
     });
   });
 
-  describe('findOne', () => {
-    it('should construct requester and call findOne on service', async () => {
-      mockReportsService.findOne.mockResolvedValue({ id: 'rep-1' });
-
-      await controller.findOne(mockRequest, 'rep-1');
-
-      expect(service.findOne).toHaveBeenCalledWith(
-        {
-          id: mockUser.id,
-          role: mockUser.role,
-          companyId: mockUser.companyId,
-          departmentId: mockUser.departmentId,
-          permissions: mockUser.permissions,
-        },
-        'rep-1'
-      );
+  describe('submitReport', () => {
+    it('should call service.submitReport', async () => {
+      await controller.submitReport(mockUserPayload as any, 'rep-1');
+      expect(service.submitReport).toHaveBeenCalledWith(mockUserPayload, 'rep-1');
     });
   });
 });

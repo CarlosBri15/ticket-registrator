@@ -28,3 +28,6 @@ export const rolePermissionsRelations = relations(rolePermissions, ({ one }) => 
         references: [companies.id],
     }),
 }));
+
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type InsertRolePermission = typeof rolePermissions.$inferInsert;

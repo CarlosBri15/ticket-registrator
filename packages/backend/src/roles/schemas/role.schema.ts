@@ -1,6 +1,7 @@
 import { pgTable, uuid, varchar, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { companies } from "../../organization/schema/organization.schema";
+import { rolePermissions } from "../../permissions/schemas/role-permission.schema";
 
 export const roles = pgTable("roles", {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -14,11 +15,12 @@ export const roles = pgTable("roles", {
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const roleRelations = relations(roles, ({ one }) => ({
+export const roleRelations = relations(roles, ({ one, many }) => ({
     company: one(companies, {
         fields: [roles.companyId],
         references: [companies.id],
     }),
+    rolePermissions: many(rolePermissions),
 }));
 
 export type Role = typeof roles.$inferSelect;

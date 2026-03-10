@@ -12,6 +12,7 @@ import { OrganizationModule } from './organization/organization.module';
 import { ItemsModule } from './items/items.module';
 import { DepartmentModule } from './department/department.module';
 import { RolesModule } from './roles/roles.module';
+import { PermissionsModule } from './permissions/permissions.module';
 import { SeedModule } from './seed/seed.module';
 
 @Module({
@@ -43,6 +44,7 @@ import { SeedModule } from './seed/seed.module';
     DepartmentModule,
 
     RolesModule,
+    PermissionsModule,
     SeedModule
   ],
 })
