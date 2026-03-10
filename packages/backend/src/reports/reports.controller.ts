@@ -11,12 +11,26 @@ import { RequireAnyPermission } from '../auth/decorators/permissions.decorator';
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) { }
 
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(permissions.CREATE_OWN_REPORTS)
   @Post()
   create(@Req() req, @Body() createReportDto: CreateReportDto) {
-    console.log('Creating report for user:', req.user)
-    return this.reportsService.create(req.user.id, createReportDto);
+    const requester = {
+      id: req.user.id,
+      role: req.user.role,
+      companyId: req.user.companyId,
+      departmentId: req.user.departmentId,
+      permissions: req.user.permissions,
+    };
+    return this.reportsService.create(requester, createReportDto);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(
+    permissions.VIEW_OWN_REPORTS,
+    permissions.VIEW_TEAM_REPORTS,
+    permissions.VIEW_ALL_REPORTS
+  )
   @Get()
   findAll(@Req() req) {
     const requester = {
@@ -65,18 +79,12 @@ export class ReportsController {
     });
   }
 
-  @Get(':id')
-  findOne(@Req() req, @Param('id') id: string) {
-    const requester = {
-      id: req.user.id,
-      role: req.user.role,
-      companyId: req.user.companyId,
-      departmentId: req.user.departmentId,
-      permissions: req.user.permissions,
-    }
-    return this.reportsService.findOne(requester, id);
-  }
-
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(
+    permissions.VIEW_OWN_REPORTS,
+    permissions.VIEW_TEAM_REPORTS,
+    permissions.VIEW_ALL_REPORTS
+  )
   @Get('user/:userId')
   findUserReports(@Req() req, @Param('userId') userId?: string) {
     const requester = {
@@ -90,13 +98,43 @@ export class ReportsController {
     return this.reportsService.findUserReports(requester, userId ?? req.user.id);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(
+    permissions.VIEW_OWN_REPORTS,
+    permissions.VIEW_TEAM_REPORTS,
+    permissions.VIEW_ALL_REPORTS
+  )
+  @Get(':id')
+  findOne(@Req() req, @Param('id') id: string) {
+    const requester = {
+      id: req.user.id,
+      role: req.user.role,
+      companyId: req.user.companyId,
+      departmentId: req.user.departmentId,
+      permissions: req.user.permissions,
+    };
+    return this.reportsService.findOne(requester, id);
+  }
 
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(
+    permissions.EDIT_OWN_REPORTS,
+    permissions.APPROVE_REPORTS
+  )
   @Patch(':id')
   update(
     @Req() req,
     @Param('id') id: string,
     @Body() body: unknown,
   ) {
+    const requester = {
+      id: req.user.id,
+      role: req.user.role,
+      companyId: req.user.companyId,
+      departmentId: req.user.departmentId,
+      permissions: req.user.permissions,
+    };
+
     // status update
     if (typeof body === 'object' && body !== null && 'status' in body) {
       const parsed = updateReportStatusSchema.safeParse(body);
@@ -105,8 +143,7 @@ export class ReportsController {
         throw new BadRequestException(parsed.error.format());
       }
 
-      // parsed.data is exactly UpdateReportStatusDto shape
-      return this.reportsService.updateStatus(id, parsed.data);
+      return this.reportsService.updateStatus(requester, id, parsed.data);
     }
 
     // field update
@@ -116,22 +153,34 @@ export class ReportsController {
       throw new BadRequestException(parsed.error.format());
     }
 
-    // parsed.data is exactly UpdateReportFieldsDto shape
-    return this.reportsService.update(
-      req.user.userId,
-      id,
-      parsed.data,
-    );
+    return this.reportsService.update(requester, id, parsed.data);
   }
 
-
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(permissions.SUBMIT_OWN_REPORTS)
   @Patch(':id/submit')
   submitReport(@Req() req, @Param('id') id: string) {
-    return this.reportsService.submitReport(req.user.userId, id);
+    const requester = {
+      id: req.user.id,
+      role: req.user.role,
+      companyId: req.user.companyId,
+      departmentId: req.user.departmentId,
+      permissions: req.user.permissions,
+    };
+    return this.reportsService.submitReport(requester, id);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(permissions.DELETE_OWN_REPORTS)
   @Delete(':id')
   remove(@Req() req, @Param('id') id: string) {
-    return this.reportsService.remove(req.user.userId, id);
+    const requester = {
+      id: req.user.id,
+      role: req.user.role,
+      companyId: req.user.companyId,
+      departmentId: req.user.departmentId,
+      permissions: req.user.permissions,
+    };
+    return this.reportsService.remove(requester, id);
   }
 }

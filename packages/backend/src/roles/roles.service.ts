@@ -2,9 +2,18 @@ import { Injectable, ConflictException, Inject, NotFoundException, ForbiddenExce
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, and, isNull, or } from 'drizzle-orm';
+import { eq, and, isNull, or, desc } from 'drizzle-orm';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { permissions, Roles, ROLE_HIERARCHY, ROLE_DEFAULT_PERMISSIONS } from '@ticket-registrator/shared';
+import type { RoleType, PermissionType } from '@ticket-registrator/shared';
+
+type Requester = {
+    id: string;
+    role: RoleType;
+    companyId: string;
+    departmentId: string;
+    permissions: PermissionType[];
+};
 
 @Injectable()
 export class RolesService {
@@ -12,9 +21,6 @@ export class RolesService {
         @Inject(DB_CONNECTION) private db: PostgresJsDatabase<typeof schema>,
     ) { }
 
-    /**
-     * Seeds all default system permissions (Global, no companyId).
-     */
     async seedDefaultPermissions() {
         const permValues = Object.values(permissions);
         const existingPerms = await this.db.query.permissions.findMany();
@@ -34,9 +40,6 @@ export class RolesService {
         return { message: `Seeded ${newPerms.length} permissions` };
     }
 
-    /**
-     * Seeds all default system roles (Global, no companyId).
-     */
     async seedDefaultRoles() {
         const rolesToSeed = Object.values(Roles);
         const existingRoles = await this.db.query.roles.findMany({
@@ -61,11 +64,7 @@ export class RolesService {
         return { message: `Seeded ${newRoles.length} system roles` };
     }
 
-    /**
-     * Seeds all default role-permission combinations (Global, no companyId).
-     */
     async seedDefaultRolePermissions() {
-        // Fetch existing roles and permissions to map by ID
         const allRoles = await this.db.query.roles.findMany({ where: isNull(schema.roles.companyId) });
         const allPerms = await this.db.query.permissions.findMany();
 
@@ -104,10 +103,6 @@ export class RolesService {
         return { message: `Seeded ${valuesToInsert.length} role-permissions mappings` };
     }
 
-    /**
-     * Combined seed method to initialize the entire permissions/roles system.
-     * To be called once by the SuperAdmin to setup the base of the app.
-     */
     async seedSystemAll() {
         const permsResult = await this.seedDefaultPermissions();
         const rolesResult = await this.seedDefaultRoles();
@@ -120,10 +115,9 @@ export class RolesService {
         };
     }
 
-    /**
-     * Creates a custom role for a company.
-     */
-    async create(companyId: string, dto: CreateRoleDto, requesterHierarchy: number) {
+    async create(companyId: string, dto: CreateRoleDto, requester: Requester) {
+        const requesterHierarchy = ROLE_HIERARCHY[requester.role] ?? 0;
+
         if (dto.hierarchy! >= requesterHierarchy) {
             throw new ForbiddenException('Cannot create a role with a hierarchy equal or higher than your own');
         }
@@ -151,20 +145,23 @@ export class RolesService {
         return role;
     }
 
-    /**
-     * Retrieves all roles viewable by the requester.
-     */
     async findAll(companyId: string | null) {
         if (companyId) {
-            const results = await this.db.query.roles.findMany({
-                orderBy: (roles, { desc }) => [desc(roles.hierarchy)],
+            return this.db.query.roles.findMany({
+                where: and(
+                    eq(schema.roles.isVisible, true),
+                    or(
+                        eq(schema.roles.companyId, companyId),
+                        isNull(schema.roles.companyId)
+                    )
+                ),
+                orderBy: [desc(schema.roles.hierarchy)],
             });
-            return results.filter(r => r.isVisible && (r.companyId === companyId || r.companyId === null));
         }
 
         return this.db.query.roles.findMany({
             where: eq(schema.roles.isVisible, true),
-            orderBy: (roles, { desc }) => [desc(roles.hierarchy)],
+            orderBy: [desc(schema.roles.hierarchy)],
         });
     }
 
@@ -185,7 +182,8 @@ export class RolesService {
         return role;
     }
 
-    async softDelete(roleId: string, companyId: string, requesterHierarchy: number) {
+    async softDelete(roleId: string, companyId: string, requester: Requester) {
+        const requesterHierarchy = ROLE_HIERARCHY[requester.role] ?? 0;
         const role = await this.db.query.roles.findFirst({
             where: and(
                 eq(schema.roles.id, roleId),

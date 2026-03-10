@@ -2,13 +2,21 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException, 
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, and, sum } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { mapTicketToITicket } from './mapper/ticket.mapper';
-import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketFieldsDto, UpdateTicketStatusDto } from './dto/update-ticket-user.dto';
 import { ITicket, TicketStatus, ItemStatus, TicketLifecycle, ReportStatus } from '@ticket-registrator/shared';
+import type { RoleType, PermissionType } from '@ticket-registrator/shared';
 import { GeminiService } from 'src/gemini/gemini.service';
 import { StorageService } from 'src/storage/storage.service';
+
+type Requester = {
+  id: string;
+  role: RoleType;
+  companyId: string;
+  departmentId: string;
+  permissions: PermissionType[];
+};
 
 @Injectable()
 export class TicketsService {
@@ -18,12 +26,12 @@ export class TicketsService {
     private readonly storageService: StorageService,
   ) { }
 
-  async create(userId: string, reportId: string, file: Express.Multer.File): Promise<ITicket> {
+  async create(requester: Requester, reportId: string, file: Express.Multer.File): Promise<ITicket> {
 
     const report = await this.db.query.reports.findFirst({
       where: and(
         eq(schema.reports.id, reportId),
-        eq(schema.reports.userId, userId),
+        eq(schema.reports.userId, requester.id),
         eq(schema.reports.isVisible, true)
       )
     });
@@ -38,8 +46,6 @@ export class TicketsService {
       this.storageService.uploadFile(file),
       this.geminiService.extractReceipt(imageBase64),
     ]);
-    console.log(JSON.stringify(geminiData, null, 2));
-
     const itemsWithStatus = geminiData.items?.map(item => ({
       name: item.description ?? null,
       amount: item.price ?? null,
@@ -90,11 +96,11 @@ export class TicketsService {
     return mapTicketToITicket(ticket as any);
   }
 
-  async findAll(userId: string, reportId: string): Promise<ITicket[]> {
+  async findAll(requester: Requester, reportId: string): Promise<ITicket[]> {
     const report = await this.db.query.reports.findFirst({
       where: and(
         eq(schema.reports.id, reportId),
-        eq(schema.reports.userId, userId),
+        eq(schema.reports.userId, requester.id),
         eq(schema.reports.isVisible, true)
       )
     });
@@ -112,11 +118,11 @@ export class TicketsService {
     return ticketsList.map(t => mapTicketToITicket(t as any));
   }
 
-  async findOne(userId: string, reportId: string, ticketId: string): Promise<ITicket> {
+  async findOne(requester: Requester, reportId: string, ticketId: string): Promise<ITicket> {
     const report = await this.db.query.reports.findFirst({
       where: and(
         eq(schema.reports.id, reportId),
-        eq(schema.reports.userId, userId),
+        eq(schema.reports.userId, requester.id),
         eq(schema.reports.isVisible, true)
       )
     });
@@ -137,12 +143,12 @@ export class TicketsService {
     return mapTicketToITicket(ticket as any);
   }
 
-  async update(userId: string, reportId: string, ticketId: string, dto: UpdateTicketFieldsDto): Promise<ITicket> {
+  async update(requester: Requester, reportId: string, ticketId: string, dto: UpdateTicketFieldsDto): Promise<ITicket> {
 
     const report = await this.db.query.reports.findFirst({
       where: and(
         eq(schema.reports.id, reportId),
-        eq(schema.reports.userId, userId),
+        eq(schema.reports.userId, requester.id),
         eq(schema.reports.isVisible, true)
       )
     });
@@ -192,7 +198,7 @@ export class TicketsService {
     const newSnapshot: Record<string, any> = {};
 
     for (const key of Object.keys(update)) {
-      // Key is camelCase now 
+      // Key is camelCase now
       oldSnapshot[key] = (currentTicket as any)[key];
       newSnapshot[key] = update[key];
     }
@@ -256,7 +262,8 @@ export class TicketsService {
     return mapTicketToITicket(updatedTicket as any);
   }
 
-  async updateStatus(reportId: string, ticketId: string, dto: UpdateTicketStatusDto): Promise<ITicket> {
+  async updateStatus(requester: Requester, reportId: string, ticketId: string, dto: UpdateTicketStatusDto): Promise<ITicket> {
+
     const report = await this.db.query.reports.findFirst({
       where: and(
         eq(schema.reports.id, reportId),
@@ -320,11 +327,11 @@ export class TicketsService {
   }
 
   // Make ticket invisible instead of deleting, only if report is still in CREATED status
-  async remove(userId: string, reportId: string, ticketId: string) {
+  async remove(requester: Requester, reportId: string, ticketId: string) {
     const report = await this.db.query.reports.findFirst({
       where: and(
         eq(schema.reports.id, reportId),
-        eq(schema.reports.userId, userId),
+        eq(schema.reports.userId, requester.id),
         eq(schema.reports.isVisible, true)
       )
     });
@@ -366,32 +373,8 @@ export class TicketsService {
     return { deleted: true };
   }
 
-  private async updateRequestedAmount(reportId: string) {
-    const result = await this.db.select({ total: sum(schema.tickets.amount) })
-      .from(schema.tickets)
-      .where(eq(schema.tickets.reportId, reportId));
-
-    const sumVal = Number(result[0]?.total ?? 0);
-
-    await this.db.update(schema.reports)
-      .set({ requestedAmount: sumVal, updatedAt: new Date() })
-      .where(eq(schema.reports.id, reportId));
-  }
-
-  private async updateApprovedAmount(reportId: string) {
-    const result = await this.db.select({ total: sum(schema.tickets.approvedAmount) })
-      .from(schema.tickets)
-      .where(eq(schema.tickets.reportId, reportId));
-
-    const sumVal = Number(result[0]?.total ?? 0);
-
-    await this.db.update(schema.reports)
-      .set({ approvedAmount: sumVal, updatedAt: new Date() })
-      .where(eq(schema.reports.id, reportId));
-  }
-
-  async getTicketImageUrl(userId: string, reportId: string, ticketId: string): Promise<{ url: string }> {
-    const ticket = await this.findOne(userId, reportId, ticketId);
+  async getTicketImageUrl(requester: Requester, reportId: string, ticketId: string): Promise<{ url: string }> {
+    const ticket = await this.findOne(requester, reportId, ticketId);
 
     if (!ticket.cgs_bucket_link) {
       throw new NotFoundException('No image found for this ticket');
