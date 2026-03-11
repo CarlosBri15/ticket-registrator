@@ -52,7 +52,7 @@ describe('ReportsAuthorizationService', () => {
     describe('canViewUserReports', () => {
         const requester = {
             id: 'req-1',
-            roleHierarchies: [AUTHORITY_LEVELS.DEPARTMENT],
+            roleHierarchy: AUTHORITY_LEVELS.DEPARTMENT,
             companyId: 'company-1',
             departmentIds: ['dept-1'],
         } as any;
@@ -63,18 +63,18 @@ describe('ReportsAuthorizationService', () => {
         });
 
         it('should allow GLOBAL authority to view any user', async () => {
-            const globalRequester = { ...requester, roleHierarchies: [AUTHORITY_LEVELS.GLOBAL] };
-            dbMock.query.users.findFirst.mockResolvedValue({ id: 'target-1', usersToRoles: [], usersToDepartments: [] });
+            const globalRequester = { ...requester, roleHierarchy: AUTHORITY_LEVELS.GLOBAL };
+            dbMock.query.users.findFirst.mockResolvedValue({ id: 'target-1', role: null, usersToDepartments: [] });
             const result = await service.canViewUserReports(globalRequester, 'target-1');
             expect(result).toBe(true);
         });
 
         it('should allow COMPANY authority to view user in same company with lower hierarchy', async () => {
-            const companyRequester = { ...requester, roleHierarchies: [AUTHORITY_LEVELS.COMPANY] };
+            const companyRequester = { ...requester, roleHierarchy: AUTHORITY_LEVELS.COMPANY };
             const targetUser = {
                 id: 'target-1',
                 companyId: 'company-1',
-                usersToRoles: [{ role: { hierarchy: AUTHORITY_LEVELS.DEPARTMENT } }],
+                role: { hierarchy: AUTHORITY_LEVELS.DEPARTMENT },
                 usersToDepartments: []
             };
             dbMock.query.users.findFirst.mockResolvedValue(targetUser);
@@ -84,11 +84,11 @@ describe('ReportsAuthorizationService', () => {
         });
 
         it('should NOT allow COMPANY authority to view user in same company with same/higher hierarchy', async () => {
-            const companyRequester = { ...requester, roleHierarchies: [AUTHORITY_LEVELS.COMPANY] };
+            const companyRequester = { ...requester, roleHierarchy: AUTHORITY_LEVELS.COMPANY };
             const targetUser = {
                 id: 'target-1',
                 companyId: 'company-1',
-                usersToRoles: [{ role: { hierarchy: AUTHORITY_LEVELS.COMPANY } }],
+                role: { hierarchy: AUTHORITY_LEVELS.COMPANY },
                 usersToDepartments: []
             };
             dbMock.query.users.findFirst.mockResolvedValue(targetUser);
@@ -101,7 +101,7 @@ describe('ReportsAuthorizationService', () => {
             const targetUser = {
                 id: 'target-1',
                 companyId: 'company-1',
-                usersToRoles: [{ role: { hierarchy: 0 } }],
+                role: { hierarchy: 0 },
                 usersToDepartments: [{ departmentId: 'dept-1' }]
             };
             dbMock.query.users.findFirst.mockResolvedValue(targetUser);
@@ -114,7 +114,7 @@ describe('ReportsAuthorizationService', () => {
             const targetUser = {
                 id: 'target-1',
                 companyId: 'company-1',
-                usersToRoles: [{ role: { hierarchy: 0 } }],
+                role: { hierarchy: 0 },
                 usersToDepartments: [{ departmentId: 'dept-2' }]
             };
             dbMock.query.users.findFirst.mockResolvedValue(targetUser);

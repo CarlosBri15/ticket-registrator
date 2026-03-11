@@ -14,20 +14,25 @@ export const users = pgTable("users", {
     password: varchar("password", { length: 255 }),
     companyId: uuid("company_id")
         .references(() => companies.id, { onDelete: "cascade" }),
+    roleId: uuid("role_id").notNull()
+        .references(() => roles.id, { onDelete: "no action" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
     deletedAt: timestamp("deleted_at"),
 });
 
-import { usersToRoles, usersToDepartments } from "./user-relations.schema";
+import { usersToDepartments } from "./user-relations.schema";
 
 export const userRelations = relations(users, ({ one, many }) => ({
     company: one(companies, {
         fields: [users.companyId],
         references: [companies.id],
     }),
+    role: one(roles, {
+        fields: [users.roleId],
+        references: [roles.id],
+    }),
     reports: many(reports),
-    usersToRoles: many(usersToRoles),
     usersToDepartments: many(usersToDepartments),
 }));
 

@@ -9,7 +9,7 @@ export const registerSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(10, "Password must be at least 10 characters"),
   confirmPassword: z.string().min(1, "Confirm password is required"),
-  roles: z.array(z.nativeEnum(Roles)).min(1, "At least one role is required"),
+  roleId: z.string().min(1, "Role is required"),
   departmentIds: z.array(z.string().uuid("Invalid department UUID")).min(1, "At least one department is required"),
 })
   .strict()

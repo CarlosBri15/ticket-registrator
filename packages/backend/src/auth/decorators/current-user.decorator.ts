@@ -3,11 +3,10 @@ import { RoleType, PermissionType } from '@ticket-registrator/shared';
 
 export interface UserPayload {
     id: string;
-    role: RoleType;
-    roles: string[];
-    roleHierarchies: number[];
+    roleId: string;
+    roleName: RoleType;
+    roleHierarchy: number;
     companyId: string;
-    departmentId: string;
     departmentIds: string[];
     permissions: PermissionType[];
 }

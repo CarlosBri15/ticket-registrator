@@ -29,7 +29,7 @@ describe('ReportsController', () => {
     id: 'user-1',
     role: Roles.EMPLOYEE,
     roles: ['Employee'],
-    roleHierarchies: [1],
+    roleHierarchy: 1,
     companyId: 'comp-1',
     departmentId: 'dep-1',
     departmentIds: ['dep-1'],

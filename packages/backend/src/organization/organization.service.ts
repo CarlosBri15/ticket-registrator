@@ -81,13 +81,8 @@ export class OrganizationService {
                     username: tempUsername,
                     password: hashedPassword,
                     companyId: createdCompany.id,
-                }).returning();
-
-                // Assign role
-                await tx.insert(schema.usersToRoles).values({
-                    userId: newAdmin.id,
                     roleId: adminRole.id,
-                });
+                }).returning();
 
                 // Assign department
                 await tx.insert(schema.usersToDepartments).values({

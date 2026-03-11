@@ -123,7 +123,7 @@ export class RolesService {
     }
 
     async create(companyId: string, dto: CreateRoleDto, requester: UserPayload) {
-        this.rolesAuthService.validateHierarchy(requester.role, dto.hierarchy!);
+        this.rolesAuthService.validateHierarchy(requester.roleHierarchy, dto.hierarchy!);
 
         const existing = await this.rolesRepository.findByNameAndCompany(dto.name!, companyId);
         if (existing) {
@@ -170,7 +170,7 @@ export class RolesService {
             throw new RoleSystemModificationException('System roles cannot be deleted');
         }
 
-        this.rolesAuthService.validateHierarchy(requester.role, role.hierarchy);
+        this.rolesAuthService.validateHierarchy(requester.roleHierarchy, role.hierarchy);
 
         await this.rolesRepository.update(roleId, { isVisible: false });
 
@@ -189,5 +189,12 @@ export class RolesService {
         }
 
         return [...permissionNames];
+    }
+
+    async getPermissionsForRoleId(roleId: string, companyId: string | null): Promise<string[]> {
+        const roleWithPermissions = await this.rolesRepository.getRolePermissionsById(roleId, companyId);
+        if (!roleWithPermissions) return [];
+
+        return roleWithPermissions.rolePermissions.map(rp => rp.permission.name);
     }
 }

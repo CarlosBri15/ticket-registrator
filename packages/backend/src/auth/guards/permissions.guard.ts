@@ -16,12 +16,8 @@ export class PermissionsGuard implements CanActivate {
         const request = context.switchToHttp().getRequest();
         const { user } = request;
 
-        if (!user || !user.roles || user.roles.length === 0) {
-            throw new ForbiddenException('User lacks necessary role information');
-        }
-
-        // Resolve permissions from RolesService for all user roles
-        const userPermissions = await this.rolesService.getPermissionsForRoles(user.roles, user.companyId);
+        // Resolve permissions from RolesService for the user role
+        const userPermissions = await this.rolesService.getPermissionsForRoleId(user.roleId, user.companyId);
 
         // Attach permissions to user object for controllers to use if needed
         user.permissions = userPermissions;

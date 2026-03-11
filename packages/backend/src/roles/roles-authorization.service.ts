@@ -7,8 +7,7 @@ import { RoleUnauthorizedException } from './exceptions/roles.exceptions';
 @Injectable()
 export class RolesAuthorizationService {
 
-    validateHierarchy(requesterRole: string, targetHierarchy: number) {
-        const requesterHierarchy = ROLE_HIERARCHY[requesterRole as keyof typeof ROLE_HIERARCHY] ?? 0;
+    validateHierarchy(requesterHierarchy: number, targetHierarchy: number) {
         if (targetHierarchy >= requesterHierarchy) {
             throw new RoleUnauthorizedException('Cannot manage roles with equal or higher hierarchy than your own');
         }

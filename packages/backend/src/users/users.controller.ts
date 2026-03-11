@@ -17,8 +17,9 @@ export class UsersController {
   @Post()
   create(@Body() createUserDto: CreateUserDto, @Req() req) {
     const creator = {
-      roles: req.user.roles,
-      roleHierarchies: req.user.roleHierarchies,
+      roleId: req.user.roleId,
+      roleName: req.user.roleName,
+      roleHierarchy: req.user.roleHierarchy,
       companyId: req.user.companyId,
       departmentIds: req.user.departmentIds,
       permissions: req.user.permissions,
@@ -32,8 +33,9 @@ export class UsersController {
   findAll(@Req() req) {
     const requester = {
       id: req.user.id,
-      roles: req.user.roles,
-      roleHierarchies: req.user.roleHierarchies,
+      roleId: req.user.roleId,
+      roleName: req.user.roleName,
+      roleHierarchy: req.user.roleHierarchy,
       companyId: req.user.companyId,
       departmentIds: req.user.departmentIds,
       permissions: req.user.permissions,
@@ -55,8 +57,9 @@ export class UsersController {
   ) {
     const requester = {
       id: req.user.id,
-      roles: req.user.roles,
-      roleHierarchies: req.user.roleHierarchies,
+      roleId: req.user.roleId,
+      roleName: req.user.roleName,
+      roleHierarchy: req.user.roleHierarchy,
       companyId: req.user.companyId,
       departmentIds: req.user.departmentIds,
       permissions: req.user.permissions,
@@ -71,8 +74,9 @@ export class UsersController {
   remove(@Param('id') userId: string, @Req() req) {
     const requester = {
       id: req.user.id,
-      roles: req.user.roles,
-      roleHierarchies: req.user.roleHierarchies,
+      roleId: req.user.roleId,
+      roleName: req.user.roleName,
+      roleHierarchy: req.user.roleHierarchy,
       companyId: req.user.companyId,
       departmentIds: req.user.departmentIds,
       permissions: req.user.permissions,

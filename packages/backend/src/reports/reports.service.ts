@@ -177,7 +177,7 @@ export class ReportsService {
   }
 
   private buildAuthorityFilter(requester: UserPayload): SQL {
-    const maxHierarchy = Math.max(...requester.roleHierarchies);
+    const maxHierarchy = requester.roleHierarchy;
     const conditions: SQL[] = [];
 
     if (maxHierarchy >= AUTHORITY_LEVELS.GLOBAL) {

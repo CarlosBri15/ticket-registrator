@@ -10,7 +10,7 @@ export const updateUserSchema = z.object({
   username: z.string().min(1, "Username is required").optional(),
   password: z.string().min(10, "Password must be at least 10 characters").optional(),
   confirmPassword: z.string().min(1, "Confirm password is required").optional(),
-  roles: z.array(z.nativeEnum(Roles)).optional(),
+  roleId: z.string().optional(),
   departmentIds: z.array(z.string().uuid("Invalid department UUID")).optional(),
 })
   .strict()

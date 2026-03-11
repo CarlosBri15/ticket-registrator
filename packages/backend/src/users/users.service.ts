@@ -20,8 +20,9 @@ export class UsersService {
   async create(
     createUserDto: CreateUserDto,
     creator: {
-      roles: RoleType[];
-      roleHierarchies: number[];
+      roleId: string;
+      roleName: RoleType;
+      roleHierarchy: number;
       companyId: string;
       departmentIds: string[];
       permissions: PermissionType[];
@@ -33,30 +34,30 @@ export class UsersService {
 
     createUserDto.password = await this.authService.hashPassword(createUserDto.password);
 
-    const isSuperAdmin = creator.roles.includes(Roles.SUPERADMIN);
+    const isSuperAdmin = creator.roleHierarchy >= AUTHORITY_LEVELS.GLOBAL;
     const targetCompanyId = (isSuperAdmin && (createUserDto as any).companyId)
       ? (createUserDto as any).companyId
       : creator.companyId;
 
-    const targetRoles = await this.db.query.roles.findMany({
+    const targetRole = await this.db.query.roles.findFirst({
       where: and(
-        inArray(schema.roles.name, createUserDto.roles!),
+        eq(schema.roles.name, createUserDto.roleId as string),
         or(isNull(schema.roles.companyId), eq(schema.roles.companyId, targetCompanyId))
       ),
     });
 
-    if (targetRoles.length !== createUserDto.roles!.length) {
-      throw new BadRequestException('One or more roles not found for the target company');
+    if (!targetRole) {
+      throw new BadRequestException('Role not found for the target company');
     }
 
-    const creatorHierarchy = Math.max(...creator.roleHierarchies);
-    const maxTargetHierarchy = Math.max(...targetRoles.map(r => r.hierarchy));
+    const creatorHierarchy = creator.roleHierarchy;
+    const targetHierarchy = targetRole.hierarchy;
 
-    if (creatorHierarchy <= maxTargetHierarchy) {
+    if (creatorHierarchy <= targetHierarchy) {
       throw new ConflictException('Cannot assign a role higher or equal than your own highest role');
     }
 
-    const isCreatingAdmin = targetRoles.some(r => r.name === Roles.ADMIN);
+    const isCreatingAdmin = targetRole.hierarchy >= AUTHORITY_LEVELS.COMPANY && targetRole.hierarchy < AUTHORITY_LEVELS.GLOBAL;
     if (isCreatingAdmin && !creator.permissions.includes(permissions.CREATE_ADMINS)) {
       throw new ForbiddenException('You do not have permission to create Admin users');
     }
@@ -68,7 +69,7 @@ export class UsersService {
       throw new ConflictException('Target company does not exist');
     }
 
-    if (creator.roles.includes(Roles.MANAGER)) {
+    if (creator.roleHierarchy >= AUTHORITY_LEVELS.DEPARTMENT && creator.roleHierarchy < AUTHORITY_LEVELS.COMPANY) {
       for (const deptId of createUserDto.departmentIds!) {
         if (!creator.departmentIds.includes(deptId)) {
           throw new ForbiddenException('Managers can only assign departments they belong to');
@@ -87,22 +88,17 @@ export class UsersService {
       throw new ConflictException('One or more departments do not exist in this company');
     }
 
-    const { roles: _, confirmPassword: __, companyId: ___, departmentIds: ____, ...rest } = createUserDto as any;
+    const { roleId: _, confirmPassword: __, companyId: ___, departmentIds: ____, ...rest } = createUserDto as any;
     const userToCreate = {
       ...rest,
       password: createUserDto.password as string,
       companyId: company.id,
+      roleId: targetRole.id,
     };
 
     try {
       const savedUser = await this.db.transaction(async (tx) => {
         const [user] = await tx.insert(schema.users).values(userToCreate as any).returning();
-
-        if (targetRoles.length > 0) {
-          await tx.insert(schema.usersToRoles).values(
-            targetRoles.map(r => ({ userId: user.id, roleId: r.id }))
-          );
-        }
 
         if (createUserDto.departmentIds && createUserDto.departmentIds.length > 0) {
           await tx.insert(schema.usersToDepartments).values(
@@ -116,7 +112,7 @@ export class UsersService {
       const fullUser = await this.db.query.users.findFirst({
         where: eq(schema.users.id, savedUser.id),
         with: {
-          usersToRoles: { with: { role: true } },
+          role: true,
           usersToDepartments: { with: { department: true } },
         }
       });
@@ -135,7 +131,7 @@ export class UsersService {
     const user = await this.db.query.users.findFirst({
       where: eq(schema.users.id, userId),
       with: {
-        usersToRoles: { with: { role: true } },
+        role: true,
         usersToDepartments: { with: { department: true } },
       }
     });
@@ -147,15 +143,26 @@ export class UsersService {
     return mapUserToIUser(user as any);
   }
 
+  async findUserRole(userId: string): Promise<{ roleId: string } | undefined> {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      columns: {
+        roleId: true,
+      },
+    });
+    return user;
+  }
+
   async findAll(requester: {
     id: string;
-    roles: RoleType[];
-    roleHierarchies: number[];
+    roleId: string;
+    roleName: RoleType;
+    roleHierarchy: number;
     companyId: string;
     departmentIds: string[];
     permissions: PermissionType[];
   }): Promise<IUser[]> {
-    const maxHierarchy = Math.max(...requester.roleHierarchies);
+    const maxHierarchy = requester.roleHierarchy;
     let userFilters = [isNull(schema.users.deletedAt)];
 
     if (maxHierarchy < AUTHORITY_LEVELS.GLOBAL) {
@@ -175,7 +182,7 @@ export class UsersService {
     const allUsers = await this.db.query.users.findMany({
       where: and(...userFilters),
       with: {
-        usersToRoles: { with: { role: true } },
+        role: true,
         usersToDepartments: { with: { department: true } },
       }
     });
@@ -188,8 +195,9 @@ export class UsersService {
     updateUserDto: UpdateUserDto,
     requester: {
       id: string;
-      roles: RoleType[];
-      roleHierarchies: number[];
+      roleId: string;
+      roleName: RoleType;
+      roleHierarchy: number;
       companyId: string;
       departmentIds: string[];
       permissions: PermissionType[];
@@ -198,16 +206,16 @@ export class UsersService {
     const userWithRels = await this.db.query.users.findFirst({
       where: eq(schema.users.id, id),
       with: {
-        usersToRoles: { with: { role: true } },
+        role: true,
         usersToDepartments: { with: { department: true } },
       }
     });
 
     if (!userWithRels) throw new NotFoundException('User not found');
 
-    const targetRoles = userWithRels.usersToRoles.map(ur => ur.role);
-    const targetHierarchy = targetRoles.length > 0 ? Math.max(...targetRoles.map(r => r.hierarchy)) : 0;
-    const requesterHierarchy = Math.max(...requester.roleHierarchies);
+    const targetRole = userWithRels.role;
+    const targetHierarchy = targetRole ? targetRole.hierarchy : 0;
+    const requesterHierarchy = requester.roleHierarchy;
     const isSelfUpdate = userWithRels.id === requester.id;
 
     if (isSelfUpdate) {
@@ -224,10 +232,10 @@ export class UsersService {
       if (requesterHierarchy < AUTHORITY_LEVELS.DEPARTMENT) {
         throw new ForbiddenException('You cannot update other users');
       }
-      if (userWithRels.companyId !== requester.companyId && !requester.roles.includes(Roles.SUPERADMIN)) {
+      if (userWithRels.companyId !== requester.companyId && requester.roleHierarchy < AUTHORITY_LEVELS.GLOBAL) {
         throw new ForbiddenException('Cannot update users outside your company');
       }
-      if (requester.roles.includes(Roles.ADMIN) && targetHierarchy >= requesterHierarchy) {
+      if (requester.roleHierarchy >= AUTHORITY_LEVELS.COMPANY && targetHierarchy >= requesterHierarchy) {
         throw new ForbiddenException('Cannot update users with equal or higher role');
       }
     }
@@ -236,7 +244,7 @@ export class UsersService {
       updateUserDto.password = await this.authService.hashPassword(updateUserDto.password);
     }
 
-    const { roles, departmentIds, ...rest } = updateUserDto as any;
+    const { roleId, departmentIds, ...rest } = updateUserDto as any;
 
     try {
       await this.db.transaction(async (tx) => {
@@ -246,22 +254,22 @@ export class UsersService {
             .where(eq(schema.users.id, id));
         }
 
-        if (roles) {
-          const targetRolesFromDb = await tx.query.roles.findMany({
+        if (roleId) {
+          const targetRoleFromDb = await tx.query.roles.findFirst({
             where: and(
-              inArray(schema.roles.name, roles),
+              eq(schema.roles.name, roleId as string),
               or(isNull(schema.roles.companyId), eq(schema.roles.companyId, userWithRels.companyId as string))
-
             ),
           });
-          if (targetRolesFromDb.length !== roles.length) throw new BadRequestException('Invalid roles provided');
+          if (!targetRoleFromDb) throw new BadRequestException('Invalid role provided');
 
-          if (Math.max(...targetRolesFromDb.map(r => r.hierarchy)) >= requesterHierarchy) {
+          if (targetRoleFromDb.hierarchy >= requesterHierarchy) {
             throw new ForbiddenException('Cannot assign a role equal or higher than your own');
           }
 
-          await tx.delete(schema.usersToRoles).where(eq(schema.usersToRoles.userId, id));
-          await tx.insert(schema.usersToRoles).values(targetRolesFromDb.map(r => ({ userId: id, roleId: r.id })));
+          await tx.update(schema.users)
+            .set({ roleId: targetRoleFromDb.id })
+            .where(eq(schema.users.id, id));
         }
 
         if (departmentIds) {
@@ -289,13 +297,13 @@ export class UsersService {
   async remove(userId: string, requester: any) {
     const userWithRels = await this.db.query.users.findFirst({
       where: eq(schema.users.id, userId),
-      with: { usersToRoles: { with: { role: true } }, usersToDepartments: true }
+      with: { role: true, usersToDepartments: true }
     });
 
     if (!userWithRels || userWithRels.deletedAt) throw new NotFoundException('User not found');
 
-    const targetHierarchy = Math.max(...userWithRels.usersToRoles.map(ur => ur.role.hierarchy), 0);
-    const requesterHierarchy = Math.max(...requester.roleHierarchies);
+    const targetHierarchy = userWithRels.role?.hierarchy || 0;
+    const requesterHierarchy = requester.roleHierarchy;
 
     if (targetHierarchy >= requesterHierarchy) throw new ForbiddenException('Cannot delete users with equal or higher role');
 
@@ -310,11 +318,11 @@ export class UsersService {
     const user = await this.db.query.users.findFirst({
       where: eq(schema.users.email, email),
       with: {
-        usersToRoles: { with: { role: true } },
+        role: true,
         usersToDepartments: true,
       }
     });
     if (!user) return null;
-    return { ...user, roles: user.usersToRoles.map(ur => ur.role) };
+    return user;
   }
 }
