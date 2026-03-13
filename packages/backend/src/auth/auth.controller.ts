@@ -5,9 +5,8 @@ import type { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
-  // Login endpoint
   @Post('login')
   async login(
     @Body() loginDto: LoginDto,
