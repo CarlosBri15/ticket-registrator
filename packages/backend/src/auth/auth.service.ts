@@ -56,7 +56,6 @@ export class AuthService {
   }
 
 
-  // Hash password with pepper before saving
   async hashPassword(password: string): Promise<string> {
     const salted = password + this.pepper;
     const saltRounds = 10;
