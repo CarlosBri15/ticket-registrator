@@ -1,0 +1,17 @@
+name: Check Merge Source
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify source branch is dev
+        if: github.head_ref != 'dev'
+        run: |
+          echo "ERROR: Solo se permiten Merges a MAIN desde la rama DEV."
+          echo "Tu rama de origen es: ${{ github.head_ref }}"
+          exit 1
