@@ -15,7 +15,6 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) { }
 
-  // Getter ensures pepper is always a string at runtime
   private get pepper(): string {
     const value = this.configService.get<string>('PASSWORD_PEPPER');
     if (!value) {
