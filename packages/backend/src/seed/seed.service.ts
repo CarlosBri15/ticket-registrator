@@ -83,12 +83,9 @@ export class SeedService implements OnApplicationBootstrap {
                 username: 'SuperAdmin',
                 email: 'superadmin@system.com',
                 password: hashedPassword,
+                roleId: superAdminRole.id,
             }).returning();
 
-            await this.db.insert(schema.usersToRoles).values({
-                userId: newAdmin.id,
-                roleId: superAdminRole.id,
-            });
 
             console.log('SuperAdmin user created successfully (SuperAdmin:SuperAdmin)');
         } else {

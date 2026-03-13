@@ -114,6 +114,26 @@ export class RolesRepository {
         });
     }
 
+    async getRolePermissionsById(roleId: string, companyId: string | null) {
+        return this.db.query.roles.findFirst({
+            where: and(
+                eq(schema.roles.id, roleId),
+                eq(schema.roles.isVisible, true),
+                or(
+                    companyId ? eq(schema.roles.companyId, companyId) : isNull(schema.roles.companyId),
+                    isNull(schema.roles.companyId)
+                )
+            ),
+            with: {
+                rolePermissions: {
+                    with: {
+                        permission: true
+                    }
+                }
+            }
+        });
+    }
+
     async transaction<T>(callback: (tx: PostgresJsDatabase<typeof schema>) => Promise<T>): Promise<T> {
         return this.db.transaction(callback as any);
     }

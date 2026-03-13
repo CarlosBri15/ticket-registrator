@@ -43,6 +43,13 @@
       "when": 1773076656805,
       "tag": "0005_serious_hemingway",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1773266824898,
+      "tag": "0006_spicy_thunderball",
+      "breakpoints": true
     }
   ]
 }

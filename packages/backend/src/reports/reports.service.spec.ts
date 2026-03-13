@@ -17,7 +17,7 @@ describe('ReportsService', () => {
 
   const requester = {
     id: 'user-1',
-    roleHierarchies: [AUTHORITY_LEVELS.DEPARTMENT],
+    roleHierarchy: AUTHORITY_LEVELS.DEPARTMENT,
     companyId: 'company-1',
     departmentIds: ['dept-1'],
   } as any;

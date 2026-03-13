@@ -18,7 +18,7 @@ export class ReportsAuthorizationService {
         const user = await this.db.query.users.findFirst({
             where: and(eq(schema.users.id, id), isNull(schema.users.deletedAt)),
             with: {
-                usersToRoles: { with: { role: true } },
+                role: true,
                 usersToDepartments: true
             }
         });
@@ -30,10 +30,10 @@ export class ReportsAuthorizationService {
         if (requester.id === targetUserId) return true;
 
         const targetUser = await this.getVisibleUser(targetUserId);
-        const requesterHierarchy = Math.max(...requester.roleHierarchies);
+        const requesterHierarchy = requester.roleHierarchy;
 
-        const targetRoles = targetUser.usersToRoles.map(ur => ur.role);
-        const targetHierarchy = targetRoles.length > 0 ? Math.max(...targetRoles.map(r => r.hierarchy)) : 0;
+        const targetRole = targetUser.role;
+        const targetHierarchy = targetRole ? targetRole.hierarchy : 0;
         const targetDeptIds = targetUser.usersToDepartments.map(ud => ud.departmentId);
 
         if (requesterHierarchy >= AUTHORITY_LEVELS.GLOBAL) return true;

@@ -39,16 +39,14 @@ export class AuthService {
     // TODO: Re-enable once new roles/permissions system is complete
     // const permissionDoc = await this.usersService.getUserPermissions(user.id);
 
-    const roles = user.roles.map((r: any) => r.name);
-    const roleHierarchies = user.roles.map((r: any) => r.hierarchy);
-    // departmentIds come from the usersToDepartments relation
+    const role = user.role;
     const departmentIds = (user as any).usersToDepartments.map((ud: any) => ud.departmentId);
 
     const payload = {
       sub: user.id,
       username: user.username,
-      roles: roles,
-      roleHierarchies: roleHierarchies,
+      roleName: role?.name,
+      roleHierarchy: role?.hierarchy,
       companyId: user.companyId,
       departmentIds: departmentIds,
     };
