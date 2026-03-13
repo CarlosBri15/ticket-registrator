@@ -3,7 +3,7 @@ name: Deploy Frontend PREVIEW
 on:
   pull_request:
     branches:
-      - main
+      - dev
     paths:
       - 'packages/frontend/**'
       - 'packages/shared/**'

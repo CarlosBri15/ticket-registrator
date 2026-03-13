@@ -10,7 +10,7 @@ i18n
     resources,
     fallbackLng: 'en',
     interpolation: {
-      escapeValue: false, // React already safes from xss
+      escapeValue: false,
     },
     detection: {
       order: ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag'],
