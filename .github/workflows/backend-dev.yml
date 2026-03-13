@@ -3,7 +3,7 @@ name: Deploy Backend to DEV
 on:
   push:
     branches:
-      - main
+      - dev
     paths:
       - 'packages/backend/**'
       - 'packages/shared/**'
@@ -56,7 +56,7 @@ jobs:
           image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }}
           env_vars: |-
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-            MONGO_URI=${{ secrets.MONGO_URI_DEV }}
+            DATABASE_URL=${{ secrets.DATABASE_URL_DEV }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
             GCP_BUCKET_NAME=${{ secrets.GCP_BUCKET_NAME }}

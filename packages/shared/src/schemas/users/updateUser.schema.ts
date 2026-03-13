@@ -10,13 +10,13 @@ export const updateUserSchema = z.object({
   username: z.string().min(1, "Username is required").optional(),
   password: z.string().min(10, "Password must be at least 10 characters").optional(),
   confirmPassword: z.string().min(1, "Confirm password is required").optional(),
-  role: z.nativeEnum(Roles).optional(),
-  departmentId: z.string().regex(objectIdRegex, "Invalid department ID").optional(),
+  roleId: z.string().optional(),
+  departmentIds: z.array(z.string().uuid("Invalid department UUID")).optional(),
 })
-.strict()
-.refine((data) => !data.password || data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
+  .strict()
+  .refine((data) => !data.password || data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 export type UpdateUserSchema = z.infer<typeof updateUserSchema>;

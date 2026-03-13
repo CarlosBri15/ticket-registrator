@@ -13,7 +13,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   // Getter ensures pepper is always a string at runtime
   private get pepper(): string {
@@ -36,15 +36,19 @@ export class AuthService {
 
     if (!isValid) throw new UnauthorizedException('Invalid credentials');
 
-    const permissionDoc = await this.usersService.getUserPermissions(user._id.toString());
+    // TODO: Re-enable once new roles/permissions system is complete
+    // const permissionDoc = await this.usersService.getUserPermissions(user.id);
+
+    const role = user.role;
+    const departmentIds = (user as any).usersToDepartments.map((ud: any) => ud.departmentId);
 
     const payload = {
-      sub: user._id,
+      sub: user.id,
       username: user.username,
-      role: user.role,
+      roleName: role?.name,
+      roleHierarchy: role?.hierarchy,
       companyId: user.companyId,
-      departmentId: user.departmentId,
-      permissions: permissionDoc.permissions,
+      departmentIds: departmentIds,
     };
 
     return {

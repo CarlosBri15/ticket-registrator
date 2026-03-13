@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import UploadTicket from "./screens/UploadTicket";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RegisterForm } from "./screens/RegisterForm";
 import { LoginForm } from "./screens/LoginForm";
@@ -7,6 +6,8 @@ import { DashboardPage } from "./screens/HomeScreen";
 import { AppLayout } from "./screens/AppLayout";
 import { ReportsScreen } from "./screens/ReportsScreen";
 import { ReportDetailScreen } from "./screens/ReportDetailScreen";
+import { SettingsScreen } from "./screens/SettingsScreen";
+import { AllTicketsScreen } from "./screens/AllTicketsScreen";
 
 const queryClient = new QueryClient();
 
@@ -29,9 +30,9 @@ function App() {
              <Route path="/home" element={<DashboardPage />} />
              <Route path="/trips" element={<ReportsScreen />} />
              <Route path="/trips/:id" element={<ReportDetailScreen />} />
-             <Route path="/tickets" element={<div>Página de Tickets (Pronto)</div>} />
+             <Route path="/tickets" element={<AllTicketsScreen />} />
+             <Route path="/settings" element={<SettingsScreen />} />
           </Route>
-          <Route path="/upload" element={<ProtectedRoute><UploadTicket /></ProtectedRoute>} />
           <Route path="/register" element={<RegisterForm />} />
           <Route path="/login" element={<LoginForm />} />
         </Routes>

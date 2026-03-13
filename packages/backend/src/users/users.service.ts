@@ -1,181 +1,193 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { User, UserDocument } from './schemas/user.schema';
+import { Injectable, ConflictException, NotFoundException, BadRequestException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
+import { DB_CONNECTION } from '../db/db.module';
+import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import * as schema from '../db/schema';
+import { eq, and, or, inArray, isNull, sql } from 'drizzle-orm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Report, ReportDocument } from '../reports/schemas/report.schema';
-import { Ticket, TicketDocument } from '../tickets/schemas/ticket.schema';
-import { Permission, PermissionDocument } from '../permissions/schema/permissions.schema';
-import { Company, CompanyDocument } from '../organization/schema/organization.schema';
-import { Department, DepartmentDocument } from '../department/department.schema';
-import { MongoServerError } from 'mongodb';
-import * as bcrypt from 'bcrypt';
-import { IUser, Roles, ROLE_DEFAULT_PERMISSIONS, ROLE_HIERARCHY } from '@ticket-registrator/shared';
-import type {PermissionType} from '@ticket-registrator/shared';
-import { RoleType } from '@ticket-registrator/shared';
+import { IUser, Roles, ROLE_HIERARCHY, permissions, AUTHORITY_LEVELS } from '@ticket-registrator/shared';
+import type { PermissionType, RoleType } from '@ticket-registrator/shared';
 import { mapUserToIUser } from './mapper/users.mapper';
 import { AuthService } from '../auth/auth.service';
-import { Inject, forwardRef } from '@nestjs/common';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectModel(User.name)
-    private userModel: Model<UserDocument>,
-    
-    @InjectModel(Report.name)
-    private reportModel: Model<ReportDocument>,
-
-    @InjectModel(Ticket.name)
-    private ticketModel: Model<TicketDocument>,
-
-    @InjectModel(Permission.name)
-    private permissionModel: Model<PermissionDocument>,
-
-    @InjectModel(Company.name)
-    private companyModel: Model<CompanyDocument>,
-
-    @InjectModel(Department.name)
-    private departmentModel: Model<DepartmentDocument>,
-
-    @Inject(forwardRef(() => AuthService))
-    private readonly authService: AuthService,
-) {}
+    @Inject(DB_CONNECTION) private db: PostgresJsDatabase<typeof schema>,
+    @Inject(forwardRef(() => AuthService)) private readonly authService: AuthService,
+  ) { }
 
   async create(
     createUserDto: CreateUserDto,
     creator: {
-      role: RoleType;
+      roleId: string;
+      roleName: RoleType;
+      roleHierarchy: number;
       companyId: string;
-      departmentId: string;
+      departmentIds: string[];
       permissions: PermissionType[];
     }
   ): Promise<IUser> {
     if (!createUserDto.password) {
       throw new ConflictException('Password is required');
     }
-    
-    // Hash password
+
     createUserDto.password = await this.authService.hashPassword(createUserDto.password);
 
-    //Permission check
-    if (!creator.permissions.includes('create_users')) {
-      throw new BadRequestException('You do not have permission to create users');
+    const isSuperAdmin = creator.roleHierarchy >= AUTHORITY_LEVELS.GLOBAL;
+    const targetCompanyId = (isSuperAdmin && (createUserDto as any).companyId)
+      ? (createUserDto as any).companyId
+      : creator.companyId;
+
+    const targetRole = await this.db.query.roles.findFirst({
+      where: and(
+        eq(schema.roles.name, createUserDto.roleId as string),
+        or(isNull(schema.roles.companyId), eq(schema.roles.companyId, targetCompanyId))
+      ),
+    });
+
+    if (!targetRole) {
+      throw new BadRequestException('Role not found for the target company');
     }
 
-    //Role hierarchy check
-    const requestedRoleHierarchy = ROLE_HIERARCHY[createUserDto.role!];
-    const creatorRoleHierarchy = ROLE_HIERARCHY[creator.role];
+    const creatorHierarchy = creator.roleHierarchy;
+    const targetHierarchy = targetRole.hierarchy;
 
-    if (creatorRoleHierarchy <= requestedRoleHierarchy) {
-      throw new ConflictException('Cannot assign a role higher than your own role');
+    if (creatorHierarchy <= targetHierarchy) {
+      throw new ConflictException('Cannot assign a role higher or equal than your own highest role');
     }
 
-    // Resolve company from JWT
-    const company = await this.companyModel.findById(creator.companyId);
+    const isCreatingAdmin = targetRole.hierarchy >= AUTHORITY_LEVELS.COMPANY && targetRole.hierarchy < AUTHORITY_LEVELS.GLOBAL;
+    if (isCreatingAdmin && !creator.permissions.includes(permissions.CREATE_ADMINS)) {
+      throw new ForbiddenException('You do not have permission to create Admin users');
+    }
+
+    const company = await this.db.query.companies.findFirst({
+      where: eq(schema.companies.id, targetCompanyId)
+    });
     if (!company) {
-      throw new ConflictException('Creator company does not exist');
+      throw new ConflictException('Target company does not exist');
     }
 
-    // Determine departmentId
-    let departmentId: Types.ObjectId | null = null;
-
-    if (creator.role === Roles.MANAGER) {
-      if (!createUserDto.departmentId) {
-        throw new BadRequestException('Department is required');
-      }
-
-      if (createUserDto.departmentId !== creator.departmentId) {
-        throw new ForbiddenException(
-          'Managers can only create users in their own department',
-        );
+    if (creator.roleHierarchy >= AUTHORITY_LEVELS.DEPARTMENT && creator.roleHierarchy < AUTHORITY_LEVELS.COMPANY) {
+      for (const deptId of createUserDto.departmentIds!) {
+        if (!creator.departmentIds.includes(deptId)) {
+          throw new ForbiddenException('Managers can only assign departments they belong to');
+        }
       }
     }
 
-    if (createUserDto.departmentId) {
-      const department = await this.departmentModel.findOne({
-        _id: new Types.ObjectId(createUserDto.departmentId),
-        companyId: company._id,
-      });
+    const departments = await this.db.query.departments.findMany({
+      where: and(
+        inArray(schema.departments.id, createUserDto.departmentIds!),
+        eq(schema.departments.companyId, company.id)
+      )
+    });
 
-      if (!department) {
-        throw new ConflictException('Department does not exist in this company');
-      }
-
-      departmentId = department._id;
-    } else {
-      departmentId = null;
+    if (departments.length !== createUserDto.departmentIds!.length) {
+      throw new ConflictException('One or more departments do not exist in this company');
     }
 
-    const userToCreate: any = {
-      ...createUserDto,
-      companyId: new Types.ObjectId(company._id),
-      departmentId: departmentId,
+    const { roleId: _, confirmPassword: __, companyId: ___, departmentIds: ____, ...rest } = createUserDto as any;
+    const userToCreate = {
+      ...rest,
+      password: createUserDto.password as string,
+      companyId: company.id,
+      roleId: targetRole.id,
     };
 
     try {
-      const user = new this.userModel(userToCreate);
-      const savedUser = await user.save();
-      const defaultPermissions = ROLE_DEFAULT_PERMISSIONS[savedUser.role];
+      const savedUser = await this.db.transaction(async (tx) => {
+        const [user] = await tx.insert(schema.users).values(userToCreate as any).returning();
 
-      await this.permissionModel.create({
-        userId: savedUser._id,
-        permissions: defaultPermissions,
-        isActive: true,
+        if (createUserDto.departmentIds && createUserDto.departmentIds.length > 0) {
+          await tx.insert(schema.usersToDepartments).values(
+            createUserDto.departmentIds.map(dId => ({ userId: user.id, departmentId: dId }))
+          );
+        }
+
+        return user;
       });
 
-      return mapUserToIUser(savedUser);
+      const fullUser = await this.db.query.users.findFirst({
+        where: eq(schema.users.id, savedUser.id),
+        with: {
+          role: true,
+          usersToDepartments: { with: { department: true } },
+        }
+      });
+
+      return mapUserToIUser(fullUser as any);
     } catch (error: any) {
-      if (error.name === 'ValidationError') {
-        throw new BadRequestException(error.message);
+      if (error.code === '23505') {
+        if (error.detail?.includes('email')) throw new ConflictException('Email already exists');
+        if (error.detail?.includes('username')) throw new ConflictException('Username already exists');
       }
-
-      if (error.code === 11000) {
-        if (error.keyPattern?.email) throw new ConflictException('Email already exists');
-        if (error.keyPattern?.username) throw new ConflictException('Username already exists');
-      }
-
-      throw error;
+      throw new BadRequestException(error.message || 'Validation failed');
     }
   }
 
   async findMe(userId: string): Promise<IUser> {
-    const user = await this.userModel.findById(userId);
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      with: {
+        role: true,
+        usersToDepartments: { with: { department: true } },
+      }
+    });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    return mapUserToIUser(user);
+    return mapUserToIUser(user as any);
+  }
+
+  async findUserRole(userId: string): Promise<{ roleId: string } | undefined> {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      columns: {
+        roleId: true,
+      },
+    });
+    return user;
   }
 
   async findAll(requester: {
     id: string;
-    role: RoleType;
+    roleId: string;
+    roleName: RoleType;
+    roleHierarchy: number;
     companyId: string;
-    departmentId: string;
+    departmentIds: string[];
     permissions: PermissionType[];
   }): Promise<IUser[]> {
+    const maxHierarchy = requester.roleHierarchy;
+    let userFilters = [isNull(schema.users.deletedAt)];
 
-    if (
-      !requester.permissions.includes("view_all_users") &&
-      !requester.permissions.includes("view_team_users")
-    ) {
-      throw new ForbiddenException('You are not allowed to view users');
+    if (maxHierarchy < AUTHORITY_LEVELS.GLOBAL) {
+      userFilters.push(eq(schema.users.companyId, requester.companyId));
+
+      if (maxHierarchy >= AUTHORITY_LEVELS.DEPARTMENT && maxHierarchy < AUTHORITY_LEVELS.COMPANY) {
+        userFilters.push(sql`EXISTS (
+          SELECT 1 FROM ${schema.usersToDepartments} ud
+          WHERE ud.user_id = ${schema.users.id}
+          AND ud.department_id = ANY(${requester.departmentIds}::uuid[])
+        )`);
+      } else if (maxHierarchy < AUTHORITY_LEVELS.DEPARTMENT) {
+        userFilters.push(eq(schema.users.id, requester.id));
+      }
     }
 
-    const baseFilter: any = {
-      isVisible: true,
-      companyId: new Types.ObjectId(requester.companyId),
-    };
+    const allUsers = await this.db.query.users.findMany({
+      where: and(...userFilters),
+      with: {
+        role: true,
+        usersToDepartments: { with: { department: true } },
+      }
+    });
 
-    if (requester.permissions.includes("view_team_users")) {
-      baseFilter.departmentId = new Types.ObjectId(requester.departmentId);
-    }
-
-    const users = await this.userModel.find(baseFilter).exec();
-    return users.map(user => mapUserToIUser(user));
+    return allUsers.map(u => mapUserToIUser(u as any));
   }
 
   async update(
@@ -183,187 +195,134 @@ export class UsersService {
     updateUserDto: UpdateUserDto,
     requester: {
       id: string;
-      role: RoleType;
+      roleId: string;
+      roleName: RoleType;
+      roleHierarchy: number;
       companyId: string;
-      departmentId: string;
+      departmentIds: string[];
       permissions: PermissionType[];
     }
   ): Promise<IUser> {
-    const user = await this.userModel.findById(id);
-    if (!user) throw new NotFoundException('User not found');
+    const userWithRels = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, id),
+      with: {
+        role: true,
+        usersToDepartments: { with: { department: true } },
+      }
+    });
 
-    const isSelfUpdate = user._id.toString() === requester.id;
-    const requesterHierarchy = ROLE_HIERARCHY[requester.role];
+    if (!userWithRels) throw new NotFoundException('User not found');
 
-    //self-update
+    const targetRole = userWithRels.role;
+    const targetHierarchy = targetRole ? targetRole.hierarchy : 0;
+    const requesterHierarchy = requester.roleHierarchy;
+    const isSelfUpdate = userWithRels.id === requester.id;
+
     if (isSelfUpdate) {
-      if (!requester.permissions.includes('edit_own_user_info')) {
+      if (!requester.permissions.includes(permissions.EDIT_USERS)) {
         throw new ForbiddenException('You cannot update your own info');
       }
-      const forbiddenFields = ['role', 'departmentId', 'companyId'];
+      const forbiddenFields = ['roles', 'departmentIds', 'companyId'];
       for (const field of forbiddenFields) {
         if (field in updateUserDto) {
           throw new ForbiddenException(`You cannot update your own ${field}`);
         }
       }
-    } 
-    // update other users
-    else {
-      if (requester.role === Roles.EMPLOYEE || requester.role === Roles.MANAGER) {
+    } else {
+      if (requesterHierarchy < AUTHORITY_LEVELS.DEPARTMENT) {
         throw new ForbiddenException('You cannot update other users');
       }
-      if (user.companyId.toString() !== requester.companyId) {
+      if (userWithRels.companyId !== requester.companyId && requester.roleHierarchy < AUTHORITY_LEVELS.GLOBAL) {
         throw new ForbiddenException('Cannot update users outside your company');
       }
-      if (requester.role === Roles.ADMIN) {
-        const forbiddenFields = ['name', 'surname', 'email', 'username', 'password', 'role', 'companyId'];
-        for (const field of forbiddenFields) {
-          if (field in updateUserDto) {
-            throw new ForbiddenException(`Admin cannot update ${field} of other users`);
-          }
-        }
-
-        const targetHierarchy = ROLE_HIERARCHY[user.role];
-        if (targetHierarchy >= requesterHierarchy) {
-          throw new ForbiddenException('Cannot update users with equal or higher role');
-        }
-      }
-      if (requester.role === Roles.SUPERADMIN) {
-        if ('companyId' in updateUserDto) {
-          delete updateUserDto.companyId;
-        }
-        if (updateUserDto.role) {
-          const requestedRoleHierarchy = ROLE_HIERARCHY[updateUserDto.role];
-          if (requestedRoleHierarchy >= requesterHierarchy) {
-            throw new ForbiddenException('Cannot assign a role equal or higher than your own role');
-          }
-          const newPermissions = ROLE_DEFAULT_PERMISSIONS[updateUserDto.role];
-          await this.permissionModel.findOneAndUpdate(
-            { userId: new Types.ObjectId(user._id) },
-            { permissions: newPermissions, isActive: true },
-            { upsert: true, new: true }
-          );
-        }
-      }
-
-      //department validation
-      if (updateUserDto.departmentId) {
-        const department = await this.departmentModel.findOne({
-          _id: new Types.ObjectId(updateUserDto.departmentId),
-          companyId: requester.companyId, // must belong to same company
-        });
-        if (!department) {
-          throw new ConflictException('Department does not exist in your company');
-        }
+      if (requester.roleHierarchy >= AUTHORITY_LEVELS.COMPANY && targetHierarchy >= requesterHierarchy) {
+        throw new ForbiddenException('Cannot update users with equal or higher role');
       }
     }
 
-    // Hash password if present
     if (updateUserDto.password) {
       updateUserDto.password = await this.authService.hashPassword(updateUserDto.password);
     }
-    if ('companyId' in updateUserDto) {
-      delete updateUserDto.companyId;
-    }
+
+    const { roleId, departmentIds, ...rest } = updateUserDto as any;
 
     try {
-      const updatedUser = await this.userModel.findByIdAndUpdate(
-        id,
-        updateUserDto,
-        { new: true }
-      );
+      await this.db.transaction(async (tx) => {
+        if (Object.keys(rest).length > 0) {
+          await tx.update(schema.users)
+            .set({ ...rest, updatedAt: new Date() })
+            .where(eq(schema.users.id, id));
+        }
 
-      if (!updatedUser) throw new NotFoundException('User not found');
+        if (roleId) {
+          const targetRoleFromDb = await tx.query.roles.findFirst({
+            where: and(
+              eq(schema.roles.name, roleId as string),
+              or(isNull(schema.roles.companyId), eq(schema.roles.companyId, userWithRels.companyId as string))
+            ),
+          });
+          if (!targetRoleFromDb) throw new BadRequestException('Invalid role provided');
 
-      return mapUserToIUser(updatedUser);
-    } catch (error) {
-      if (error instanceof MongoServerError && error.code === 11000) {
-        if (error.keyPattern?.email) throw new ConflictException('Email already exists');
-        if (error.keyPattern?.username) throw new ConflictException('Username already exists');
+          if (targetRoleFromDb.hierarchy >= requesterHierarchy) {
+            throw new ForbiddenException('Cannot assign a role equal or higher than your own');
+          }
+
+          await tx.update(schema.users)
+            .set({ roleId: targetRoleFromDb.id })
+            .where(eq(schema.users.id, id));
+        }
+
+        if (departmentIds) {
+          const targetDepts = await tx.query.departments.findMany({
+            where: and(inArray(schema.departments.id, departmentIds), eq(schema.departments.companyId, userWithRels.companyId as string))
+
+          });
+          if (targetDepts.length !== departmentIds.length) throw new BadRequestException('Invalid departments');
+
+          await tx.delete(schema.usersToDepartments).where(eq(schema.usersToDepartments.userId, id));
+          await tx.insert(schema.usersToDepartments).values(departmentIds.map(dId => ({ userId: id, departmentId: dId })));
+        }
+      });
+
+      return this.findMe(id);
+    } catch (error: any) {
+      if (error.code === '23505') {
+        if (error.detail?.includes('email')) throw new ConflictException('Email already exists');
+        if (error.detail?.includes('username')) throw new ConflictException('Username already exists');
       }
       throw error;
     }
   }
 
-  async remove(
-    userId: string,
-    requester: {
-      id: string;
-      role: RoleType;
-      companyId: string;
-      departmentId: string;
-      permissions: PermissionType[];
-    }
-  ) {
-    const user = await this.userModel.findById(userId);
+  async remove(userId: string, requester: any) {
+    const userWithRels = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      with: { role: true, usersToDepartments: true }
+    });
 
-    if (!user) throw new NotFoundException('User not found');
-    if (!user.isVisible) throw new ConflictException('User already deleted');
+    if (!userWithRels || userWithRels.deletedAt) throw new NotFoundException('User not found');
 
-    // Permission check
-    if (!requester.permissions.includes("delete_user")) {
-      throw new ForbiddenException('You do not have permission to delete users');
-    }
+    const targetHierarchy = userWithRels.role?.hierarchy || 0;
+    const requesterHierarchy = requester.roleHierarchy;
 
-    const requesterHierarchy = ROLE_HIERARCHY[requester.role];
-    const targetHierarchy = ROLE_HIERARCHY[user.role];
+    if (targetHierarchy >= requesterHierarchy) throw new ForbiddenException('Cannot delete users with equal or higher role');
 
-    // Cannot delete equal or higher role
-    if (targetHierarchy >= requesterHierarchy) {
-      throw new ForbiddenException('Cannot delete users with equal or higher role');
-    }
-
-    // Company check
-    if (user.companyId.toString() !== requester.companyId) {
-      throw new ForbiddenException('Cannot delete users outside your company');
-    }
-
-    // Manager → only same department
-    if (
-      requester.role === Roles.MANAGER &&
-      user.departmentId?.toString() !== requester.departmentId
-    ) {
-      throw new ForbiddenException('Managers can only delete users in their department');
-    }
-
-    // Soft delete user
-    user.isVisible = false;
-    await user.save();
-
-    // Soft delete reports and tickets
-    const reports = await this.reportModel.find({ user_id: user._id }, { _id: 1 });
-    const reportIds = reports.map(r => r._id);
-
-    if (reportIds.length > 0) {
-      await this.reportModel.updateMany(
-        { _id: { $in: reportIds } },
-        { $set: { isVisible: false } }
-      );
-      await this.ticketModel.updateMany(
-        { report_id: { $in: reportIds } },
-        { $set: { isVisible: false } }
-      );
-    }
-
-    // Soft delete permissions
-    await this.permissionModel.updateMany(
-      { userId: user._id },
-      { $set: { isActive: false } }
-    );
+    await this.db.update(schema.users)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(eq(schema.users.id, userId));
 
     return { deleted: true };
   }
 
   async findByEmail(email: string) {
-    return this.userModel.findOne({ email });
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.email, email),
+      with: {
+        role: true,
+        usersToDepartments: true,
+      }
+    });
+    if (!user) return null;
+    return user;
   }
-
-  async getUserPermissions(userId: string): Promise<PermissionDocument> {
-    const permissionsDoc = await this.permissionModel.findOne({ userId: new Types.ObjectId(userId), isActive: true });
-    if (!permissionsDoc) throw new NotFoundException('Permissions not found');
-    return permissionsDoc;
-  }
-
-
-
 }

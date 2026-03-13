@@ -1,49 +1,37 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Types } from "mongoose";
+import { pgTable, uuid, varchar, boolean, timestamp, integer } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { users } from "../../users/schemas/user.schema";
+import { tickets } from "../../tickets/schemas/ticket.schema";
+import { ticketHistories } from "../../history/history.schema";
 import type { ReportStatusType } from "@ticket-registrator/shared";
 import { ReportStatus } from "@ticket-registrator/shared";
 
-export type ReportDocument = HydratedDocument<Report>;
+export const reports = pgTable("reports", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+        .references(() => users.id, { onDelete: "cascade" })
+        .notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    startDate: timestamp("start_date").notNull(),
+    endDate: timestamp("end_date").notNull(),
+    requestedAmount: integer("requested_amount").default(0).notNull(),
+    approvedAmount: integer("approved_amount").default(0).notNull(),
+    currency: varchar("currency", { length: 10 }).notNull(),
+    type: varchar("type", { length: 50 }).notNull(),
+    status: varchar("status", { length: 50 }).default(ReportStatus.CREATED).notNull(),
+    isVisible: boolean("is_visible").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
-@Schema({ timestamps: true })
-export class Report {
+export const reportRelations = relations(reports, ({ one, many }) => ({
+    user: one(users, {
+        fields: [reports.userId],
+        references: [users.id],
+    }),
+    tickets: many(tickets),
+    ticketHistories: many(ticketHistories),
+}));
 
-    createdAt: Date;
-    updatedAt: Date;
-    
-    @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-    user_id: Types.ObjectId;
-
-    @Prop()
-    name: string;
-
-    @Prop()
-    start_date: Date;
-
-    @Prop()
-    end_date: Date;
-
-    @Prop({ type: Number, required: true, default: 0})
-    requested_amount: number;
-
-    @Prop({ type: Number, required: true, default: 0 })
-    approved_amount: number;
-
-    @Prop()
-    currency: string;
-
-    @Prop()
-    type: string;
-
-    @Prop({
-        required: true,
-        enum: Object.values(ReportStatus),
-        default: ReportStatus.CREATED,
-    })
-    status: ReportStatusType;
-
-    @Prop({ type: Boolean, default: true })
-      isVisible: boolean;
-}
-
-export const ReportSchema = SchemaFactory.createForClass(Report);
+export type Report = typeof reports.$inferSelect;
+export type InsertReport = typeof reports.$inferInsert;

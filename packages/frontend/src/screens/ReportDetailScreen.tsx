@@ -1,14 +1,72 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ScanLine, FileText, Calendar, Wallet, Banknote, Tag, History, Plus } from "lucide-react";
+import { ArrowLeft, ScanLine, FileText, Calendar, Wallet, Banknote, Tag, Plus, Send, CheckCircle, Trash2, ArrowRight, AlertTriangle, Receipt, TrendingUp } from "lucide-react";
 import { Button } from "../components/Button";
 import { StatusBadge } from "../components/StatusBadge";
 import { TicketUploadModal } from "../components/TicketUploadModal";
 import { TicketDetailModal } from "../components/TicketDetailModal";
-import { useReportQuery, useTicketsQuery, type ITicket } from "@ticket-registrator/shared";
+import { useReportQuery, useTicketsQuery, useSubmitReportMutation, useDeleteTicketMutation, useDeleteReportMutation, type ITicket } from "@ticket-registrator/shared";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
+
+const TicketSkeleton = () => (
+  <div className="bg-white rounded-[2rem] border border-gray-100 p-5 animate-pulse flex items-center gap-4">
+    <div className="w-12 h-12 bg-gray-100 rounded-2xl shrink-0" />
+    <div className="flex-1 space-y-2">
+      <div className="h-4 bg-gray-100 rounded w-2/3" />
+      <div className="h-3 bg-gray-100 rounded w-1/3" />
+    </div>
+    <div className="text-right space-y-1.5">
+      <div className="h-5 bg-gray-100 rounded w-20 ml-auto" />
+      <div className="h-4 bg-gray-100 rounded w-14 ml-auto" />
+    </div>
+  </div>
+);
+
+const ConfirmDialog = ({
+  icon,
+  iconBg,
+  title,
+  description,
+  onCancel,
+  onConfirm,
+  confirmLabel,
+  confirmClassName,
+  isLoading,
+}: {
+  icon: React.ReactNode;
+  iconBg: string;
+  title: string;
+  description: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  confirmLabel: string;
+  confirmClassName?: string;
+  isLoading?: boolean;
+}) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark/50 backdrop-blur-sm">
+    <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-300">
+      <div className={`w-14 h-14 ${iconBg} rounded-2xl flex items-center justify-center mb-6 mx-auto`}>
+        {icon}
+      </div>
+      <h3 className="text-xl font-black text-dark text-center mb-2 tracking-tight">{title}</h3>
+      <p className="text-gray-500 text-sm text-center leading-relaxed mb-8">{description}</p>
+      <div className="flex gap-3">
+        <Button variant="ghost" onClick={onCancel} className="flex-1" disabled={isLoading}>
+          Cancelar
+        </Button>
+        <Button
+          onClick={onConfirm}
+          isLoading={isLoading}
+          className={`flex-1 border-transparent ${confirmClassName}`}
+        >
+          {confirmLabel}
+        </Button>
+      </div>
+    </div>
+  </div>
+);
 
 export const ReportDetailScreen = () => {
   const { t, i18n } = useTranslation();
@@ -17,22 +75,60 @@ export const ReportDetailScreen = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<ITicket | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  
+  const [submitConfirm, setSubmitConfirm] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+
   const { data: report, isLoading, isError } = useReportQuery(id);
   const { data: tickets, isLoading: isLoadingTickets } = useTicketsQuery(id!);
+  const submitMutation = useSubmitReportMutation({
+    onSuccess: () => setSubmitConfirm(false),
+  });
+  const deleteTicketMutation = useDeleteTicketMutation();
+  const deleteReportMutation = useDeleteReportMutation({
+    onSuccess: () => navigate("/trips"),
+  });
 
-  const dateLocale = i18n.language.startsWith('es') ? es : enUS;
+  const dateLocale = i18n.language.startsWith("es") ? es : enUS;
+
+  const pendingAmount = tickets
+    ?.filter(tk => tk.status.toUpperCase() === "PENDING")
+    .reduce((acc, tk) => acc + (tk.amount || 0), 0) ?? 0;
+
+  const isEditable = report && ["CREATED", "DRAFT"].includes(report.status.toUpperCase());
 
   const handleTicketClick = (ticket: ITicket) => {
     setSelectedTicket(ticket);
     setIsDetailModalOpen(true);
   };
 
+  const handleDeleteTicket = (e: React.MouseEvent, ticket: ITicket) => {
+    e.stopPropagation();
+    if (!id) return;
+    const ticketId = ticket.id;
+    deleteTicketMutation.mutate({ reportId: id, ticketId });
+  };
+
   if (isLoading) {
     return (
-      <div className="h-[60vh] flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-gray-500 font-medium">{t('reportDetail.loadingDetails')}</p>
+      <div className="space-y-8 pb-20 animate-pulse">
+        <div className="h-10 w-32 bg-gray-100 rounded-xl" />
+        <div className="bg-white rounded-[2.5rem] border border-gray-100 p-8 space-y-5">
+          <div className="flex gap-3">
+            <div className="h-7 w-24 bg-gray-100 rounded-full" />
+            <div className="h-7 w-16 bg-gray-100 rounded-xl" />
+          </div>
+          <div className="h-9 w-2/3 bg-gray-100 rounded-xl" />
+          <div className="flex gap-4">
+            <div className="h-5 w-32 bg-gray-100 rounded" />
+            <div className="h-5 w-20 bg-gray-100 rounded" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-4">
+            {[1, 2, 3].map(i => <TicketSkeleton key={i} />)}
+          </div>
+          <div className="bg-white rounded-[2.5rem] border border-gray-100 h-64 animate-pulse" />
+        </div>
       </div>
     );
   }
@@ -40,203 +136,330 @@ export const ReportDetailScreen = () => {
   if (isError || !report) {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center text-center px-4">
-        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mb-4">
           <FileText className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-bold text-dark mb-2">{t('reportDetail.errorLoading')}</h2>
-        <p className="text-gray-500 mb-6">{t('reportDetail.errorDesc')}</p>
-        <Button onClick={() => navigate('/trips')} className="w-auto px-8">{t('common.cancel')}</Button>
+        <h2 className="text-xl font-black text-dark mb-2">{t("reportDetail.errorLoading")}</h2>
+        <p className="text-gray-500 mb-6 text-sm">{t("reportDetail.errorDesc")}</p>
+        <Button onClick={() => navigate("/trips")} className="w-auto px-8">{t("common.cancel")}</Button>
       </div>
     );
   }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-20">
-      
-      {/* 1. Navigation & Header */}
-      <div className="flex flex-col gap-6">
-        <button 
-            onClick={() => navigate('/trips')}
-            className="flex items-center gap-2 text-gray-400 hover:text-dark transition-colors w-fit group"
-        >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-sm font-semibold">{t('reportDetail.backToTrips')}</span>
-        </button>
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-            
-            <div className="relative z-10 flex flex-col gap-4">
-                <div className="flex flex-wrap items-center gap-3">
-                    <h1 className="text-3xl font-bold text-dark tracking-tight">{report.name}</h1>
-                    <StatusBadge status={report.status} />
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-gray-500">
-                    <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-brand/60" />
-                        <span className="text-sm font-medium">
-                            {format(new Date(report.start_date), "d MMM", { locale: dateLocale })} - {format(new Date(report.end_date), "d MMM yyyy", { locale: dateLocale })}
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-2 border-l border-gray-200 pl-6">
-                        <Tag className="w-4 h-4 text-brand/60" />
-                        <span className="text-sm font-medium">{report.type || t('common.loading')}</span>
-                    </div>
-                    <div className="flex items-center gap-2 border-l border-gray-200 pl-6">
-                        <span className="text-xs font-mono bg-gray-50 px-2 py-1 rounded border border-gray-100 text-gray-400">
-                            #{id?.substring(0,8)}
-                        </span>
-                    </div>
-                </div>
+      {/* Back nav */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => navigate("/trips")}
+          className="flex items-center gap-2 text-gray-400 hover:text-dark transition-colors group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span className="text-sm font-bold">{t("reportDetail.backToTrips")}</span>
+        </button>
+        {isEditable && (
+          <button
+            onClick={() => setDeleteConfirm(true)}
+            className="flex items-center gap-1.5 text-red-400 hover:text-red-600 text-sm font-bold transition-colors group"
+          >
+            <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            <span className="hidden sm:inline">{t("common.delete")}</span>
+          </button>
+        )}
+      </div>
+
+      {/* Hero header */}
+      <div className="relative bg-brand rounded-[2rem] p-8 overflow-hidden shadow-xl shadow-brand/20">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4 pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <StatusBadge status={report.status} size="md" />
+              <span className="text-[10px] font-mono text-white/40 bg-white/10 px-2.5 py-1 rounded-full border border-white/10">
+                #{id?.substring(0, 8)}
+              </span>
             </div>
-            
-            <Button 
-                onClick={() => setIsUploadModalOpen(true)} 
-                className="w-full md:w-auto px-8 py-4 text-lg shadow-2xl shadow-brand/20 group relative overflow-hidden"
+
+            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight leading-tight">
+              {report.name}
+            </h1>
+
+            <div className="flex flex-wrap items-center gap-4 text-white/60 text-sm font-medium">
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" />
+                {format(new Date(report.start_date), "d MMM", { locale: dateLocale })} — {format(new Date(report.end_date), "d MMM yyyy", { locale: dateLocale })}
+              </span>
+              {report.type && (
+                <span className="flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5" />
+                  {report.type}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 shrink-0">
+            {isEditable && (
+              <Button
+                onClick={() => setSubmitConfirm(true)}
+                isLoading={submitMutation.isPending}
+                variant="white"
+                className="w-auto font-black text-sm px-4 py-2.5"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                {t("reportDetail.submitReport")}
+              </Button>
+            )}
+            {report.status.toUpperCase() === "SUBMITTED" && (
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50/20 rounded-2xl border border-amber-200/30 text-amber-200 text-sm font-bold">
+                <CheckCircle className="w-4 h-4" />
+                {t("reportDetail.submittedReview")}
+              </div>
+            )}
+            {report.status.toUpperCase() === "APPROVED" && (
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50/20 rounded-2xl border border-green-200/30 text-green-300 text-sm font-bold">
+                <CheckCircle className="w-4 h-4" />
+                {t("reportDetail.approved")}
+              </div>
+            )}
+            {report.status.toUpperCase() === "REJECTED" && (
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50/20 rounded-2xl border border-red-200/30 text-red-300 text-sm font-bold">
+                <AlertTriangle className="w-4 h-4" />
+                {t("status.REJECTED")}
+              </div>
+            )}
+            <Button
+              onClick={() => setIsUploadModalOpen(true)}
+              disabled={!isEditable}
+              variant="ghost-white"
+              className="w-auto font-bold text-sm px-4 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                <ScanLine className="w-5 h-5 mr-2 relative z-10" />
-                <span className="relative z-10">{t('reportDetail.scanTicket')}</span>
+              <ScanLine className="w-4 h-4 mr-2" />
+              {t("reportDetail.scanTicket")}
             </Button>
+          </div>
         </div>
       </div>
 
+      {/* Submit dialog */}
+      {submitConfirm && (
+        <ConfirmDialog
+          icon={<Send className="w-7 h-7 text-green-600" />}
+          iconBg="bg-green-100"
+          title={t("reportDetail.submitReport")}
+          description={t("reportDetail.confirmSubmit")}
+          onCancel={() => setSubmitConfirm(false)}
+          onConfirm={() => submitMutation.mutate(id!)}
+          confirmLabel={t("reportDetail.submitReport")}
+          confirmClassName="bg-green-600 hover:bg-green-700 shadow-xl shadow-green-600/20"
+          isLoading={submitMutation.isPending}
+        />
+      )}
+
+      {/* Delete report dialog */}
+      {deleteConfirm && (
+        <ConfirmDialog
+          icon={<AlertTriangle className="w-7 h-7 text-red-600" />}
+          iconBg="bg-red-100"
+          title={`${t("common.delete")} reporte`}
+          description="¿Estás seguro de que quieres eliminar este reporte? Esta acción no se puede deshacer y se eliminarán todos los tickets asociados."
+          onCancel={() => setDeleteConfirm(false)}
+          onConfirm={() => deleteReportMutation.mutate(id!)}
+          confirmLabel={t("common.delete")}
+          confirmClassName="bg-red-600 hover:bg-red-700 shadow-xl shadow-red-600/20"
+          isLoading={deleteReportMutation.isPending}
+        />
+      )}
+
+      {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-              <div className="flex items-center justify-between px-1">
-                <h2 className="text-xl font-bold text-dark flex items-center gap-2">
-                    {t('reportDetail.ticketsTitle')}
-                    <span className="text-xs font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                        {tickets?.length || 0}
-                    </span>
-                </h2>
-                <div className="flex items-center gap-1 text-xs font-bold text-brand hover:underline cursor-pointer">
-                    <History className="w-3.5 h-3.5" />
-                    {t('reportDetail.activityHistory')}
-                </div>
-              </div>
-              
-              {isLoadingTickets ? (
-                <div className="flex justify-center py-12">
-                    <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              ) : tickets && tickets.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
-                    {tickets.map((ticket) => (
-                        <div 
-                            key={ticket.id}
-                            onClick={() => handleTicketClick(ticket)}
-                            className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md hover:border-brand/20 transition-all cursor-pointer group flex items-center justify-between"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center group-hover:bg-brand/5 transition-colors">
-                                    <FileText className="w-6 h-6 text-gray-300 group-hover:text-brand transition-colors" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-dark group-hover:text-brand transition-colors">{ticket.location_name || "Ticket"}</h4>
-                                    <p className="text-xs text-gray-400 font-medium">
-                                        {ticket.date ? format(new Date(ticket.date), "PPP", { locale: dateLocale }) : "---"}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-6">
-                                <div className="text-right">
-                                    <p className="font-bold text-dark text-lg">{ticket.amount} <span className="text-[10px] text-gray-400">{ticket.currency}</span></p>
-                                    <StatusBadge status={ticket.status} />
-                                </div>
-                                <ArrowLeft className="w-4 h-4 text-gray-200 group-hover:text-brand rotate-180 transition-all group-hover:translate-x-1" />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-              ) : (
-                <div className="bg-white/40 backdrop-blur-sm rounded-[3rem] border border-dashed border-gray-300 p-20 text-center group hover:bg-white hover:border-brand/30 transition-all duration-500">
-                    <div className="relative w-24 h-24 mx-auto mb-8">
-                        <div className="absolute inset-0 bg-brand/5 rounded-full group-hover:scale-110 transition-transform duration-500" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <FileText className="w-10 h-10 text-gray-300 group-hover:text-brand/40 transition-colors" />
-                        </div>
-                        <div className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-xl shadow-lg flex items-center justify-center border border-gray-100 group-hover:rotate-12 transition-transform">
-                            <Plus className="w-4 h-4 text-brand" />
-                        </div>
+
+        {/* Ticket list */}
+        <div className="lg:col-span-2 space-y-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Receipt className="w-4 h-4 text-gray-400" />
+              <h2 className="text-sm font-black text-dark uppercase tracking-widest">{t("reportDetail.ticketsTitle")}</h2>
+              <span className="text-[10px] font-black bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full">
+                {tickets?.length || 0}
+              </span>
+            </div>
+            {isEditable && tickets && tickets.length > 0 && (
+              <button
+                onClick={() => setIsUploadModalOpen(true)}
+                className="flex items-center gap-1.5 text-brand text-xs font-black hover:underline"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Añadir
+              </button>
+            )}
+          </div>
+
+          {isLoadingTickets ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => <TicketSkeleton key={i} />)}
+            </div>
+          ) : tickets && tickets.length > 0 ? (
+            <div className="space-y-3">
+              {tickets.map((ticket) => (
+                <div
+                  key={ticket.id}
+                  onClick={() => handleTicketClick(ticket)}
+                  className="group bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-lg hover:shadow-brand/8 hover:border-brand/15 transition-all duration-300 cursor-pointer p-5 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="w-12 h-12 bg-brand/5 rounded-2xl flex items-center justify-center group-hover:bg-brand/10 transition-colors shrink-0 border border-brand/10">
+                      <FileText className="w-5 h-5 text-brand/40 group-hover:text-brand/60 transition-colors" />
                     </div>
-                    <h3 className="text-2xl font-bold text-dark mb-3 tracking-tight">{t('reportDetail.startDigitalizing')}</h3>
-                    <p className="text-gray-500 text-base mb-10 max-w-sm mx-auto leading-relaxed">
-                        {t('reportDetail.digitalizeDesc')}
-                    </p>
-                    <Button variant="secondary" onClick={() => setIsUploadModalOpen(true)} className="w-auto px-10 rounded-2xl border-2 border-gray-100 hover:border-brand/20">
-                        <ScanLine className="w-5 h-5 mr-2" />
-                        {t('reportDetail.scanFirstTicket')}
-                    </Button>
+                    <div className="min-w-0">
+                      <h4 className="font-black text-dark group-hover:text-brand transition-colors truncate text-sm">
+                        {ticket.location_name || "Ticket sin nombre"}
+                      </h4>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {ticket.date && (
+                          <span className="text-[10px] text-gray-400 font-medium">
+                            {format(new Date(ticket.date), "dd MMM yyyy", { locale: dateLocale })}
+                          </span>
+                        )}
+                        {ticket.expense_type && (
+                          <span className="text-[10px] bg-brand/5 text-brand/70 px-2 py-0.5 rounded-full font-black uppercase tracking-wider border border-brand/10">
+                            {ticket.expense_type}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0 ml-3">
+                    <div className="text-right">
+                      <p className="font-black text-dark text-base leading-tight">
+                        {ticket.amount != null ? ticket.amount.toLocaleString() : "—"}
+                        <span className="text-[10px] text-gray-400 font-medium ml-1">{ticket.currency}</span>
+                      </p>
+                      <div className="mt-1">
+                        <StatusBadge status={ticket.status} size="sm" />
+                      </div>
+                    </div>
+                    {isEditable && (
+                      <button
+                        onClick={(e) => handleDeleteTicket(e, ticket)}
+                        className="w-8 h-8 rounded-xl bg-red-50 text-red-300 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 border border-red-100"
+                        title={t("common.delete")}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <ArrowRight className="w-4 h-4 text-gray-200 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
+                  </div>
                 </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              onClick={() => isEditable && setIsUploadModalOpen(true)}
+              className={`bg-white/60 backdrop-blur-sm rounded-[2.5rem] border-2 border-dashed border-gray-200 p-16 text-center transition-all duration-500 ${isEditable ? "hover:bg-white hover:border-brand/30 cursor-pointer group" : ""}`}
+            >
+              <div className="relative w-20 h-20 mx-auto mb-6">
+                <div className="absolute inset-0 bg-brand/5 rounded-2xl group-hover:scale-110 transition-transform duration-500" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <FileText className="w-9 h-9 text-gray-300 group-hover:text-brand/40 transition-colors" />
+                </div>
+                {isEditable && (
+                  <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-xl shadow-md flex items-center justify-center border border-gray-100 group-hover:rotate-12 transition-transform">
+                    <Plus className="w-3.5 h-3.5 text-brand" />
+                  </div>
+                )}
+              </div>
+              <h3 className="text-xl font-black text-dark mb-2 tracking-tight">{t("reportDetail.startDigitalizing")}</h3>
+              <p className="text-gray-400 text-sm mb-8 max-w-xs mx-auto leading-relaxed">
+                {t("reportDetail.digitalizeDesc")}
+              </p>
+              {isEditable && (
+                <Button variant="outline" className="w-auto mx-auto border-gray-200 hover:border-brand/30 font-bold">
+                  <ScanLine className="w-4 h-4 mr-2" />
+                  {t("reportDetail.scanFirstTicket")}
+                </Button>
               )}
-          </div>
+            </div>
+          )}
+        </div>
 
-          <div className="space-y-6">
-              <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-2 h-full bg-brand/10 group-hover:bg-brand transition-colors duration-500" />
-                  <div className="flex items-center gap-3 mb-8">
-                      <div className="w-10 h-10 bg-brand/10 text-brand rounded-xl flex items-center justify-center">
-                          <Wallet className="w-5 h-5" />
-                      </div>
-                      <h3 className="font-bold text-dark text-lg">{t('reportDetail.financialSummary')}</h3>
-                  </div>
-                  
-                  <div className="space-y-8">
-                      <div className="flex flex-col gap-1 p-5 rounded-2xl bg-gray-50/50 border border-gray-100">
-                          <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest">{t('reportDetail.totalRequested')}</span>
-                          <div className="flex items-baseline gap-2">
-                              <span className="text-4xl font-extrabold text-dark">{report.requested_amount}</span>
-                              <span className="text-sm font-bold text-gray-400">{report.currency}</span>
-                          </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                          <div className="p-4 rounded-2xl bg-green-50/30 border border-green-100/50">
-                              <span className="text-[10px] text-green-700/60 font-bold uppercase tracking-widest block mb-1">{t('reportDetail.approved')}</span>
-                              <div className="flex items-baseline gap-1">
-                                  <span className="text-xl font-extrabold text-green-600">{report.approved_amount}</span>
-                                  <span className="text-[10px] font-bold text-green-600/50">{report.currency}</span>
-                              </div>
-                          </div>
-                          <div className="p-4 rounded-2xl bg-amber-50/30 border border-amber-100/50">
-                              <span className="text-[10px] text-amber-700/60 font-bold uppercase tracking-widest block mb-1">{t('reportDetail.inReview')}</span>
-                              <div className="flex items-baseline gap-1">
-                                  <span className="text-xl font-extrabold text-amber-600">0</span>
-                                  <span className="text-[10px] font-bold text-amber-600/50">{report.currency}</span>
-                              </div>
-                          </div>
-                      </div>
+        {/* Financial sidebar */}
+        <div className="space-y-5">
 
-                      <div className="pt-4 flex flex-col gap-3 border-t border-gray-50">
-                         <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-400 font-medium flex items-center gap-2">
-                                <Banknote className="w-4 h-4" />
-                                {t('reportDetail.estimatedReimbursement')}
-                            </span>
-                            <span className="font-bold text-dark">{report.approved_amount} {report.currency}</span>
-                         </div>
-                      </div>
-                  </div>
+          {/* Financial summary */}
+          <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-brand/5 px-6 py-4 border-b border-brand/10 flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-brand" />
+              <h3 className="text-[10px] font-black text-brand/70 uppercase tracking-widest">{t("reportDetail.financialSummary")}</h3>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {/* Total */}
+              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{t("reportDetail.totalRequested")}</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-4xl font-black text-dark tracking-tighter">
+                    {(report.requested_amount ?? 0).toLocaleString()}
+                  </span>
+                  <span className="text-sm font-bold text-gray-400">{report.currency}</span>
+                </div>
               </div>
 
-              <div className="bg-brand/5 p-6 rounded-[2rem] border border-brand/10">
-                  <h4 className="text-sm font-bold text-brand-hover mb-2 flex items-center gap-2">
-                      <ScanLine className="w-4 h-4" />
-                      {t('reportDetail.aiTipTitle')}
-                  </h4>
-                  <p className="text-xs text-brand/70 leading-relaxed font-medium">
-                      {t('reportDetail.aiTipDesc')}
-                  </p>
+              {/* Approved & Pending grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 rounded-2xl bg-green-50/60 border border-green-100">
+                  <p className="text-[10px] font-black text-green-700/60 uppercase tracking-widest mb-1.5">{t("reportDetail.approved")}</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl font-black text-green-700">{(report.approved_amount ?? 0).toLocaleString()}</span>
+                    <span className="text-[10px] font-bold text-green-600/50">{report.currency}</span>
+                  </div>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-100">
+                  <p className="text-[10px] font-black text-amber-700/60 uppercase tracking-widest mb-1.5">{t("reportDetail.inReview")}</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl font-black text-amber-700">{pendingAmount.toLocaleString()}</span>
+                    <span className="text-[10px] font-bold text-amber-600/50">{report.currency}</span>
+                  </div>
+                </div>
               </div>
+
+              {/* Estimated reimbursement */}
+              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <span className="text-xs font-semibold text-gray-400 flex items-center gap-1.5">
+                  <Banknote className="w-3.5 h-3.5" />
+                  {t("reportDetail.estimatedReimbursement")}
+                </span>
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3 text-green-500" />
+                  <span className="text-sm font-black text-dark">
+                    {(report.approved_amount ?? 0).toLocaleString()} <span className="text-gray-400 font-bold text-xs">{report.currency}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
+
+          {/* AI tip */}
+          <div className="bg-brand/5 p-5 rounded-[2rem] border border-brand/10">
+            <div className="flex items-center gap-2 mb-2">
+              <ScanLine className="w-4 h-4 text-brand" />
+              <h4 className="text-xs font-black text-brand/80">{t("reportDetail.aiTipTitle")}</h4>
+            </div>
+            <p className="text-xs text-brand/60 leading-relaxed font-medium">
+              {t("reportDetail.aiTipDesc")}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <TicketUploadModal 
-        isOpen={isUploadModalOpen} 
-        onClose={() => setIsUploadModalOpen(false)} 
-        reportId={id!} 
+      <TicketUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        reportId={id!}
       />
 
       <TicketDetailModal

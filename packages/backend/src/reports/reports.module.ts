@@ -1,21 +1,14 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { ReportsService } from './reports.service';
 import { ReportsController } from './reports.controller';
-import { Report, ReportSchema } from './schemas/report.schema';
-import { Ticket, TicketSchema } from '../tickets/schemas/ticket.schema';
-import { User, UserSchema } from 'src/users/schemas/user.schema';
+import { RolesModule } from '../roles/roles.module';
+import { ReportsRepository } from './reports.repository';
+import { ReportsAuthorizationService } from './reports-authorization.service';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: Report.name, schema: ReportSchema },
-      { name: Ticket.name, schema: TicketSchema },
-      { name: User.name, schema: UserSchema },
-    ]),
-  ],
+  imports: [RolesModule],
   controllers: [ReportsController],
-  providers: [ReportsService],
-  exports: [ReportsService],
+  providers: [ReportsService, ReportsRepository, ReportsAuthorizationService],
+  exports: [ReportsService, ReportsRepository, ReportsAuthorizationService],
 })
-export class ReportsModule {}
+export class ReportsModule { }

@@ -30,16 +30,14 @@ export const RegisterForm = () => {
     });
 
     const onSubmit = (data: RegisterSchema) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { confirmPassword, ...rest } = data; 
-        mutate(rest as any); // Explicit cast to avoid strict mapping issues if any
+        mutate(data as any);
     };
 
     const serverErrorMessage = isError ? (error as AxiosError<{ message: string }>)?.response?.data?.message || t('common.error') : null;
 
     return (
         <div className="min-h-screen w-full grid lg:grid-cols-2 bg-surface">
-            
+
             {/* PANEL IZQUIERDO: Visual / Branding */}
             <div className="hidden lg:flex relative flex-col justify-between bg-dark p-16 overflow-hidden">
                 <div className="absolute inset-0 bg-grid-pattern opacity-20" />
@@ -48,7 +46,7 @@ export const RegisterForm = () => {
 
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md">
                     <div className="relative z-10 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 shadow-2xl animate-float">
-                         <div className="flex justify-between items-center mb-6">
+                        <div className="flex justify-between items-center mb-6">
                             <div className="flex items-center gap-2">
                                 <div className="p-2 bg-brand/20 rounded-lg text-brand-light">
                                     <PieChart className="w-5 h-5 text-white" />
@@ -56,12 +54,12 @@ export const RegisterForm = () => {
                                 <span className="text-white font-medium text-sm">{t('register.monthlyExpenses')}</span>
                             </div>
                             <span className="text-green-400 text-xs font-mono">+12.5%</span>
-                         </div>
-                         <div className="flex items-end justify-between h-32 gap-2">
-                             {[40, 70, 45, 90, 60, 80].map((h, i) => (
-                                 <div key={i} className="w-full bg-white/10 rounded-t-sm hover:bg-brand/50 transition-colors duration-500" style={{ height: `${h}%` }}></div>
-                             ))}
-                         </div>
+                        </div>
+                        <div className="flex items-end justify-between h-32 gap-2">
+                            {[40, 70, 45, 90, 60, 80].map((h, i) => (
+                                <div key={i} className="w-full bg-white/10 rounded-t-sm hover:bg-brand/50 transition-colors duration-500" style={{ height: `${h}%` }}></div>
+                            ))}
+                        </div>
                     </div>
 
                     <div className="absolute -bottom-6 -right-6 bg-surface text-dark px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 animate-pulse-slow">
@@ -111,51 +109,51 @@ export const RegisterForm = () => {
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <Input 
+                            <Input
                                 label={t('register.nameLabel')}
                                 placeholder="Ej: Ana"
                                 {...register("name")}
-                                error={errors.name?.message} 
+                                error={errors.name?.message}
                             />
-                            <Input 
+                            <Input
                                 label={t('register.surnameLabel') || "Apellidos"}
                                 placeholder="Ej: García"
                                 {...register("surname")}
-                                error={errors.surname?.message} 
+                                error={errors.surname?.message}
                             />
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <Input 
+                            <Input
                                 label={t('register.emailLabel')}
-                                type="email" 
+                                type="email"
                                 placeholder="ana@empresa.com"
                                 {...register("email")}
-                                error={errors.email?.message} 
+                                error={errors.email?.message}
                             />
-                            <Input 
+                            <Input
                                 label={t('register.usernameLabel') || "Usuario"}
                                 placeholder="ana.garcia"
                                 {...register("username")}
-                                error={errors.username?.message} 
+                                error={errors.username?.message}
                             />
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <Input 
+                            <Input
                                 label={t('auth.passwordLabel')}
-                                type="password" 
+                                type="password"
                                 placeholder="••••••••••"
                                 {...register("password")}
-                                error={errors.password?.message} 
+                                error={errors.password?.message}
                             />
 
-                            <Input 
+                            <Input
                                 label={t('register.confirmPasswordLabel')}
-                                type="password" 
+                                type="password"
                                 placeholder="••••••••••"
                                 {...register("confirmPassword")}
-                                error={errors.confirmPassword?.message} 
+                                error={errors.confirmPassword?.message}
                             />
                         </div>
 
@@ -163,12 +161,12 @@ export const RegisterForm = () => {
                             <div className="p-4 rounded-xl bg-red-50 border border-red-100 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
                                 <span className="text-red-500 mt-0.5">⚠️</span>
                                 <p className="text-sm font-medium text-red-700">
-                                   {serverErrorMessage}
+                                    {serverErrorMessage}
                                 </p>
                             </div>
                         )}
 
-                        <Button type="submit" isLoading={isPending} className="mt-4 text-lg">
+                        <Button type="submit" isLoading={isPending} className="w-full mt-4 text-lg">
                             {t('register.submitButton')}
                         </Button>
                     </form>

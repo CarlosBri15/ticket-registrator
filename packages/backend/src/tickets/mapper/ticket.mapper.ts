@@ -1,32 +1,32 @@
-import { TicketDocument } from '../schemas/ticket.schema';
-import { ITicket, IItem } from '@ticket-registrator/shared';
+import { Ticket } from '../schemas/ticket.schema';
+import { ITicket, IItem, TicketStatusType, TicketLifecycleType, ItemStatusType } from '@ticket-registrator/shared';
+import { Item } from '../../items/schemas/item.schema';
 
-export const mapTicketToITicket = (ticketDoc: TicketDocument): ITicket => ({
-  id: ticketDoc._id.toString(),
-  report_id: ticketDoc.report_id.toString(),
-  status: ticketDoc.status,
-  lifecycle: ticketDoc.lifecycle,
+export const mapTicketToITicket = (ticketDoc: Ticket & { items?: Item[] }): ITicket => ({
+  id: ticketDoc.id,
+  report_id: ticketDoc.reportId,
+  status: ticketDoc.status as TicketStatusType,
+  lifecycle: ticketDoc.lifecycle as TicketLifecycleType,
   version: ticketDoc.version,
-  cgs_bucket_link: ticketDoc.cgs_bucket_link,
-  payment_type: ticketDoc.payment_type,
-  expense_type: ticketDoc.expense_type,
+  cgs_bucket_link: ticketDoc.cgsBucketLink,
+  payment_type: ticketDoc.paymentType,
+  expense_type: ticketDoc.expenseType,
   date: ticketDoc.date?.toISOString() ?? null,
-  location_name: ticketDoc.location_name,
-  location_address: ticketDoc.location_address,
+  location_name: ticketDoc.locationName,
+  location_address: ticketDoc.locationAddress,
   amount: ticketDoc.amount,
   currency: ticketDoc.currency,
-  converted_amount: ticketDoc.converted_amount,
-  converted_currency: ticketDoc.converted_currency,
-  cgs_bucket_link_justification: ticketDoc.cgs_bucket_link_justification,
-  last_four_digits: ticketDoc.last_four_digits,
-  items: ticketDoc.items?.map((item): IItem => ({
-    id:'',
+  converted_amount: ticketDoc.convertedAmount,
+  converted_currency: ticketDoc.convertedCurrency,
+  cgs_bucket_link_justification: ticketDoc.cgsBucketLinkJustification,
+  last_four_digits: ticketDoc.lastFourDigits,
+  items: ticketDoc.items?.map(item => ({
+    id: item.id,
     name: item.name,
     amount: item.amount,
     currency: item.currency,
-    status: item.status,
+    status: item.status as ItemStatusType,
   })) ?? [],
-  isVisible: ticketDoc.isVisible,
-  createdAt: ticketDoc.createdAt.toISOString(),
-  updatedAt: ticketDoc.updatedAt.toISOString(),
+  createdAt: ticketDoc.createdAt?.toISOString() ?? new Date().toISOString(),
+  updatedAt: ticketDoc.updatedAt?.toISOString() ?? new Date().toISOString(),
 });

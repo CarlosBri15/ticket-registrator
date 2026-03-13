@@ -1,20 +1,25 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Types } from "mongoose";
+import { pgTable, uuid, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { users } from "../../users/schemas/user.schema";
 import type { PermissionType } from "@ticket-registrator/shared";
 
-export type PermissionDocument = HydratedDocument<Permission>;
+export const permissions = pgTable("permissions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  permissions: jsonb("permissions").$type<PermissionType[]>().default([]).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
-@Schema({ timestamps: true })
-export class Permission {
+export const permissionRelations = relations(permissions, ({ one }) => ({
+  user: one(users, {
+    fields: [permissions.userId],
+    references: [users.id],
+  }),
+}));
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true, unique: true })
-  userId: Types.ObjectId;
-
-  @Prop({ type: [String], default: [] })
-  permissions: PermissionType[];
-
-  @Prop({ default: true })
-  isActive: boolean;
-}
-
-export const PermissionSchema = SchemaFactory.createForClass(Permission);
+export type Permission = typeof permissions.$inferSelect;
+export type InsertPermission = typeof permissions.$inferInsert;

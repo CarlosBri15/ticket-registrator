@@ -1,47 +1,54 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
-import {AuthGuard} from "@nestjs/passport";
+import { AuthGuard } from "@nestjs/passport";
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequireAnyPermission } from '../auth/decorators/permissions.decorator';
+import { permissions } from '@ticket-registrator/shared';
 
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   // Protected user creation
-  @UseGuards(AuthGuard('jwt'))
+  @RequireAnyPermission(permissions.CREATE_USERS)
   @Post()
   create(@Body() createUserDto: CreateUserDto, @Req() req) {
     const creator = {
-      role: req.user.role,
-      companyId: req.user.companyId,         
-      departmentId: req.user.departmentId, 
+      roleId: req.user.roleId,
+      roleName: req.user.roleName,
+      roleHierarchy: req.user.roleHierarchy,
+      companyId: req.user.companyId,
+      departmentIds: req.user.departmentIds,
       permissions: req.user.permissions,
     };
 
     return this.usersService.create(createUserDto, creator);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @RequireAnyPermission(permissions.VIEW_USERS)
   @Get()
   findAll(@Req() req) {
     const requester = {
       id: req.user.id,
-      role: req.user.role,
-      companyId: req.user.companyId,         
-      departmentId: req.user.departmentId, 
+      roleId: req.user.roleId,
+      roleName: req.user.roleName,
+      roleHierarchy: req.user.roleHierarchy,
+      companyId: req.user.companyId,
+      departmentIds: req.user.departmentIds,
       permissions: req.user.permissions,
     };
     return this.usersService.findAll(requester);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Get('me')
   findMe(@Req() req) {
     return this.usersService.findMe(req.user.id);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @RequireAnyPermission(permissions.EDIT_USERS)
   @Patch(':id')
   update(
     @Req() req,
@@ -50,9 +57,11 @@ export class UsersController {
   ) {
     const requester = {
       id: req.user.id,
-      role: req.user.role,
+      roleId: req.user.roleId,
+      roleName: req.user.roleName,
+      roleHierarchy: req.user.roleHierarchy,
       companyId: req.user.companyId,
-      departmentId: req.user.departmentId,
+      departmentIds: req.user.departmentIds,
       permissions: req.user.permissions,
     };
 
@@ -60,14 +69,16 @@ export class UsersController {
   }
 
 
-  @UseGuards(AuthGuard('jwt'))
+  @RequireAnyPermission(permissions.DELETE_USERS)
   @Delete(':id')
   remove(@Param('id') userId: string, @Req() req) {
     const requester = {
-      id: req.user.id,            
-      role: req.user.role,
-      companyId: req.user.companyId,         
-      departmentId: req.user.departmentId, 
+      id: req.user.id,
+      roleId: req.user.roleId,
+      roleName: req.user.roleName,
+      roleHierarchy: req.user.roleHierarchy,
+      companyId: req.user.companyId,
+      departmentIds: req.user.departmentIds,
       permissions: req.user.permissions,
     };
 
