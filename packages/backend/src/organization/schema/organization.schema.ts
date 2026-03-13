@@ -1,14 +1,19 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument} from 'mongoose';
+import { pgTable, uuid, varchar, boolean, timestamp } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { departments } from "../../department/schema/department.schema";
 
-export type CompanyDocument = HydratedDocument<Company>;
-@Schema()
-export class Company {   
+export const companies = pgTable("companies", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgName: varchar("org_name", { length: 255 }).notNull(),
+  //isVisible: boolean("is_visible").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at"),
+});
 
-  @Prop({ required: true })
-  orgName: string;
+export const companyRelations = relations(companies, ({ many }) => ({
+  departments: many(departments),
+}));
 
-  @Prop({ type: Boolean, default: true })
-  isVisible: boolean;
-}
-export const CompanySchema = SchemaFactory.createForClass(Company);
+export type Company = typeof companies.$inferSelect;
+export type InsertCompany = typeof companies.$inferInsert;

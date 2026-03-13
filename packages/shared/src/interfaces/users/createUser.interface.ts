@@ -4,5 +4,6 @@ export interface ICreateUser {
   email: string;
   username: string;
   password: string;
-  isVisible: boolean;
+  confirmPassword: string;
+  isVisible?: boolean;
 }

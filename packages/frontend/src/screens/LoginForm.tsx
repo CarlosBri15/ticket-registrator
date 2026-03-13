@@ -144,7 +144,7 @@ export const LoginForm = () => {
                             </div>
                         )}
 
-                        <Button type="submit" isLoading={isPending} className="mt-2 text-lg">
+                        <Button type="submit" isLoading={isPending} className="w-full mt-2 text-lg">
                             {t('auth.loginButton')}
                         </Button>
                     </form>

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TestModule } from './test/test.module';
-import { MongooseModule } from '@nestjs/mongoose';
+import { DbModule } from './db/db.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { TicketsModule } from './tickets/tickets.module';
@@ -9,6 +9,11 @@ import { GeminiModule } from './gemini/gemini.module';
 import { AuthModule } from './auth/auth.module';
 import { StorageModule } from './storage/storage.module';
 import { OrganizationModule } from './organization/organization.module';
+import { ItemsModule } from './items/items.module';
+import { DepartmentModule } from './department/department.module';
+import { RolesModule } from './roles/roles.module';
+import { PermissionsModule } from './permissions/permissions.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -16,13 +21,7 @@ import { OrganizationModule } from './organization/organization.module';
       isGlobal: true,
     }),
 
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGO_URI'),
-      }),
-      inject: [ConfigService],
-    }),
+    DbModule,
 
     TestModule,
 
@@ -38,6 +37,15 @@ import { OrganizationModule } from './organization/organization.module';
 
     StorageModule,
 
-    OrganizationModule],
+    OrganizationModule,
+
+    ItemsModule,
+
+    DepartmentModule,
+
+    RolesModule,
+    PermissionsModule,
+    SeedModule
+  ],
 })
-export class AppModule {}
+export class AppModule { }

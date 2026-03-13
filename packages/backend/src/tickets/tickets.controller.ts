@@ -1,102 +1,95 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
-import { CreateTicketDto } from './dto/create-ticket.dto';
-import { updateTicketFieldsSchema, updateTicketStatusSchema, updateTicketLlmSchema } from '@ticket-registrator/shared';
+import { permissions } from '@ticket-registrator/shared';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequireAnyPermission } from '../auth/decorators/permissions.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { UserPayload } from '../auth/decorators/current-user.decorator';
+import { UpdateTicketFieldsDto, UpdateTicketStatusDto } from './dto/update-ticket-user.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('reports/:reportId/tickets')
 export class TicketsController {
-  constructor(private readonly ticketsService: TicketsService) {}
+  constructor(private readonly ticketsService: TicketsService) { }
 
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(permissions.CREATE_TICKETS)
   @Post()
   @UseInterceptors(FileInterceptor('image'))
   create(
-    @Req() req,
+    @CurrentUser() requester: UserPayload,
     @Param('reportId') reportId: string,
-    //@Body() dto: CreateTicketDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.ticketsService.create(
-      req.user.userId,
-      reportId,
-      //dto,
-      file,
-    );
+    return this.ticketsService.create(requester, reportId, file);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(permissions.VIEW_TICKETS)
   @Get()
-  findAll(@Req() req, @Param('reportId') reportId: string) {
-    return this.ticketsService.findAll(req.user.userId, reportId);
+  findAll(
+    @CurrentUser() requester: UserPayload,
+    @Param('reportId') reportId: string
+  ) {
+    return this.ticketsService.findAll(requester, reportId);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(permissions.VIEW_TICKETS)
   @Get(':ticketId')
-  findOne(@Req() req, @Param('ticketId') id: string) {
-    return this.ticketsService.findOne(req.user.userId, req.params.reportId, id);
+  findOne(
+    @CurrentUser() requester: UserPayload,
+    @Param('reportId') reportId: string,
+    @Param('ticketId') id: string
+  ) {
+    return this.ticketsService.findOne(requester, reportId, id);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(permissions.EDIT_TICKETS)
   @Patch(':ticketId')
-    update(
-      @Req() req,
-      @Param('reportId') reportId: string,
-      @Param('ticketId') ticketId: string,
-      @Body() body: unknown,
-    ) {
-      // Status update
-      if (typeof body === 'object' && body !== null && 'status' in body) {
-        const parsed = updateTicketStatusSchema.safeParse(body);
-        if (!parsed.success) {
-          throw new BadRequestException(parsed.error.format());
-        }
-        return this.ticketsService.updateStatus(reportId, ticketId, parsed.data);
-      }
-
-      // LLM update
-      if (
-        typeof body === 'object' &&
-        body !== null &&
-        ('llm_appproved_percentage' in body ||
-        'llm_suggested_amount' in body ||
-        'llm_recomendation' in body)
-      ) {
-        const parsed = updateTicketLlmSchema.safeParse(body);
-        if (!parsed.success) {
-          throw new BadRequestException(parsed.error.format());
-        }
-        //return this.ticketsService.updateLlm(reportId, ticketId, parsed.data);
-      }
-
-      // Fields update
-      const parsed = updateTicketFieldsSchema.safeParse(body);
-      if (!parsed.success) {
-        throw new BadRequestException(parsed.error.format());
-      }
-      return this.ticketsService.update(
-        req.user.userId,
-        reportId,
-        ticketId,
-        parsed.data,
-      );
+  update(
+    @CurrentUser() requester: UserPayload,
+    @Param('reportId') reportId: string,
+    @Param('ticketId') ticketId: string,
+    @Body() dto: UpdateTicketFieldsDto,
+  ) {
+    return this.ticketsService.update(requester, reportId, ticketId, dto);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(permissions.APPROVE_TICKETS)
+  @Patch(':ticketId/status')
+  updateStatus(
+    @CurrentUser() requester: UserPayload,
+    @Param('reportId') reportId: string,
+    @Param('ticketId') ticketId: string,
+    @Body() dto: UpdateTicketStatusDto,
+  ) {
+    return this.ticketsService.updateStatus(requester, reportId, ticketId, dto);
+  }
 
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(permissions.DELETE_TICKETS)
   @Delete(':ticketId')
   remove(
-    @Req() req,
+    @CurrentUser() requester: UserPayload,
     @Param('reportId') reportId: string,
     @Param('ticketId') ticketId: string,
   ) {
-    return this.ticketsService.remove(req.user.userId, reportId, ticketId);
+    return this.ticketsService.remove(requester, reportId, ticketId);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(permissions.VIEW_TICKETS)
   @Get(':ticketId/image')
   getImage(
-    @Req() req,
+    @CurrentUser() requester: UserPayload,
     @Param('reportId') reportId: string,
     @Param('ticketId') ticketId: string,
   ) {
-    return this.ticketsService.getTicketImageUrl(req.user.userId, reportId, ticketId);
+    return this.ticketsService.getTicketImageUrl(requester, reportId, ticketId);
   }
-
 }

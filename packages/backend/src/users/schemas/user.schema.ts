@@ -1,38 +1,41 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Types } from "mongoose";
-import type { RoleType } from "@ticket-registrator/shared";
-import { Roles } from "@ticket-registrator/shared";
+import { pgTable, uuid, varchar, timestamp } from "drizzle-orm/pg-core";
+import { companies } from "../../organization/schema/organization.schema";
+import { departments } from "../../department/schema/department.schema";
+import { relations } from "drizzle-orm";
+import { roles } from "../../roles/schemas/role.schema";
+import { reports } from "../../reports/schemas/report.schema";
 
-export type UserDocument = HydratedDocument<User>;
+export const users = pgTable("users", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: varchar("name", { length: 255 }),
+    surname: varchar("surname", { length: 255 }),
+    email: varchar("email", { length: 255 }).unique(),
+    username: varchar("username", { length: 255 }).unique(),
+    password: varchar("password", { length: 255 }),
+    companyId: uuid("company_id")
+        .references(() => companies.id, { onDelete: "cascade" }),
+    roleId: uuid("role_id").notNull()
+        .references(() => roles.id, { onDelete: "no action" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at"),
+});
 
-@Schema({ timestamps: true })
-export class User {
-    @Prop({ required: true })
-    name: string;
+import { usersToDepartments } from "./user-relations.schema";
 
-    @Prop({ required: true })
-    surname: string;
+export const userRelations = relations(users, ({ one, many }) => ({
+    company: one(companies, {
+        fields: [users.companyId],
+        references: [companies.id],
+    }),
+    role: one(roles, {
+        fields: [users.roleId],
+        references: [roles.id],
+    }),
+    reports: many(reports),
+    usersToDepartments: many(usersToDepartments),
+}));
 
-    @Prop({ required: true, unique: true })
-    email: string;
 
-    @Prop({ required: true, unique: true })
-    username: string;
-
-    @Prop({ required: true })
-    password: string;
-
-    @Prop({required: true, enum: Object.values(Roles)})
-    role: RoleType;
-
-    @Prop({ type: Types.ObjectId, ref: 'Company', required: true })
-    companyId: Types.ObjectId;
-
-    @Prop({ type: Types.ObjectId, ref: 'Department', required: true })
-    departmentId: Types.ObjectId;
-
-    @Prop({ type: Boolean, default: true })
-    isVisible: boolean;
-}
-
-export const UserSchema = SchemaFactory.createForClass(User);
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;

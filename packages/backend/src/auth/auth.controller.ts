@@ -5,9 +5,8 @@ import type { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
-  // Login endpoint
   @Post('login')
   async login(
     @Body() loginDto: LoginDto,
@@ -15,7 +14,6 @@ export class AuthController {
   ) {
     const { access_token } = await this.authService.login(loginDto);
 
-    // Set JWT in HttpOnly cookie
     res.cookie('access_token', access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

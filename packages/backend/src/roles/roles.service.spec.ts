@@ -1,0 +1,109 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { RolesService } from './roles.service';
+import { RolesRepository } from './roles.repository';
+import { RolesAuthorizationService } from './roles-authorization.service';
+import { Roles } from '@ticket-registrator/shared';
+import { RoleNotFoundException, RoleConflictException } from './exceptions/roles.exceptions';
+
+describe('RolesService', () => {
+  let service: RolesService;
+  let repositoryMock: any;
+  let authServiceMock: any;
+
+  beforeEach(async () => {
+    repositoryMock = {
+      findAllPermissions: jest.fn().mockResolvedValue([]),
+      bulkInsertPermissions: jest.fn(),
+      findAllSystemRoles: jest.fn().mockResolvedValue([]),
+      bulkInsertRoles: jest.fn(),
+      findAllRolePermissions: jest.fn().mockResolvedValue([]),
+      bulkInsertRolePermissions: jest.fn(),
+      findByNameAndCompany: jest.fn(),
+      create: jest.fn(),
+      findById: jest.fn(),
+      findAllCompanyRoles: jest.fn(),
+      update: jest.fn(),
+      getRolePermissionsByNames: jest.fn().mockResolvedValue([]),
+    };
+
+    authServiceMock = {
+      validateHierarchy: jest.fn(),
+      validateCompanyAccess: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        RolesService,
+        { provide: RolesRepository, useValue: repositoryMock },
+        { provide: RolesAuthorizationService, useValue: authServiceMock },
+      ],
+    }).compile();
+
+    service = module.get<RolesService>(RolesService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  describe('create', () => {
+    const dto = { name: 'New Role', hierarchy: 1 };
+    const requester = { id: 'user-1', role: Roles.ADMIN } as any;
+
+    it('should create a role successfully', async () => {
+      repositoryMock.findByNameAndCompany.mockResolvedValue(null);
+      repositoryMock.create.mockResolvedValue({ id: 'role-1', ...dto });
+
+      const result = await service.create('comp-1', dto, requester);
+
+      expect(result.id).toBe('role-1');
+      expect(authServiceMock.validateHierarchy).toHaveBeenCalled();
+      expect(repositoryMock.create).toHaveBeenCalled();
+    });
+
+    it('should throw ConflictException if role already exists', async () => {
+      repositoryMock.findByNameAndCompany.mockResolvedValue({ id: 'existing' });
+
+      await expect(service.create('comp-1', dto, requester))
+        .rejects.toThrow(RoleConflictException);
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a role if found', async () => {
+      repositoryMock.findById.mockResolvedValue({ id: '1', companyId: 'comp-1' });
+
+      const result = await service.findOne('1', 'comp-1');
+
+      expect(result.id).toBe('1');
+      expect(authServiceMock.validateCompanyAccess).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if role not found', async () => {
+      repositoryMock.findById.mockResolvedValue(null);
+
+      await expect(service.findOne('1', 'comp-1'))
+        .rejects.toThrow(RoleNotFoundException);
+    });
+  });
+
+  describe('softDelete', () => {
+    const requester = { id: 'user-1', role: Roles.ADMIN } as any;
+
+    it('should soft delete successfully', async () => {
+      repositoryMock.findById.mockResolvedValue({ id: '1', companyId: 'comp-1', hierarchy: 1, isSystem: false });
+
+      const result = await service.softDelete('1', 'comp-1', requester);
+
+      expect(result.deleted).toBe(true);
+      expect(repositoryMock.update).toHaveBeenCalledWith('1', { isVisible: false });
+    });
+
+    it('should throw if role is system', async () => {
+      repositoryMock.findById.mockResolvedValue({ id: '1', companyId: 'comp-1', hierarchy: 1, isSystem: true });
+
+      await expect(service.softDelete('1', 'comp-1', requester))
+        .rejects.toThrow();
+    });
+  });
+});

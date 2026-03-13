@@ -1,346 +1,209 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { Report, ReportDocument } from './schemas/report.schema';
-import { Ticket, TicketDocument } from '../tickets/schemas/ticket.schema';
-import { User, UserDocument } from 'src/users/schemas/user.schema';
-import { IReport, ReportStatus, ROLE_HIERARCHY, Roles } from '@ticket-registrator/shared';
-import type { RoleType } from '@ticket-registrator/shared';
-import type { PermissionType } from '@ticket-registrator/shared';
+import { Injectable, Logger } from '@nestjs/common';
+import { eq, and, or, gte, lte, ilike, desc, isNull, sql, SQL } from 'drizzle-orm';
+import { IReport, ReportStatus, AUTHORITY_LEVELS, PaginatedList } from '@ticket-registrator/shared';
+import * as schema from '../db/schema';
 import { CreateReportDto } from './dto/create-report.dto';
-import {UpdateReportFieldsDto, UpdateReportStatusDto} from './dto/update-report.dto'
+import { UpdateReportFieldsDto, UpdateReportStatusDto } from './dto/update-report.dto';
 import { mapReportToIReport } from './mapper/report.mapper';
+import { ReportsRepository } from './reports.repository';
+import { ReportsAuthorizationService } from './reports-authorization.service';
+import type { UserPayload } from '../auth/decorators/current-user.decorator';
+import {
+  ReportNotFoundException,
+  ReportAlreadyExistsException,
+  ReportUnauthorizedException,
+  ReportStatusConflictException
+} from './exceptions/reports.exceptions';
 
 @Injectable()
 export class ReportsService {
+  private readonly logger = new Logger(ReportsService.name);
+
   constructor(
-    @InjectModel(User.name)
-    private userModel: Model<UserDocument>,
-    @InjectModel(Report.name)
-    private reportModel: Model<ReportDocument>,
-    @InjectModel(Ticket.name)
-    private ticketModel: Model<TicketDocument>,
-  ) {}
+    private readonly reportsRepository: ReportsRepository,
+    private readonly reportsAuthorizationService: ReportsAuthorizationService,
+  ) { }
 
-  // Helper to check if user exists and is visible
-  private async getVisibleUser(id: string) {
-    const user = await this.userModel.findOne({
-      _id: new Types.ObjectId(id),
-      isVisible: true,
-    });
-    if (!user) throw new NotFoundException('User not found or not visible');
-    return user;
-  }
+  async create(requester: UserPayload, dto: CreateReportDto): Promise<IReport> {
+    await this.reportsAuthorizationService.getVisibleUser(requester.id);
 
-  async create(id: string, dto: CreateReportDto): Promise<IReport> {
-    await this.getVisibleUser(id);  // Ensure user exists and is visible
-    const overlapping = await this.reportModel.findOne({
-      user_id: new Types.ObjectId(id),
-      $or: [
-        {
-          start_date: { $lte: dto.end_date },
-          end_date: { $gte: dto.start_date },
-        },
-      ],
-    });
+    const overlapping = await this.reportsRepository.findOverlapping(
+      requester.id,
+      new Date(dto.start_date!),
+      new Date(dto.end_date!)
+    );
 
     if (overlapping) {
-      throw new ConflictException(
-        'A report already exists for this trip date range',
-      );
+      throw new ReportAlreadyExistsException();
     }
 
-    // Create report
-    const report = await this.reportModel.create({
-      user_id: new Types.ObjectId(id),
-      requested_amount: 0,
-      approved_amount: 0,
-      status: ReportStatus.CREATED,
-      name:dto.name,
-      start_date: dto.start_date,
-      end_date: dto.end_date,
+    const report = await this.reportsRepository.create({
+      userId: requester.id,
+      requestedAmount: 0,
+      approvedAmount: 0,
+      status: ReportStatus.CREATED as any,
+      name: dto.name,
+      startDate: new Date(dto.start_date!),
+      endDate: new Date(dto.end_date!),
       currency: dto.currency,
       type: dto.type ?? '',
-      isVisible: dto.isVisible,
-    });
+      isVisible: dto.isVisible ?? true,
+    } as any);
 
+    this.logger.log(`Report created: ${report.id} by user ${requester.id}`);
     return mapReportToIReport(report);
   }
 
-  async findUserReports(
-    requester: {
-      id: string;
-      role: RoleType;
-      companyId: string;
-      departmentId?: string;
-      permissions: PermissionType[];
-    },
-    targetUserId: string
-  ): Promise<IReport[]> {
-    await this.getVisibleUser(requester.id);
-
-    // Ensure target user exists and is visible
-    const targetUser = await this.getVisibleUser(targetUserId);
-    const requesterHierarchy = ROLE_HIERARCHY[requester.role];
-    const targetHierarchy = ROLE_HIERARCHY[targetUser.role];
-
-    //Permission checks
-    // Own reports
-    if (requester.id === targetUserId) {
-      if (!requester.permissions.includes('view_own_reports')) {
-        throw new ForbiddenException('You do not have permission to view your own reports');
-      }
-    }
-    // Viewing others' reports
-    else {
-      let allowed = false;
-
-      // Manager: can view reports of users in their department
-      if (
-        requester.role === Roles.MANAGER &&
-        requester.permissions.includes('view_team_reports') &&
-        targetUser.companyId.toString() === requester.companyId &&
-        targetUser.departmentId?.toString() === requester.departmentId
-      ) {
-        allowed = true;
-      }
-
-      // Admin/SuperAdmin: can view reports in company, but only lower hierarchy
-      if (
-        (requester.role === Roles.ADMIN || requester.role === Roles.SUPERADMIN) &&
-        requester.permissions.includes('view_all_reports') &&
-        targetUser.companyId.toString() === requester.companyId &&
-        targetHierarchy < requesterHierarchy
-      ) {
-        allowed = true;
-      }
-
-      if (!allowed) {
-        throw new ForbiddenException('You do not have permission to view this user\'s reports');
-      }
+  async findUserReports(requester: UserPayload, targetUserId: string): Promise<IReport[]> {
+    const allowed = await this.reportsAuthorizationService.canViewUserReports(requester, targetUserId);
+    if (!allowed) {
+      throw new ReportUnauthorizedException('You do not have permission to view this user\'s reports');
     }
 
-    const reports = await this.reportModel.find({
-      user_id: new Types.ObjectId(targetUserId),
-      isVisible: true,
-    });
-    console.log('Reports found:', reports); // <-- add th
-     return reports.map(report => mapReportToIReport(report));
-  }
-
-  async findAllReports(requester: {
-    id: string;
-    role: RoleType;
-    companyId: string;
-    departmentId: string;
-    permissions: PermissionType[];
-  }): Promise<IReport[]> {
-
-    await this.getVisibleUser(requester.id);
-
-    if (
-      !requester.permissions.includes("view_own_reports") &&
-      !requester.permissions.includes("view_team_reports") &&
-      !requester.permissions.includes("view_all_reports")
-    ) {
-      throw new ForbiddenException('You are not allowed to view reports');
-    }
-    const requesterHierarchy = ROLE_HIERARCHY[requester.role];
-    const userFilter: any = {
-      companyId: new Types.ObjectId(requester.companyId),
-      isVisible: true,
-    };
-
-    //view all
-    if (requester.permissions.includes("view_all_reports")) {
-
-      if (requester.role !== Roles.SUPERADMIN) {
-        userFilter.role = {
-          $in: (Object.keys(ROLE_HIERARCHY) as RoleType[]).filter(
-            role => ROLE_HIERARCHY[role] < requesterHierarchy
-          ),
-        };
-      }
-
-    }
-    //View Team
-    else if (requester.permissions.includes("view_team_reports")) {
-      userFilter.departmentId = new Types.ObjectId(requester.departmentId);
-      userFilter.role = {
-        $in: (Object.keys(ROLE_HIERARCHY) as RoleType[]).filter(
-          role => ROLE_HIERARCHY[role] < requesterHierarchy
-        ),
-      };
-    }
-
-    // view own reports
-    else {
-      userFilter._id = new Types.ObjectId(requester.id);
-    }
-
-    const users = await this.userModel.find(userFilter).select('_id');
-    let visibleUserIds = users.map(u => u._id.toString());
-
-    if (!visibleUserIds.includes(requester.id)) {
-      visibleUserIds.push(requester.id);
-    }
-
-    const reports = await this.reportModel.find({
-      user_id: { $in: visibleUserIds.map(id => new Types.ObjectId(id)) },
-      isVisible: true,
-    });
-
+    const reports = await this.reportsRepository.findByUserId(targetUserId);
     return reports.map(report => mapReportToIReport(report));
   }
 
-  async findOne(
-    requester: {
-      id: string;
-      role: RoleType;
-      companyId: string;
-      departmentId: string;
-      permissions: PermissionType[];
-    },
-    reportId: string
-  ): Promise<IReport> {
-    await this.getVisibleUser(requester.id);
-    const report = await this.reportModel.findById(reportId);
-    if (!report || !report.isVisible) {
-      throw new NotFoundException('Report not found');
-    }
+  async findAllReports(requester: UserPayload): Promise<IReport[]> {
+    const authorityFilter = this.buildAuthorityFilter(requester);
+    const { data } = await this.reportsRepository.findWithFilters({
+      where: and(authorityFilter, eq(schema.reports.isVisible, true))!,
+    });
 
-    const reportOwner = await this.getVisibleUser(report.user_id.toString());
-    const requesterHierarchy = ROLE_HIERARCHY[requester.role];
-    const targetHierarchy = ROLE_HIERARCHY[reportOwner.role];
-    if (reportOwner._id.toString() === requester.id) {
-      if (!requester.permissions.includes('view_own_reports')) {
-        throw new ForbiddenException('You do not have permission to view your own reports');
-      }
-      return mapReportToIReport(report);
-    }
-
-    // Manager: can view reports of users in their department
-    if (
-      requester.permissions.includes('view_team_reports') &&
-      reportOwner.companyId.toString() === requester.companyId &&
-      reportOwner.departmentId?.toString() === requester.departmentId
-    ) {
-      return mapReportToIReport(report);
-    }
-
-    // Admin/SuperAdmin: can view all reports in company, but not above hierarchy
-    if (
-      requester.permissions.includes('view_all_reports') &&
-      reportOwner.companyId.toString() === requester.companyId &&
-      targetHierarchy < requesterHierarchy // cannot view reports of higher/equal roles
-    ) {
-      return mapReportToIReport(report);
-    }
-    throw new ForbiddenException('You do not have permission to view this report');
+    return data.map(report => mapReportToIReport(report));
   }
 
-  async update(userId: string,reportId: string,updateReportDto: UpdateReportFieldsDto): Promise<IReport> {
-    await this.getVisibleUser(userId);
-    // Only allow updates if report is still in CREATED status
-    const report = await this.reportModel.findOne({
-      _id: new Types.ObjectId(reportId),
-      user_id: new Types.ObjectId(userId),
-      isVisible: true,
-      status: ReportStatus.CREATED,
+  async findAllReportsPaginated(requester: UserPayload, filters: any): Promise<PaginatedList<IReport>> {
+    const { page = 1, limit = 10, userId, name, startDate, endDate, status } = filters;
+    const offset = (page - 1) * limit;
+
+    const authorityFilter = this.buildAuthorityFilter(requester);
+    const queryFilters: SQL[] = [eq(schema.reports.isVisible, true)];
+
+    if (userId) queryFilters.push(eq(schema.reports.userId, userId));
+    if (name) queryFilters.push(ilike(schema.reports.name, `%${name}%`));
+    if (status) queryFilters.push(eq(schema.reports.status, status as string));
+    if (startDate) queryFilters.push(gte(schema.reports.startDate, new Date(startDate)));
+    if (endDate) queryFilters.push(lte(schema.reports.endDate, new Date(endDate)));
+
+    const { data, total } = await this.reportsRepository.findWithFilters({
+      where: and(...queryFilters, authorityFilter)!,
+      limit,
+      offset,
+      orderBy: desc(schema.reports.createdAt),
     });
 
-    if (!report) {
-      throw new NotFoundException(
-        'Report not found or cannot be updated (status must be CREATED)',
-      );
-    }
+    return {
+      data: data.map(report => mapReportToIReport(report)),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
 
-    // Update allowed fields from DTO
-    const allowedFields = ['name', 'start_date', 'end_date', 'type', 'isVisible'] as const;
+  async findOne(requester: UserPayload, reportId: string): Promise<IReport> {
+    const report = await this.reportsRepository.findById(reportId);
+    if (!report || !report.isVisible) throw new ReportNotFoundException(reportId);
 
-    let hasUpdates = false;
-    allowedFields.forEach(field => {
-      if (updateReportDto[field] !== undefined) {
-        (report as any)[field] = updateReportDto[field];
-        hasUpdates = true;
-      }
-    });
+    const allowed = await this.reportsAuthorizationService.canViewReport(requester, report);
+    if (!allowed) throw new ReportUnauthorizedException();
 
-    if (!hasUpdates) {
-      throw new BadRequestException('No valid fields provided for update');
-    }
-
-    // Save changes
-    await report.save();
-
-    // Map to IReport using your mapper
     return mapReportToIReport(report);
   }
 
-  async updateStatus(reportId: string, dto: UpdateReportStatusDto): Promise<IReport> {
-    // Only reports with status SUBMITTED can be updated
-    const updatedReport = await this.reportModel.findOneAndUpdate(
-      {
-        _id: new Types.ObjectId(reportId),
-        status: ReportStatus.SUBMITTED,
-        isVisible: true,
-      },
-      { $set: { status: dto.status } },
-      { new: true, runValidators: true },
+  async update(requester: UserPayload, reportId: string, dto: UpdateReportFieldsDto): Promise<IReport> {
+    const updateData = this.prepareUpdateData(dto);
+
+    const updated = await this.reportsRepository.updateWithCondition(
+      reportId,
+      updateData,
+      and(
+        eq(schema.reports.userId, requester.id),
+        eq(schema.reports.status, ReportStatus.CREATED),
+        eq(schema.reports.isVisible, true)
+      )!
     );
 
-    if (!updatedReport) {
-      throw new ConflictException(
-        'Report not found or cannot be reviewed (status must be SUBMITTED)',
-      );
-    }
-
-    // Use mapper for consistent formatting
-    return mapReportToIReport(updatedReport);
+    if (!updated) throw new ReportNotFoundException(reportId);
+    return mapReportToIReport(updated);
   }
 
-  async submitReport(userId: string, reportId: string): Promise<IReport> {
-    await this.getVisibleUser(userId);
-    const updatedReport = await this.reportModel.findOneAndUpdate(
-      {
-        _id: new Types.ObjectId(reportId),
-        user_id: new Types.ObjectId(userId),
-        status: ReportStatus.CREATED,
-        isVisible: true,
-      },
-      { $set: { status: ReportStatus.SUBMITTED } },
-      { new: true, runValidators: true },
+  async updateStatus(requester: UserPayload, reportId: string, dto: UpdateReportStatusDto): Promise<IReport> {
+    const updated = await this.reportsRepository.updateWithCondition(
+      reportId,
+      { status: dto.status as string, updatedAt: new Date() },
+      and(
+        eq(schema.reports.status, ReportStatus.SUBMITTED),
+        eq(schema.reports.isVisible, true)
+      )!
     );
 
-    if (!updatedReport) {
-      throw new ConflictException(
-        'Report not found or cannot be submitted (status must be CREATED)',
-      );
-    }
+    if (!updated) throw new ReportStatusConflictException('Report not found or not in SUBMITTED state');
 
-    // Map Mongoose document to IReport using the mapper
-    return mapReportToIReport(updatedReport);
+    this.logger.log(`Report status updated: ${reportId} to ${dto.status} by user ${requester.id}`);
+    return mapReportToIReport(updated);
   }
 
-  async remove(userId: string, reportId: string) {
-    await this.getVisibleUser(userId);
-    const report = await this.reportModel.findOne({
-      _id: new Types.ObjectId(reportId),
-      user_id: new Types.ObjectId(userId),
+  async submitReport(requester: UserPayload, reportId: string): Promise<IReport> {
+    const updated = await this.reportsRepository.updateWithCondition(
+      reportId,
+      { status: ReportStatus.SUBMITTED, updatedAt: new Date() },
+      and(
+        eq(schema.reports.userId, requester.id),
+        eq(schema.reports.status, ReportStatus.CREATED),
+        eq(schema.reports.isVisible, true)
+      )!
+    );
+
+    if (!updated) throw new ReportStatusConflictException('Report not found or already submitted');
+
+    this.logger.log(`Report submitted: ${reportId} by user ${requester.id}`);
+    return mapReportToIReport(updated);
+  }
+
+  async remove(requester: UserPayload, reportId: string) {
+    const report = await this.reportsRepository.findById(reportId);
+    if (!report || report.userId !== requester.id) throw new ReportNotFoundException(reportId);
+    if (report.status !== ReportStatus.CREATED) throw new ReportStatusConflictException('Cannot remove a report after submission');
+
+    await this.reportsRepository.transaction(async (tx) => {
+      await tx.update(schema.reports).set({ isVisible: false, updatedAt: new Date() }).where(eq(schema.reports.id, reportId));
+      await tx.update(schema.tickets).set({ isVisible: false, updatedAt: new Date() }).where(eq(schema.tickets.reportId, reportId));
     });
-    if (!report) throw new NotFoundException('Report not found');
-    if (report.status !== ReportStatus.CREATED) {
-      throw new ConflictException('Cannot remove a report after submission');
-    }
-    report.isVisible = false;
-    await report.save();
-    // Cascade: hide all tickets belonging to this report
-    await this.ticketModel.updateMany(
-      { report_id: new Types.ObjectId(reportId) },
-      { $set: { isVisible: false } }
-    );
+
+    this.logger.log(`Report removed (soft-delete): ${reportId} by user ${requester.id}`);
     return { deleted: true };
   }
 
+  private buildAuthorityFilter(requester: UserPayload): SQL {
+    const maxHierarchy = requester.roleHierarchy;
+    const conditions: SQL[] = [];
 
+    if (maxHierarchy >= AUTHORITY_LEVELS.GLOBAL) {
+      conditions.push(isNull(schema.users.deletedAt));
+    } else if (maxHierarchy >= AUTHORITY_LEVELS.COMPANY) {
+      conditions.push(and(eq(schema.users.companyId, requester.companyId), isNull(schema.users.deletedAt))!);
+    } else if (maxHierarchy >= AUTHORITY_LEVELS.DEPARTMENT) {
+      conditions.push(and(
+        eq(schema.users.companyId, requester.companyId),
+        sql`EXISTS (SELECT 1 FROM ${schema.usersToDepartments} ud WHERE ud.user_id = ${schema.users.id} AND ud.department_id = ANY(${requester.departmentIds}::uuid[]))`,
+        isNull(schema.users.deletedAt)
+      )!);
+    } else {
+      conditions.push(eq(schema.users.id, requester.id));
+    }
+
+    return or(eq(schema.users.id, requester.id), ...conditions)!;
+  }
+
+  private prepareUpdateData(dto: UpdateReportFieldsDto): Partial<schema.InsertReport> {
+    const updateData: any = { updatedAt: new Date() };
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.start_date !== undefined) updateData.startDate = new Date(dto.start_date);
+    if (dto.end_date !== undefined) updateData.endDate = new Date(dto.end_date);
+    if (dto.type !== undefined) updateData.type = dto.type;
+    if (dto.isVisible !== undefined) updateData.isVisible = dto.isVisible;
+    return updateData;
+  }
 }

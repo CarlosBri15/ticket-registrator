@@ -1,25 +1,33 @@
-// ticket-history.schema.ts
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Types } from "mongoose";
+import { pgTable, uuid, integer, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { reports } from "../reports/schemas/report.schema";
+import { tickets } from "../tickets/schemas/ticket.schema";
 
-@Schema({ timestamps: true })
-export class TicketHistory {
-  @Prop({ type: Types.ObjectId, ref: 'Report', required: true })
-  reportId: Types.ObjectId;
+export const ticketHistories = pgTable("ticket_histories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  reportId: uuid("report_id")
+    .references(() => reports.id, { onDelete: "cascade" })
+    .notNull(),
+  ticketId: uuid("ticket_id")
+    .references(() => tickets.id, { onDelete: "cascade" })
+    .notNull(),
+  version: integer("version").notNull(),
+  oldSnapshot: jsonb("old_snapshot").notNull(),
+  newSnapshot: jsonb("new_snapshot").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
-  @Prop({ type: Types.ObjectId, ref: 'Ticket', required: true })
-  ticketId: Types.ObjectId;
+export const ticketHistoryRelations = relations(ticketHistories, ({ one }) => ({
+  report: one(reports, {
+    fields: [ticketHistories.reportId],
+    references: [reports.id],
+  }),
+  ticket: one(tickets, {
+    fields: [ticketHistories.ticketId],
+    references: [tickets.id],
+  }),
+}));
 
-  @Prop({ type: Number, required: true })
-  version: number; 
-
-  @Prop({ type: Object, required: true })
-  oldSnapshot: Record<string, any>;
-
-  @Prop({ type: Object, required: true })
-  newSnapshot: Record<string, any>;
-
-}
-
-export const TicketHistorySchema = SchemaFactory.createForClass(TicketHistory);
-export type TicketHistoryDocument = HydratedDocument<TicketHistory>;
+export type TicketHistory = typeof ticketHistories.$inferSelect;
+export type InsertTicketHistory = typeof ticketHistories.$inferInsert;

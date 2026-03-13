@@ -1,30 +1,18 @@
-import { Module, forwardRef} from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
-import { MongooseModule } from '@nestjs/mongoose';
-import { User, UserSchema } from './schemas/user.schema';
-import { Report, ReportSchema } from '../reports/schemas/report.schema';
-import { Ticket, TicketSchema } from '../tickets/schemas/ticket.schema';
-import { Permission, PermissionSchema } from '../permissions/schema/permissions.schema';
-import { Company, CompanySchema } from '../organization/schema/organization.schema';
-import { Department, DepartmentSchema } from '../department/department.schema';
-import {AuthModule} from '../auth/auth.module';
+import { AuthModule } from '../auth/auth.module';
+
+import { RolesModule } from '../roles/roles.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: User.name, schema: UserSchema },
-      { name: Report.name, schema: ReportSchema },
-      { name: Ticket.name, schema: TicketSchema },
-      { name: Permission.name, schema: PermissionSchema },
-      { name: Company.name, schema: CompanySchema },
-      { name: Department.name, schema: DepartmentSchema },
-    ]),
     forwardRef(() => AuthModule), // <-- circular dependency
+    RolesModule,
   ],
 
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService],
 })
-export class UsersModule {}
+export class UsersModule { }

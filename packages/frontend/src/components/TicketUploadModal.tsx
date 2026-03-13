@@ -167,14 +167,14 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
             </div>
 
             <div className="flex gap-3 pt-2">
-                <Button variant="ghost" onClick={handleClose} disabled={uploadMutation.isPending}>
+                <Button variant="ghost" onClick={handleClose} disabled={uploadMutation.isPending} className="flex-1">
                     Cancelar
                 </Button>
-                <Button 
-                    onClick={handleUpload} 
-                    isLoading={uploadMutation.isPending} 
+                <Button
+                    onClick={handleUpload}
+                    isLoading={uploadMutation.isPending}
                     disabled={!file}
-                    className="shadow-xl shadow-brand/20"
+                    className="flex-1 shadow-xl shadow-brand/20"
                 >
                     <Sparkles className="w-4 h-4 mr-2" />
                     Procesar con IA
@@ -183,15 +183,32 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
           </>
         ) : (
           <div className="space-y-4">
-            <div className="bg-brand/5 p-4 rounded-2xl flex gap-3 border border-brand/10">
-              <Sparkles className="w-5 h-5 text-brand shrink-0 mt-0.5" />
-              <p className="text-xs text-brand-dark leading-relaxed font-medium">
-                Hemos extraído automáticamente los datos de tu ticket. Por favor, revísalos y corrígelos si es necesario antes de confirmar.
-              </p>
-            </div>
-            
+            {extractedTicket && (() => {
+              const missing = [
+                extractedTicket.location_name, extractedTicket.location_address,
+                extractedTicket.date, extractedTicket.currency,
+                extractedTicket.payment_type, extractedTicket.expense_type
+              ].filter(v => v === null || v === undefined || v === "").length;
+              const hasMissing = missing > 0 || (extractedTicket.amount === null || extractedTicket.amount === undefined);
+              return hasMissing ? (
+                <div className="bg-amber-50 p-4 rounded-2xl flex gap-3 border border-amber-100">
+                  <Sparkles className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                    La IA no pudo leer algunos campos del ticket. Completa los que aparecen destacados antes de confirmar.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-brand/5 p-4 rounded-2xl flex gap-3 border border-brand/10">
+                  <Sparkles className="w-5 h-5 text-brand shrink-0 mt-0.5" />
+                  <p className="text-xs text-brand-hover leading-relaxed font-medium">
+                    La IA extrajo todos los datos de tu ticket correctamente. Revisa la información y confirma.
+                  </p>
+                </div>
+              );
+            })()}
+
             {extractedTicket && (
-              <TicketConfirmationForm 
+              <TicketConfirmationForm
                 ticket={extractedTicket}
                 onConfirm={handleConfirm}
                 onCancel={handleDiscard}

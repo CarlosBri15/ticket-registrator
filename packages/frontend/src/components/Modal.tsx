@@ -6,9 +6,10 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  subtitle?: string;
 }
 
-export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
+export const Modal = ({ isOpen, onClose, title, subtitle, children }: ModalProps) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -28,35 +29,41 @@ export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-      {/* Backdrop con Blur intenso */}
-      <div 
-        className="absolute inset-0 bg-dark/60 backdrop-blur-md animate-in fade-in duration-500"
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-dark/50 backdrop-blur-md animate-in fade-in duration-300"
         onClick={onClose}
       />
-      
-      {/* Modal Content */}
-      <div className="relative bg-white w-full max-w-xl rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] animate-in fade-in zoom-in-95 slide-in-from-bottom-8 duration-500 overflow-hidden">
-        
-        {/* Decoración superior (estilo financiero) */}
-        <div className="h-2 w-full bg-brand" />
 
-        {/* Header */}
-        <div className="flex items-center justify-between p-8 pb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-dark tracking-tight">{title}</h2>
-            <p className="text-sm text-gray-400 mt-1 font-medium">Completa la información requerida</p>
+      {/* Modal */}
+      <div className="relative bg-white w-full sm:max-w-xl rounded-t-[2rem] sm:rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(42,49,50,0.35)] animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-400 overflow-hidden">
+
+        {/* Gradient header */}
+        <div className="relative bg-brand px-8 pt-8 pb-6 overflow-hidden">
+          {/* Background blobs */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4 pointer-events-none" />
+
+          <div className="relative z-10 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-black text-white tracking-tight leading-tight">{title}</h2>
+              {subtitle && (
+                <p className="text-sm text-white/60 font-medium mt-1">{subtitle}</p>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 shrink-0"
+              aria-label="Cerrar"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-3 text-gray-400 hover:text-dark hover:bg-gray-100 rounded-2xl transition-all duration-200"
-          >
-            <X className="w-6 h-6" />
-          </button>
         </div>
 
         {/* Body */}
-        <div className="p-8 pt-4 max-h-[calc(100vh-14rem)] overflow-y-auto">
+        <div className="p-8 max-h-[calc(100vh-16rem)] overflow-y-auto custom-scrollbar">
           {children}
         </div>
       </div>

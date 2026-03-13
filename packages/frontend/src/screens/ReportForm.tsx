@@ -1,24 +1,40 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createReportSchema, type CreateReportSchema, useCreateReportMutation } from "@ticket-registrator/shared";
 import { Button } from "../components/Button";
 import { Input } from "../components/Input";
-import { Banknote, Tag } from "lucide-react";
+import { Banknote, Tag, AlertCircle } from "lucide-react";
 import { AxiosError } from "axios";
+import { useTranslation } from "react-i18next";
 
 interface ReportFormProps {
   onSuccess: () => void;
   onCancel: () => void;
 }
 
+const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "JPY", "MXN", "COP", "ARS", "BRL"];
+const TRIP_TYPES = [
+  "Viaje de Negocios",
+  "Formacion",
+  "Congreso / Evento",
+  "Cliente",
+  "Proyecto",
+  "Otro",
+];
+
 export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
+  const { t } = useTranslation();
+  const [apiError, setApiError] = useState<string | null>(null);
+
   const { mutate: createReport, isPending } = useCreateReportMutation({
     onSuccess: () => {
-        onSuccess();
+      setApiError(null);
+      onSuccess();
     },
     onError: (error: AxiosError<{ message: string }>) => {
-        const message = error?.response?.data?.message || 'Error al crear el viaje';
-        alert(message);
+      const message = error?.response?.data?.message || t('trips.createError');
+      setApiError(message);
     }
   });
 
@@ -34,15 +50,24 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
   });
 
   const onSubmit = (data: CreateReportSchema) => {
+    setApiError(null);
     createReport(data);
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      {/* API Error banner */}
+      {apiError && (
+        <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 rounded-2xl px-4 py-3 text-sm font-medium">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>{apiError}</span>
+        </div>
+      )}
+
       <div className="space-y-6">
         <Input
-          label="Identificador del Viaje"
-          placeholder="Ej: Convención Anual Madrid 2026"
+          label={t('trips.nameLabel')}
+          placeholder={t('trips.namePlaceholder')}
           {...register("name")}
           error={errors.name?.message}
         />
@@ -50,59 +75,75 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
             type="date"
-            label="Fecha Inicio"
+            label={t('trips.startLabel')}
             {...register("start_date", { valueAsDate: true })}
             error={errors.start_date?.message}
           />
-
           <Input
             type="date"
-            label="Fecha Fin"
+            label={t('trips.endLabel')}
             {...register("end_date", { valueAsDate: true })}
             error={errors.end_date?.message}
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="relative">
-             <Input
-                label="Moneda Base"
-                placeholder="EUR"
+          {/* Currency select */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-bold text-dark">{t('trips.currencyLabel')}</label>
+            <div className="relative">
+              <Banknote className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              <select
                 {...register("currency")}
-                error={errors.currency?.message}
-                className="pl-11"
-              />
-              <Banknote className="absolute left-4 top-[42px] w-5 h-5 text-gray-400" />
+                className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-2xl text-sm font-medium text-dark focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all appearance-none cursor-pointer"
+              >
+                {CURRENCIES.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            {errors.currency?.message && (
+              <p className="text-xs text-red-500 font-medium">{errors.currency.message}</p>
+            )}
           </div>
 
-          <div className="relative">
-              <Input
-                label="Categoría / Tipo"
-                placeholder="Ej: Viaje de Negocios"
+          {/* Trip type select */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-bold text-dark">{t('trips.categoryLabel')}</label>
+            <div className="relative">
+              <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              <select
                 {...register("type")}
-                error={errors.type?.message}
-                className="pl-11"
-              />
-              <Tag className="absolute left-4 top-[42px] w-5 h-5 text-gray-400" />
+                className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-2xl text-sm font-medium text-dark focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all appearance-none cursor-pointer"
+              >
+                <option value="">{t('trips.categoryPlaceholder')}</option>
+                {TRIP_TYPES.map(tp => (
+                  <option key={tp} value={tp}>{tp}</option>
+                ))}
+              </select>
+            </div>
+            {errors.type?.message && (
+              <p className="text-xs text-red-500 font-medium">{errors.type.message}</p>
+            )}
           </div>
         </div>
       </div>
 
       <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-100">
-        <Button 
-          type="button" 
-          variant="ghost" 
+        <Button
+          type="button"
+          variant="ghost"
           onClick={onCancel}
-          className="sm:w-auto"
+          className="w-full sm:w-auto"
         >
-          Descartar
+          {t('common.cancel')}
         </Button>
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           isLoading={isPending}
-          className="sm:w-auto px-10 shadow-xl shadow-brand/20"
+          className="w-full sm:w-auto px-10 shadow-xl shadow-brand/20"
         >
-          Crear Viaje
+          {t('trips.saveButton')}
         </Button>
       </div>
     </form>

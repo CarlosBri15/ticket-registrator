@@ -42,3 +42,27 @@ export * from './i18n';
 export * from './user-roles/roles'
 export * from './user-roles/permissions'
 export * from './user-roles/role-default-permissions'
+
+// Organization
+export * from './schemas/organization/onboardOrganization.schema';
+export * from './schemas/organization/updateOrganization.schema';
+
+
+// Department
+export * from './schemas/department/createDepartment.schema';
+export * from './schemas/department/updateDepartment.schema';
+
+// Pagination
+export * from './interfaces/pagination/pagination.interface';
+
+// Roles
+export * from './schemas/roles/createRole.schema';
+
+// Permissions
+export * from './interfaces/permissions/permission.interface';
+export * from './interfaces/permissions/rolePermission.interface';
+export * from './interfaces/permissions/userPermission.interface';
+export * from './schemas/permissions/createPermission.schema';
+export * from './schemas/permissions/updatePermission.schema';
+export * from './schemas/permissions/assignPermission.schema';
+export * from './schemas/permissions/userPermissionOverride.schema';
