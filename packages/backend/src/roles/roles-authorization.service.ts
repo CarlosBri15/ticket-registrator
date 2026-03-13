@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { UserPayload } from '../auth/decorators/current-user.decorator';
 import { ROLE_HIERARCHY } from '@ticket-registrator/shared';
-import { Role } from './schemas/role.schema';
 import { RoleUnauthorizedException } from './exceptions/roles.exceptions';
 
 @Injectable()
