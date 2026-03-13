@@ -14,7 +14,6 @@ export class AuthController {
   ) {
     const { access_token } = await this.authService.login(loginDto);
 
-    // Set JWT in HttpOnly cookie
     res.cookie('access_token', access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
