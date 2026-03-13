@@ -15,7 +15,7 @@ env:
   REPO_NAME: backend-ticket-registrator
   SERVICE_NAME: dev-ticket-registrator
   WIF_PROVIDER: 'projects/785450442855/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
-  WIF_SERVICE_ACCOUNT: 'github-actions-sa@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com'
+  WIF_SERVICE_ACCOUNT: 'github-deployer@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com'
 
 jobs:
   deploy:
