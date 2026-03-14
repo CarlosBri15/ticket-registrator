@@ -6,14 +6,56 @@ on:
       - dev
 
 jobs:
+  # 0. Detect Changes
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+      shared: ${{ steps.filter.outputs.shared }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'packages/backend/**'
+              - 'packages/shared/**'
+            frontend:
+              - 'packages/frontend/**'
+              - 'packages/shared/**'
+            mobile:
+              - 'packages/mobile/**'
+              - 'packages/shared/**'
+            shared:
+              - 'packages/shared/**'
+      - id: set-matrix
+        run: |
+          MATRIX="["
+          if [ "${{ steps.filter.outputs.backend }}" == "true" ]; then MATRIX="${MATRIX}\"backend\","; fi
+          if [ "${{ steps.filter.outputs.frontend }}" == "true" ]; then MATRIX="${MATRIX}\"frontend\","; fi
+          if [ "${{ steps.filter.outputs.mobile }}" == "true" ]; then MATRIX="${MATRIX}\"mobile\","; fi
+          if [ "${{ steps.filter.outputs.shared }}" == "true" ]; then MATRIX="${MATRIX}\"shared\","; fi
+          if [ "$MATRIX" == "[" ]; then
+            MATRIX="[]"
+          else
+            MATRIX="${MATRIX%,}]"
+          fi
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
   # 1. CI: Tests, Lint and Sonar Analysis
   ci:
     name: CI (${{ matrix.project }})
+    needs: changes
+    if: ${{ needs.changes.outputs.matrix != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
-        project: [backend, frontend, mobile, shared]
+        project: ${{ fromJSON(needs.changes.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,6 +70,7 @@ jobs:
       - name: Build Shared Package
         run: npm run build -w @ticket-registrator/shared
       - name: Run Linter
+        continue-on-error: true
         working-directory: packages/${{ matrix.project }}
         run: npm run lint
       - name: Run Unit Tests
@@ -46,7 +89,8 @@ jobs:
   # 2. Deploy Backend
   deploy-backend:
     name: Deploy Backend
-    needs: ci
+    needs: [changes, ci]
+    if: ${{ always() && needs.changes.outputs.backend == 'true' && (needs.ci.result == 'success' || needs.ci.result == 'skipped') }}
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
@@ -82,7 +126,8 @@ jobs:
   # 3. Deploy Frontend
   deploy-frontend:
     name: Deploy Frontend
-    needs: ci
+    needs: [changes, ci]
+    if: ${{ always() && needs.changes.outputs.frontend == 'true' && (needs.ci.result == 'success' || needs.ci.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

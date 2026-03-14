@@ -1,9 +1,9 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  KeyboardAvoidingView, 
-  Platform, 
+import {
+  View,
+  Text,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
@@ -44,11 +44,11 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
         >
@@ -60,7 +60,6 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {/* Header */}
             <View className="items-center mb-10">
               <Text className="text-3xl font-bold text-dark mb-2">TicketReg AI</Text>
               <Text className="text-gray-500 text-center">
@@ -112,8 +111,8 @@ export default function LoginScreen() {
                 </View>
               )}
 
-              <Button 
-                onPress={handleSubmit(onSubmit)} 
+              <Button
+                onPress={handleSubmit(onSubmit)}
                 isLoading={isPending}
                 className="mt-4"
                 size="lg"
