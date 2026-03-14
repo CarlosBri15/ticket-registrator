@@ -241,7 +241,7 @@ describe('TicketsService', () => {
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.updateWithHistory.mockResolvedValue(mockTicket);
 
-      await service.update(requester, 'report-1', 'ticket-1', { date: undefined });
+      await service.update(requester, 'report-1', 'ticket-1', { date: null as any });
       expect(ticketsRepositoryMock.updateWithHistory).toHaveBeenCalled();
     });
 
