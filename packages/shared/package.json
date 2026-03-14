@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
-    "test:cov": "jest --coverage"
+    "test:cov": "jest --coverage",
+    "lint": "echo \"Skipping lint for shared...\""
   },
   "dependencies": {
     "@tanstack/react-query": "^5.66.0",

@@ -32,20 +32,16 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: |
-          cd packages/${{ matrix.project }}
-          npm install
+        run: npm install
 
       - name: Run Linter
-        run: |
-          cd packages/${{ matrix.project }}
-          npm run lint
+        working-directory: packages/${{ matrix.project }}
+        run: npm run lint
 
       - name: Run Unit Tests
         continue-on-error: true
-        run: |
-          cd packages/${{ matrix.project }}
-          npm test -- --coverage --watchAll=false
+        working-directory: packages/${{ matrix.project }}
+        run: npm test -- --coverage --watchAll=false
 
       - name: SonarCloud Scan (${{ matrix.project }})
         uses: SonarSource/sonarcloud-github-action@master
