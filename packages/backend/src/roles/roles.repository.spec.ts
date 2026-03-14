@@ -145,6 +145,15 @@ describe('RolesRepository', () => {
         });
     });
 
+    describe('transaction', () => {
+        it('should delegate to db.transaction', async () => {
+            const callback = jest.fn().mockResolvedValue('result');
+            dbMock.transaction.mockImplementation((cb: any) => cb(dbMock));
+            await repository.transaction(callback);
+            expect(dbMock.transaction).toHaveBeenCalled();
+        });
+    });
+
     describe('bulkInsertRolePermissions', () => {
         it('should call db.insert when data is not empty', async () => {
             await repository.bulkInsertRolePermissions([{ roleId: 'r1', permissionId: 'p1', companyId: null }]);

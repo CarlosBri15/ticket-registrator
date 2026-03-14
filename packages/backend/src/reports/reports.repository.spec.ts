@@ -142,6 +142,17 @@ describe('ReportsRepository', () => {
         });
     });
 
+    describe('update', () => {
+        it('should update report fields and return updated report', async () => {
+            const mockData = { name: 'Updated Name' } as any;
+            dbMock.returning.mockResolvedValue([{ id: 'report-1', ...mockData }]);
+
+            const result = await repository.update('report-1', mockData);
+            expect(dbMock.update).toHaveBeenCalledWith(schema.reports);
+            expect(result?.id).toBe('report-1');
+        });
+    });
+
     describe('softDelete', () => {
         it('should update isVisible to false', async () => {
             dbMock.returning.mockResolvedValue([{ id: 'r1', isVisible: false }]);

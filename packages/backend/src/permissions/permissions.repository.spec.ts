@@ -81,6 +81,11 @@ describe('PermissionsRepository', () => {
         expect(dbMock.delete).toHaveBeenCalled();
     });
 
+    it('should call findByName', async () => {
+        await repository.findByName('view_reports');
+        expect(dbMock.query.permissions.findFirst).toHaveBeenCalled();
+    });
+
     it('should call bulkInsertPermissions', async () => {
         const insertWithConflict = jest.fn().mockReturnValue({
             values: jest.fn().mockReturnValue({

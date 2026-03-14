@@ -105,6 +105,20 @@ describe('RolesService', () => {
       await expect(service.softDelete('1', 'comp-1', requester))
         .rejects.toThrow();
     });
+
+    it('should throw RoleNotFoundException when role companyId does not match', async () => {
+      repositoryMock.findById.mockResolvedValue({ id: '1', companyId: 'other-company', hierarchy: 1, isSystem: false });
+
+      await expect(service.softDelete('1', 'comp-1', requester))
+        .rejects.toThrow(RoleNotFoundException);
+    });
+
+    it('should throw RoleNotFoundException when role not found in softDelete', async () => {
+      repositoryMock.findById.mockResolvedValue(null);
+
+      await expect(service.softDelete('1', 'comp-1', requester))
+        .rejects.toThrow(RoleNotFoundException);
+    });
   });
 
   describe('findAll', () => {

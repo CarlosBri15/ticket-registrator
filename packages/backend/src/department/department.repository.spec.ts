@@ -159,6 +159,40 @@ describe('DepartmentRepository', () => {
     });
   });
 
+  // ── findCompanyById ───────────────────────────────────────────────────────────
+
+  describe('findCompanyById', () => {
+    it('should return company if found', async () => {
+      const mockCompany = { id: 'company-1', orgName: 'Acme Corp', deletedAt: null };
+      dbMock.query.companies.findFirst.mockResolvedValue(mockCompany);
+
+      const result = await repository.findCompanyById('company-1');
+
+      expect(dbMock.query.companies.findFirst).toHaveBeenCalled();
+      expect(result).toEqual(mockCompany);
+    });
+
+    it('should return undefined if company not found', async () => {
+      dbMock.query.companies.findFirst.mockResolvedValue(undefined);
+
+      const result = await repository.findCompanyById('unknown');
+      expect(result).toBeUndefined();
+    });
+  });
+
+  // ── seedDefaultDepartments ────────────────────────────────────────────────────
+
+  describe('seedDefaultDepartments', () => {
+    it('should insert default departments and return them', async () => {
+      dbMock.returning.mockResolvedValue([mockDepartment]);
+
+      const result = await repository.seedDefaultDepartments('company-1');
+
+      expect(dbMock.insert).toHaveBeenCalledWith(schema.departments);
+      expect(result).toEqual([mockDepartment]);
+    });
+  });
+
   // ── transaction ───────────────────────────────────────────────────────────────
 
   describe('transaction', () => {

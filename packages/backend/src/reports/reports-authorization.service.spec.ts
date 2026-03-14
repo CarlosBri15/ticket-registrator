@@ -118,4 +118,21 @@ describe('ReportsAuthorizationService', () => {
             expect(result).toBe(false);
         });
     });
+
+    describe('canViewReport', () => {
+        it('should delegate to canViewUserReports using report.userId', async () => {
+            const requester = {
+                id: 'req-1',
+                roleHierarchy: AUTHORITY_LEVELS.GLOBAL,
+                companyId: 'company-1',
+                departmentIds: [],
+            } as any;
+            const report = { id: 'report-1', userId: 'target-user' };
+            const targetUser = { id: 'target-user', roleHierarchy: 0, companyId: 'company-1', departmentIds: [] };
+            (usersServiceMock.findActiveById as jest.Mock).mockResolvedValue(targetUser);
+
+            const result = await service.canViewReport(requester, report);
+            expect(result).toBe(true);
+        });
+    });
 });

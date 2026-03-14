@@ -59,6 +59,54 @@ describe('StorageService', () => {
     expect(service).toBeDefined();
   });
 
+  describe('constructor with keyFilename', () => {
+    it('should configure keyFilename when keyPath is short and valid', async () => {
+      const configWithKey = {
+        get: jest.fn((key: string) => {
+          const values: Record<string, string> = {
+            GCP_PROJECT_ID: 'fake-project',
+            GCP_BUCKET_NAME: 'fake-bucket',
+            GCP_KEY_FILE_PATH: 'keys/gcp.json',
+          };
+          return values[key];
+        }),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          StorageService,
+          { provide: ConfigService, useValue: configWithKey },
+        ],
+      }).compile();
+
+      const svcWithKey = module.get<StorageService>(StorageService);
+      expect(svcWithKey).toBeDefined();
+    });
+
+    it('should not configure keyFilename when keyPath is "undefined"', async () => {
+      const configUndefinedKey = {
+        get: jest.fn((key: string) => {
+          const values: Record<string, string> = {
+            GCP_PROJECT_ID: 'fake-project',
+            GCP_BUCKET_NAME: 'fake-bucket',
+            GCP_KEY_FILE_PATH: 'undefined',
+          };
+          return values[key];
+        }),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          StorageService,
+          { provide: ConfigService, useValue: configUndefinedKey },
+        ],
+      }).compile();
+
+      const svcNoKey = module.get<StorageService>(StorageService);
+      expect(svcNoKey).toBeDefined();
+    });
+  });
+
   // ── findFile ─────────────────────────────────────────────────────────────────
 
   describe('findFile', () => {

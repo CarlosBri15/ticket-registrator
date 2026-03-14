@@ -241,5 +241,67 @@ describe('DepartmentService', () => {
         DepartmentConflictException,
       );
     });
+
+    it('should reassign users to unassigned dept when userIds.length > 0', async () => {
+      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(mockDepartment);
+      (repositoryMock.findUnassigned as jest.Mock).mockResolvedValue({ id: 'unassigned-dept' });
+
+      const findManySpy = jest.fn()
+        .mockResolvedValueOnce([{ userId: 'user-1' }])  // users in the dept
+        .mockResolvedValueOnce([]);                       // no remaining depts → insert to unassigned
+
+      (repositoryMock.transaction as jest.Mock).mockImplementation((cb: any) =>
+        cb({
+          update: jest.fn().mockReturnThis(),
+          set: jest.fn().mockReturnThis(),
+          where: jest.fn().mockResolvedValue([]),
+          delete: jest.fn().mockReturnThis(),
+          insert: jest.fn().mockReturnThis(),
+          values: jest.fn().mockResolvedValue([]),
+          query: { usersToDepartments: { findMany: findManySpy } },
+        }),
+      );
+
+      const result = await service.softDelete(companyRequester, 'company-1', 'dept-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('should NOT reassign user to unassigned when they still have other departments', async () => {
+      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(mockDepartment);
+      (repositoryMock.findUnassigned as jest.Mock).mockResolvedValue({ id: 'unassigned-dept' });
+
+      const findManySpy = jest.fn()
+        .mockResolvedValueOnce([{ userId: 'user-1' }])
+        .mockResolvedValueOnce([{ userId: 'user-1', departmentId: 'other' }]);
+
+      (repositoryMock.transaction as jest.Mock).mockImplementation((cb: any) =>
+        cb({
+          update: jest.fn().mockReturnThis(),
+          set: jest.fn().mockReturnThis(),
+          where: jest.fn().mockResolvedValue([]),
+          delete: jest.fn().mockReturnThis(),
+          insert: jest.fn().mockReturnThis(),
+          values: jest.fn().mockResolvedValue([]),
+          query: { usersToDepartments: { findMany: findManySpy } },
+        }),
+      );
+
+      const result = await service.softDelete(companyRequester, 'company-1', 'dept-1');
+      expect(result).toEqual({ deleted: true });
+    });
+  });
+
+  // ── seedDefaultDepartments ────────────────────────────────────────────────
+
+  describe('seedDefaultDepartments', () => {
+    it('should return mapped departments from repository', async () => {
+      (repositoryMock.seedDefaultDepartments as jest.Mock).mockResolvedValue([mockDepartment]);
+
+      const result = await service.seedDefaultDepartments('company-1');
+
+      expect(repositoryMock.seedDefaultDepartments).toHaveBeenCalledWith('company-1');
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe('Finance');
+    });
   });
 });

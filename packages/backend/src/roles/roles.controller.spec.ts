@@ -37,6 +37,21 @@ describe('RolesControllers', () => {
       expect(serviceMock.seedSystemAll).toHaveBeenCalled();
     });
 
+    it('should call seedPermissions', async () => {
+      await systemController.seedPermissions();
+      expect(serviceMock.seedDefaultPermissions).toHaveBeenCalled();
+    });
+
+    it('should call seedRoles', async () => {
+      await systemController.seedRoles();
+      expect(serviceMock.seedDefaultRoles).toHaveBeenCalled();
+    });
+
+    it('should call seedRolePermissions', async () => {
+      await systemController.seedRolePermissions();
+      expect(serviceMock.seedDefaultRolePermissions).toHaveBeenCalled();
+    });
+
     it('should call findAll with null companyId', async () => {
       await systemController.findAll();
       expect(serviceMock.findAll).toHaveBeenCalledWith(null);
@@ -55,6 +70,11 @@ describe('RolesControllers', () => {
     it('should call findAll with companyId', async () => {
       await companyController.findAll('comp-1');
       expect(serviceMock.findAll).toHaveBeenCalledWith('comp-1');
+    });
+
+    it('should call findOne with id and companyId', async () => {
+      await companyController.findOne('comp-1', 'role-1');
+      expect(serviceMock.findOne).toHaveBeenCalledWith('role-1', 'comp-1');
     });
 
     it('should call softDelete', async () => {

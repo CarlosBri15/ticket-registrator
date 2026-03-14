@@ -251,5 +251,139 @@ describe('OrganizationService', () => {
 
       await expect(service.onboard(globalRequester, dto)).rejects.toThrow(BadRequestException);
     });
+
+    it('should throw BadRequestException if admin role not found', async () => {
+      (repositoryMock.findByName as jest.Mock).mockResolvedValue(undefined);
+      (repositoryMock.transaction as jest.Mock).mockImplementation(async (cb) =>
+        cb({
+          query: {
+            departments: { findFirst: jest.fn().mockResolvedValue({ id: 'unassigned-dept' }) },
+            roles: { findFirst: jest.fn().mockResolvedValue(null) },
+            users: { findFirst: jest.fn() },
+          },
+          insert: jest.fn(),
+        }),
+      );
+
+      await expect(service.onboard(globalRequester, dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw OrganizationConflictException if admin email already in use', async () => {
+      (repositoryMock.findByName as jest.Mock).mockResolvedValue(undefined);
+
+      const insertMock = jest.fn().mockReturnValue({
+        values: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([{ id: 'company-new', orgName: 'New Corp' }]),
+        }),
+      });
+
+      (repositoryMock.transaction as jest.Mock).mockImplementation(async (cb) =>
+        cb({
+          query: {
+            departments: { findFirst: jest.fn().mockResolvedValue({ id: 'unassigned-dept' }) },
+            roles: { findFirst: jest.fn().mockResolvedValue({ id: 'role-admin', name: 'Admin' }) },
+            users: { findFirst: jest.fn().mockResolvedValue({ id: 'existing-user' }) },
+          },
+          insert: insertMock,
+        }),
+      );
+
+      await expect(service.onboard(globalRequester, dto)).rejects.toThrow(OrganizationConflictException);
+    });
+
+    it('should create company and admin successfully (happy path)', async () => {
+      (repositoryMock.findByName as jest.Mock).mockResolvedValue(undefined);
+      (cryptoServiceMock.hashPassword as jest.Mock).mockResolvedValue('hashed-pw');
+
+      const mockCreatedCompany = {
+        id: 'company-new',
+        orgName: 'New Corp',
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01'),
+        deletedAt: null,
+      };
+      const mockCreatedAdmin = {
+        id: 'new-admin',
+        name: 'Jane',
+        email: 'jane@newcorp.com',
+        username: 'admin_abc',
+      };
+
+      let insertCallIndex = 0;
+      const combinedInsert = jest.fn().mockImplementation(() => {
+        insertCallIndex++;
+        if (insertCallIndex === 1) {
+          return { values: jest.fn().mockReturnValue({ returning: jest.fn().mockResolvedValue([mockCreatedCompany]) }) };
+        } else if (insertCallIndex === 2) {
+          return { values: jest.fn().mockReturnValue({ returning: jest.fn().mockResolvedValue([mockCreatedAdmin]) }) };
+        } else {
+          return { values: jest.fn().mockResolvedValue([]) };
+        }
+      });
+
+      (repositoryMock.transaction as jest.Mock).mockImplementation(async (cb) =>
+        cb({
+          query: {
+            departments: { findFirst: jest.fn().mockResolvedValue({ id: 'unassigned-dept' }) },
+            roles: { findFirst: jest.fn().mockResolvedValue({ id: 'role-admin', name: 'Admin' }) },
+            users: { findFirst: jest.fn().mockResolvedValue(null) },
+          },
+          insert: combinedInsert,
+        }),
+      );
+
+      const result = await service.onboard(globalRequester, dto);
+      expect(result.admins).toHaveLength(1);
+      expect(result.admins[0].email).toBe('jane@newcorp.com');
+    });
+  });
+
+  // ── softDelete with users and reports ──────────────────────────────────────
+
+  describe('softDelete with users and reports', () => {
+    it('should soft delete company with users and reports', async () => {
+      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(mockCompany);
+
+      const updateMock = jest.fn().mockReturnThis();
+      const setMock = jest.fn().mockReturnThis();
+      const whereMock = jest.fn().mockResolvedValue([]);
+
+      const findManyUsers = jest.fn().mockResolvedValue([{ id: 'user-1' }, { id: 'user-2' }]);
+      const findManyReports = jest.fn().mockResolvedValue([{ id: 'report-1' }]);
+
+      (repositoryMock.transaction as jest.Mock).mockImplementation((cb) =>
+        cb({
+          update: updateMock,
+          set: setMock,
+          where: whereMock,
+          query: {
+            users: { findMany: findManyUsers },
+            reports: { findMany: findManyReports },
+          },
+        }),
+      );
+
+      const result = await service.softDelete(globalRequester, 'company-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('should soft delete company with users but no reports', async () => {
+      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(mockCompany);
+
+      (repositoryMock.transaction as jest.Mock).mockImplementation((cb) =>
+        cb({
+          update: jest.fn().mockReturnThis(),
+          set: jest.fn().mockReturnThis(),
+          where: jest.fn().mockResolvedValue([]),
+          query: {
+            users: { findMany: jest.fn().mockResolvedValue([{ id: 'user-1' }]) },
+            reports: { findMany: jest.fn().mockResolvedValue([]) },
+          },
+        }),
+      );
+
+      const result = await service.softDelete(globalRequester, 'company-1');
+      expect(result).toEqual({ deleted: true });
+    });
   });
 });
