@@ -81,6 +81,8 @@ jobs:
         with:
           projectBaseDir: packages/${{ matrix.project }}
           args: >
+            -Dsonar.organization=ticket-registrator
+            -Dsonar.projectKey=ticket-registrator-${{ matrix.project }}
             -Dsonar.qualitygate.wait=true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
