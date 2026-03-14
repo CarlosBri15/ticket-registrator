@@ -34,6 +34,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+
       - name: Run Linter
         continue-on-error: true
         working-directory: packages/${{ matrix.project }}
