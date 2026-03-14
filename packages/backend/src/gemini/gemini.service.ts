@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ConfigService } from '@nestjs/config';
+import { IReceiptExtraction } from '@ticket-registrator/shared';
 import { receiptPrompt, receiptSchema } from './prompts';
 import { GeminiExtractionException } from './exceptions/gemini.exceptions';
 
@@ -17,7 +18,7 @@ export class GeminiService {
     this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
-  async extractReceipt(imageBase64: string): Promise<Record<string, unknown>> {
+  async extractReceipt(imageBase64: string): Promise<IReceiptExtraction> {
     this.logger.log('Extracting receipt data from image');
 
     try {

@@ -7,5 +7,6 @@ import { CryptoModule } from '../crypto/crypto.module';
 @Module({
   imports: [RolesModule, PermissionsModule, CryptoModule],
   providers: [SeedService],
+  exports: [SeedService],
 })
 export class SeedModule {}

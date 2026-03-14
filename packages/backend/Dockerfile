@@ -29,6 +29,7 @@ COPY packages/shared/package*.json ./packages/shared/
 RUN npm install --omit=dev
 
 COPY --from=builder /app/packages/backend/dist ./packages/backend/dist
+COPY --from=builder /app/packages/backend/drizzle ./packages/backend/drizzle
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 
 EXPOSE 8080

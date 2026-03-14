@@ -230,7 +230,7 @@ describe('TicketsService', () => {
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.updateWithHistory.mockResolvedValue(mockTicket);
 
-      await service.update(requester, 'report-1', 'ticket-1', { date: '2024-01-15' });
+      await service.update(requester, 'report-1', 'ticket-1', { date: new Date('2024-01-15') });
       expect(ticketsRepositoryMock.updateWithHistory).toHaveBeenCalled();
     });
 
@@ -241,7 +241,7 @@ describe('TicketsService', () => {
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.updateWithHistory.mockResolvedValue(mockTicket);
 
-      await service.update(requester, 'report-1', 'ticket-1', { date: null });
+      await service.update(requester, 'report-1', 'ticket-1', { date: null as any });
       expect(ticketsRepositoryMock.updateWithHistory).toHaveBeenCalled();
     });
 

@@ -15,7 +15,7 @@ describe('UsersService', () => {
   let dbMock: any;
   let cryptoServiceMock: any;
 
-  const mockRole = { id: 'role-id', name: 'Employee', hierarchy: AUTHORITY_LEVELS.EMPLOYEE ?? 1, companyId: null };
+  const mockRole = { id: 'role-id', name: 'Employee', hierarchy: 10, companyId: null };
   const mockCompany = { id: 'company-1', name: 'Acme' };
   const mockDepartment = { id: 'dept-1', name: 'Sales', companyId: 'company-1' };
   const mockUser: any = {

@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - dev
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
@@ -50,6 +49,8 @@ jobs:
         uses: SonarSource/sonarcloud-github-action@master
         with:
           projectBaseDir: packages/${{ matrix.project }}
+          args: >
+            -Dsonar.qualitygate.wait=true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -61,18 +62,9 @@ jobs:
           webhook: ${{ secrets.DISCORD_WEBHOOK_CI }}
           status: ${{ job.status }}
           title: "CI: ${{ matrix.project }}"
-          description: "Tests and Lint analysis completed."
-          nodetails: true
-
-      - name: Notify Sonar Scan (Discord)
-        if: success()
-        uses: sarisia/actions-status-discord@v1
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK_SONAR }}
-          status: ${{ job.status }}
-          title: "SonarCloud Analysis: ${{ matrix.project }}"
-          description: "Analysis sent to SonarCloud successfully."
-          color: 0x3498db
+          description: "Tests, Lint and Sonar analysis completed."
+          url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          noprefix: true
 
       - name: Notify Alert on Failure (Discord)
         if: failure()
@@ -82,5 +74,6 @@ jobs:
           status: ${{ job.status }}
           content: "@here ⚠️ El flujo de CI ha fallado en el paquete **${{ matrix.project }}**"
           title: "CI FAILURE: ${{ matrix.project }}"
-          description: "Revisa los logs para más detalles."
+          description: "Revisa los logs y el estado de SonarCloud para más detalles."
+          url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           color: 0xff0000

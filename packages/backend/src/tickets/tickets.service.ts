@@ -1,5 +1,5 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
-import { ITicket, TicketStatus, TicketLifecycle, ReportStatus, ItemStatus } from '@ticket-registrator/shared';
+import { Injectable, Logger, ConflictException } from '@nestjs/common';
+import { ITicket, TicketStatus, TicketLifecycle, ReportStatus, ItemStatus, IReceiptExtraction } from '@ticket-registrator/shared';
 import { TicketsRepository } from './tickets.repository';
 import { TicketsAuthorizationService } from './tickets-authorization.service';
 import { ReportsRepository } from '../reports/reports.repository';
@@ -15,10 +15,11 @@ import {
 import { ReportNotFoundException } from '../reports/exceptions/reports.exceptions';
 import { UpdateTicketFieldsDto, UpdateTicketStatusDto } from './dto/update-ticket-user.dto';
 import * as schema from '../db/schema';
-import { eq, and } from 'drizzle-orm';
 import { Ticket, InsertTicket } from './schemas/ticket.schema';
 import { InsertItem, Item } from '../items/schemas/item.schema';
 import { Report } from '../reports/schemas/report.schema';
+
+
 
 @Injectable()
 export class TicketsService {
