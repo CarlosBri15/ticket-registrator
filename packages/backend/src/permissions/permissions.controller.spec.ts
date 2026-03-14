@@ -18,8 +18,6 @@ describe('PermissionsController', () => {
             seedDefaultPermissions: jest.fn(),
             assignToRole: jest.fn(),
             unassignFromRole: jest.fn(),
-            upsertUserOverrides: jest.fn(),
-            getUserOverrides: jest.fn(),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -84,15 +82,4 @@ describe('PermissionsController', () => {
         expect(serviceMock.unassignFromRole).toHaveBeenCalledWith('r1', 'p1', requester);
     });
 
-    it('should call upsertUserOverrides', async () => {
-        const dto = { userId: 'u2', permissions: [] } as any;
-        const requester = { id: 'u1' } as any;
-        await controller.upsertUserOverrides(requester, dto);
-        expect(serviceMock.upsertUserOverrides).toHaveBeenCalledWith(dto, requester);
-    });
-
-    it('should call getUserOverrides', async () => {
-        await controller.getUserOverrides('u2');
-        expect(serviceMock.getUserOverrides).toHaveBeenCalledWith('u2');
-    });
 });

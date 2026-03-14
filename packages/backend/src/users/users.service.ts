@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException, ForbiddenException, Inject } from '@nestjs/common';
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
@@ -8,14 +8,14 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { IUser, Roles, ROLE_HIERARCHY, permissions, AUTHORITY_LEVELS } from '@ticket-registrator/shared';
 import type { PermissionType, RoleType } from '@ticket-registrator/shared';
 import { mapUserToIUser } from './mapper/users.mapper';
-import { AuthService } from '../auth/auth.service';
+import { CryptoService } from '../crypto/crypto.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @Inject(DB_CONNECTION) private db: PostgresJsDatabase<typeof schema>,
-    @Inject(forwardRef(() => AuthService)) private readonly authService: AuthService,
-  ) { }
+    private readonly cryptoService: CryptoService,
+  ) {}
 
   async create(
     createUserDto: CreateUserDto,
@@ -32,7 +32,7 @@ export class UsersService {
       throw new ConflictException('Password is required');
     }
 
-    createUserDto.password = await this.authService.hashPassword(createUserDto.password);
+    createUserDto.password = await this.cryptoService.hashPassword(createUserDto.password);
 
     const isSuperAdmin = creator.roleHierarchy >= AUTHORITY_LEVELS.GLOBAL;
     const targetCompanyId = (isSuperAdmin && (createUserDto as any).companyId)
@@ -241,7 +241,7 @@ export class UsersService {
     }
 
     if (updateUserDto.password) {
-      updateUserDto.password = await this.authService.hashPassword(updateUserDto.password);
+      updateUserDto.password = await this.cryptoService.hashPassword(updateUserDto.password);
     }
 
     const { roleId, departmentIds, ...rest } = updateUserDto as any;
@@ -324,5 +324,22 @@ export class UsersService {
     });
     if (!user) return null;
     return user;
+  }
+
+  async findActiveById(id: string): Promise<{ id: string; roleHierarchy: number; companyId: string | null; departmentIds: string[] } | null> {
+    const user = await this.db.query.users.findFirst({
+      where: and(eq(schema.users.id, id), isNull(schema.users.deletedAt)),
+      with: {
+        role: true,
+        usersToDepartments: true,
+      },
+    });
+    if (!user) return null;
+    return {
+      id: user.id,
+      roleHierarchy: user.role?.hierarchy ?? 0,
+      companyId: user.companyId,
+      departmentIds: user.usersToDepartments.map((ud: any) => ud.departmentId),
+    };
   }
 }

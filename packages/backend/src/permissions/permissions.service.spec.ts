@@ -18,8 +18,7 @@ describe('PermissionsService', () => {
             update: jest.fn(),
             assignToRole: jest.fn(),
             unassignFromRole: jest.fn(),
-            upsertUserOverrides: jest.fn(),
-            findUserOverrides: jest.fn(),
+            bulkInsertPermissions: jest.fn(),
         };
 
         const authServiceMock = {
@@ -125,35 +124,30 @@ describe('PermissionsService', () => {
         });
     });
 
-    describe('upsertUserOverrides', () => {
+    describe('unassignFromRole', () => {
         const requester = { id: 'u1', permissions: [] } as any;
 
-        it('should upsert user overrides', async () => {
+        it('should unassign permission from role', async () => {
             authService.validateCanAssignPermissions.mockReturnValue(true as any);
-            repository.upsertUserOverrides.mockResolvedValue({ id: 'o1' } as any);
+            repository.unassignFromRole.mockResolvedValue(undefined);
 
-            await service.upsertUserOverrides({ userId: 'u2', permissions: [], isActive: true } as any, requester);
-            expect(repository.upsertUserOverrides).toHaveBeenCalled();
+            const result = await service.unassignFromRole('role-1', 'perm-1', requester);
+            expect(repository.unassignFromRole).toHaveBeenCalledWith('role-1', 'perm-1');
+            expect(result).toEqual({ unassigned: true });
         });
     });
 
     describe('seedDefaultPermissions', () => {
-        it('should seed permissions if not exist', async () => {
-            repository.findAll.mockResolvedValue([]);
-            repository.create.mockResolvedValue({ id: '1' } as any);
+        it('should call bulkInsertPermissions with all shared permissions', async () => {
+            repository.bulkInsertPermissions.mockResolvedValue(undefined);
 
             await service.seedDefaultPermissions();
-            expect(repository.create).toHaveBeenCalled();
-        });
 
-        it('should not seed if already exist', async () => {
-            // This is tricky because we need to know what's in sharedPermissions
-            // But if we mock repository.findAll to return something, it should skip it.
-            repository.findAll.mockResolvedValue([{ name: 'view_users' }] as any);
-            // If view_users is the only one (mocking the loop), it should not call create
-            // For now, just verifying it calls findAll
-            await service.seedDefaultPermissions();
-            expect(repository.findAll).toHaveBeenCalled();
+            expect(repository.bulkInsertPermissions).toHaveBeenCalledWith(
+                expect.arrayContaining([
+                    expect.objectContaining({ name: expect.any(String), description: expect.any(String) }),
+                ])
+            );
         });
     });
 });

@@ -44,11 +44,12 @@ export * from './user-roles/permissions'
 export * from './user-roles/role-default-permissions'
 
 // Organization
+export * from './interfaces/organization/organization.interface';
 export * from './schemas/organization/onboardOrganization.schema';
 export * from './schemas/organization/updateOrganization.schema';
 
-
 // Department
+export * from './interfaces/department/department.interface';
 export * from './schemas/department/createDepartment.schema';
 export * from './schemas/department/updateDepartment.schema';
 

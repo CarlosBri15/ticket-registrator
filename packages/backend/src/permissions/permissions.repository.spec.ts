@@ -81,8 +81,15 @@ describe('PermissionsRepository', () => {
         expect(dbMock.delete).toHaveBeenCalled();
     });
 
-    it('should call findUserOverrides', async () => {
-        await repository.findUserOverrides('1');
-        expect(dbMock.query.userPermissions.findFirst).toHaveBeenCalled();
+    it('should call bulkInsertPermissions', async () => {
+        const insertWithConflict = jest.fn().mockReturnValue({
+            values: jest.fn().mockReturnValue({
+                onConflictDoUpdate: jest.fn().mockResolvedValue(undefined),
+            }),
+        });
+        dbMock.insert = insertWithConflict;
+        const data = [{ name: 'view_reports', description: 'View reports' }];
+        await repository.bulkInsertPermissions(data);
+        expect(dbMock.insert).toHaveBeenCalled();
     });
 });

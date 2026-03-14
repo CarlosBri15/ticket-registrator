@@ -1,13 +1,16 @@
 import { Module } from '@nestjs/common';
 import { DepartmentService } from './department.service';
 import { DepartmentController } from './department.controller';
-
-import { RolesModule } from '../roles/roles.module';
+import { DepartmentRepository } from './department.repository';
+import { DepartmentAuthorizationService } from './department-authorization.service';
 
 @Module({
-  imports: [RolesModule],
   controllers: [DepartmentController],
-  providers: [DepartmentService],
-  exports: [DepartmentService],
+  providers: [
+    DepartmentService,
+    DepartmentRepository,
+    DepartmentAuthorizationService,
+  ],
+  exports: [DepartmentService, DepartmentRepository],
 })
-export class DepartmentModule { }
+export class DepartmentModule {}

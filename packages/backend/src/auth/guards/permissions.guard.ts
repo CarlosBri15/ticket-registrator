@@ -16,12 +16,6 @@ export class PermissionsGuard implements CanActivate {
         const request = context.switchToHttp().getRequest();
         const { user } = request;
 
-        // Resolve permissions from RolesService for the user role
-        const userPermissions = await this.rolesService.getPermissionsForRoleId(user.roleId, user.companyId);
-
-        // Attach permissions to user object for controllers to use if needed
-        user.permissions = userPermissions;
-
         const requiredPermissions = this.reflector.getAllAndOverride<PermissionType[]>(PERMISSIONS_KEY, [
             context.getHandler(),
             context.getClass(),
@@ -30,6 +24,16 @@ export class PermissionsGuard implements CanActivate {
         if (!requiredPermissions) {
             return true;
         }
+
+        if (!user || !user.roleId) {
+            throw new ForbiddenException('User lacks necessary role information');
+        }
+
+        // Resolve permissions from RolesService for the user role
+        const userPermissions = await this.rolesService.getPermissionsForRoleId(user.roleId, user.companyId);
+
+        // Attach permissions to user object for controllers to use if needed
+        user.permissions = userPermissions;
 
         const hasPermission = requiredPermissions.some((permission) =>
             userPermissions.includes(permission),

@@ -1,0 +1,130 @@
+import { mapTicketToITicket } from './ticket.mapper';
+import { TicketStatus, TicketLifecycle, ItemStatus } from '@ticket-registrator/shared';
+
+describe('mapTicketToITicket', () => {
+  const now = new Date('2024-05-10T09:00:00.000Z');
+
+  const baseTicket = {
+    id: 'ticket-1',
+    reportId: 'report-1',
+    status: TicketStatus.PENDING,
+    lifecycle: TicketLifecycle.DRAFT,
+    version: 1,
+    cgsBucketLink: 'receipt.jpg',
+    paymentType: 'credit_card',
+    expenseType: 'travel',
+    date: now,
+    locationName: 'Coffee Shop',
+    locationAddress: '123 Main St',
+    amount: 10.5,
+    currency: 'USD',
+    convertedAmount: 9.8,
+    convertedCurrency: 'EUR',
+    cgsBucketLinkJustification: null,
+    lastFourDigits: '1234',
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  it('should map all scalar fields correctly', () => {
+    const result = mapTicketToITicket({ ...baseTicket, items: [] });
+
+    expect(result.id).toBe('ticket-1');
+    expect(result.report_id).toBe('report-1');
+    expect(result.status).toBe(TicketStatus.PENDING);
+    expect(result.lifecycle).toBe(TicketLifecycle.DRAFT);
+    expect(result.version).toBe(1);
+    expect(result.cgs_bucket_link).toBe('receipt.jpg');
+    expect(result.payment_type).toBe('credit_card');
+    expect(result.expense_type).toBe('travel');
+    expect(result.location_name).toBe('Coffee Shop');
+    expect(result.location_address).toBe('123 Main St');
+    expect(result.amount).toBe(10.5);
+    expect(result.currency).toBe('USD');
+    expect(result.converted_amount).toBe(9.8);
+    expect(result.converted_currency).toBe('EUR');
+    expect(result.last_four_digits).toBe('1234');
+  });
+
+  it('should convert date to ISO string', () => {
+    const result = mapTicketToITicket({ ...baseTicket, items: [] });
+    expect(result.date).toBe(now.toISOString());
+  });
+
+  it('should return null for date when it is null', () => {
+    const result = mapTicketToITicket({ ...baseTicket, date: null, items: [] });
+    expect(result.date).toBeNull();
+  });
+
+  it('should convert createdAt to ISO string', () => {
+    const result = mapTicketToITicket({ ...baseTicket, items: [] });
+    expect(result.createdAt).toBe(now.toISOString());
+  });
+
+  it('should convert updatedAt to ISO string', () => {
+    const result = mapTicketToITicket({ ...baseTicket, items: [] });
+    expect(result.updatedAt).toBe(now.toISOString());
+  });
+
+  it('should fallback to current ISO string when createdAt is undefined', () => {
+    const result = mapTicketToITicket({ ...baseTicket, createdAt: undefined as any, items: [] });
+    expect(result.createdAt).toBeTruthy();
+    expect(typeof result.createdAt).toBe('string');
+  });
+
+  it('should return empty items array when items is undefined', () => {
+    const result = mapTicketToITicket({ ...baseTicket });
+    expect(result.items).toEqual([]);
+  });
+
+  it('should return empty items array when items is empty', () => {
+    const result = mapTicketToITicket({ ...baseTicket, items: [] });
+    expect(result.items).toEqual([]);
+  });
+
+  it('should map items correctly', () => {
+    const items = [
+      {
+        id: 'item-1',
+        ticketId: 'ticket-1',
+        name: 'Coffee',
+        amount: 4.5,
+        currency: 'USD',
+        status: ItemStatus.PENDING,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+
+    const result = mapTicketToITicket({ ...baseTicket, items });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toEqual({
+      id: 'item-1',
+      name: 'Coffee',
+      amount: 4.5,
+      currency: 'USD',
+      status: ItemStatus.PENDING,
+    });
+  });
+
+  it('should map multiple items correctly', () => {
+    const items = [
+      { id: 'item-1', ticketId: 'ticket-1', name: 'Coffee', amount: 4.5, currency: 'USD', status: ItemStatus.PENDING, createdAt: now, updatedAt: now },
+      { id: 'item-2', ticketId: 'ticket-1', name: 'Taxi', amount: 12.0, currency: 'USD', status: ItemStatus.APPROVED, createdAt: now, updatedAt: now },
+    ];
+
+    const result = mapTicketToITicket({ ...baseTicket, items });
+
+    expect(result.items).toHaveLength(2);
+    expect(result.items[1].id).toBe('item-2');
+    expect(result.items[1].status).toBe(ItemStatus.APPROVED);
+  });
+
+  it('should not expose internal DB fields (reportId, cgsBucketLink as camelCase)', () => {
+    const result = mapTicketToITicket({ ...baseTicket, items: [] });
+    expect(result).not.toHaveProperty('reportId');
+    expect(result).not.toHaveProperty('cgsBucketLink');
+    expect(result).not.toHaveProperty('paymentType');
+  });
+});

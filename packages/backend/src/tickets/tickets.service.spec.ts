@@ -6,7 +6,7 @@ import { TicketsAuthorizationService } from './tickets-authorization.service';
 import { GeminiService } from '../gemini/gemini.service';
 import { StorageService } from '../storage/storage.service';
 import { TicketStatus, ReportStatus, TicketLifecycle } from '@ticket-registrator/shared';
-import { TicketUnauthorizedException } from './exceptions/tickets.exceptions';
+import { TicketUnauthorizedException, TicketNotFoundException } from './exceptions/tickets.exceptions';
 
 describe('TicketsService', () => {
   let service: TicketsService;
@@ -125,6 +125,47 @@ describe('TicketsService', () => {
 
       await service.remove(requester, 'report-1', 'ticket-1');
       expect(ticketsRepositoryMock.softDelete).toHaveBeenCalled();
+    });
+  });
+
+  describe('findAll', () => {
+    it('should return all tickets for a report when authorized', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
+      ticketsRepositoryMock.findByReportId.mockResolvedValue([{ ...mockTicket, items: [] }]);
+
+      const result = await service.findAll(requester, 'report-1');
+      expect(result).toHaveLength(1);
+      expect(ticketsRepositoryMock.findByReportId).toHaveBeenCalledWith('report-1');
+    });
+
+    it('should throw TicketUnauthorizedException if not authorized', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanViewReport.mockResolvedValue(false);
+
+      await expect(service.findAll(requester, 'report-1')).rejects.toThrow(TicketUnauthorizedException);
+    });
+  });
+
+  describe('getTicketImageUrl', () => {
+    it('should return the image URL for a ticket', async () => {
+      const ticketWithImage = { ...mockTicket, items: [], cgsBucketLink: 'img-key.jpg' };
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
+      ticketsRepositoryMock.findById.mockResolvedValue(ticketWithImage);
+      storageServiceMock.findFile.mockResolvedValue('https://cdn.example.com/img.jpg');
+
+      const result = await service.getTicketImageUrl(requester, 'report-1', 'ticket-1');
+      expect(result.url).toBe('https://cdn.example.com/img.jpg');
+    });
+
+    it('should throw TicketNotFoundException when ticket has no image link', async () => {
+      const ticketNoImage = { ...mockTicket, items: [], cgsBucketLink: null };
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
+      ticketsRepositoryMock.findById.mockResolvedValue(ticketNoImage);
+
+      await expect(service.getTicketImageUrl(requester, 'report-1', 'ticket-1')).rejects.toThrow(TicketNotFoundException);
     });
   });
 });

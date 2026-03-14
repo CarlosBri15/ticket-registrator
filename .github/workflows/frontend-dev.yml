@@ -14,6 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
       - name: Create .env file
         run: echo "VITE_API_URL=${{ secrets.VITE_API_URL_DEV }}" > ./packages/frontend/.env.dev
       - name: Install and Build
@@ -32,3 +37,24 @@ jobs:
           target: dev
           channelId: live
           entryPoint: "./packages/frontend"
+
+      - name: Notify Deployment (Discord)
+        if: success()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_DEV_DEPLOY }}
+          status: ${{ job.status }}
+          title: "💻 Frontend Deployed to DEV"
+          description: "La interfaz web se ha desplegado correctamente en Firebase Hosting (DEV)."
+          color: 0x2ecc71
+
+      - name: Notify Alert on Failure (Discord)
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_ALERTS }}
+          status: ${{ job.status }}
+          content: "@here 🚨 **ERROR CRÍTICO**: El despliegue del Frontend en DEV ha fallado."
+          title: "DEPLOYMENT FAILURE: Frontend (DEV)"
+          description: "La actualización en Firebase Hosting no se ha completado."
+          color: 0xff0000

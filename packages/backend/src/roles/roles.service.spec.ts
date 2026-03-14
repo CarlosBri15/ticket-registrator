@@ -106,4 +106,83 @@ describe('RolesService', () => {
         .rejects.toThrow();
     });
   });
+
+  describe('findAll', () => {
+    it('should call findAllCompanyRoles when companyId is provided', async () => {
+      repositoryMock.findAllCompanyRoles.mockResolvedValue([{ id: 'role-1' }] as any);
+
+      const result = await service.findAll('comp-1');
+
+      expect(repositoryMock.findAllCompanyRoles).toHaveBeenCalledWith('comp-1');
+      expect(result).toHaveLength(1);
+    });
+
+    it('should call findAllSystemRoles when companyId is null', async () => {
+      repositoryMock.findAllSystemRoles.mockResolvedValue([{ id: 'sys-role' }] as any);
+
+      const result = await service.findAll(null);
+
+      expect(repositoryMock.findAllSystemRoles).toHaveBeenCalled();
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('getPermissionsForRoles', () => {
+    it('should collect unique permission names from all roles', async () => {
+      const rolesWithPerms = [
+        {
+          id: 'r1',
+          rolePermissions: [
+            { permission: { name: 'view_reports' } },
+            { permission: { name: 'create_reports' } },
+          ],
+        },
+        {
+          id: 'r2',
+          rolePermissions: [
+            { permission: { name: 'view_reports' } }, // duplicate
+            { permission: { name: 'edit_tickets' } },
+          ],
+        },
+      ];
+      repositoryMock.getRolePermissionsByNames.mockResolvedValue(rolesWithPerms as any);
+
+      const result = await service.getPermissionsForRoles(['Employee', 'Manager'], 'comp-1');
+
+      expect(result).toHaveLength(3);
+      expect(result).toContain('view_reports');
+      expect(result).toContain('create_reports');
+      expect(result).toContain('edit_tickets');
+    });
+
+    it('should return empty array when no roles have permissions', async () => {
+      repositoryMock.getRolePermissionsByNames.mockResolvedValue([]);
+
+      const result = await service.getPermissionsForRoles(['Unknown'], null);
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getPermissionsForRoleId', () => {
+    it('should return permissions for the given role id', async () => {
+      const roleWithPerms = {
+        id: 'r1',
+        rolePermissions: [
+          { permission: { name: 'view_reports' } },
+          { permission: { name: 'create_reports' } },
+        ],
+      };
+      repositoryMock.getRolePermissionsById = jest.fn().mockResolvedValue(roleWithPerms);
+
+      const result = await service.getPermissionsForRoleId('r1', null);
+      expect(result).toEqual(['view_reports', 'create_reports']);
+    });
+
+    it('should return empty array when role is not found', async () => {
+      repositoryMock.getRolePermissionsById = jest.fn().mockResolvedValue(undefined);
+
+      const result = await service.getPermissionsForRoleId('unknown', null);
+      expect(result).toEqual([]);
+    });
+  });
 });

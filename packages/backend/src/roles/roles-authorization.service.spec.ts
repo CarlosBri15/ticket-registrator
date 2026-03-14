@@ -18,16 +18,16 @@ describe('RolesAuthorizationService', () => {
     });
 
     describe('validateHierarchy', () => {
-        it('should throw exception if target hierarchy is higher', () => {
-            expect(() => service.validateHierarchy('Manager', 55)).toThrow(RoleUnauthorizedException);
+        it('should throw exception if target hierarchy is higher than requester', () => {
+            expect(() => service.validateHierarchy(50, 55)).toThrow(RoleUnauthorizedException);
         });
 
-        it('should throw exception if target hierarchy is equal', () => {
-            expect(() => service.validateHierarchy('Manager', 50)).toThrow(RoleUnauthorizedException);
+        it('should throw exception if target hierarchy is equal to requester', () => {
+            expect(() => service.validateHierarchy(50, 50)).toThrow(RoleUnauthorizedException);
         });
 
-        it('should pass if target hierarchy is lower', () => {
-            expect(() => service.validateHierarchy('SuperAdmin', 10)).not.toThrow();
+        it('should pass if target hierarchy is lower than requester', () => {
+            expect(() => service.validateHierarchy(100, 10)).not.toThrow();
         });
     });
 

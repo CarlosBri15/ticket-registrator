@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
-import { TestModule } from './test/test.module';
 import { DbModule } from './db/db.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { ReportsModule } from './reports/reports.module';
@@ -14,6 +13,7 @@ import { DepartmentModule } from './department/department.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { SeedModule } from './seed/seed.module';
+import { CryptoModule } from './crypto/crypto.module';
 
 @Module({
   imports: [
@@ -23,7 +23,7 @@ import { SeedModule } from './seed/seed.module';
 
     DbModule,
 
-    TestModule,
+    CryptoModule,
 
     UsersModule,
 
@@ -45,7 +45,7 @@ import { SeedModule } from './seed/seed.module';
 
     RolesModule,
     PermissionsModule,
-    SeedModule
+    SeedModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

@@ -168,4 +168,81 @@ describe('ReportsService', () => {
       await expect(service.remove(requester, 'report-1')).rejects.toThrow(ReportStatusConflictException);
     });
   });
+
+  describe('findUserReports', () => {
+    const mockReportDoc = {
+      id: 'report-1', userId: 'user-1', name: 'Trip', status: ReportStatus.CREATED,
+      startDate: new Date(), endDate: new Date(), createdAt: new Date(), updatedAt: new Date(),
+      currency: 'USD', type: '', requestedAmount: 0, approvedAmount: 0,
+    };
+
+    it('should return reports when authorized', async () => {
+      authServiceMock.canViewUserReports.mockResolvedValue(true);
+      repositoryMock.findByUserId.mockResolvedValue([mockReportDoc]);
+
+      const result = await service.findUserReports(requester, 'user-1');
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('report-1');
+    });
+
+    it('should throw ReportUnauthorizedException when not authorized', async () => {
+      authServiceMock.canViewUserReports.mockResolvedValue(false);
+
+      await expect(service.findUserReports(requester, 'user-1')).rejects.toThrow(ReportUnauthorizedException);
+    });
+  });
+
+  describe('findAllReports', () => {
+    it('should return all visible reports for authority level', async () => {
+      const globalRequester = { ...requester, roleHierarchy: AUTHORITY_LEVELS.GLOBAL, id: 'admin-1' } as any;
+      const mockReportDoc = {
+        id: 'report-1', userId: 'user-1', name: 'Trip', status: ReportStatus.CREATED,
+        startDate: new Date(), endDate: new Date(), createdAt: new Date(), updatedAt: new Date(),
+        currency: 'USD', type: '', requestedAmount: 0, approvedAmount: 0,
+      };
+      repositoryMock.findWithFilters.mockResolvedValue({ data: [mockReportDoc], total: 1 });
+
+      const result = await service.findAllReports(globalRequester);
+      expect(repositoryMock.findWithFilters).toHaveBeenCalled();
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('findAllReportsPaginated', () => {
+    it('should return paginated reports with default page and limit', async () => {
+      const mockReportDoc = {
+        id: 'report-1', userId: 'user-1', name: 'Trip', status: ReportStatus.CREATED,
+        startDate: new Date(), endDate: new Date(), createdAt: new Date(), updatedAt: new Date(),
+        currency: 'USD', type: '', requestedAmount: 0, approvedAmount: 0,
+      };
+      repositoryMock.findWithFilters.mockResolvedValue({ data: [mockReportDoc], total: 1 });
+
+      const result = await service.findAllReportsPaginated(requester, { page: 1, limit: 10 });
+      expect(result.data).toHaveLength(1);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
+      expect(result.totalPages).toBe(1);
+    });
+  });
+
+  describe('update', () => {
+    it('should update report fields successfully', async () => {
+      const mockReportDoc = {
+        id: 'report-1', userId: 'user-1', name: 'Updated', status: ReportStatus.CREATED,
+        startDate: new Date(), endDate: new Date(), createdAt: new Date(), updatedAt: new Date(),
+        currency: 'USD', type: '', requestedAmount: 0, approvedAmount: 0,
+      };
+      repositoryMock.updateWithCondition.mockResolvedValue(mockReportDoc);
+
+      const result = await service.update(requester, 'report-1', { name: 'Updated' });
+      expect(result.name).toBe('Updated');
+    });
+
+    it('should throw ReportNotFoundException if update returns null', async () => {
+      repositoryMock.updateWithCondition.mockResolvedValue(null);
+
+      await expect(service.update(requester, 'report-1', { name: 'X' })).rejects.toThrow(ReportNotFoundException);
+    });
+  });
 });

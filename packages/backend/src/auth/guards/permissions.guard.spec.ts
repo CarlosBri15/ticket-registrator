@@ -11,7 +11,7 @@ describe('PermissionsGuard', () => {
     beforeEach(() => {
         reflector = new Reflector();
         rolesService = {
-            getPermissionsForRoles: jest.fn(),
+            getPermissionsForRoleId: jest.fn(),
         };
         guard = new PermissionsGuard(reflector, rolesService);
     });
@@ -32,11 +32,11 @@ describe('PermissionsGuard', () => {
         expect(guard).toBeDefined();
     });
 
-    it('should allow access if no permissions are required (decorator not present)', () => {
+    it('should allow access if no permissions are required (decorator not present)', async () => {
         jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
         const context = mockExecutionContext();
 
-        const result = guard.canActivate(context);
+        const result = await guard.canActivate(context);
         expect(result).toBe(true);
     });
 
@@ -48,9 +48,9 @@ describe('PermissionsGuard', () => {
         await expect(guard.canActivate(context)).rejects.toThrow('User lacks necessary role information');
     });
 
-    it('should throw ForbiddenException if user has no roles array', async () => {
+    it('should throw ForbiddenException if user has no roleId', async () => {
         jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([permissions.VIEW_REPORTS]);
-        const context = mockExecutionContext({ id: '123' }); // User without roles array
+        const context = mockExecutionContext({ id: '123' }); // User without roleId
 
         await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
     });
@@ -60,10 +60,10 @@ describe('PermissionsGuard', () => {
             permissions.VIEW_REPORTS,
             permissions.MANAGE_PERMISSIONS,
         ]);
-        rolesService.getPermissionsForRoles.mockResolvedValue([permissions.VIEW_USERS]);
+        rolesService.getPermissionsForRoleId.mockResolvedValue([permissions.VIEW_USERS]);
         const context = mockExecutionContext({
             id: '123',
-            roles: ['some-role'],
+            roleId: 'role-id-1',
             companyId: 'comp-1',
         });
 
@@ -73,10 +73,10 @@ describe('PermissionsGuard', () => {
 
     it('should allow access if user has exactly the required permission', async () => {
         jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([permissions.VIEW_REPORTS]);
-        rolesService.getPermissionsForRoles.mockResolvedValue([permissions.VIEW_REPORTS]);
+        rolesService.getPermissionsForRoleId.mockResolvedValue([permissions.VIEW_REPORTS]);
         const context = mockExecutionContext({
             id: '123',
-            roles: ['some-role'],
+            roleId: 'role-id-1',
             companyId: 'comp-1',
         });
 
@@ -89,10 +89,10 @@ describe('PermissionsGuard', () => {
             permissions.VIEW_REPORTS,
             permissions.CREATE_USERS,
         ]);
-        rolesService.getPermissionsForRoles.mockResolvedValue([permissions.CREATE_USERS, permissions.VIEW_USERS]);
+        rolesService.getPermissionsForRoleId.mockResolvedValue([permissions.CREATE_USERS, permissions.VIEW_USERS]);
         const context = mockExecutionContext({
             id: '123',
-            roles: ['some-role'],
+            roleId: 'role-id-1',
             companyId: 'comp-1',
         });
 

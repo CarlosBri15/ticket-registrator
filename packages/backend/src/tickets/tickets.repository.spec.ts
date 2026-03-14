@@ -67,4 +67,36 @@ describe('TicketsRepository', () => {
             expect(dbMock.update).toHaveBeenCalledWith(schema.tickets);
         });
     });
+
+    describe('findByReportId', () => {
+        it('should call db.query.tickets.findMany', async () => {
+            dbMock.query.tickets.findMany.mockResolvedValue([]);
+            const result = await repository.findByReportId('report-1');
+            expect(dbMock.query.tickets.findMany).toHaveBeenCalled();
+            expect(result).toEqual([]);
+        });
+    });
+
+    describe('updateWithHistory', () => {
+        it('should insert history and update ticket in a transaction', async () => {
+            dbMock.returning.mockResolvedValue([{ id: 'ticket-1' }]);
+
+            const historyData = { ticketId: 'ticket-1', reportId: 'report-1', version: 1, oldSnapshot: {}, newSnapshot: {} } as any;
+            await repository.updateWithHistory('ticket-1', { status: 'APPROVED' } as any, historyData);
+
+            expect(dbMock.insert).toHaveBeenCalledWith(schema.ticketHistories);
+            expect(dbMock.update).toHaveBeenCalledWith(schema.tickets);
+        });
+
+        it('should delete and re-insert items when itemsToUpdate is provided', async () => {
+            dbMock.returning.mockResolvedValue([{ id: 'ticket-1' }]);
+
+            const historyData = { ticketId: 'ticket-1', reportId: 'report-1', version: 1, oldSnapshot: {}, newSnapshot: {} } as any;
+            const items = [{ name: 'Item 1', amount: 10 }] as any;
+            await repository.updateWithHistory('ticket-1', {} as any, historyData, items);
+
+            expect(dbMock.delete).toHaveBeenCalledWith(schema.items);
+            expect(dbMock.insert).toHaveBeenCalledWith(schema.items);
+        });
+    });
 });
