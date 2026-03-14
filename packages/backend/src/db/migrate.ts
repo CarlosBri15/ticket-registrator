@@ -6,12 +6,12 @@ import { join } from 'path';
 
 dotenv.config();
 
-const connectionString = process.env.DATABASE_URL || "postgres://root:rootpassword@localhost:5432/ticket_registrator";
+const connectionString = process.env.DATABASE_URL;
 
 async function runMigrations() {
     console.log('--- MIGRATIONS START ---');
-    
-    const sql = postgres(connectionString, { max: 1 });
+
+    const sql = postgres(connectionString!, { max: 1 });
     const db = drizzle(sql);
 
     try {
