@@ -10,13 +10,55 @@ on:
       - dev 
 
 jobs:
+  # 0. Detect Changes
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+      shared: ${{ steps.filter.outputs.shared }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'packages/backend/**'
+              - 'packages/shared/**'
+            frontend:
+              - 'packages/frontend/**'
+              - 'packages/shared/**'
+            mobile:
+              - 'packages/mobile/**'
+              - 'packages/shared/**'
+            shared:
+              - 'packages/shared/**'
+      - id: set-matrix
+        run: |
+          MATRIX="["
+          if [ "${{ steps.filter.outputs.backend }}" == "true" ]; then MATRIX="${MATRIX}\"backend\","; fi
+          if [ "${{ steps.filter.outputs.frontend }}" == "true" ]; then MATRIX="${MATRIX}\"frontend\","; fi
+          if [ "${{ steps.filter.outputs.mobile }}" == "true" ]; then MATRIX="${MATRIX}\"mobile\","; fi
+          if [ "${{ steps.filter.outputs.shared }}" == "true" ]; then MATRIX="${MATRIX}\"shared\","; fi
+          if [ "$MATRIX" == "[" ]; then
+            MATRIX="[]"
+          else
+            MATRIX="${MATRIX%,}]"
+          fi
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
   sonarcloud:
     name: Analyze ${{ matrix.project }}
+    needs: changes
+    if: ${{ needs.changes.outputs.matrix != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        project: [backend, frontend, mobile, shared]
+        project: ${{ fromJSON(needs.changes.outputs.matrix) }}
 
     steps:
       - uses: actions/checkout@v4

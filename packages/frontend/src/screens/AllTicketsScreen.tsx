@@ -9,7 +9,6 @@ import { es, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
-// Sub-component that loads tickets for a single report
 const ReportTicketGroup = ({
   report,
   onTicketClick,
