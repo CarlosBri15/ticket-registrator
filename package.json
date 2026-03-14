@@ -8,6 +8,9 @@
     "packages/shared",
     "packages/mobile"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "install:all": "npm install",
     "build:shared": "npm run build -w @ticket-registrator/shared",

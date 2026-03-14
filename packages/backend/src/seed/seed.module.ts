@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { SeedService } from './seed.service';
 import { RolesModule } from '../roles/roles.module';
-import { AuthModule } from '../auth/auth.module';
-import { UsersModule } from '../users/users.module';
+import { PermissionsModule } from '../permissions/permissions.module';
+import { CryptoModule } from '../crypto/crypto.module';
 
 @Module({
-    imports: [RolesModule, AuthModule, UsersModule],
-    providers: [SeedService],
+  imports: [RolesModule, PermissionsModule, CryptoModule],
+  providers: [SeedService],
 })
-export class SeedModule { }
+export class SeedModule {}
