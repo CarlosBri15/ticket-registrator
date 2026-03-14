@@ -18,6 +18,7 @@ export * from './schemas/reports/updateReport.schema';
 // Tickets
 export * from './interfaces/tickets/ticket.interface';
 export * from './interfaces/tickets/item.interface';
+export * from './interfaces/tickets/receipt-extraction.interface';
 export * from './schemas/tickets/createTicket.schema';
 export * from './schemas/tickets/createItem.schema';
 export * from './schemas/tickets/updateTicket.schema';

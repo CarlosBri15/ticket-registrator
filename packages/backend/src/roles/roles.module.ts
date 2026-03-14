@@ -4,8 +4,11 @@ import { SystemRolesController, CompanyRolesController } from './roles.controlle
 import { RolesRepository } from './roles.repository';
 import { RolesAuthorizationService } from './roles-authorization.service';
 
+import { SeedModule } from '../seed/seed.module';
+
 @Global()
 @Module({
+  imports: [SeedModule],
   controllers: [SystemRolesController, CompanyRolesController],
   providers: [RolesService, RolesRepository, RolesAuthorizationService],
   exports: [RolesService, RolesRepository, RolesAuthorizationService],

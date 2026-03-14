@@ -62,7 +62,7 @@ jobs:
           status: ${{ job.status }}
           title: "CI: ${{ matrix.project }}"
           description: "Tests and Lint analysis completed."
-          nodetails: true
+          noprefix: true
 
       - name: Notify Sonar Scan (Discord)
         if: success()

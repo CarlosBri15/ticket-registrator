@@ -22,6 +22,13 @@ describe('mapTicketToITicket', () => {
     convertedCurrency: 'EUR',
     cgsBucketLinkJustification: null,
     lastFourDigits: '1234',
+    llmApprovedPercentage: null,
+    llmRecommendation: null,
+    llmSuggestedAmount: null,
+    llmSuggestedCurrency: null,
+    approvedAmount: 0,
+    isVisible: true,
+    deletedAt: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -99,7 +106,7 @@ describe('mapTicketToITicket', () => {
     const result = mapTicketToITicket({ ...baseTicket, items });
 
     expect(result.items).toHaveLength(1);
-    expect(result.items[0]).toEqual({
+    expect(result.items![0]).toEqual({
       id: 'item-1',
       name: 'Coffee',
       amount: 4.5,
@@ -117,8 +124,8 @@ describe('mapTicketToITicket', () => {
     const result = mapTicketToITicket({ ...baseTicket, items });
 
     expect(result.items).toHaveLength(2);
-    expect(result.items[1].id).toBe('item-2');
-    expect(result.items[1].status).toBe(ItemStatus.APPROVED);
+    expect(result.items![1].id).toBe('item-2');
+    expect(result.items![1].status).toBe(ItemStatus.APPROVED);
   });
 
   it('should not expose internal DB fields (reportId, cgsBucketLink as camelCase)', () => {

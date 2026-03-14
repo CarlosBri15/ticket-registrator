@@ -30,6 +30,7 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL_DEV }}
           VITE_ENV: dev
       - uses: FirebaseExtended/action-hosting-deploy@v0
+        id: deploy
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_TICKET_REGISTRATOR }}'
@@ -45,8 +46,9 @@ jobs:
           webhook: ${{ secrets.DISCORD_WEBHOOK_DEV_DEPLOY }}
           status: ${{ job.status }}
           title: "💻 Frontend Deployed to DEV"
-          description: "La interfaz web se ha desplegado correctamente en Firebase Hosting (DEV)."
+          description: "La interfaz web se ha desplegado correctamente en Firebase Hosting (DEV).\n\nURL: https://ticket-registrator-dev.web.app"
           color: 0x2ecc71
+          url: "https://ticket-registrator-dev.web.app"
 
       - name: Notify Alert on Failure (Discord)
         if: failure()

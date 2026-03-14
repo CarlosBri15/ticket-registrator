@@ -314,7 +314,7 @@ export class UsersService {
     return { deleted: true };
   }
 
-  async findByEmail(email: string) {
+  async findByEmail(email: string): Promise<any | null> {
     const user = await this.db.query.users.findFirst({
       where: eq(schema.users.email, email),
       with: {

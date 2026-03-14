@@ -283,8 +283,8 @@ describe('ReportsService', () => {
 
       const result = await service.update(requester, 'report-1', {
         name: 'New',
-        start_date: '2024-01-01',
-        end_date: '2024-12-31',
+        start_date: new Date('2024-01-01'),
+        end_date: new Date('2024-12-31'),
         type: 'TRAVEL',
         isVisible: true,
       });

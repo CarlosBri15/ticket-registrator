@@ -72,7 +72,7 @@ jobs:
           webhook: ${{ secrets.DISCORD_WEBHOOK_DEV_DEPLOY }}
           status: ${{ job.status }}
           title: "🚀 Backend Deployed to DEV"
-          description: "La API del backend se ha desplegado correctamente en Google Cloud Run."
+          description: "La API del backend se ha desplegado correctamente en Google Cloud Run.\n\nURL: ${{ steps.deploy.outputs.url }}"
           color: 0x2ecc71
           url: "${{ steps.deploy.outputs.url }}"
 
