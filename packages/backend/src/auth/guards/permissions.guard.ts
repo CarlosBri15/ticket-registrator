@@ -9,7 +9,7 @@ export class PermissionsGuard implements CanActivate {
     constructor(
         private reflector: Reflector,
         @Inject(forwardRef(() => RolesService))
-        private rolesService: RolesService
+        private readonly rolesService: RolesService
     ) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -25,7 +25,7 @@ export class PermissionsGuard implements CanActivate {
             return true;
         }
 
-        if (!user || !user.roleId) {
+        if (!user?.roleId) {
             throw new ForbiddenException('User lacks necessary role information');
         }
 

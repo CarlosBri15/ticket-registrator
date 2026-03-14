@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IItem, ItemStatusType } from '@ticket-registrator/shared';
+import { IItem } from '@ticket-registrator/shared';
 import { ItemsRepository } from './items.repository';
 import { ItemNotFoundException } from './exceptions/items.exceptions';
 import { InsertItem, Item } from './schemas/item.schema';
@@ -9,7 +9,7 @@ const mapItemToIItem = (item: Item): IItem => ({
   name: item.name,
   amount: item.amount,
   currency: item.currency,
-  status: item.status as ItemStatusType,
+  status: item.status,
 });
 
 @Injectable()

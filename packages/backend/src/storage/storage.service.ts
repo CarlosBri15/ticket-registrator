@@ -11,8 +11,8 @@ import {
 @Injectable()
 export class StorageService {
   private readonly logger = new Logger(StorageService.name);
-  private storage: Storage;
-  private bucketName: string;
+  private readonly storage: Storage;
+  private readonly bucketName: string;
 
   constructor(private readonly configService: ConfigService) {
     const storageOptions: any = {
