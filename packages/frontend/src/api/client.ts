@@ -17,7 +17,6 @@ const tokenProvider: TokenProvider = {
     }
 };
 
-// Inicializamos la instancia global de la API para los hooks de shared
 const client = createApiClient(API_URL, tokenProvider);
 setApiClient(client);
 
