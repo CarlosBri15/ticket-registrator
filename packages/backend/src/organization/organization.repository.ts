@@ -2,14 +2,14 @@ import { Injectable, Inject } from '@nestjs/common';
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, isNull, and, inArray } from 'drizzle-orm';
+import { eq, isNull, and } from 'drizzle-orm';
 import { Company, InsertCompany } from './schema/organization.schema';
 
 @Injectable()
 export class OrganizationRepository {
   constructor(
     @Inject(DB_CONNECTION) private readonly db: PostgresJsDatabase<typeof schema>,
-  ) {}
+  ) { }
 
   async findAll(): Promise<Company[]> {
     return this.db.query.companies.findMany({

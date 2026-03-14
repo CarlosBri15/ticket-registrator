@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RolesRepository } from './roles.repository';
 import { RolesAuthorizationService } from './roles-authorization.service';
-import { PermissionType, RoleType } from '@ticket-registrator/shared';
 import {
   RoleNotFoundException,
   RoleConflictException,
@@ -17,7 +16,7 @@ export class RolesService {
   constructor(
     private readonly rolesRepository: RolesRepository,
     private readonly rolesAuthService: RolesAuthorizationService,
-  ) {}
+  ) { }
 
   async create(companyId: string, dto: CreateRoleDto, requester: UserPayload) {
     this.rolesAuthService.validateHierarchy(requester.roleHierarchy, dto.hierarchy!);

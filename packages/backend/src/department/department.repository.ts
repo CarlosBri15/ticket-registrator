@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, and, isNull, inArray } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { Department, InsertDepartment } from './schema/department.schema';
 import { DEFAULT_DEPARTMENTS } from '@ticket-registrator/shared';
 
@@ -10,7 +10,7 @@ import { DEFAULT_DEPARTMENTS } from '@ticket-registrator/shared';
 export class DepartmentRepository {
   constructor(
     @Inject(DB_CONNECTION) private readonly db: PostgresJsDatabase<typeof schema>,
-  ) {}
+  ) { }
 
   async findAllByCompany(companyId: string): Promise<Department[]> {
     return this.db.query.departments.findMany({

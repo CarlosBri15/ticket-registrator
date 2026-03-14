@@ -5,7 +5,7 @@ import * as schema from '../db/schema';
 import { eq, and, or, inArray, isNull, sql } from 'drizzle-orm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { IUser, Roles, ROLE_HIERARCHY, permissions, AUTHORITY_LEVELS } from '@ticket-registrator/shared';
+import { IUser, permissions, AUTHORITY_LEVELS } from '@ticket-registrator/shared';
 import type { PermissionType, RoleType } from '@ticket-registrator/shared';
 import { mapUserToIUser } from './mapper/users.mapper';
 import { CryptoService } from '../crypto/crypto.service';
@@ -15,7 +15,7 @@ export class UsersService {
   constructor(
     @Inject(DB_CONNECTION) private db: PostgresJsDatabase<typeof schema>,
     private readonly cryptoService: CryptoService,
-  ) {}
+  ) { }
 
   async create(
     createUserDto: CreateUserDto,
