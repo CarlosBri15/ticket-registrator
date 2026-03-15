@@ -94,7 +94,6 @@ export class SeedService implements OnApplicationBootstrap {
           await this.rolesRepository.update(existing.id, {
             hierarchy,
             description,
-            isVisible: true,
           });
           updatedCount++;
         }
