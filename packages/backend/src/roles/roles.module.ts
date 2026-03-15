@@ -1,6 +1,9 @@
 import { Module, Global, forwardRef } from '@nestjs/common';
 import { RolesService } from './roles.service';
-import { SystemRolesController, CompanyRolesController } from './roles.controller';
+import {
+  SystemRolesController,
+  CompanyRolesController,
+} from './roles.controller';
 import { RolesRepository } from './roles.repository';
 import { RolesAuthorizationService } from './roles-authorization.service';
 

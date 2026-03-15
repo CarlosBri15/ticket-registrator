@@ -1,5 +1,8 @@
 import { users, userRelations } from './user.schema';
-import { usersToDepartments, usersToDepartmentsRelations } from './user-relations.schema';
+import {
+  usersToDepartments,
+  usersToDepartmentsRelations,
+} from './user-relations.schema';
 
 describe('User Schemas', () => {
   it('should export users table', () => {

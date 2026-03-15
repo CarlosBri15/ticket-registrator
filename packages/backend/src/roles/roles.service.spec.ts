@@ -3,7 +3,10 @@ import { RolesService } from './roles.service';
 import { RolesRepository } from './roles.repository';
 import { RolesAuthorizationService } from './roles-authorization.service';
 import { Roles } from '@ticket-registrator/shared';
-import { RoleNotFoundException, RoleConflictException } from './exceptions/roles.exceptions';
+import {
+  RoleNotFoundException,
+  RoleConflictException,
+} from './exceptions/roles.exceptions';
 
 describe('RolesService', () => {
   let service: RolesService;
@@ -64,14 +67,18 @@ describe('RolesService', () => {
     it('should throw ConflictException if role already exists', async () => {
       repositoryMock.findByNameAndCompany.mockResolvedValue({ id: 'existing' });
 
-      await expect(service.create('comp-1', dto, requester))
-        .rejects.toThrow(RoleConflictException);
+      await expect(service.create('comp-1', dto, requester)).rejects.toThrow(
+        RoleConflictException,
+      );
     });
   });
 
   describe('findOne', () => {
     it('should return a role if found', async () => {
-      repositoryMock.findById.mockResolvedValue({ id: '1', companyId: 'comp-1' });
+      repositoryMock.findById.mockResolvedValue({
+        id: '1',
+        companyId: 'comp-1',
+      });
 
       const result = await service.findOne('1', 'comp-1');
 
@@ -82,8 +89,9 @@ describe('RolesService', () => {
     it('should throw NotFoundException if role not found', async () => {
       repositoryMock.findById.mockResolvedValue(null);
 
-      await expect(service.findOne('1', 'comp-1'))
-        .rejects.toThrow(RoleNotFoundException);
+      await expect(service.findOne('1', 'comp-1')).rejects.toThrow(
+        RoleNotFoundException,
+      );
     });
   });
 
@@ -91,39 +99,61 @@ describe('RolesService', () => {
     const requester = { id: 'user-1', role: Roles.ADMIN } as any;
 
     it('should soft delete successfully', async () => {
-      repositoryMock.findById.mockResolvedValue({ id: '1', companyId: 'comp-1', hierarchy: 1, isSystem: false });
+      repositoryMock.findById.mockResolvedValue({
+        id: '1',
+        companyId: 'comp-1',
+        hierarchy: 1,
+        isSystem: false,
+      });
 
       const result = await service.softDelete('1', 'comp-1', requester);
 
       expect(result.deleted).toBe(true);
-      expect(repositoryMock.update).toHaveBeenCalledWith('1', { isVisible: false });
+      expect(repositoryMock.update).toHaveBeenCalledWith('1', {
+        isVisible: false,
+      });
     });
 
     it('should throw if role is system', async () => {
-      repositoryMock.findById.mockResolvedValue({ id: '1', companyId: 'comp-1', hierarchy: 1, isSystem: true });
+      repositoryMock.findById.mockResolvedValue({
+        id: '1',
+        companyId: 'comp-1',
+        hierarchy: 1,
+        isSystem: true,
+      });
 
-      await expect(service.softDelete('1', 'comp-1', requester))
-        .rejects.toThrow();
+      await expect(
+        service.softDelete('1', 'comp-1', requester),
+      ).rejects.toThrow();
     });
 
     it('should throw RoleNotFoundException when role companyId does not match', async () => {
-      repositoryMock.findById.mockResolvedValue({ id: '1', companyId: 'other-company', hierarchy: 1, isSystem: false });
+      repositoryMock.findById.mockResolvedValue({
+        id: '1',
+        companyId: 'other-company',
+        hierarchy: 1,
+        isSystem: false,
+      });
 
-      await expect(service.softDelete('1', 'comp-1', requester))
-        .rejects.toThrow(RoleNotFoundException);
+      await expect(
+        service.softDelete('1', 'comp-1', requester),
+      ).rejects.toThrow(RoleNotFoundException);
     });
 
     it('should throw RoleNotFoundException when role not found in softDelete', async () => {
       repositoryMock.findById.mockResolvedValue(null);
 
-      await expect(service.softDelete('1', 'comp-1', requester))
-        .rejects.toThrow(RoleNotFoundException);
+      await expect(
+        service.softDelete('1', 'comp-1', requester),
+      ).rejects.toThrow(RoleNotFoundException);
     });
   });
 
   describe('findAll', () => {
     it('should call findAllCompanyRoles when companyId is provided', async () => {
-      repositoryMock.findAllCompanyRoles.mockResolvedValue([{ id: 'role-1' }] as any);
+      repositoryMock.findAllCompanyRoles.mockResolvedValue([
+        { id: 'role-1' },
+      ] as any);
 
       const result = await service.findAll('comp-1');
 
@@ -132,7 +162,9 @@ describe('RolesService', () => {
     });
 
     it('should call findAllSystemRoles when companyId is null', async () => {
-      repositoryMock.findAllSystemRoles.mockResolvedValue([{ id: 'sys-role' }] as any);
+      repositoryMock.findAllSystemRoles.mockResolvedValue([
+        { id: 'sys-role' },
+      ] as any);
 
       const result = await service.findAll(null);
 
@@ -159,9 +191,14 @@ describe('RolesService', () => {
           ],
         },
       ];
-      repositoryMock.getRolePermissionsByNames.mockResolvedValue(rolesWithPerms as any);
+      repositoryMock.getRolePermissionsByNames.mockResolvedValue(
+        rolesWithPerms as any,
+      );
 
-      const result = await service.getPermissionsForRoles(['Employee', 'Manager'], 'comp-1');
+      const result = await service.getPermissionsForRoles(
+        ['Employee', 'Manager'],
+        'comp-1',
+      );
 
       expect(result).toHaveLength(3);
       expect(result).toContain('view_reports');
@@ -186,14 +223,18 @@ describe('RolesService', () => {
           { permission: { name: 'create_reports' } },
         ],
       };
-      repositoryMock.getRolePermissionsById = jest.fn().mockResolvedValue(roleWithPerms);
+      repositoryMock.getRolePermissionsById = jest
+        .fn()
+        .mockResolvedValue(roleWithPerms);
 
       const result = await service.getPermissionsForRoleId('r1', null);
       expect(result).toEqual(['view_reports', 'create_reports']);
     });
 
     it('should return empty array when role is not found', async () => {
-      repositoryMock.getRolePermissionsById = jest.fn().mockResolvedValue(undefined);
+      repositoryMock.getRolePermissionsById = jest
+        .fn()
+        .mockResolvedValue(undefined);
 
       const result = await service.getPermissionsForRoleId('unknown', null);
       expect(result).toEqual([]);

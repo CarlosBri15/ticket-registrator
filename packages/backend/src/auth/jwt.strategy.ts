@@ -4,6 +4,15 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 
+interface JwtPayload {
+  sub: string;
+  username: string;
+  roleName: string;
+  roleHierarchy: number;
+  companyId: string;
+  departmentIds: string[];
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
@@ -13,11 +22,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET'),
+      secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: JwtPayload) {
     const userRole = await this.usersService.findUserRole(payload.sub);
     if (!userRole) throw new UnauthorizedException();
 
@@ -31,5 +40,4 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       departmentIds: payload.departmentIds,
     };
   }
-
 }

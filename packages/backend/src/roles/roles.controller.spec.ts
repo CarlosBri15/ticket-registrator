@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SystemRolesController, CompanyRolesController } from './roles.controller';
+import {
+  SystemRolesController,
+  CompanyRolesController,
+} from './roles.controller';
 import { RolesService } from './roles.service';
 import { SeedService } from '../seed/seed.service';
 import { Roles } from '@ticket-registrator/shared';
@@ -34,7 +37,9 @@ describe('RolesControllers', () => {
     }).compile();
 
     systemController = module.get<SystemRolesController>(SystemRolesController);
-    companyController = module.get<CompanyRolesController>(CompanyRolesController);
+    companyController = module.get<CompanyRolesController>(
+      CompanyRolesController,
+    );
   });
 
   describe('SystemRolesController', () => {
@@ -70,7 +75,11 @@ describe('RolesControllers', () => {
     it('should call create', async () => {
       const dto = { name: 'Role', hierarchy: 1 };
       await companyController.create(requester, 'comp-1', dto);
-      expect(rolesServiceMock.create).toHaveBeenCalledWith('comp-1', dto, requester);
+      expect(rolesServiceMock.create).toHaveBeenCalledWith(
+        'comp-1',
+        dto,
+        requester,
+      );
     });
 
     it('should call findAll with companyId', async () => {
@@ -85,7 +94,11 @@ describe('RolesControllers', () => {
 
     it('should call softDelete', async () => {
       await companyController.softDelete(requester, 'comp-1', 'role-1');
-      expect(rolesServiceMock.softDelete).toHaveBeenCalledWith('role-1', 'comp-1', requester);
+      expect(rolesServiceMock.softDelete).toHaveBeenCalledWith(
+        'role-1',
+        'comp-1',
+        requester,
+      );
     });
   });
 });

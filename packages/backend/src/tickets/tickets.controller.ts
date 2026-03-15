@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 import { permissions } from '@ticket-registrator/shared';
 import { AuthGuard } from '@nestjs/passport';
@@ -7,12 +18,15 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequireAnyPermission } from '../auth/decorators/permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { UserPayload } from '../auth/decorators/current-user.decorator';
-import { UpdateTicketFieldsDto, UpdateTicketStatusDto } from './dto/update-ticket-user.dto';
+import {
+  UpdateTicketFieldsDto,
+  UpdateTicketStatusDto,
+} from './dto/update-ticket-user.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('reports/:reportId/tickets')
 export class TicketsController {
-  constructor(private readonly ticketsService: TicketsService) { }
+  constructor(private readonly ticketsService: TicketsService) {}
 
   @UseGuards(PermissionsGuard)
   @RequireAnyPermission(permissions.CREATE_TICKETS)
@@ -31,7 +45,7 @@ export class TicketsController {
   @Get()
   findAll(
     @CurrentUser() requester: UserPayload,
-    @Param('reportId') reportId: string
+    @Param('reportId') reportId: string,
   ) {
     return this.ticketsService.findAll(requester, reportId);
   }
@@ -42,7 +56,7 @@ export class TicketsController {
   findOne(
     @CurrentUser() requester: UserPayload,
     @Param('reportId') reportId: string,
-    @Param('ticketId') id: string
+    @Param('ticketId') id: string,
   ) {
     return this.ticketsService.findOne(requester, reportId, id);
   }

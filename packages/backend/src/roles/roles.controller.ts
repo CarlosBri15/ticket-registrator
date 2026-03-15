@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { permissions } from '@ticket-registrator/shared';
@@ -15,7 +23,7 @@ export class SystemRolesController {
   constructor(
     private readonly rolesService: RolesService,
     private readonly seedService: SeedService,
-  ) { }
+  ) {}
 
   @RequireAnyPermission(permissions.MANAGE_PERMISSIONS)
   @Post('system/seed-permissions')
@@ -51,7 +59,7 @@ export class SystemRolesController {
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @Controller('organizations/:companyId/roles')
 export class CompanyRolesController {
-  constructor(private readonly rolesService: RolesService) { }
+  constructor(private readonly rolesService: RolesService) {}
 
   @RequireAnyPermission(permissions.CREATE_ROLES)
   @Post()
@@ -71,10 +79,7 @@ export class CompanyRolesController {
 
   @RequireAnyPermission(permissions.VIEW_ROLES)
   @Get(':id')
-  findOne(
-    @Param('companyId') companyId: string,
-    @Param('id') id: string,
-  ) {
+  findOne(@Param('companyId') companyId: string, @Param('id') id: string) {
     return this.rolesService.findOne(id, companyId);
   }
 

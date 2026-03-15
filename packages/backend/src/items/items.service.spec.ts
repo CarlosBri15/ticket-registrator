@@ -53,11 +53,15 @@ describe('ItemsService', () => {
 
   describe('findByTicketId', () => {
     it('should return mapped IItem array for given ticketId', async () => {
-      (itemsRepositoryMock.findByTicketId as jest.Mock).mockResolvedValue([mockItem]);
+      (itemsRepositoryMock.findByTicketId as jest.Mock).mockResolvedValue([
+        mockItem,
+      ]);
 
       const result = await service.findByTicketId('ticket-1');
 
-      expect(itemsRepositoryMock.findByTicketId).toHaveBeenCalledWith('ticket-1');
+      expect(itemsRepositoryMock.findByTicketId).toHaveBeenCalledWith(
+        'ticket-1',
+      );
       expect(result).toEqual([mockIItem]);
     });
 
@@ -70,8 +74,16 @@ describe('ItemsService', () => {
     });
 
     it('should return all items when ticket has multiple', async () => {
-      const secondItem = { ...mockItem, id: 'item-2', name: 'Taxi', amount: 12 };
-      (itemsRepositoryMock.findByTicketId as jest.Mock).mockResolvedValue([mockItem, secondItem]);
+      const secondItem = {
+        ...mockItem,
+        id: 'item-2',
+        name: 'Taxi',
+        amount: 12,
+      };
+      (itemsRepositoryMock.findByTicketId as jest.Mock).mockResolvedValue([
+        mockItem,
+        secondItem,
+      ]);
 
       const result = await service.findByTicketId('ticket-1');
 
@@ -96,13 +108,17 @@ describe('ItemsService', () => {
     it('should throw ItemNotFoundException when item does not exist', async () => {
       (itemsRepositoryMock.findById as jest.Mock).mockResolvedValue(undefined);
 
-      await expect(service.findById('missing-id')).rejects.toThrow(ItemNotFoundException);
+      await expect(service.findById('missing-id')).rejects.toThrow(
+        ItemNotFoundException,
+      );
     });
 
     it('should include item id in the exception message for missing item', async () => {
       (itemsRepositoryMock.findById as jest.Mock).mockResolvedValue(undefined);
 
-      await expect(service.findById('missing-id')).rejects.toThrow('missing-id');
+      await expect(service.findById('missing-id')).rejects.toThrow(
+        'missing-id',
+      );
     });
   });
 
@@ -111,9 +127,17 @@ describe('ItemsService', () => {
   describe('bulkCreate', () => {
     it('should create items and return mapped IItem array', async () => {
       const insertData = [
-        { ticketId: 'ticket-1', name: 'Coffee', amount: 4.5, currency: 'USD', status: ItemStatus.PENDING },
+        {
+          ticketId: 'ticket-1',
+          name: 'Coffee',
+          amount: 4.5,
+          currency: 'USD',
+          status: ItemStatus.PENDING,
+        },
       ];
-      (itemsRepositoryMock.bulkCreate as jest.Mock).mockResolvedValue([mockItem]);
+      (itemsRepositoryMock.bulkCreate as jest.Mock).mockResolvedValue([
+        mockItem,
+      ]);
 
       const result = await service.bulkCreate(insertData as any);
 
@@ -139,7 +163,7 @@ describe('ItemsService', () => {
       const result = await service.bulkCreate([]);
 
       expect(result).toHaveLength(2);
-      expect(result.map(i => i.id)).toEqual(['item-1', 'item-2']);
+      expect(result.map((i) => i.id)).toEqual(['item-1', 'item-2']);
     });
   });
 
@@ -147,17 +171,27 @@ describe('ItemsService', () => {
 
   describe('bulkDeleteByTicketId', () => {
     it('should delete all items for given ticketId', async () => {
-      (itemsRepositoryMock.bulkDeleteByTicketId as jest.Mock).mockResolvedValue(undefined);
+      (itemsRepositoryMock.bulkDeleteByTicketId as jest.Mock).mockResolvedValue(
+        undefined,
+      );
 
-      await expect(service.bulkDeleteByTicketId('ticket-1')).resolves.not.toThrow();
+      await expect(
+        service.bulkDeleteByTicketId('ticket-1'),
+      ).resolves.not.toThrow();
 
-      expect(itemsRepositoryMock.bulkDeleteByTicketId).toHaveBeenCalledWith('ticket-1');
+      expect(itemsRepositoryMock.bulkDeleteByTicketId).toHaveBeenCalledWith(
+        'ticket-1',
+      );
     });
 
     it('should resolve even when there are no items to delete', async () => {
-      (itemsRepositoryMock.bulkDeleteByTicketId as jest.Mock).mockResolvedValue(undefined);
+      (itemsRepositoryMock.bulkDeleteByTicketId as jest.Mock).mockResolvedValue(
+        undefined,
+      );
 
-      await expect(service.bulkDeleteByTicketId('ticket-empty')).resolves.not.toThrow();
+      await expect(
+        service.bulkDeleteByTicketId('ticket-empty'),
+      ).resolves.not.toThrow();
     });
   });
 });

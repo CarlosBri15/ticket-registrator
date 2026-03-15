@@ -1,12 +1,14 @@
 import { IUser } from '@ticket-registrator/shared';
+import { User } from '../schemas/user.schema';
 
-export const mapUserToIUser = (
-  user: any,
-): IUser => {
+export type UserWithDepts = User & {
+  usersToDepartments?: { departmentId: string }[];
+};
 
+export const mapUserToIUser = (user: UserWithDepts): IUser => {
   // Map departmentIds from junction table (usersToDepartments -> department)
   const departmentIds = user.usersToDepartments
-    ? user.usersToDepartments.map((ud: any) => ud.departmentId)
+    ? user.usersToDepartments.map((ud) => ud.departmentId)
     : [];
 
   return {

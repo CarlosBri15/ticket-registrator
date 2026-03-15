@@ -22,7 +22,9 @@ export class OrganizationAlreadyDeletedException extends HttpException {
 }
 
 export class OrganizationUnauthorizedException extends HttpException {
-  constructor(message = 'You are not authorized to perform this action on the organization') {
+  constructor(
+    message = 'You are not authorized to perform this action on the organization',
+  ) {
     super(message, HttpStatus.FORBIDDEN);
   }
 }

@@ -15,6 +15,7 @@ describe('JwtStrategy', () => {
 
     const configServiceMock = {
       get: jest.fn().mockReturnValue('test-secret'),
+      getOrThrow: jest.fn().mockReturnValue('test-secret'),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -60,13 +61,17 @@ describe('JwtStrategy', () => {
     it('should throw UnauthorizedException when user role not found', async () => {
       usersServiceMock.findUserRole.mockResolvedValue(null);
 
-      await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
+      await expect(strategy.validate(payload)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException when findUserRole returns undefined', async () => {
       usersServiceMock.findUserRole.mockResolvedValue(undefined);
 
-      await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
+      await expect(strategy.validate(payload)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });

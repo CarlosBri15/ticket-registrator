@@ -3,7 +3,9 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 export class StorageFileNotFoundException extends HttpException {
   constructor(fileName?: string) {
     super(
-      fileName ? `File "${fileName}" not found in storage` : 'File not found in storage',
+      fileName
+        ? `File "${fileName}" not found in storage`
+        : 'File not found in storage',
       HttpStatus.NOT_FOUND,
     );
   }

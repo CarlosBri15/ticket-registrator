@@ -22,7 +22,9 @@ describe('StorageController', () => {
     })
       .overrideGuard(require('@nestjs/passport').AuthGuard('jwt'))
       .useValue({ canActivate: () => true })
-      .overrideGuard(require('../auth/guards/permissions.guard').PermissionsGuard)
+      .overrideGuard(
+        require('../auth/guards/permissions.guard').PermissionsGuard,
+      )
       .useValue({ canActivate: () => true })
       .compile();
 
@@ -51,7 +53,9 @@ describe('StorageController', () => {
         new StorageFileNotFoundException('missing.jpg'),
       );
 
-      await expect(controller.findFile('missing.jpg')).rejects.toThrow(StorageFileNotFoundException);
+      await expect(controller.findFile('missing.jpg')).rejects.toThrow(
+        StorageFileNotFoundException,
+      );
     });
   });
 
@@ -72,13 +76,19 @@ describe('StorageController', () => {
         new StorageFileNotFoundException('missing.jpg'),
       );
 
-      await expect(controller.removeFile('missing.jpg')).rejects.toThrow(StorageFileNotFoundException);
+      await expect(controller.removeFile('missing.jpg')).rejects.toThrow(
+        StorageFileNotFoundException,
+      );
     });
 
     it('should propagate StorageRemoveException', async () => {
-      (storageServiceMock.removeFile as jest.Mock).mockRejectedValue(new StorageRemoveException());
+      (storageServiceMock.removeFile as jest.Mock).mockRejectedValue(
+        new StorageRemoveException(),
+      );
 
-      await expect(controller.removeFile('file.jpg')).rejects.toThrow(StorageRemoveException);
+      await expect(controller.removeFile('file.jpg')).rejects.toThrow(
+        StorageRemoveException,
+      );
     });
   });
 });

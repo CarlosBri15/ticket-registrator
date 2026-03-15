@@ -8,7 +8,12 @@ describe('OrganizationController', () => {
   let controller: OrganizationController;
   let serviceMock: jest.Mocked<Partial<OrganizationService>>;
 
-  const requester = { id: 'user-1', roleHierarchy: 100, companyId: 'comp-1', departmentIds: [] } as any;
+  const requester = {
+    id: 'user-1',
+    roleHierarchy: 100,
+    companyId: 'comp-1',
+    departmentIds: [],
+  } as any;
 
   beforeEach(async () => {
     serviceMock = {
@@ -23,7 +28,10 @@ describe('OrganizationController', () => {
       controllers: [OrganizationController],
       providers: [
         { provide: OrganizationService, useValue: serviceMock },
-        { provide: RolesService, useValue: { getPermissionsForRoles: jest.fn() } },
+        {
+          provide: RolesService,
+          useValue: { getPermissionsForRoles: jest.fn() },
+        },
         Reflector,
       ],
     }).compile();

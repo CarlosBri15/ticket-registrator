@@ -22,7 +22,9 @@ export class DepartmentAlreadyDeletedException extends HttpException {
 }
 
 export class DepartmentUnauthorizedException extends HttpException {
-  constructor(message = 'You are not authorized to perform this action on the department') {
+  constructor(
+    message = 'You are not authorized to perform this action on the department',
+  ) {
     super(message, HttpStatus.FORBIDDEN);
   }
 }

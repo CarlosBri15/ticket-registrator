@@ -15,9 +15,18 @@ describe('UsersService', () => {
   let dbMock: any;
   let cryptoServiceMock: any;
 
-  const mockRole = { id: 'role-id', name: 'Employee', hierarchy: 10, companyId: null };
+  const mockRole = {
+    id: 'role-id',
+    name: 'Employee',
+    hierarchy: 10,
+    companyId: null,
+  };
   const mockCompany = { id: 'company-1', name: 'Acme' };
-  const mockDepartment = { id: 'dept-1', name: 'Sales', companyId: 'company-1' };
+  const mockDepartment = {
+    id: 'dept-1',
+    name: 'Sales',
+    companyId: 'company-1',
+  };
   const mockUser: any = {
     id: 'user-1',
     name: 'John',
@@ -27,7 +36,9 @@ describe('UsersService', () => {
     roleId: 'role-id',
     companyId: 'company-1',
     role: mockRole,
-    usersToDepartments: [{ departmentId: 'dept-1', department: mockDepartment }],
+    usersToDepartments: [
+      { departmentId: 'dept-1', department: mockDepartment },
+    ],
     deletedAt: null,
   };
 
@@ -50,10 +61,14 @@ describe('UsersService', () => {
       },
       transaction: jest.fn(),
       insert: jest.fn().mockReturnValue({
-        values: jest.fn().mockReturnValue({ returning: jest.fn().mockResolvedValue([mockUser]) }),
+        values: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([mockUser]),
+        }),
       }),
       update: jest.fn().mockReturnValue({
-        set: jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }),
+        set: jest
+          .fn()
+          .mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }),
       }),
       delete: jest.fn().mockReturnValue({
         where: jest.fn().mockResolvedValue(undefined),
@@ -93,31 +108,54 @@ describe('UsersService', () => {
     };
 
     it('should throw ConflictException when password is missing', async () => {
-      await expect(service.create({ ...createDto, password: undefined }, creatorBase))
-        .rejects.toThrow(ConflictException);
+      await expect(
+        service.create({ ...createDto, password: undefined }, creatorBase),
+      ).rejects.toThrow(ConflictException);
     });
 
     it('should throw BadRequestException when role not found', async () => {
       dbMock.query.roles.findFirst.mockResolvedValue(null);
-      await expect(service.create(createDto, creatorBase)).rejects.toThrow(BadRequestException);
+      await expect(service.create(createDto, creatorBase)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw ConflictException when creator hierarchy <= target hierarchy', async () => {
-      dbMock.query.roles.findFirst.mockResolvedValue({ ...mockRole, hierarchy: AUTHORITY_LEVELS.COMPANY ?? 4 });
-      await expect(service.create(createDto, creatorBase)).rejects.toThrow(ConflictException);
+      dbMock.query.roles.findFirst.mockResolvedValue({
+        ...mockRole,
+        hierarchy: AUTHORITY_LEVELS.COMPANY ?? 4,
+      });
+      await expect(service.create(createDto, creatorBase)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should throw ForbiddenException when creating admin without permission', async () => {
-      const adminRole = { ...mockRole, hierarchy: AUTHORITY_LEVELS.COMPANY ?? 4, name: 'Admin' };
+      const adminRole = {
+        ...mockRole,
+        hierarchy: AUTHORITY_LEVELS.COMPANY ?? 4,
+        name: 'Admin',
+      };
       dbMock.query.roles.findFirst.mockResolvedValue(adminRole);
-      const creatorWithoutPerm = { ...creatorBase, roleHierarchy: AUTHORITY_LEVELS.GLOBAL ?? 5, permissions: [] };
-      await expect(service.create(createDto, creatorWithoutPerm)).rejects.toThrow(ForbiddenException);
+      const creatorWithoutPerm = {
+        ...creatorBase,
+        roleHierarchy: AUTHORITY_LEVELS.GLOBAL ?? 5,
+        permissions: [],
+      };
+      await expect(
+        service.create(createDto, creatorWithoutPerm),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw ConflictException when target company does not exist', async () => {
-      dbMock.query.roles.findFirst.mockResolvedValue({ ...mockRole, hierarchy: 1 });
+      dbMock.query.roles.findFirst.mockResolvedValue({
+        ...mockRole,
+        hierarchy: 1,
+      });
       dbMock.query.companies.findFirst.mockResolvedValue(null);
-      await expect(service.create(createDto, creatorBase)).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto, creatorBase)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should throw ForbiddenException when manager assigns department they dont belong to', async () => {
@@ -126,27 +164,44 @@ describe('UsersService', () => {
         roleHierarchy: AUTHORITY_LEVELS.DEPARTMENT ?? 2,
         departmentIds: ['dept-2'],
       };
-      dbMock.query.roles.findFirst.mockResolvedValue({ ...mockRole, hierarchy: 1 });
+      dbMock.query.roles.findFirst.mockResolvedValue({
+        ...mockRole,
+        hierarchy: 1,
+      });
       dbMock.query.companies.findFirst.mockResolvedValue(mockCompany);
-      await expect(service.create({ ...createDto, departmentIds: ['dept-1'] }, managerCreator))
-        .rejects.toThrow(ForbiddenException);
+      await expect(
+        service.create(
+          { ...createDto, departmentIds: ['dept-1'] },
+          managerCreator,
+        ),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw ConflictException when departments dont exist in company', async () => {
-      dbMock.query.roles.findFirst.mockResolvedValue({ ...mockRole, hierarchy: 1 });
+      dbMock.query.roles.findFirst.mockResolvedValue({
+        ...mockRole,
+        hierarchy: 1,
+      });
       dbMock.query.companies.findFirst.mockResolvedValue(mockCompany);
       dbMock.query.departments.findMany.mockResolvedValue([]); // returns 0, but dto has 1
-      await expect(service.create(createDto, creatorBase)).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto, creatorBase)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should create user successfully', async () => {
-      dbMock.query.roles.findFirst.mockResolvedValue({ ...mockRole, hierarchy: 1 });
+      dbMock.query.roles.findFirst.mockResolvedValue({
+        ...mockRole,
+        hierarchy: 1,
+      });
       dbMock.query.companies.findFirst.mockResolvedValue(mockCompany);
       dbMock.query.departments.findMany.mockResolvedValue([mockDepartment]);
       dbMock.transaction.mockImplementation(async (cb: any) => {
         const tx = {
           insert: jest.fn().mockReturnValue({
-            values: jest.fn().mockReturnValue({ returning: jest.fn().mockResolvedValue([{ id: 'user-1' }]) }),
+            values: jest.fn().mockReturnValue({
+              returning: jest.fn().mockResolvedValue([{ id: 'user-1' }]),
+            }),
           }),
         };
         return cb(tx);
@@ -158,26 +213,41 @@ describe('UsersService', () => {
     });
 
     it('should create user successfully as superadmin with custom companyId', async () => {
-      const superCreator = { ...creatorBase, roleHierarchy: AUTHORITY_LEVELS.GLOBAL ?? 5, companyId: 'company-1' };
-      dbMock.query.roles.findFirst.mockResolvedValue({ ...mockRole, hierarchy: 1 });
+      const superCreator = {
+        ...creatorBase,
+        roleHierarchy: AUTHORITY_LEVELS.GLOBAL ?? 5,
+        companyId: 'company-1',
+      };
+      dbMock.query.roles.findFirst.mockResolvedValue({
+        ...mockRole,
+        hierarchy: 1,
+      });
       dbMock.query.companies.findFirst.mockResolvedValue(mockCompany);
       dbMock.query.departments.findMany.mockResolvedValue([mockDepartment]);
       dbMock.transaction.mockImplementation(async (cb: any) => {
         const tx = {
           insert: jest.fn().mockReturnValue({
-            values: jest.fn().mockReturnValue({ returning: jest.fn().mockResolvedValue([{ id: 'user-1' }]) }),
+            values: jest.fn().mockReturnValue({
+              returning: jest.fn().mockResolvedValue([{ id: 'user-1' }]),
+            }),
           }),
         };
         return cb(tx);
       });
       dbMock.query.users.findFirst.mockResolvedValue(mockUser);
 
-      const result = await service.create({ ...createDto, companyId: 'company-1' }, superCreator);
+      const result = await service.create(
+        { ...createDto, companyId: 'company-1' },
+        superCreator,
+      );
       expect(result.id).toBe('user-1');
     });
 
     it('should throw ConflictException on duplicate email (pg error 23505)', async () => {
-      dbMock.query.roles.findFirst.mockResolvedValue({ ...mockRole, hierarchy: 1 });
+      dbMock.query.roles.findFirst.mockResolvedValue({
+        ...mockRole,
+        hierarchy: 1,
+      });
       dbMock.query.companies.findFirst.mockResolvedValue(mockCompany);
       dbMock.query.departments.findMany.mockResolvedValue([mockDepartment]);
       const pgError: any = new Error('duplicate key');
@@ -185,11 +255,16 @@ describe('UsersService', () => {
       pgError.detail = 'Key (email)=(x) already exists';
       dbMock.transaction.mockRejectedValue(pgError);
 
-      await expect(service.create(createDto, creatorBase)).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto, creatorBase)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should throw ConflictException on duplicate username (pg error 23505)', async () => {
-      dbMock.query.roles.findFirst.mockResolvedValue({ ...mockRole, hierarchy: 1 });
+      dbMock.query.roles.findFirst.mockResolvedValue({
+        ...mockRole,
+        hierarchy: 1,
+      });
       dbMock.query.companies.findFirst.mockResolvedValue(mockCompany);
       dbMock.query.departments.findMany.mockResolvedValue([mockDepartment]);
       const pgError: any = new Error('duplicate key');
@@ -197,33 +272,48 @@ describe('UsersService', () => {
       pgError.detail = 'Key (username)=(x) already exists';
       dbMock.transaction.mockRejectedValue(pgError);
 
-      await expect(service.create(createDto, creatorBase)).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto, creatorBase)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should throw BadRequestException on generic db error', async () => {
-      dbMock.query.roles.findFirst.mockResolvedValue({ ...mockRole, hierarchy: 1 });
+      dbMock.query.roles.findFirst.mockResolvedValue({
+        ...mockRole,
+        hierarchy: 1,
+      });
       dbMock.query.companies.findFirst.mockResolvedValue(mockCompany);
       dbMock.query.departments.findMany.mockResolvedValue([mockDepartment]);
       dbMock.transaction.mockRejectedValue(new Error('some db error'));
 
-      await expect(service.create(createDto, creatorBase)).rejects.toThrow(BadRequestException);
+      await expect(service.create(createDto, creatorBase)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should create user without departments', async () => {
-      dbMock.query.roles.findFirst.mockResolvedValue({ ...mockRole, hierarchy: 1 });
+      dbMock.query.roles.findFirst.mockResolvedValue({
+        ...mockRole,
+        hierarchy: 1,
+      });
       dbMock.query.companies.findFirst.mockResolvedValue(mockCompany);
       dbMock.query.departments.findMany.mockResolvedValue([]);
       dbMock.transaction.mockImplementation(async (cb: any) => {
         const tx = {
           insert: jest.fn().mockReturnValue({
-            values: jest.fn().mockReturnValue({ returning: jest.fn().mockResolvedValue([{ id: 'user-1' }]) }),
+            values: jest.fn().mockReturnValue({
+              returning: jest.fn().mockResolvedValue([{ id: 'user-1' }]),
+            }),
           }),
         };
         return cb(tx);
       });
       dbMock.query.users.findFirst.mockResolvedValue(mockUser);
 
-      const result = await service.create({ ...createDto, departmentIds: [] }, creatorBase);
+      const result = await service.create(
+        { ...createDto, departmentIds: [] },
+        creatorBase,
+      );
       expect(result.id).toBe('user-1');
     });
   });
@@ -279,14 +369,20 @@ describe('UsersService', () => {
     });
 
     it('should filter by company for company-level requester', async () => {
-      const companyRequester = { ...requesterBase, roleHierarchy: AUTHORITY_LEVELS.COMPANY ?? 4 };
+      const companyRequester = {
+        ...requesterBase,
+        roleHierarchy: AUTHORITY_LEVELS.COMPANY ?? 4,
+      };
       dbMock.query.users.findMany.mockResolvedValue([mockUser]);
       const result = await service.findAll(companyRequester);
       expect(result).toHaveLength(1);
     });
 
     it('should filter by departments for department-level requester', async () => {
-      const deptRequester = { ...requesterBase, roleHierarchy: AUTHORITY_LEVELS.DEPARTMENT ?? 2 };
+      const deptRequester = {
+        ...requesterBase,
+        roleHierarchy: AUTHORITY_LEVELS.DEPARTMENT ?? 2,
+      };
       dbMock.query.users.findMany.mockResolvedValue([mockUser]);
       const result = await service.findAll(deptRequester);
       expect(result).toHaveLength(1);
@@ -315,73 +411,146 @@ describe('UsersService', () => {
 
     it('should throw NotFoundException when user not found', async () => {
       dbMock.query.users.findFirst.mockResolvedValue(null);
-      await expect(service.update('user-1', {}, requesterBase)).rejects.toThrow(NotFoundException);
+      await expect(service.update('user-1', {}, requesterBase)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw ForbiddenException when self-update without EDIT_USERS permission', async () => {
-      dbMock.query.users.findFirst.mockResolvedValue({ ...mockUser, id: 'user-1' });
+      dbMock.query.users.findFirst.mockResolvedValue({
+        ...mockUser,
+        id: 'user-1',
+      });
       const requesterNoPerm = { ...requesterBase, permissions: [] };
-      await expect(service.update('user-1', {}, requesterNoPerm)).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.update('user-1', {}, requesterNoPerm),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw ForbiddenException when self-update tries to change roles field', async () => {
-      dbMock.query.users.findFirst.mockResolvedValue({ ...mockUser, id: 'user-1' });
-      await expect(service.update('user-1', { roles: 'new-role' } as any, requesterBase)).rejects.toThrow(ForbiddenException);
+      dbMock.query.users.findFirst.mockResolvedValue({
+        ...mockUser,
+        id: 'user-1',
+      });
+      await expect(
+        service.update('user-1', { roles: 'new-role' } as any, requesterBase),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw ForbiddenException when self-update tries to change departmentIds', async () => {
-      dbMock.query.users.findFirst.mockResolvedValue({ ...mockUser, id: 'user-1' });
-      await expect(service.update('user-1', { departmentIds: ['d1'] } as any, requesterBase)).rejects.toThrow(ForbiddenException);
+      dbMock.query.users.findFirst.mockResolvedValue({
+        ...mockUser,
+        id: 'user-1',
+      });
+      await expect(
+        service.update(
+          'user-1',
+          { departmentIds: ['d1'] } as any,
+          requesterBase,
+        ),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw ForbiddenException when low-level tries to update other user', async () => {
       const otherUser = { ...mockUser, id: 'user-2' };
       dbMock.query.users.findFirst.mockResolvedValue(otherUser);
       const lowRequester = { ...requesterBase, roleHierarchy: 1, id: 'user-1' };
-      await expect(service.update('user-2', {}, lowRequester)).rejects.toThrow(ForbiddenException);
+      await expect(service.update('user-2', {}, lowRequester)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should throw ForbiddenException when updating user outside company', async () => {
-      const otherUser = { ...mockUser, id: 'user-2', companyId: 'company-2', role: mockRole };
+      const otherUser = {
+        ...mockUser,
+        id: 'user-2',
+        companyId: 'company-2',
+        role: mockRole,
+      };
       dbMock.query.users.findFirst.mockResolvedValue(otherUser);
-      const sameCompanyRequester = { ...requesterBase, id: 'user-1', companyId: 'company-1' };
-      await expect(service.update('user-2', {}, sameCompanyRequester)).rejects.toThrow(ForbiddenException);
+      const sameCompanyRequester = {
+        ...requesterBase,
+        id: 'user-1',
+        companyId: 'company-1',
+      };
+      await expect(
+        service.update('user-2', {}, sameCompanyRequester),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw ForbiddenException when updating user with equal or higher role', async () => {
-      const targetRole = { ...mockRole, hierarchy: AUTHORITY_LEVELS.COMPANY ?? 4 };
-      const otherUser = { ...mockUser, id: 'user-2', companyId: 'company-1', role: targetRole };
+      const targetRole = {
+        ...mockRole,
+        hierarchy: AUTHORITY_LEVELS.COMPANY ?? 4,
+      };
+      const otherUser = {
+        ...mockUser,
+        id: 'user-2',
+        companyId: 'company-1',
+        role: targetRole,
+      };
       dbMock.query.users.findFirst.mockResolvedValue(otherUser);
-      await expect(service.update('user-2', {}, requesterBase)).rejects.toThrow(ForbiddenException);
+      await expect(service.update('user-2', {}, requesterBase)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should update basic fields successfully', async () => {
-      const targetUser = { ...mockUser, id: 'user-2', companyId: 'company-1', role: { ...mockRole, hierarchy: 1 } };
+      const targetUser = {
+        ...mockUser,
+        id: 'user-2',
+        companyId: 'company-1',
+        role: { ...mockRole, hierarchy: 1 },
+      };
       dbMock.query.users.findFirst
-        .mockResolvedValueOnce(targetUser)  // initial findFirst
+        .mockResolvedValueOnce(targetUser) // initial findFirst
         .mockResolvedValueOnce(targetUser); // findMe call
       dbMock.transaction.mockImplementation(async (cb: any) => {
         const tx = {
-          update: jest.fn().mockReturnValue({ set: jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }) }),
-          query: { roles: { findFirst: jest.fn().mockResolvedValue(null) }, departments: { findMany: jest.fn().mockResolvedValue([]) } },
-          delete: jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }),
-          insert: jest.fn().mockReturnValue({ values: jest.fn().mockResolvedValue(undefined) }),
+          update: jest.fn().mockReturnValue({
+            set: jest.fn().mockReturnValue({
+              where: jest.fn().mockResolvedValue(undefined),
+            }),
+          }),
+          query: {
+            roles: { findFirst: jest.fn().mockResolvedValue(null) },
+            departments: { findMany: jest.fn().mockResolvedValue([]) },
+          },
+          delete: jest
+            .fn()
+            .mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }),
+          insert: jest.fn().mockReturnValue({
+            values: jest.fn().mockResolvedValue(undefined),
+          }),
         };
         return cb(tx);
       });
 
-      const result = await service.update('user-2', { name: 'Updated' }, requesterBase);
+      const result = await service.update(
+        'user-2',
+        { name: 'Updated' },
+        requesterBase,
+      );
       expect(result).toBeDefined();
     });
 
     it('should hash password when provided in update', async () => {
-      const targetUser = { ...mockUser, id: 'user-2', companyId: 'company-1', role: { ...mockRole, hierarchy: 1 } };
+      const targetUser = {
+        ...mockUser,
+        id: 'user-2',
+        companyId: 'company-1',
+        role: { ...mockRole, hierarchy: 1 },
+      };
       dbMock.query.users.findFirst
         .mockResolvedValueOnce(targetUser)
         .mockResolvedValueOnce(targetUser);
       dbMock.transaction.mockImplementation(async (cb: any) => {
         const tx = {
-          update: jest.fn().mockReturnValue({ set: jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }) }),
+          update: jest.fn().mockReturnValue({
+            set: jest.fn().mockReturnValue({
+              where: jest.fn().mockResolvedValue(undefined),
+            }),
+          }),
         };
         return cb(tx);
       });
@@ -391,103 +560,193 @@ describe('UsersService', () => {
     });
 
     it('should update roleId in transaction', async () => {
-      const targetUser = { ...mockUser, id: 'user-2', companyId: 'company-1', role: { ...mockRole, hierarchy: 1 } };
+      const targetUser = {
+        ...mockUser,
+        id: 'user-2',
+        companyId: 'company-1',
+        role: { ...mockRole, hierarchy: 1 },
+      };
       dbMock.query.users.findFirst
         .mockResolvedValueOnce(targetUser)
         .mockResolvedValueOnce(targetUser);
       dbMock.transaction.mockImplementation(async (cb: any) => {
         const newRole = { id: 'new-role-id', hierarchy: 1 };
         const tx = {
-          update: jest.fn().mockReturnValue({ set: jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }) }),
+          update: jest.fn().mockReturnValue({
+            set: jest.fn().mockReturnValue({
+              where: jest.fn().mockResolvedValue(undefined),
+            }),
+          }),
           query: { roles: { findFirst: jest.fn().mockResolvedValue(newRole) } },
         };
         return cb(tx);
       });
 
-      await service.update('user-2', { roleId: 'Employee' } as any, requesterBase);
+      await service.update(
+        'user-2',
+        { roleId: 'Employee' } as any,
+        requesterBase,
+      );
       expect(dbMock.transaction).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when new role not found in transaction', async () => {
-      const targetUser = { ...mockUser, id: 'user-2', companyId: 'company-1', role: { ...mockRole, hierarchy: 1 } };
+      const targetUser = {
+        ...mockUser,
+        id: 'user-2',
+        companyId: 'company-1',
+        role: { ...mockRole, hierarchy: 1 },
+      };
       dbMock.query.users.findFirst.mockResolvedValueOnce(targetUser);
       dbMock.transaction.mockImplementation(async (cb: any) => {
         const tx = {
-          update: jest.fn().mockReturnValue({ set: jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }) }),
+          update: jest.fn().mockReturnValue({
+            set: jest.fn().mockReturnValue({
+              where: jest.fn().mockResolvedValue(undefined),
+            }),
+          }),
           query: { roles: { findFirst: jest.fn().mockResolvedValue(null) } },
         };
         return cb(tx);
       });
 
-      await expect(service.update('user-2', { roleId: 'Unknown' } as any, requesterBase)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.update('user-2', { roleId: 'Unknown' } as any, requesterBase),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw ForbiddenException when assigning role >= requester hierarchy', async () => {
-      const targetUser = { ...mockUser, id: 'user-2', companyId: 'company-1', role: { ...mockRole, hierarchy: 1 } };
+      const targetUser = {
+        ...mockUser,
+        id: 'user-2',
+        companyId: 'company-1',
+        role: { ...mockRole, hierarchy: 1 },
+      };
       dbMock.query.users.findFirst.mockResolvedValueOnce(targetUser);
       dbMock.transaction.mockImplementation(async (cb: any) => {
-        const highRole = { id: 'high-id', hierarchy: AUTHORITY_LEVELS.COMPANY ?? 4 };
+        const highRole = {
+          id: 'high-id',
+          hierarchy: AUTHORITY_LEVELS.COMPANY ?? 4,
+        };
         const tx = {
-          update: jest.fn().mockReturnValue({ set: jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }) }),
-          query: { roles: { findFirst: jest.fn().mockResolvedValue(highRole) } },
+          update: jest.fn().mockReturnValue({
+            set: jest.fn().mockReturnValue({
+              where: jest.fn().mockResolvedValue(undefined),
+            }),
+          }),
+          query: {
+            roles: { findFirst: jest.fn().mockResolvedValue(highRole) },
+          },
         };
         return cb(tx);
       });
 
-      await expect(service.update('user-2', { roleId: 'Admin' } as any, requesterBase)).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.update('user-2', { roleId: 'Admin' } as any, requesterBase),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should update departments in transaction', async () => {
-      const targetUser = { ...mockUser, id: 'user-2', companyId: 'company-1', role: { ...mockRole, hierarchy: 1 } };
+      const targetUser = {
+        ...mockUser,
+        id: 'user-2',
+        companyId: 'company-1',
+        role: { ...mockRole, hierarchy: 1 },
+      };
       dbMock.query.users.findFirst
         .mockResolvedValueOnce(targetUser)
         .mockResolvedValueOnce(targetUser);
       dbMock.transaction.mockImplementation(async (cb: any) => {
         const tx = {
-          update: jest.fn().mockReturnValue({ set: jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }) }),
-          query: { departments: { findMany: jest.fn().mockResolvedValue([mockDepartment]) } },
-          delete: jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }),
-          insert: jest.fn().mockReturnValue({ values: jest.fn().mockResolvedValue(undefined) }),
+          update: jest.fn().mockReturnValue({
+            set: jest.fn().mockReturnValue({
+              where: jest.fn().mockResolvedValue(undefined),
+            }),
+          }),
+          query: {
+            departments: {
+              findMany: jest.fn().mockResolvedValue([mockDepartment]),
+            },
+          },
+          delete: jest
+            .fn()
+            .mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }),
+          insert: jest.fn().mockReturnValue({
+            values: jest.fn().mockResolvedValue(undefined),
+          }),
         };
         return cb(tx);
       });
 
-      await service.update('user-2', { departmentIds: ['dept-1'] } as any, requesterBase);
+      await service.update(
+        'user-2',
+        { departmentIds: ['dept-1'] } as any,
+        requesterBase,
+      );
       expect(dbMock.transaction).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException on invalid departments in transaction', async () => {
-      const targetUser = { ...mockUser, id: 'user-2', companyId: 'company-1', role: { ...mockRole, hierarchy: 1 } };
+      const targetUser = {
+        ...mockUser,
+        id: 'user-2',
+        companyId: 'company-1',
+        role: { ...mockRole, hierarchy: 1 },
+      };
       dbMock.query.users.findFirst.mockResolvedValueOnce(targetUser);
       dbMock.transaction.mockImplementation(async (cb: any) => {
         const tx = {
-          update: jest.fn().mockReturnValue({ set: jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }) }),
+          update: jest.fn().mockReturnValue({
+            set: jest.fn().mockReturnValue({
+              where: jest.fn().mockResolvedValue(undefined),
+            }),
+          }),
           query: { departments: { findMany: jest.fn().mockResolvedValue([]) } }, // 0 returned, 1 expected
         };
         return cb(tx);
       });
 
-      await expect(service.update('user-2', { departmentIds: ['dept-invalid'] } as any, requesterBase)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.update(
+          'user-2',
+          { departmentIds: ['dept-invalid'] } as any,
+          requesterBase,
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw ConflictException on duplicate email in update (pg 23505)', async () => {
-      const targetUser = { ...mockUser, id: 'user-2', companyId: 'company-1', role: { ...mockRole, hierarchy: 1 } };
+      const targetUser = {
+        ...mockUser,
+        id: 'user-2',
+        companyId: 'company-1',
+        role: { ...mockRole, hierarchy: 1 },
+      };
       dbMock.query.users.findFirst.mockResolvedValueOnce(targetUser);
       const pgError: any = new Error('dup');
       pgError.code = '23505';
       pgError.detail = 'Key (email)=(x)';
       dbMock.transaction.mockRejectedValue(pgError);
 
-      await expect(service.update('user-2', { email: 'dup@x.com' }, requesterBase)).rejects.toThrow(ConflictException);
+      await expect(
+        service.update('user-2', { email: 'dup@x.com' }, requesterBase),
+      ).rejects.toThrow(ConflictException);
     });
 
     it('should rethrow non-pg errors in update', async () => {
-      const targetUser = { ...mockUser, id: 'user-2', companyId: 'company-1', role: { ...mockRole, hierarchy: 1 } };
+      const targetUser = {
+        ...mockUser,
+        id: 'user-2',
+        companyId: 'company-1',
+        role: { ...mockRole, hierarchy: 1 },
+      };
       dbMock.query.users.findFirst.mockResolvedValueOnce(targetUser);
       const err = new ForbiddenException('test');
       dbMock.transaction.mockRejectedValue(err);
 
-      await expect(service.update('user-2', { name: 'x' }, requesterBase)).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.update('user-2', { name: 'x' }, requesterBase),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -513,12 +772,19 @@ describe('UsersService', () => {
 
     it('should throw NotFoundException when user not found', async () => {
       dbMock.query.users.findFirst.mockResolvedValue(null);
-      await expect(service.remove('user-1', requester)).rejects.toThrow(NotFoundException);
+      await expect(service.remove('user-1', requester)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw NotFoundException when user already deleted', async () => {
-      dbMock.query.users.findFirst.mockResolvedValue({ ...mockUser, deletedAt: new Date() });
-      await expect(service.remove('user-1', requester)).rejects.toThrow(NotFoundException);
+      dbMock.query.users.findFirst.mockResolvedValue({
+        ...mockUser,
+        deletedAt: new Date(),
+      });
+      await expect(service.remove('user-1', requester)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw ForbiddenException when target has >= hierarchy', async () => {
@@ -527,7 +793,9 @@ describe('UsersService', () => {
         role: { hierarchy: AUTHORITY_LEVELS.COMPANY ?? 4 },
         deletedAt: null,
       });
-      await expect(service.remove('user-1', requester)).rejects.toThrow(ForbiddenException);
+      await expect(service.remove('user-1', requester)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should handle user with no role (hierarchy 0)', async () => {
@@ -536,7 +804,10 @@ describe('UsersService', () => {
         role: null,
         deletedAt: null,
       });
-      const superRequester = { ...requester, roleHierarchy: AUTHORITY_LEVELS.GLOBAL ?? 5 };
+      const superRequester = {
+        ...requester,
+        roleHierarchy: AUTHORITY_LEVELS.GLOBAL ?? 5,
+      };
 
       const result = await service.remove('user-1', superRequester);
       expect(result).toEqual({ deleted: true });

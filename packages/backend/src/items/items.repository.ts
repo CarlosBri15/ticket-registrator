@@ -8,7 +8,8 @@ import { Item, InsertItem } from './schemas/item.schema';
 @Injectable()
 export class ItemsRepository {
   constructor(
-    @Inject(DB_CONNECTION) private readonly db: PostgresJsDatabase<typeof schema>,
+    @Inject(DB_CONNECTION)
+    private readonly db: PostgresJsDatabase<typeof schema>,
   ) {}
 
   async findByTicketId(ticketId: string): Promise<Item[]> {
@@ -29,6 +30,8 @@ export class ItemsRepository {
   }
 
   async bulkDeleteByTicketId(ticketId: string): Promise<void> {
-    await this.db.delete(schema.items).where(eq(schema.items.ticketId, ticketId));
+    await this.db
+      .delete(schema.items)
+      .where(eq(schema.items.ticketId, ticketId));
   }
 }

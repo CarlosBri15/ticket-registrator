@@ -29,7 +29,9 @@ describe('OrganizationAuthorizationService', () => {
       providers: [OrganizationAuthorizationService],
     }).compile();
 
-    service = module.get<OrganizationAuthorizationService>(OrganizationAuthorizationService);
+    service = module.get<OrganizationAuthorizationService>(
+      OrganizationAuthorizationService,
+    );
   });
 
   it('should be defined', () => {
@@ -44,11 +46,15 @@ describe('OrganizationAuthorizationService', () => {
     });
 
     it('should throw OrganizationUnauthorizedException for company admin', () => {
-      expect(() => service.validateCanCreate(companyRequester)).toThrow(OrganizationUnauthorizedException);
+      expect(() => service.validateCanCreate(companyRequester)).toThrow(
+        OrganizationUnauthorizedException,
+      );
     });
 
     it('should throw OrganizationUnauthorizedException for department user', () => {
-      expect(() => service.validateCanCreate(departmentRequester)).toThrow(OrganizationUnauthorizedException);
+      expect(() => service.validateCanCreate(departmentRequester)).toThrow(
+        OrganizationUnauthorizedException,
+      );
     });
   });
 
@@ -60,7 +66,9 @@ describe('OrganizationAuthorizationService', () => {
     });
 
     it('should throw OrganizationUnauthorizedException for non-global', () => {
-      expect(() => service.validateCanViewAll(companyRequester)).toThrow(OrganizationUnauthorizedException);
+      expect(() => service.validateCanViewAll(companyRequester)).toThrow(
+        OrganizationUnauthorizedException,
+      );
     });
   });
 
@@ -68,23 +76,27 @@ describe('OrganizationAuthorizationService', () => {
 
   describe('validateCanUpdate', () => {
     it('should allow global admin to update any company', () => {
-      expect(() => service.validateCanUpdate(globalRequester, 'any-company-id')).not.toThrow();
+      expect(() =>
+        service.validateCanUpdate(globalRequester, 'any-company-id'),
+      ).not.toThrow();
     });
 
     it('should allow company admin to update their own company', () => {
-      expect(() => service.validateCanUpdate(companyRequester, 'company-1')).not.toThrow();
+      expect(() =>
+        service.validateCanUpdate(companyRequester, 'company-1'),
+      ).not.toThrow();
     });
 
     it('should throw OrganizationUnauthorizedException if company admin tries to update another company', () => {
-      expect(() => service.validateCanUpdate(companyRequester, 'other-company')).toThrow(
-        OrganizationUnauthorizedException,
-      );
+      expect(() =>
+        service.validateCanUpdate(companyRequester, 'other-company'),
+      ).toThrow(OrganizationUnauthorizedException);
     });
 
     it('should throw OrganizationUnauthorizedException for department user', () => {
-      expect(() => service.validateCanUpdate(departmentRequester, 'company-1')).toThrow(
-        OrganizationUnauthorizedException,
-      );
+      expect(() =>
+        service.validateCanUpdate(departmentRequester, 'company-1'),
+      ).toThrow(OrganizationUnauthorizedException);
     });
   });
 
@@ -96,11 +108,15 @@ describe('OrganizationAuthorizationService', () => {
     });
 
     it('should throw OrganizationUnauthorizedException for company admin', () => {
-      expect(() => service.validateCanDelete(companyRequester)).toThrow(OrganizationUnauthorizedException);
+      expect(() => service.validateCanDelete(companyRequester)).toThrow(
+        OrganizationUnauthorizedException,
+      );
     });
 
     it('should throw OrganizationUnauthorizedException for department user', () => {
-      expect(() => service.validateCanDelete(departmentRequester)).toThrow(OrganizationUnauthorizedException);
+      expect(() => service.validateCanDelete(departmentRequester)).toThrow(
+        OrganizationUnauthorizedException,
+      );
     });
   });
 });
