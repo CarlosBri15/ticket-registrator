@@ -210,12 +210,12 @@ export class OrganizationService {
         if (reportIds.length > 0) {
           await tx
             .update(schema.reports)
-            .set({ isVisible: false, updatedAt: new Date() })
+            .set({ deletedAt: new Date(), updatedAt: new Date() })
             .where(inArray(schema.reports.id, reportIds));
 
           await tx
             .update(schema.tickets)
-            .set({ isVisible: false, updatedAt: new Date() })
+            .set({ deletedAt: new Date(), updatedAt: new Date() })
             .where(inArray(schema.tickets.reportId, reportIds));
         }
       }

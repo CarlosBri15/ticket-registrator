@@ -5,12 +5,22 @@ import {
   boolean,
   timestamp,
   integer,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { reports } from '../../reports/schemas/report.schema';
 import { items } from '../../items/schemas/item.schema';
 import { ticketHistories } from '../../history/history.schema';
-import { TicketStatus, TicketLifecycle } from '@ticket-registrator/shared';
+import {
+  TicketStatus,
+  TicketLifecycle,
+  ItemStatus,
+} from '@ticket-registrator/shared';
+import type {
+  TicketStatusType,
+  TicketLifecycleType,
+  ItemStatusType,
+} from '@ticket-registrator/shared';
 
 export const tickets = pgTable('tickets', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -47,9 +57,10 @@ export const tickets = pgTable('tickets', {
   llmSuggestedCurrency: varchar('llm_suggested_currency', { length: 10 }),
   approvedAmount: integer('approved_amount').default(0).notNull(),
 
-  isVisible: boolean('is_visible').default(true).notNull(),
+  flag: boolean('flag').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 export const ticketRelations = relations(tickets, ({ one, many }) => ({

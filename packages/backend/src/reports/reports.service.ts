@@ -34,16 +34,6 @@ import {
   ReportStatusConflictException,
 } from './exceptions/reports.exceptions';
 
-interface ReportListFilters {
-  page?: number;
-  limit?: number;
-  userId?: string;
-  name?: string;
-  startDate?: string;
-  endDate?: string;
-  status?: string;
-}
-
 @Injectable()
 export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
@@ -70,14 +60,13 @@ export class ReportsService {
       userId: requester.id,
       requestedAmount: 0,
       approvedAmount: 0,
-      status: ReportStatus.CREATED,
-      name: dto.name!,
+      status: ReportStatus.CREATED as any,
+      name: dto.name,
       startDate: new Date(dto.start_date!),
       endDate: new Date(dto.end_date!),
-      currency: dto.currency!,
+      currency: dto.currency,
       type: dto.type ?? '',
-      isVisible: dto.isVisible ?? true,
-    });
+    } as any);
 
     this.logger.log(`Report created: ${report.id} by user ${requester.id}`);
     return mapReportToIReport(report);
@@ -104,7 +93,7 @@ export class ReportsService {
   async findAllReports(requester: UserPayload): Promise<IReport[]> {
     const authorityFilter = this.buildAuthorityFilter(requester);
     const { data } = await this.reportsRepository.findWithFilters({
-      where: and(authorityFilter, eq(schema.reports.isVisible, true))!,
+      where: and(authorityFilter, isNull(schema.reports.deletedAt))!,
     });
 
     return data.map((report) => mapReportToIReport(report));
@@ -112,7 +101,7 @@ export class ReportsService {
 
   async findAllReportsPaginated(
     requester: UserPayload,
-    filters: ReportListFilters,
+    filters: any,
   ): Promise<PaginatedList<IReport>> {
     const {
       page = 1,
@@ -126,11 +115,11 @@ export class ReportsService {
     const offset = (page - 1) * limit;
 
     const authorityFilter = this.buildAuthorityFilter(requester);
-    const queryFilters: SQL[] = [eq(schema.reports.isVisible, true)];
+    const queryFilters: SQL[] = [isNull(schema.reports.deletedAt)];
 
     if (userId) queryFilters.push(eq(schema.reports.userId, userId));
     if (name) queryFilters.push(ilike(schema.reports.name, `%${name}%`));
-    if (status) queryFilters.push(eq(schema.reports.status, status));
+    if (status) queryFilters.push(eq(schema.reports.status, status as string));
     if (startDate)
       queryFilters.push(gte(schema.reports.startDate, new Date(startDate)));
     if (endDate)
@@ -154,7 +143,8 @@ export class ReportsService {
 
   async findOne(requester: UserPayload, reportId: string): Promise<IReport> {
     const report = await this.reportsRepository.findById(reportId);
-    if (!report?.isVisible) throw new ReportNotFoundException(reportId);
+    if (!report || report.deletedAt)
+      throw new ReportNotFoundException(reportId);
 
     const allowed = await this.reportsAuthorizationService.canViewReport(
       requester,
@@ -178,7 +168,7 @@ export class ReportsService {
       and(
         eq(schema.reports.userId, requester.id),
         eq(schema.reports.status, ReportStatus.CREATED),
-        eq(schema.reports.isVisible, true),
+        isNull(schema.reports.deletedAt),
       )!,
     );
 
@@ -193,10 +183,10 @@ export class ReportsService {
   ): Promise<IReport> {
     const updated = await this.reportsRepository.updateWithCondition(
       reportId,
-      { status: dto.status, updatedAt: new Date() },
+      { status: dto.status as string, updatedAt: new Date() },
       and(
         eq(schema.reports.status, ReportStatus.SUBMITTED),
-        eq(schema.reports.isVisible, true),
+        isNull(schema.reports.deletedAt),
       )!,
     );
 
@@ -221,7 +211,7 @@ export class ReportsService {
       and(
         eq(schema.reports.userId, requester.id),
         eq(schema.reports.status, ReportStatus.CREATED),
-        eq(schema.reports.isVisible, true),
+        isNull(schema.reports.deletedAt),
       )!,
     );
 
@@ -236,7 +226,7 @@ export class ReportsService {
 
   async remove(requester: UserPayload, reportId: string) {
     const report = await this.reportsRepository.findById(reportId);
-    if (report?.userId !== requester.id)
+    if (!report || report.userId !== requester.id)
       throw new ReportNotFoundException(reportId);
     if (report.status !== ReportStatus.CREATED)
       throw new ReportStatusConflictException(
@@ -246,11 +236,11 @@ export class ReportsService {
     await this.reportsRepository.transaction(async (tx) => {
       await tx
         .update(schema.reports)
-        .set({ isVisible: false, updatedAt: new Date() })
+        .set({ deletedAt: new Date(), updatedAt: new Date() })
         .where(eq(schema.reports.id, reportId));
       await tx
         .update(schema.tickets)
-        .set({ isVisible: false, updatedAt: new Date() })
+        .set({ deletedAt: new Date(), updatedAt: new Date() })
         .where(eq(schema.tickets.reportId, reportId));
     });
 
@@ -291,13 +281,12 @@ export class ReportsService {
   private prepareUpdateData(
     dto: UpdateReportFieldsDto,
   ): Partial<schema.InsertReport> {
-    const updateData: Partial<schema.InsertReport> = { updatedAt: new Date() };
+    const updateData: any = { updatedAt: new Date() };
     if (dto.name !== undefined) updateData.name = dto.name;
     if (dto.start_date !== undefined)
       updateData.startDate = new Date(dto.start_date);
     if (dto.end_date !== undefined) updateData.endDate = new Date(dto.end_date);
     if (dto.type !== undefined) updateData.type = dto.type;
-    if (dto.isVisible !== undefined) updateData.isVisible = dto.isVisible;
     return updateData;
   }
 }

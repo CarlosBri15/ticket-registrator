@@ -1,8 +1,10 @@
 import { Ticket } from '../schemas/ticket.schema';
 import {
   ITicket,
+  IItem,
   TicketStatusType,
   TicketLifecycleType,
+  ItemStatusType,
 } from '@ticket-registrator/shared';
 import { Item } from '../../items/schemas/item.schema';
 
@@ -26,6 +28,7 @@ export const mapTicketToITicket = (
   converted_currency: ticketDoc.convertedCurrency,
   cgs_bucket_link_justification: ticketDoc.cgsBucketLinkJustification,
   last_four_digits: ticketDoc.lastFourDigits,
+  flag: ticketDoc.flag,
   items:
     ticketDoc.items?.map((item) => ({
       id: item.id,

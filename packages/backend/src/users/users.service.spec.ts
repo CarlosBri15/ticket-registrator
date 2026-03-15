@@ -82,7 +82,9 @@ describe('UsersService', () => {
     };
 
     rolesServiceMock = {
-      getPermissionsForRoleId: jest.fn().mockResolvedValue(['view_users', 'create_users']),
+      getPermissionsForRoleId: jest
+        .fn()
+        .mockResolvedValue(['view_users', 'create_users']),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -330,7 +332,10 @@ describe('UsersService', () => {
   describe('findMe', () => {
     it('should return ICurrentUser with roleName, hierarchy and permissions', async () => {
       dbMock.query.users.findFirst.mockResolvedValue(mockUser);
-      rolesServiceMock.getPermissionsForRoleId.mockResolvedValue(['view_users', 'create_users']);
+      rolesServiceMock.getPermissionsForRoleId.mockResolvedValue([
+        'view_users',
+        'create_users',
+      ]);
 
       const result = await service.findMe('user-1');
 

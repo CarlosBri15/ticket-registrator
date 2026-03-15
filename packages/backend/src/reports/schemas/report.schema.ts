@@ -10,6 +10,7 @@ import { relations } from 'drizzle-orm';
 import { users } from '../../users/schemas/user.schema';
 import { tickets } from '../../tickets/schemas/ticket.schema';
 import { ticketHistories } from '../../history/history.schema';
+import type { ReportStatusType } from '@ticket-registrator/shared';
 import { ReportStatus } from '@ticket-registrator/shared';
 
 export const reports = pgTable('reports', {
@@ -27,9 +28,9 @@ export const reports = pgTable('reports', {
   status: varchar('status', { length: 50 })
     .default(ReportStatus.CREATED)
     .notNull(),
-  isVisible: boolean('is_visible').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 export const reportRelations = relations(reports, ({ one, many }) => ({

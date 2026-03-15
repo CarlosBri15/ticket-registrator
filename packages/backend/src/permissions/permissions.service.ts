@@ -88,7 +88,7 @@ export class PermissionsService {
     this.permissionsAuthService.validateCanManageCatalog(requester.permissions);
 
     await this.findOne(id);
-    await this.permissionsRepository.update(id, { isVisible: false });
+    await this.permissionsRepository.update(id, { deletedAt: new Date() });
 
     this.logger.log(`Permission soft deleted: ${id} by user ${requester.id}`);
     return { deleted: true };

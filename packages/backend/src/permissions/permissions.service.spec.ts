@@ -111,10 +111,15 @@ describe('PermissionsService', () => {
     it('should soft delete a permission', async () => {
       authService.validateCanManageCatalog.mockReturnValue(true as any);
       repository.findById.mockResolvedValue({ id: '1' } as any);
-      repository.update.mockResolvedValue({ id: '1', isVisible: false } as any);
+      repository.update.mockResolvedValue({
+        id: '1',
+        deletedAt: new Date(),
+      } as any);
 
       await service.softDelete('1', requester);
-      expect(repository.update).toHaveBeenCalledWith('1', { isVisible: false });
+      expect(repository.update).toHaveBeenCalledWith('1', {
+        deletedAt: expect.any(Date),
+      });
     });
   });
 

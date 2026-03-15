@@ -14,7 +14,10 @@ describe('mapUserToIUser', () => {
   it('should map all fields correctly', () => {
     const user = {
       ...baseUser,
-      usersToDepartments: [{ departmentId: 'dept-1' }, { departmentId: 'dept-2' }],
+      usersToDepartments: [
+        { departmentId: 'dept-1' },
+        { departmentId: 'dept-2' },
+      ],
     };
 
     expect(mapUserToIUser(user)).toEqual({

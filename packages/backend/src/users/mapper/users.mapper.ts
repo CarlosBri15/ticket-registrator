@@ -10,8 +10,12 @@ export type UserWithRole = User & {
   usersToDepartments?: { departmentId: string }[];
 };
 
-const extractDepartmentIds = (user: { usersToDepartments?: { departmentId: string }[] | null }): string[] =>
-  user.usersToDepartments ? user.usersToDepartments.map((ud) => ud.departmentId) : [];
+const extractDepartmentIds = (user: {
+  usersToDepartments?: { departmentId: string }[] | null;
+}): string[] =>
+  user.usersToDepartments
+    ? user.usersToDepartments.map((ud) => ud.departmentId)
+    : [];
 
 export const mapUserToIUser = (user: UserWithDepts): IUser => ({
   id: user.id,
@@ -24,7 +28,10 @@ export const mapUserToIUser = (user: UserWithDepts): IUser => ({
   departmentIds: extractDepartmentIds(user),
 });
 
-export const mapUserToICurrentUser = (user: UserWithRole, permissions: string[]): ICurrentUser => ({
+export const mapUserToICurrentUser = (
+  user: UserWithRole,
+  permissions: string[],
+): ICurrentUser => ({
   id: user.id,
   name: user.name ?? '',
   surname: user.surname ?? '',

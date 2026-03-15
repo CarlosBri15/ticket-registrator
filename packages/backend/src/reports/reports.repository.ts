@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, and, or, lte, gte, count, desc, SQL } from 'drizzle-orm';
+import { eq, and, or, lte, gte, count, desc, SQL, isNull } from 'drizzle-orm';
 import { Report } from './schemas/report.schema';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class ReportsRepository {
 
   async findById(id: string): Promise<Report | undefined> {
     return this.db.query.reports.findFirst({
-      where: eq(schema.reports.id, id),
+      where: and(eq(schema.reports.id, id), isNull(schema.reports.deletedAt)),
     });
   }
 
@@ -55,7 +55,7 @@ export class ReportsRepository {
     return this.db.query.reports.findMany({
       where: and(
         eq(schema.reports.userId, userId),
-        eq(schema.reports.isVisible, true),
+        isNull(schema.reports.deletedAt),
       ),
     });
   }
@@ -114,17 +114,13 @@ export class ReportsRepository {
   async softDelete(id: string): Promise<boolean> {
     const [updated] = await this.db
       .update(schema.reports)
-      .set({ isVisible: false, updatedAt: new Date() })
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(eq(schema.reports.id, id))
       .returning();
     return !!updated;
   }
 
-  async transaction<T>(
-    callback: (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
-  ): Promise<T> {
-    return this.db.transaction(
-      callback as (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
-    );
+  async transaction<T>(callback: (tx: any) => Promise<T>): Promise<T> {
+    return this.db.transaction(callback);
   }
 }

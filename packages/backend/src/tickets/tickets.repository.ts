@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, SQL, desc, isNull } from 'drizzle-orm';
 
 @Injectable()
 export class TicketsRepository {
@@ -13,7 +13,7 @@ export class TicketsRepository {
 
   async findById(id: string) {
     return this.db.query.tickets.findFirst({
-      where: and(eq(schema.tickets.id, id), eq(schema.tickets.isVisible, true)),
+      where: and(eq(schema.tickets.id, id), isNull(schema.tickets.deletedAt)),
       with: { items: true },
     });
   }
@@ -22,7 +22,7 @@ export class TicketsRepository {
     return this.db.query.tickets.findMany({
       where: and(
         eq(schema.tickets.reportId, reportId),
-        eq(schema.tickets.isVisible, true),
+        isNull(schema.tickets.deletedAt),
       ),
       with: { items: true },
       orderBy: [desc(schema.tickets.createdAt)],
@@ -87,7 +87,7 @@ export class TicketsRepository {
       await tx.insert(schema.ticketHistories).values(historyData);
       return tx
         .update(schema.tickets)
-        .set({ isVisible: false, updatedAt: new Date() })
+        .set({ deletedAt: new Date(), updatedAt: new Date() })
         .where(eq(schema.tickets.id, ticketId))
         .returning();
     });
@@ -96,8 +96,6 @@ export class TicketsRepository {
   async transaction<T>(
     callback: (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
   ): Promise<T> {
-    return this.db.transaction(
-      callback as (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
-    );
+    return this.db.transaction(callback as any); // Drizzle transaction context is slightly different but compatible in this context
   }
 }

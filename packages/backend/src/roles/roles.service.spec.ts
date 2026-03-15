@@ -110,7 +110,7 @@ describe('RolesService', () => {
 
       expect(result.deleted).toBe(true);
       expect(repositoryMock.update).toHaveBeenCalledWith('1', {
-        isVisible: false,
+        deletedAt: expect.any(Date),
       });
     });
 

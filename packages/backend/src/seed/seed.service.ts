@@ -32,7 +32,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly permissionsService: PermissionsService,
     @Inject(DB_CONNECTION)
     private readonly db: PostgresJsDatabase<typeof schema>,
-  ) { }
+  ) {}
 
   async onApplicationBootstrap() {
     this.logger.log('--- AUTO MIGRATIONS START ---');
@@ -94,7 +94,6 @@ export class SeedService implements OnApplicationBootstrap {
           await this.rolesRepository.update(existing.id, {
             hierarchy,
             description,
-            isVisible: true,
           });
           updatedCount++;
         }

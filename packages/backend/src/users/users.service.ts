@@ -19,7 +19,12 @@ import {
   AUTHORITY_LEVELS,
 } from '@ticket-registrator/shared';
 import type { PermissionType, RoleType } from '@ticket-registrator/shared';
-import { mapUserToIUser, mapUserToICurrentUser, UserWithDepts, UserWithRole } from './mapper/users.mapper';
+import {
+  mapUserToIUser,
+  mapUserToICurrentUser,
+  UserWithDepts,
+  UserWithRole,
+} from './mapper/users.mapper';
 import { CryptoService } from '../crypto/crypto.service';
 import { RolesService } from '../roles/roles.service';
 

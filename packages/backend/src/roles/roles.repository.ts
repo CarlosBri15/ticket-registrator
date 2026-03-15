@@ -23,7 +23,7 @@ export class RolesRepository {
   async findAllSystemRoles(): Promise<Role[]> {
     return this.db.query.roles.findMany({
       where: and(
-        eq(schema.roles.isVisible, true),
+        isNull(schema.roles.deletedAt),
         isNull(schema.roles.companyId),
       ),
       orderBy: [desc(schema.roles.hierarchy)],
@@ -33,7 +33,7 @@ export class RolesRepository {
   async findAllCompanyRoles(companyId: string): Promise<Role[]> {
     return this.db.query.roles.findMany({
       where: and(
-        eq(schema.roles.isVisible, true),
+        isNull(schema.roles.deletedAt),
         or(
           eq(schema.roles.companyId, companyId),
           isNull(schema.roles.companyId),
@@ -45,7 +45,7 @@ export class RolesRepository {
 
   async findById(id: string): Promise<Role | undefined> {
     return this.db.query.roles.findFirst({
-      where: and(eq(schema.roles.id, id), eq(schema.roles.isVisible, true)),
+      where: and(eq(schema.roles.id, id), isNull(schema.roles.deletedAt)),
     });
   }
 
@@ -59,7 +59,7 @@ export class RolesRepository {
         companyId
           ? eq(schema.roles.companyId, companyId)
           : isNull(schema.roles.companyId),
-        eq(schema.roles.isVisible, true),
+        isNull(schema.roles.deletedAt),
       ),
     });
   }
@@ -114,7 +114,7 @@ export class RolesRepository {
     return this.db.query.roles.findMany({
       where: and(
         inArray(schema.roles.name, roleNames),
-        eq(schema.roles.isVisible, true),
+        isNull(schema.roles.deletedAt),
         or(
           companyId
             ? eq(schema.roles.companyId, companyId)
@@ -136,7 +136,7 @@ export class RolesRepository {
     return this.db.query.roles.findFirst({
       where: and(
         eq(schema.roles.id, roleId),
-        eq(schema.roles.isVisible, true),
+        isNull(schema.roles.deletedAt),
         or(
           companyId
             ? eq(schema.roles.companyId, companyId)
@@ -157,8 +157,6 @@ export class RolesRepository {
   async transaction<T>(
     callback: (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
   ): Promise<T> {
-    return this.db.transaction(
-      callback as (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
-    );
+    return this.db.transaction(callback as any);
   }
 }

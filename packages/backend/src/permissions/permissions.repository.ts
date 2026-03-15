@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, isNull, or, inArray, desc } from 'drizzle-orm';
 import { Permission, InsertPermission } from './schemas/permission.schema';
 import {
   RolePermission,
@@ -18,7 +18,7 @@ export class PermissionsRepository {
 
   async findAll(): Promise<Permission[]> {
     return this.db.query.permissions.findMany({
-      where: eq(schema.permissions.isVisible, true),
+      where: isNull(schema.permissions.deletedAt),
       orderBy: [desc(schema.permissions.createdAt)],
     });
   }
@@ -27,7 +27,7 @@ export class PermissionsRepository {
     return this.db.query.permissions.findFirst({
       where: and(
         eq(schema.permissions.id, id),
-        eq(schema.permissions.isVisible, true),
+        isNull(schema.permissions.deletedAt),
       ),
     });
   }
@@ -36,7 +36,7 @@ export class PermissionsRepository {
     return this.db.query.permissions.findFirst({
       where: and(
         eq(schema.permissions.name, name),
-        eq(schema.permissions.isVisible, true),
+        isNull(schema.permissions.deletedAt),
       ),
     });
   }
@@ -88,7 +88,7 @@ export class PermissionsRepository {
       .onConflictDoUpdate({
         target: schema.permissions.name,
         set: {
-          isVisible: true,
+          deletedAt: null,
           updatedAt: new Date(),
         },
       });

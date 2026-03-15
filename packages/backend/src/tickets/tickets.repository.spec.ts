@@ -61,7 +61,7 @@ describe('TicketsRepository', () => {
   });
 
   describe('softDelete', () => {
-    it('should insert history and update isVisible', async () => {
+    it('should insert history and update deletedAt', async () => {
       await repository.softDelete('ticket-1', {
         ticketId: 'ticket-1',
         reportId: 'report-1',

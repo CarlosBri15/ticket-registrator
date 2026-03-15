@@ -69,7 +69,7 @@ describe('TicketsService', () => {
     id: 'report-1',
     userId: 'user-1',
     status: ReportStatus.CREATED,
-    isVisible: true,
+    deletedAt: null,
     currency: 'EUR',
   };
   const mockTicket = {
@@ -79,13 +79,12 @@ describe('TicketsService', () => {
     status: TicketStatus.PENDING,
     lifecycle: TicketLifecycle.DRAFT,
     version: 1,
-    isVisible: true,
   };
 
   describe('create', () => {
     it('should create a ticket successfully', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
       storageServiceMock.uploadFile.mockResolvedValue('link');
       geminiServiceMock.extractReceipt.mockResolvedValue({
@@ -113,7 +112,7 @@ describe('TicketsService', () => {
     it('should throw ReportNotFoundException when report is not visible', async () => {
       reportsRepositoryMock.findById.mockResolvedValue({
         ...mockReport,
-        isVisible: false,
+        deletedAt: new Date(),
       });
       await expect(
         service.create(requester, 'report-1', {
@@ -124,7 +123,7 @@ describe('TicketsService', () => {
 
     it('should throw TicketUnauthorizedException when user cannot modify report', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(false);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(false);
       await expect(
         service.create(requester, 'report-1', {
           buffer: Buffer.from('f'),
@@ -137,7 +136,7 @@ describe('TicketsService', () => {
         ...mockReport,
         status: ReportStatus.SUBMITTED,
       });
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       await expect(
         service.create(requester, 'report-1', {
           buffer: Buffer.from('f'),
@@ -147,7 +146,7 @@ describe('TicketsService', () => {
 
     it('should parse gemini date correctly', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
       storageServiceMock.uploadFile.mockResolvedValue('link');
       geminiServiceMock.extractReceipt.mockResolvedValue({
@@ -168,7 +167,7 @@ describe('TicketsService', () => {
 
     it('should handle invalid date from gemini (0000-00-00)', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
       storageServiceMock.uploadFile.mockResolvedValue('link');
       geminiServiceMock.extractReceipt.mockResolvedValue({
@@ -237,7 +236,7 @@ describe('TicketsService', () => {
   describe('update', () => {
     it('should update ticket fields and save history', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.updateWithHistory.mockResolvedValue(mockTicket);
@@ -257,7 +256,7 @@ describe('TicketsService', () => {
 
     it('should throw TicketUnauthorizedException when user cannot modify report', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(false);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(false);
       await expect(
         service.update(requester, 'report-1', 'ticket-1', {}),
       ).rejects.toThrow(TicketUnauthorizedException);
@@ -268,7 +267,7 @@ describe('TicketsService', () => {
         ...mockReport,
         status: ReportStatus.SUBMITTED,
       });
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       await expect(
         service.update(requester, 'report-1', 'ticket-1', {}),
       ).rejects.toThrow(TicketStatusConflictException);
@@ -276,7 +275,7 @@ describe('TicketsService', () => {
 
     it('should throw TicketNotFoundException when ticket not found for update', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsRepositoryMock.findById.mockResolvedValue(null);
       await expect(
         service.update(requester, 'report-1', 'ticket-1', {}),
@@ -285,11 +284,11 @@ describe('TicketsService', () => {
 
     it('should return findOne result when no changes provided', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
 
-      await service.update(
+      const result = await service.update(
         requester,
         'report-1',
         'ticket-1',
@@ -300,7 +299,7 @@ describe('TicketsService', () => {
 
     it('should update with date field', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.updateWithHistory.mockResolvedValue(mockTicket);
@@ -313,7 +312,7 @@ describe('TicketsService', () => {
 
     it('should update with null date', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.updateWithHistory.mockResolvedValue(mockTicket);
@@ -326,7 +325,7 @@ describe('TicketsService', () => {
 
     it('should update with items', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.updateWithHistory.mockResolvedValue(mockTicket);
@@ -349,7 +348,7 @@ describe('TicketsService', () => {
 
     it('should throw TicketNotFoundException when ticket reportId mismatch', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsRepositoryMock.findById.mockResolvedValue({
         ...mockTicket,
         reportId: 'other-report',
@@ -370,7 +369,7 @@ describe('TicketsService', () => {
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.updateWithHistory.mockResolvedValue(mockTicket);
 
-      await service.updateStatus(
+      const result = await service.updateStatus(
         requester,
         'report-1',
         'ticket-1',
@@ -415,7 +414,7 @@ describe('TicketsService', () => {
   describe('remove', () => {
     it('should soft delete ticket', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
 
       await service.remove(requester, 'report-1', 'ticket-1');
@@ -431,7 +430,7 @@ describe('TicketsService', () => {
 
     it('should throw TicketUnauthorizedException when user cannot modify report', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(false);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(false);
       await expect(
         service.remove(requester, 'report-1', 'ticket-1'),
       ).rejects.toThrow(TicketUnauthorizedException);
@@ -442,7 +441,7 @@ describe('TicketsService', () => {
         ...mockReport,
         status: ReportStatus.SUBMITTED,
       });
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       await expect(
         service.remove(requester, 'report-1', 'ticket-1'),
       ).rejects.toThrow(TicketStatusConflictException);
@@ -450,7 +449,7 @@ describe('TicketsService', () => {
 
     it('should throw TicketNotFoundException when ticket not found for remove', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsRepositoryMock.findById.mockResolvedValue(null);
       await expect(
         service.remove(requester, 'report-1', 'ticket-1'),
@@ -459,7 +458,7 @@ describe('TicketsService', () => {
 
     it('should throw TicketNotFoundException when ticket reportId mismatch', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(true);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsRepositoryMock.findById.mockResolvedValue({
         ...mockTicket,
         reportId: 'other-report',
