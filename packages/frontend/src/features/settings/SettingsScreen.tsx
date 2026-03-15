@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Globe, User, LogOut, Check, Mail } from "lucide-react";
 import { useUserQuery } from "@ticket-registrator/shared";
-import { tokenProvider } from "../api/client";
+import { tokenProvider } from "../../api/client";
 import { useNavigate } from "react-router-dom";
 
 const LANGUAGES = [

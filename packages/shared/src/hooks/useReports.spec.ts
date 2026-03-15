@@ -13,12 +13,13 @@ jest.mock('../api/clientContainer', () => ({
             getOne: jest.fn().mockResolvedValue({ id: '1' }),
             create: jest.fn().mockResolvedValue({ id: 'new' }),
             submit: jest.fn().mockResolvedValue({ id: '1', status: 'Submitted' }),
+            updateStatus: jest.fn().mockResolvedValue({ id: '1', status: 'Approved' }),
             delete: jest.fn().mockResolvedValue(undefined),
         }),
     },
 }));
 
-import { useReportsQuery, useReportQuery, useCreateReportMutation, useSubmitReportMutation, useDeleteReportMutation } from './useReports';
+import { useReportsQuery, useReportQuery, useCreateReportMutation, useSubmitReportMutation, useDeleteReportMutation, useUpdateReportStatusMutation } from './useReports';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '../api/clientContainer';
 
@@ -134,6 +135,54 @@ describe('useReports hooks', () => {
             const call = (useMutation as jest.Mock).mock.calls[0][0];
             await call.onError(new Error('err'));
             expect(onError).toHaveBeenCalled();
+        });
+    });
+
+    describe('useUpdateReportStatusMutation', () => {
+        it('should call useMutation with mutationFn', () => {
+            useUpdateReportStatusMutation();
+            expect(useMutation).toHaveBeenCalledWith(expect.objectContaining({
+                mutationFn: expect.any(Function),
+            }));
+        });
+
+        it('mutationFn should call api.reports().updateStatus with id and status', async () => {
+            useUpdateReportStatusMutation();
+            const call = (useMutation as jest.Mock).mock.calls[0][0];
+            await call.mutationFn({ id: 'report1', status: 'Approved' });
+            expect(api.reports().updateStatus).toHaveBeenCalledWith('report1', 'Approved');
+        });
+
+        it('onSuccess should invalidate reports and specific report queries', async () => {
+            const onSuccess = jest.fn();
+            useUpdateReportStatusMutation({ onSuccess });
+            const call = (useMutation as jest.Mock).mock.calls[0][0];
+            const data = { id: 'report1', status: 'Approved' };
+            await call.onSuccess(data, { id: 'report1', status: 'Approved' });
+            expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['reports'] });
+            expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['reports', 'report1'] });
+            expect(onSuccess).toHaveBeenCalledWith(data);
+        });
+
+        it('onSuccess should not throw when no options provided', () => {
+            useUpdateReportStatusMutation();
+            const call = (useMutation as jest.Mock).mock.calls[0][0];
+            expect(() => call.onSuccess({ id: 'r1' }, { id: 'r1', status: 'Approved' })).not.toThrow();
+        });
+
+        it('onError should call options.onError if provided', async () => {
+            const onError = jest.fn();
+            useUpdateReportStatusMutation({ onError });
+            const call = (useMutation as jest.Mock).mock.calls[0][0];
+            const error = new Error('Status update failed');
+            await call.onError(error);
+            expect(onError).toHaveBeenCalledWith(error);
+        });
+
+        it('onError should not throw when no options provided', () => {
+            useUpdateReportStatusMutation();
+            const call = (useMutation as jest.Mock).mock.calls[0][0];
+            expect(() => call.onError(new Error('err'))).not.toThrow();
         });
     });
 

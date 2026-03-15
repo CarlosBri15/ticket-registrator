@@ -1,11 +1,40 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ScanLine, FileText, Calendar, Wallet, Banknote, Tag, Plus, Send, CheckCircle, Trash2, ArrowRight, AlertTriangle, Receipt, TrendingUp } from "lucide-react";
-import { Button } from "../components/Button";
-import { StatusBadge } from "../components/StatusBadge";
-import { TicketUploadModal } from "../components/TicketUploadModal";
-import { TicketDetailModal } from "../components/TicketDetailModal";
-import { useReportQuery, useTicketsQuery, useSubmitReportMutation, useDeleteTicketMutation, useDeleteReportMutation, type ITicket } from "@ticket-registrator/shared";
+import {
+  ArrowLeft,
+  ScanLine,
+  FileText,
+  Calendar,
+  Wallet,
+  Banknote,
+  Tag,
+  Plus,
+  Send,
+  CheckCircle,
+  Trash2,
+  ArrowRight,
+  AlertTriangle,
+  Receipt,
+  TrendingUp,
+  ThumbsUp,
+  ThumbsDown,
+  XCircle,
+} from "lucide-react";
+import { Button } from "../../components/ui/Button";
+import { StatusBadge } from "../../components/ui/StatusBadge";
+import { TicketUploadModal } from "../tickets/components/TicketUploadModal";
+import { TicketDetailModal } from "../tickets/components/TicketDetailModal";
+import {
+  useReportQuery,
+  useTicketsQuery,
+  useSubmitReportMutation,
+  useDeleteTicketMutation,
+  useDeleteReportMutation,
+  useUpdateReportStatusMutation,
+  usePermissions,
+  ReportStatus,
+  type ITicket,
+} from "@ticket-registrator/shared";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
@@ -34,6 +63,7 @@ const ConfirmDialog = ({
   confirmLabel,
   confirmClassName,
   isLoading,
+  cancelLabel,
 }: {
   icon: React.ReactNode;
   iconBg: string;
@@ -42,6 +72,7 @@ const ConfirmDialog = ({
   onCancel: () => void;
   onConfirm: () => void;
   confirmLabel: string;
+  cancelLabel: string;
   confirmClassName?: string;
   isLoading?: boolean;
 }) => (
@@ -54,7 +85,7 @@ const ConfirmDialog = ({
       <p className="text-gray-500 text-sm text-center leading-relaxed mb-8">{description}</p>
       <div className="flex gap-3">
         <Button variant="ghost" onClick={onCancel} className="flex-1" disabled={isLoading}>
-          Cancelar
+          {cancelLabel}
         </Button>
         <Button
           onClick={onConfirm}
@@ -72,16 +103,27 @@ export const ReportDetailScreen = () => {
   const { t, i18n } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
+  const { can } = usePermissions();
+
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<ITicket | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [submitConfirm, setSubmitConfirm] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [approveConfirm, setApproveConfirm] = useState(false);
+  const [declineConfirm, setDeclineConfirm] = useState(false);
 
   const { data: report, isLoading, isError } = useReportQuery(id);
   const { data: tickets, isLoading: isLoadingTickets } = useTicketsQuery(id!);
+
   const submitMutation = useSubmitReportMutation({
     onSuccess: () => setSubmitConfirm(false),
+  });
+  const updateStatusMutation = useUpdateReportStatusMutation({
+    onSuccess: () => {
+      setApproveConfirm(false);
+      setDeclineConfirm(false);
+    },
   });
   const deleteTicketMutation = useDeleteTicketMutation();
   const deleteReportMutation = useDeleteReportMutation({
@@ -90,11 +132,14 @@ export const ReportDetailScreen = () => {
 
   const dateLocale = i18n.language.startsWith("es") ? es : enUS;
 
-  const pendingAmount = tickets
-    ?.filter(tk => tk.status.toUpperCase() === "PENDING")
-    .reduce((acc, tk) => acc + (tk.amount || 0), 0) ?? 0;
+  const pendingAmount =
+    tickets
+      ?.filter((tk) => tk.status.toUpperCase() === "PENDING")
+      .reduce((acc, tk) => acc + (tk.amount || 0), 0) ?? 0;
 
   const isEditable = report && ["CREATED", "DRAFT"].includes(report.status.toUpperCase());
+  const isSubmitted = report?.status.toUpperCase() === "SUBMITTED";
+  const canApprove = can("approve_reports") && isSubmitted;
 
   const handleTicketClick = (ticket: ITicket) => {
     setSelectedTicket(ticket);
@@ -104,8 +149,7 @@ export const ReportDetailScreen = () => {
   const handleDeleteTicket = (e: React.MouseEvent, ticket: ITicket) => {
     e.stopPropagation();
     if (!id) return;
-    const ticketId = ticket.id;
-    deleteTicketMutation.mutate({ reportId: id, ticketId });
+    deleteTicketMutation.mutate({ reportId: id, ticketId: ticket.id });
   };
 
   if (isLoading) {
@@ -125,7 +169,7 @@ export const ReportDetailScreen = () => {
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-4">
-            {[1, 2, 3].map(i => <TicketSkeleton key={i} />)}
+            {[1, 2, 3].map((i) => <TicketSkeleton key={i} />)}
           </div>
           <div className="bg-white rounded-[2.5rem] border border-gray-100 h-64 animate-pulse" />
         </div>
@@ -190,7 +234,8 @@ export const ReportDetailScreen = () => {
             <div className="flex flex-wrap items-center gap-4 text-white/60 text-sm font-medium">
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5" />
-                {format(new Date(report.start_date), "d MMM", { locale: dateLocale })} — {format(new Date(report.end_date), "d MMM yyyy", { locale: dateLocale })}
+                {format(new Date(report.start_date), "d MMM", { locale: dateLocale })} —{" "}
+                {format(new Date(report.end_date), "d MMM yyyy", { locale: dateLocale })}
               </span>
               {report.type && (
                 <span className="flex items-center gap-1.5">
@@ -202,6 +247,7 @@ export const ReportDetailScreen = () => {
           </div>
 
           <div className="flex flex-wrap gap-2 shrink-0">
+            {/* Employee: submit */}
             {isEditable && (
               <Button
                 onClick={() => setSubmitConfirm(true)}
@@ -213,7 +259,31 @@ export const ReportDetailScreen = () => {
                 {t("reportDetail.submitReport")}
               </Button>
             )}
-            {report.status.toUpperCase() === "SUBMITTED" && (
+
+            {/* Manager: approve / decline */}
+            {canApprove && (
+              <>
+                <Button
+                  onClick={() => setApproveConfirm(true)}
+                  variant="white"
+                  className="w-auto font-black text-sm px-4 py-2.5 !bg-green-500 !text-white hover:!bg-green-600 !border-green-400"
+                >
+                  <ThumbsUp className="w-4 h-4 mr-2" />
+                  {t("reportDetail.approveReport")}
+                </Button>
+                <Button
+                  onClick={() => setDeclineConfirm(true)}
+                  variant="ghost-white"
+                  className="w-auto font-black text-sm px-4 py-2.5 !border-red-300/50 hover:!bg-red-500/20"
+                >
+                  <ThumbsDown className="w-4 h-4 mr-2" />
+                  {t("reportDetail.declineReport")}
+                </Button>
+              </>
+            )}
+
+            {/* Status-only badges */}
+            {isSubmitted && !canApprove && (
               <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50/20 rounded-2xl border border-amber-200/30 text-amber-200 text-sm font-bold">
                 <CheckCircle className="w-4 h-4" />
                 {t("reportDetail.submittedReview")}
@@ -225,12 +295,13 @@ export const ReportDetailScreen = () => {
                 {t("reportDetail.approved")}
               </div>
             )}
-            {report.status.toUpperCase() === "REJECTED" && (
+            {["REJECTED", "DECLINED"].includes(report.status.toUpperCase()) && (
               <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50/20 rounded-2xl border border-red-200/30 text-red-300 text-sm font-bold">
-                <AlertTriangle className="w-4 h-4" />
-                {t("status.REJECTED")}
+                <XCircle className="w-4 h-4" />
+                {t("status.DECLINED")}
               </div>
             )}
+
             <Button
               onClick={() => setIsUploadModalOpen(true)}
               disabled={!isEditable}
@@ -244,7 +315,7 @@ export const ReportDetailScreen = () => {
         </div>
       </div>
 
-      {/* Submit dialog */}
+      {/* Submit confirm */}
       {submitConfirm && (
         <ConfirmDialog
           icon={<Send className="w-7 h-7 text-green-600" />}
@@ -254,21 +325,55 @@ export const ReportDetailScreen = () => {
           onCancel={() => setSubmitConfirm(false)}
           onConfirm={() => submitMutation.mutate(id!)}
           confirmLabel={t("reportDetail.submitReport")}
+          cancelLabel={t("common.cancel")}
           confirmClassName="bg-green-600 hover:bg-green-700 shadow-xl shadow-green-600/20"
           isLoading={submitMutation.isPending}
         />
       )}
 
-      {/* Delete report dialog */}
+      {/* Approve confirm */}
+      {approveConfirm && (
+        <ConfirmDialog
+          icon={<ThumbsUp className="w-7 h-7 text-green-600" />}
+          iconBg="bg-green-100"
+          title={t("reportDetail.approveReport")}
+          description={t("reportDetail.confirmApprove")}
+          onCancel={() => setApproveConfirm(false)}
+          onConfirm={() => updateStatusMutation.mutate({ id: id!, status: ReportStatus.APPROVED })}
+          confirmLabel={t("reportDetail.approveReport")}
+          cancelLabel={t("common.cancel")}
+          confirmClassName="bg-green-600 hover:bg-green-700 shadow-xl shadow-green-600/20"
+          isLoading={updateStatusMutation.isPending}
+        />
+      )}
+
+      {/* Decline confirm */}
+      {declineConfirm && (
+        <ConfirmDialog
+          icon={<ThumbsDown className="w-7 h-7 text-red-600" />}
+          iconBg="bg-red-100"
+          title={t("reportDetail.declineReport")}
+          description={t("reportDetail.confirmDecline")}
+          onCancel={() => setDeclineConfirm(false)}
+          onConfirm={() => updateStatusMutation.mutate({ id: id!, status: ReportStatus.DECLINED })}
+          confirmLabel={t("reportDetail.declineReport")}
+          cancelLabel={t("common.cancel")}
+          confirmClassName="bg-red-600 hover:bg-red-700 shadow-xl shadow-red-600/20"
+          isLoading={updateStatusMutation.isPending}
+        />
+      )}
+
+      {/* Delete report confirm */}
       {deleteConfirm && (
         <ConfirmDialog
           icon={<AlertTriangle className="w-7 h-7 text-red-600" />}
           iconBg="bg-red-100"
-          title={`${t("common.delete")} reporte`}
-          description="¿Estás seguro de que quieres eliminar este reporte? Esta acción no se puede deshacer y se eliminarán todos los tickets asociados."
+          title={t("reportDetail.deleteReport")}
+          description={t("reportDetail.confirmDelete")}
           onCancel={() => setDeleteConfirm(false)}
           onConfirm={() => deleteReportMutation.mutate(id!)}
           confirmLabel={t("common.delete")}
+          cancelLabel={t("common.cancel")}
           confirmClassName="bg-red-600 hover:bg-red-700 shadow-xl shadow-red-600/20"
           isLoading={deleteReportMutation.isPending}
         />
@@ -282,7 +387,9 @@ export const ReportDetailScreen = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Receipt className="w-4 h-4 text-gray-400" />
-              <h2 className="text-sm font-black text-dark uppercase tracking-widest">{t("reportDetail.ticketsTitle")}</h2>
+              <h2 className="text-sm font-black text-dark uppercase tracking-widest">
+                {t("reportDetail.ticketsTitle")}
+              </h2>
               <span className="text-[10px] font-black bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full">
                 {tickets?.length || 0}
               </span>
@@ -293,14 +400,14 @@ export const ReportDetailScreen = () => {
                 className="flex items-center gap-1.5 text-brand text-xs font-black hover:underline"
               >
                 <Plus className="w-3.5 h-3.5" />
-                Añadir
+                {t("reportDetail.addTicket")}
               </button>
             )}
           </div>
 
           {isLoadingTickets ? (
             <div className="space-y-3">
-              {[1, 2, 3].map(i => <TicketSkeleton key={i} />)}
+              {[1, 2, 3].map((i) => <TicketSkeleton key={i} />)}
             </div>
           ) : tickets && tickets.length > 0 ? (
             <div className="space-y-3">
@@ -316,7 +423,7 @@ export const ReportDetailScreen = () => {
                     </div>
                     <div className="min-w-0">
                       <h4 className="font-black text-dark group-hover:text-brand transition-colors truncate text-sm">
-                        {ticket.location_name || "Ticket sin nombre"}
+                        {ticket.location_name || t("reportDetail.noTicketName")}
                       </h4>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         {ticket.date && (
@@ -389,18 +496,19 @@ export const ReportDetailScreen = () => {
 
         {/* Financial sidebar */}
         <div className="space-y-5">
-
-          {/* Financial summary */}
           <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
             <div className="bg-brand/5 px-6 py-4 border-b border-brand/10 flex items-center gap-2">
               <Wallet className="w-4 h-4 text-brand" />
-              <h3 className="text-[10px] font-black text-brand/70 uppercase tracking-widest">{t("reportDetail.financialSummary")}</h3>
+              <h3 className="text-[10px] font-black text-brand/70 uppercase tracking-widest">
+                {t("reportDetail.financialSummary")}
+              </h3>
             </div>
 
             <div className="p-6 space-y-5">
-              {/* Total */}
               <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{t("reportDetail.totalRequested")}</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                  {t("reportDetail.totalRequested")}
+                </p>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-4xl font-black text-dark tracking-tighter">
                     {(report.requested_amount ?? 0).toLocaleString()}
@@ -409,17 +517,22 @@ export const ReportDetailScreen = () => {
                 </div>
               </div>
 
-              {/* Approved & Pending grid */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-4 rounded-2xl bg-green-50/60 border border-green-100">
-                  <p className="text-[10px] font-black text-green-700/60 uppercase tracking-widest mb-1.5">{t("reportDetail.approved")}</p>
+                  <p className="text-[10px] font-black text-green-700/60 uppercase tracking-widest mb-1.5">
+                    {t("reportDetail.approved")}
+                  </p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-black text-green-700">{(report.approved_amount ?? 0).toLocaleString()}</span>
+                    <span className="text-xl font-black text-green-700">
+                      {(report.approved_amount ?? 0).toLocaleString()}
+                    </span>
                     <span className="text-[10px] font-bold text-green-600/50">{report.currency}</span>
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-100">
-                  <p className="text-[10px] font-black text-amber-700/60 uppercase tracking-widest mb-1.5">{t("reportDetail.inReview")}</p>
+                  <p className="text-[10px] font-black text-amber-700/60 uppercase tracking-widest mb-1.5">
+                    {t("reportDetail.inReview")}
+                  </p>
                   <div className="flex items-baseline gap-1">
                     <span className="text-xl font-black text-amber-700">{pendingAmount.toLocaleString()}</span>
                     <span className="text-[10px] font-bold text-amber-600/50">{report.currency}</span>
@@ -427,7 +540,6 @@ export const ReportDetailScreen = () => {
                 </div>
               </div>
 
-              {/* Estimated reimbursement */}
               <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                 <span className="text-xs font-semibold text-gray-400 flex items-center gap-1.5">
                   <Banknote className="w-3.5 h-3.5" />
@@ -436,14 +548,14 @@ export const ReportDetailScreen = () => {
                 <div className="flex items-center gap-1">
                   <TrendingUp className="w-3 h-3 text-green-500" />
                   <span className="text-sm font-black text-dark">
-                    {(report.approved_amount ?? 0).toLocaleString()} <span className="text-gray-400 font-bold text-xs">{report.currency}</span>
+                    {(report.approved_amount ?? 0).toLocaleString()}{" "}
+                    <span className="text-gray-400 font-bold text-xs">{report.currency}</span>
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* AI tip */}
           <div className="bg-brand/5 p-5 rounded-[2rem] border border-brand/10">
             <div className="flex items-center gap-2 mb-2">
               <ScanLine className="w-4 h-4 text-brand" />

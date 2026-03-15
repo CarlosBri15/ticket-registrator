@@ -1,11 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Button } from "../components/Button";
-import { Input } from "../components/Input";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
 import { loginSchema, type LoginSchema, useLoginMutation, type ILoginResponse } from "@ticket-registrator/shared";
 import { Link, useNavigate } from "react-router-dom";
 import { Scan, ShieldCheck, Sparkles } from "lucide-react";
-import { tokenProvider } from "../api/client";
+import { tokenProvider } from "../../api/client";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 
@@ -35,7 +35,7 @@ export const LoginForm = () => {
 
     return (
         <div className="min-h-screen w-full grid lg:grid-cols-2 bg-surface">
-            
+
             {/* PANEL IZQUIERDO: Visual / Branding */}
             <div className="hidden lg:flex relative flex-col justify-between bg-dark p-16 overflow-hidden">
                 <div className="absolute inset-0 bg-grid-pattern opacity-20" />
@@ -51,7 +51,7 @@ export const LoginForm = () => {
                             <Scan className="text-brand/50 w-8 h-8" />
                          </div>
                     </div>
-                    
+
                     <div className="absolute top-20 left-10 w-56 h-40 bg-brand/20 backdrop-blur-xl rounded-2xl border border-white/10 p-6 transform -rotate-3 animate-pulse-slow shadow-2xl z-10">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
@@ -110,22 +110,22 @@ export const LoginForm = () => {
                     </div>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                        <Input 
+                        <Input
                             label={t('auth.emailLabel')}
-                            type="email" 
+                            type="email"
                             placeholder={t('auth.emailPlaceholder')}
                             {...register("email")}
-                            error={errors.email?.message} 
+                            error={errors.email?.message}
                             autoComplete="email"
                         />
 
                         <div className="space-y-1">
-                            <Input 
+                            <Input
                                 label={t('auth.passwordLabel')}
-                                type="password" 
+                                type="password"
                                 placeholder="••••••••••"
                                 {...register("password")}
-                                error={errors.password?.message} 
+                                error={errors.password?.message}
                                 autoComplete="current-password"
                             />
                             <div className="flex justify-end">

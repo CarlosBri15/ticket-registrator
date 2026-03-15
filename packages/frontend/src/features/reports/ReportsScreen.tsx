@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useReportsQuery } from "@ticket-registrator/shared";
-import { Button } from "../components/Button";
-import { StatusBadge } from "../components/StatusBadge";
-import { Modal } from "../components/Modal";
-import { ReportForm } from "./ReportForm";
+import { Button } from "../../components/ui/Button";
+import { StatusBadge } from "../../components/ui/StatusBadge";
+import { Modal } from "../../components/ui/Modal";
+import { ReportForm } from "./components/ReportForm";
 import { Plus, Calendar, ArrowUpRight, Clock, CheckCircle, Plane, Wallet, ChevronRight, BarChart3, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -108,7 +108,7 @@ export const ReportsScreen = () => {
             <MapPin className="w-5 h-5" />
           </div>
           <p className="text-sm text-brand-hover leading-relaxed">
-            Define el destino y fechas de tu viaje. Podrás ir añadiendo tickets a medida que se generen los gastos.
+            {t("trips.newTripInfoDesc")}
           </p>
         </div>
         <ReportForm

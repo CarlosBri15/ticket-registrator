@@ -14,18 +14,21 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import {
   IUser,
+  ICurrentUser,
   permissions,
   AUTHORITY_LEVELS,
 } from '@ticket-registrator/shared';
 import type { PermissionType, RoleType } from '@ticket-registrator/shared';
-import { mapUserToIUser, UserWithDepts } from './mapper/users.mapper';
+import { mapUserToIUser, mapUserToICurrentUser, UserWithDepts, UserWithRole } from './mapper/users.mapper';
 import { CryptoService } from '../crypto/crypto.service';
+import { RolesService } from '../roles/roles.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @Inject(DB_CONNECTION) private db: PostgresJsDatabase<typeof schema>,
     private readonly cryptoService: CryptoService,
+    private readonly rolesService: RolesService,
   ) {}
 
   async create(
@@ -179,7 +182,7 @@ export class UsersService {
     }
   }
 
-  async findMe(userId: string): Promise<IUser> {
+  async findMe(userId: string): Promise<ICurrentUser> {
     const user = await this.db.query.users.findFirst({
       where: eq(schema.users.id, userId),
       with: {
@@ -192,7 +195,12 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    return mapUserToIUser(user as UserWithDepts);
+    const userPermissions = await this.rolesService.getPermissionsForRoleId(
+      user.roleId,
+      user.companyId,
+    );
+
+    return mapUserToICurrentUser(user as UserWithRole, userPermissions);
   }
 
   async findUserRole(userId: string): Promise<{ roleId: string } | undefined> {

@@ -5,6 +5,6 @@ export interface IUser {
     email: string;
     username: string;
     roleId: string;
-    companyId: string;
+    companyId: string | null;
     departmentIds: string[];
 }

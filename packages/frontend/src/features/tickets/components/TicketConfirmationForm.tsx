@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Check, AlertCircle, Cpu, Home, MapPin, Calendar, DollarSign, CreditCard, Tag, List } from "lucide-react";
 import type { ITicket } from "@ticket-registrator/shared";
-import { Input } from "./Input";
-import { Button } from "./Button";
+import { Input } from "../../../components/ui/Input";
+import { Button } from "../../../components/ui/Button";
 
 interface TicketConfirmationFormProps {
   ticket: ITicket;

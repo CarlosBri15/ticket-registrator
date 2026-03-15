@@ -1,11 +1,11 @@
-import { Modal } from "./Modal";
-import { Button } from "./Button";
+import { Modal } from "../../../components/ui/Modal";
+import { Button } from "../../../components/ui/Button";
+import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { useTicketImageQuery, type ITicket } from "@ticket-registrator/shared";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { MapPin, CreditCard, Tag, ExternalLink, Image as ImageIcon, Loader2 } from "lucide-react";
-import { StatusBadge } from "./StatusBadge";
 
 interface TicketDetailModalProps {
   isOpen: boolean;
@@ -79,16 +79,16 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket, reportId }: TicketD
                     </div>
                 ) : imageData?.url ? (
                     <>
-                        <img 
-                            src={imageData.url} 
-                            alt="Ticket" 
+                        <img
+                            src={imageData.url}
+                            alt="Ticket"
                             className="max-h-60 rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-500 cursor-pointer"
                             onClick={() => window.open(imageData.url, '_blank')}
                         />
                         <div className="absolute inset-0 bg-dark/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                            <a 
-                                href={imageData.url} 
-                                target="_blank" 
+                            <a
+                                href={imageData.url}
+                                target="_blank"
                                 rel="noreferrer"
                                 className="bg-white text-dark px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
                             >

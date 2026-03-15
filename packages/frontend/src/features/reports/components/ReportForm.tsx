@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createReportSchema, type CreateReportSchema, useCreateReportMutation } from "@ticket-registrator/shared";
-import { Button } from "../components/Button";
-import { Input } from "../components/Input";
+import { Button } from "../../../components/ui/Button";
+import { Input } from "../../../components/ui/Input";
 import { Banknote, Tag, AlertCircle } from "lucide-react";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
@@ -14,14 +14,15 @@ interface ReportFormProps {
 }
 
 const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "JPY", "MXN", "COP", "ARS", "BRL"];
-const TRIP_TYPES = [
-  "Viaje de Negocios",
-  "Formacion",
-  "Congreso / Evento",
-  "Cliente",
-  "Proyecto",
-  "Otro",
-];
+
+const TRIP_TYPE_KEYS = [
+  "trips.typeBusinessTrip",
+  "trips.typeTraining",
+  "trips.typeConference",
+  "trips.typeClient",
+  "trips.typeProject",
+  "trips.typeOther",
+] as const;
 
 export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
   const { t } = useTranslation();
@@ -117,8 +118,8 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
                 className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-2xl text-sm font-medium text-dark focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all appearance-none cursor-pointer"
               >
                 <option value="">{t('trips.categoryPlaceholder')}</option>
-                {TRIP_TYPES.map(tp => (
-                  <option key={tp} value={tp}>{tp}</option>
+                {TRIP_TYPE_KEYS.map(key => (
+                  <option key={key} value={t(key)}>{t(key)}</option>
                 ))}
               </select>
             </div>

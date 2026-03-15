@@ -9,11 +9,13 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { AUTHORITY_LEVELS, permissions } from '@ticket-registrator/shared';
+import { RolesService } from '../roles/roles.service';
 
 describe('UsersService', () => {
   let service: UsersService;
   let dbMock: any;
   let cryptoServiceMock: any;
+  let rolesServiceMock: any;
 
   const mockRole = {
     id: 'role-id',
@@ -79,11 +81,16 @@ describe('UsersService', () => {
       hashPassword: jest.fn().mockResolvedValue('hashed-password'),
     };
 
+    rolesServiceMock = {
+      getPermissionsForRoleId: jest.fn().mockResolvedValue(['view_users', 'create_users']),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         { provide: DB_CONNECTION, useValue: dbMock },
         { provide: CryptoService, useValue: cryptoServiceMock },
+        { provide: RolesService, useValue: rolesServiceMock },
       ],
     }).compile();
 
@@ -321,10 +328,54 @@ describe('UsersService', () => {
   // ── findMe ────────────────────────────────────────────────────────────────────
 
   describe('findMe', () => {
-    it('should return mapped user when found', async () => {
+    it('should return ICurrentUser with roleName, hierarchy and permissions', async () => {
       dbMock.query.users.findFirst.mockResolvedValue(mockUser);
+      rolesServiceMock.getPermissionsForRoleId.mockResolvedValue(['view_users', 'create_users']);
+
       const result = await service.findMe('user-1');
+
       expect(result.id).toBe('user-1');
+      expect(result.roleName).toBe('Employee');
+      expect(result.hierarchy).toBe(10);
+      expect(result.permissions).toEqual(['view_users', 'create_users']);
+    });
+
+    it('should call getPermissionsForRoleId with correct roleId and companyId', async () => {
+      dbMock.query.users.findFirst.mockResolvedValue(mockUser);
+
+      await service.findMe('user-1');
+
+      expect(rolesServiceMock.getPermissionsForRoleId).toHaveBeenCalledWith(
+        'role-id',
+        'company-1',
+      );
+    });
+
+    it('should include departmentIds in the result', async () => {
+      dbMock.query.users.findFirst.mockResolvedValue(mockUser);
+
+      const result = await service.findMe('user-1');
+
+      expect(result.departmentIds).toEqual(['dept-1']);
+    });
+
+    it('should return null companyId for SuperAdmin (no company)', async () => {
+      const superAdminUser = { ...mockUser, companyId: null };
+      dbMock.query.users.findFirst.mockResolvedValue(superAdminUser);
+      rolesServiceMock.getPermissionsForRoleId.mockResolvedValue([]);
+
+      const result = await service.findMe('superadmin-1');
+
+      expect(result.companyId).toBeNull();
+    });
+
+    it('should return empty permissions when role has none', async () => {
+      dbMock.query.users.findFirst.mockResolvedValue(mockUser);
+      rolesServiceMock.getPermissionsForRoleId.mockResolvedValue([]);
+
+      const result = await service.findMe('user-1');
+
+      expect(result.permissions).toEqual([]);
     });
 
     it('should throw NotFoundException when user not found', async () => {

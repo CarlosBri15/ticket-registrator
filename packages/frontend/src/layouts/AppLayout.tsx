@@ -12,25 +12,70 @@ import {
   ChevronRight,
   User,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Users,
+  Building2,
+  Shield,
+  Globe,
+  Lock,
 } from "lucide-react";
-import { useUserQuery } from "@ticket-registrator/shared";
+import { useUserQuery, usePermissions } from "@ticket-registrator/shared";
+import type { PermissionType } from "@ticket-registrator/shared";
 import { tokenProvider } from "../api/client";
 import { useTranslation } from "react-i18next";
-import { LanguageSelector } from "../components/LanguageSelector";
+import { LanguageSelector } from "../components/ui/LanguageSelector";
+
+interface MenuItem {
+  path: string;
+  label: string;
+  description: string;
+  icon: React.ElementType;
+  permission: PermissionType | null;
+}
+
+interface MenuSection {
+  title: string;
+  items: MenuItem[];
+}
+
+const MENU_SECTIONS: MenuSection[] = [
+  {
+    title: "Principal",
+    items: [
+      { path: "/home",    label: "Dashboard",  description: "Resumen general",    icon: LayoutDashboard, permission: null },
+      { path: "/trips",   label: "Viajes",      description: "Gestión de gastos",  icon: Plane,           permission: "view_reports" },
+      { path: "/tickets", label: "Tickets",     description: "Histórico completo", icon: Receipt,         permission: "view_tickets" },
+    ],
+  },
+  {
+    title: "Gestión",
+    items: [
+      { path: "/users",       label: "Usuarios",      description: "Gestión de equipo",   icon: Users,     permission: "view_users" },
+      { path: "/departments", label: "Departamentos", description: "Áreas de la empresa",  icon: Building2, permission: "view_departments" },
+    ],
+  },
+  {
+    title: "Administración",
+    items: [
+      { path: "/roles",       label: "Roles",     description: "Gestión de roles",    icon: Shield, permission: "view_roles" },
+      { path: "/permissions", label: "Permisos",  description: "Control de acceso",   icon: Lock,   permission: "view_permissions" },
+    ],
+  },
+  {
+    title: "Sistema",
+    items: [
+      { path: "/organizations", label: "Organizaciones", description: "Gestión global", icon: Globe, permission: "view_company" },
+    ],
+  },
+];
 
 export const AppLayout = () => {
   const { t } = useTranslation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { data: user } = useUserQuery();
+  const { can } = usePermissions();
   const navigate = useNavigate();
-
-  const MENU_ITEMS = [
-    { path: "/home", label: t('home.summary'), icon: LayoutDashboard, description: t('home.summary') },
-    { path: "/trips", label: t('trips.title'), icon: Plane, description: "Gestion de gastos" },
-    { path: "/tickets", label: "Todos los Tickets", icon: Receipt, description: "Historico completo" },
-  ];
 
   const closeMobile = () => setIsMobileOpen(false);
 
@@ -40,8 +85,55 @@ export const AppLayout = () => {
   };
 
   const userInitials = user?.name
-    ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+    ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2)
     : <User className="w-5 h-5" />;
+
+  // Filter each section's items by user permissions; drop empty sections
+  const visibleSections = MENU_SECTIONS
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.permission || can(item.permission)),
+    }))
+    .filter((section) => section.items.length > 0);
+
+  const renderNavItem = (item: MenuItem) => {
+    const Icon = item.icon;
+    return (
+      <NavLink
+        key={item.path}
+        to={item.path}
+        onClick={closeMobile}
+        title={isCollapsed ? item.label : ""}
+        className={({ isActive }) => `
+          flex items-center rounded-2xl transition-all duration-200 group relative
+          ${isCollapsed ? "justify-center p-3.5 mx-auto w-12" : "px-4 py-3.5 gap-4"}
+          ${isActive
+            ? "bg-brand text-white shadow-xl shadow-brand/20"
+            : "text-gray-400 hover:bg-white/5 hover:text-white"
+          }
+        `}
+      >
+        <Icon className={`shrink-0 transition-transform group-hover:scale-110 ${isCollapsed ? "w-6 h-6" : "w-5 h-5"}`} />
+
+        {!isCollapsed && (
+          <div className="flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 overflow-hidden">
+            <span className="font-semibold text-sm truncate">{item.label}</span>
+            <span className="text-[10px] opacity-50 font-medium truncate">{item.description}</span>
+          </div>
+        )}
+
+        {!isCollapsed && (
+          <ChevronRight className="ml-auto w-4 h-4 transition-transform duration-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1" />
+        )}
+
+        {isCollapsed && (
+          <div className="absolute left-full ml-4 px-3 py-2 bg-brand text-white text-[10px] font-bold uppercase tracking-wider rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none translate-x-2 group-hover:translate-x-0 transition-all z-[100] shadow-xl whitespace-nowrap">
+            {item.label}
+          </div>
+        )}
+      </NavLink>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-surface flex overflow-hidden font-sans text-dark">
@@ -56,6 +148,7 @@ export const AppLayout = () => {
       >
         <div className="flex flex-col h-full w-full relative">
 
+          {/* Logo */}
           <div className={`
             h-24 flex items-center border-b border-white/5 shrink-0 transition-all duration-300
             ${isCollapsed ? "px-4 justify-center" : "px-6"}
@@ -97,64 +190,32 @@ export const AppLayout = () => {
             </button>
           )}
 
-          <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
-            {!isCollapsed && (
-              <p className="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4 animate-in fade-in duration-300">
-                Menú Principal
-              </p>
-            )}
-
-            {MENU_ITEMS.map((item) => {
-              const Icon = item.icon;
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  onClick={closeMobile}
-                  title={isCollapsed ? item.label : ""}
-                  className={({ isActive }) => `
-                    flex items-center rounded-2xl transition-all duration-200 group relative
-                    ${isCollapsed ? "justify-center p-3.5 mx-auto w-12" : "px-4 py-3.5 gap-4"}
-                    ${isActive
-                      ? "bg-brand text-white shadow-xl shadow-brand/20"
-                      : "text-gray-400 hover:bg-white/5 hover:text-white"
-                    }
-                  `}
-                >
-                  <Icon className={`shrink-0 transition-transform group-hover:scale-110 ${isCollapsed ? "w-6 h-6" : "w-5 h-5"}`} />
-
-                  {!isCollapsed && (
-                    <div className="flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 overflow-hidden">
-                      <span className="font-semibold text-sm truncate">{item.label}</span>
-                      <span className="text-[10px] opacity-50 font-medium truncate">
-                        {item.description}
-                      </span>
-                    </div>
-                  )}
-
-                  {!isCollapsed && (
-                    <ChevronRight className="ml-auto w-4 h-4 transition-transform duration-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1" />
-                  )}
-
-                  {isCollapsed && (
-                    <div className="absolute left-full ml-4 px-3 py-2 bg-brand text-white text-[10px] font-bold uppercase tracking-wider rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none translate-x-2 group-hover:translate-x-0 transition-all z-[100] shadow-xl whitespace-nowrap">
-                      {item.label}
-                    </div>
-                  )}
-                </NavLink>
-              );
-            })}
+          {/* Navigation — filtered by permissions */}
+          <nav className="flex-1 px-3 py-6 space-y-6 overflow-y-auto overflow-x-hidden custom-scrollbar">
+            {visibleSections.map((section) => (
+              <div key={section.title}>
+                {!isCollapsed && (
+                  <p className="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3 animate-in fade-in duration-300">
+                    {section.title}
+                  </p>
+                )}
+                <div className="space-y-1">
+                  {section.items.map(renderNavItem)}
+                </div>
+              </div>
+            ))}
           </nav>
 
+          {/* User footer */}
           <div className="p-4 bg-white/[0.02] border-t border-white/5 shrink-0 overflow-hidden">
             <div className={`
-                p-2 rounded-2xl transition-all duration-300 mb-4
-                ${isCollapsed ? "bg-transparent flex justify-center" : "bg-transparent border border-white/10 flex items-center gap-3 p-3 hover:bg-white/5"}
+              p-2 rounded-2xl transition-all duration-300 mb-4
+              ${isCollapsed ? "bg-transparent flex justify-center" : "bg-transparent border border-white/10 flex items-center gap-3 p-3 hover:bg-white/5"}
             `}>
               <div className={`
                 shrink-0 rounded-xl bg-brand text-white font-bold flex items-center justify-center shadow-lg shadow-brand/10 border border-white/10
                 ${isCollapsed ? "w-12 h-12" : "w-10 h-10"}
-               `}>
+              `}>
                 {userInitials}
               </div>
               {!isCollapsed && (
@@ -163,7 +224,7 @@ export const AppLayout = () => {
                     {user?.name || 'Usuario'}
                   </span>
                   <span className="text-[10px] text-brand-light truncate font-bold uppercase tracking-tighter opacity-70">
-                    {user?.email?.split('@')[0] || 'Admin'}
+                    {user?.roleName || user?.email?.split('@')[0] || ''}
                   </span>
                 </div>
               )}
@@ -191,6 +252,15 @@ export const AppLayout = () => {
         </div>
       </aside>
 
+      {/* Mobile overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={closeMobile}
+        />
+      )}
+
+      {/* Main content */}
       <main className={`flex-1 flex flex-col relative min-w-0 h-screen overflow-hidden transition-all duration-300 ${isCollapsed ? "lg:ml-20" : "lg:ml-72"}`}>
         <header className="lg:hidden h-20 bg-white border-b border-gray-100 flex items-center justify-between px-6 z-40 shrink-0">
           <div className="flex items-center gap-3">
@@ -207,7 +277,6 @@ export const AppLayout = () => {
           </button>
         </header>
 
-        {/* Desktop Header for Language Selector */}
         <div className="hidden lg:flex absolute top-6 right-10 z-50">
           <LanguageSelector />
         </div>

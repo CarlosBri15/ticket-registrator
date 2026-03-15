@@ -208,6 +208,7 @@ jobs:
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
             GCP_BUCKET_NAME=${{ secrets.GCP_BUCKET_NAME }}
+            PASSWORD_PEPPER=${{ secrets.PASSWORD_PEPPER }}
             NODE_ENV=production
 
   # 3. Deploy Frontend

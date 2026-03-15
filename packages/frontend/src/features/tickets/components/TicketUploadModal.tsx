@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { Upload, File, AlertCircle, Sparkles } from "lucide-react";
-import { Modal } from "./Modal";
-import { Button } from "./Button";
+import { Modal } from "../../../components/ui/Modal";
+import { Button } from "../../../components/ui/Button";
 import { useUploadTicketMutation, useUpdateTicketMutation, useDeleteTicketMutation } from "@ticket-registrator/shared";
 import type { ITicket } from "@ticket-registrator/shared";
 import { TicketConfirmationForm } from "./TicketConfirmationForm";
@@ -77,19 +77,19 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
 
   const handleUpload = async () => {
     if (!file) return;
-    
+
     const formData = new FormData();
     formData.append('image', file); // 'image' field as expected by backend
-    
+
     uploadMutation.mutate({ reportId, formData });
   };
 
   const handleConfirm = async (updatedData: Partial<ITicket>) => {
     if (!extractedTicket) return;
-    updateMutation.mutate({ 
-      reportId, 
-      ticketId: extractedTicket.id, 
-      data: updatedData 
+    updateMutation.mutate({
+      reportId,
+      ticketId: extractedTicket.id,
+      data: updatedData
     });
   };
 
@@ -103,15 +103,15 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
   };
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={handleClose} 
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
       title={step === 'upload' ? "Subir Ticket de Gasto" : "Confirmar Datos Extraídos"}
     >
       <div className="space-y-6">
         {step === 'upload' ? (
           <>
-            <div 
+            <div
               onDragOver={onDragOver}
               onDragLeave={onDragLeave}
               onDrop={onDrop}
@@ -121,14 +121,14 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
                 ${file ? 'border-green-500/50 bg-green-50/10' : ''}
               `}
             >
-              <input 
-                type="file" 
-                className="absolute inset-0 opacity-0 cursor-pointer" 
+              <input
+                type="file"
+                className="absolute inset-0 opacity-0 cursor-pointer"
                 onChange={handleFileChange}
                 accept="image/*,application/pdf"
                 disabled={uploadMutation.isPending}
               />
-              
+
               {file ? (
                 <div className="flex flex-col items-center animate-in zoom-in-95 duration-300">
                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-4">
@@ -137,7 +137,7 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
                    <p className="text-dark font-bold text-lg mb-1">{file.name}</p>
                    <p className="text-gray-400 text-sm">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                    {!uploadMutation.isPending && (
-                     <button 
+                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setFile(null); }}
                       className="mt-4 text-xs font-bold text-red-500 hover:text-red-600 uppercase tracking-widest"
                      >

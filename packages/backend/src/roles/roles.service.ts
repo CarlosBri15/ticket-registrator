@@ -117,4 +117,12 @@ export class RolesService {
 
     return roleWithPermissions.rolePermissions.map((rp) => rp.permission.name);
   }
+
+  async getPermissionObjectsForRole(roleId: string, companyId: string | null) {
+    const roleWithPermissions =
+      await this.rolesRepository.getRolePermissionsById(roleId, companyId);
+    if (!roleWithPermissions) return [];
+
+    return roleWithPermissions.rolePermissions.map((rp) => rp.permission);
+  }
 }

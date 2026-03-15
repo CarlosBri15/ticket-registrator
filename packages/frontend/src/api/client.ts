@@ -13,7 +13,10 @@ const tokenProvider: TokenProvider = {
         localStorage.removeItem('access_token');
     },
     onUnauthorized: () => {
-        window.location.href = '/login';
+        const publicPaths = ['/login', '/register'];
+        if (!publicPaths.includes(window.location.pathname)) {
+            window.location.href = '/login';
+        }
     }
 };
 
