@@ -60,7 +60,7 @@ describe('TicketsService', () => {
     service = module.get<TicketsService>(TicketsService);
   });
 
-  const mockReport = { id: 'report-1', userId: 'user-1', status: ReportStatus.CREATED, isVisible: true, currency: 'EUR' };
+  const mockReport = { id: 'report-1', userId: 'user-1', status: ReportStatus.CREATED, deletedAt: null, currency: 'EUR' };
   const mockTicket = { id: 'ticket-1', reportId: 'report-1', userId: 'user-1', status: TicketStatus.PENDING, lifecycle: TicketLifecycle.DRAFT, version: 1 };
 
   describe('create', () => {
