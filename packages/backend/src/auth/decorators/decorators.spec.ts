@@ -16,7 +16,10 @@ describe('Auth Decorators', () => {
         mockMethod() {}
       }
 
-      const metadata = Reflect.getMetadata(ROLES_KEY, MockClass.prototype.mockMethod);
+      const metadata = Reflect.getMetadata(
+        ROLES_KEY,
+        MockClass.prototype.mockMethod,
+      );
       expect(metadata).toEqual(['Admin', 'Manager']);
     });
 
@@ -32,7 +35,10 @@ describe('Auth Decorators', () => {
         mockMethod() {}
       }
 
-      const metadata = Reflect.getMetadata(PERMISSIONS_KEY, MockClass.prototype.mockMethod);
+      const metadata = Reflect.getMetadata(
+        PERMISSIONS_KEY,
+        MockClass.prototype.mockMethod,
+      );
       expect(metadata).toEqual(['VIEW_REPORTS', 'EDIT_REPORTS']);
     });
 

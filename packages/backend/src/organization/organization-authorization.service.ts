@@ -9,15 +9,23 @@ export class OrganizationAuthorizationService {
 
   validateCanCreate(requester: UserPayload): void {
     if (requester.roleHierarchy < AUTHORITY_LEVELS.GLOBAL) {
-      this.logger.warn(`Unauthorized organization create attempt by user ${requester.id}`);
-      throw new OrganizationUnauthorizedException('Only global administrators can create organizations');
+      this.logger.warn(
+        `Unauthorized organization create attempt by user ${requester.id}`,
+      );
+      throw new OrganizationUnauthorizedException(
+        'Only global administrators can create organizations',
+      );
     }
   }
 
   validateCanViewAll(requester: UserPayload): void {
     if (requester.roleHierarchy < AUTHORITY_LEVELS.GLOBAL) {
-      this.logger.warn(`Unauthorized organization list attempt by user ${requester.id}`);
-      throw new OrganizationUnauthorizedException('Only global administrators can list all organizations');
+      this.logger.warn(
+        `Unauthorized organization list attempt by user ${requester.id}`,
+      );
+      throw new OrganizationUnauthorizedException(
+        'Only global administrators can list all organizations',
+      );
     }
   }
 
@@ -28,15 +36,23 @@ export class OrganizationAuthorizationService {
       requester.companyId === companyId;
 
     if (!isGlobal && !isCompanyAdmin) {
-      this.logger.warn(`Unauthorized organization update attempt by user ${requester.id} on company ${companyId}`);
-      throw new OrganizationUnauthorizedException('You can only update your own organization');
+      this.logger.warn(
+        `Unauthorized organization update attempt by user ${requester.id} on company ${companyId}`,
+      );
+      throw new OrganizationUnauthorizedException(
+        'You can only update your own organization',
+      );
     }
   }
 
   validateCanDelete(requester: UserPayload): void {
     if (requester.roleHierarchy < AUTHORITY_LEVELS.GLOBAL) {
-      this.logger.warn(`Unauthorized organization delete attempt by user ${requester.id}`);
-      throw new OrganizationUnauthorizedException('Only global administrators can delete organizations');
+      this.logger.warn(
+        `Unauthorized organization delete attempt by user ${requester.id}`,
+      );
+      throw new OrganizationUnauthorizedException(
+        'Only global administrators can delete organizations',
+      );
     }
   }
 }

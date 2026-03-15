@@ -6,7 +6,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: true, 
+    origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
@@ -18,4 +18,4 @@ async function bootstrap() {
 
   console.log(`Application is running on: ${await app.getUrl()}`);
 }
-bootstrap(); 
+void bootstrap();

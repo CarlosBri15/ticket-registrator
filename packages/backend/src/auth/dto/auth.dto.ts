@@ -1,4 +1,4 @@
 import { loginSchema } from '@ticket-registrator/shared';
 import { createZodDto } from 'nestjs-zod';
 
-export class LoginDto extends createZodDto(loginSchema) { }
+export class LoginDto extends createZodDto(loginSchema) {}

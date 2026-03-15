@@ -104,11 +104,19 @@ describe('ItemsRepository', () => {
   describe('bulkCreate', () => {
     it('should insert items and return created records', async () => {
       const returningMock = jest.fn().mockResolvedValue([mockItem]);
-      const valuesMock = jest.fn().mockReturnValue({ returning: returningMock });
+      const valuesMock = jest
+        .fn()
+        .mockReturnValue({ returning: returningMock });
       dbMock.insert.mockReturnValue({ values: valuesMock });
 
       const insertData = [
-        { ticketId: 'ticket-1', name: 'Coffee', amount: 4.5, currency: 'USD', status: ItemStatus.PENDING },
+        {
+          ticketId: 'ticket-1',
+          name: 'Coffee',
+          amount: 4.5,
+          currency: 'USD',
+          status: ItemStatus.PENDING,
+        },
       ];
 
       const result = await repository.bulkCreate(insertData as any);
@@ -130,12 +138,26 @@ describe('ItemsRepository', () => {
         { ...mockItem, id: 'item-2', name: 'Taxi' },
       ];
       const returningMock = jest.fn().mockResolvedValue(createdItems);
-      const valuesMock = jest.fn().mockReturnValue({ returning: returningMock });
+      const valuesMock = jest
+        .fn()
+        .mockReturnValue({ returning: returningMock });
       dbMock.insert.mockReturnValue({ values: valuesMock });
 
       const insertData = [
-        { ticketId: 'ticket-1', name: 'Coffee', amount: 4.5, currency: 'USD', status: ItemStatus.PENDING },
-        { ticketId: 'ticket-1', name: 'Taxi', amount: 12, currency: 'USD', status: ItemStatus.PENDING },
+        {
+          ticketId: 'ticket-1',
+          name: 'Coffee',
+          amount: 4.5,
+          currency: 'USD',
+          status: ItemStatus.PENDING,
+        },
+        {
+          ticketId: 'ticket-1',
+          name: 'Taxi',
+          amount: 12,
+          currency: 'USD',
+          status: ItemStatus.PENDING,
+        },
       ];
 
       const result = await repository.bulkCreate(insertData as any);
@@ -161,7 +183,9 @@ describe('ItemsRepository', () => {
       const whereMock = jest.fn().mockResolvedValue(undefined);
       dbMock.delete.mockReturnValue({ where: whereMock });
 
-      await expect(repository.bulkDeleteByTicketId('ticket-empty')).resolves.not.toThrow();
+      await expect(
+        repository.bulkDeleteByTicketId('ticket-empty'),
+      ).resolves.not.toThrow();
     });
   });
 });

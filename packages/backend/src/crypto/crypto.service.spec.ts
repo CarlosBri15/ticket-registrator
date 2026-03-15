@@ -40,7 +40,9 @@ describe('CryptoService', () => {
 
     it('should throw if PASSWORD_PEPPER is not configured', async () => {
       (configServiceMock.get as jest.Mock).mockReturnValue(undefined);
-      await expect(service.hashPassword('pass')).rejects.toThrow('PASSWORD_PEPPER is not defined');
+      await expect(service.hashPassword('pass')).rejects.toThrow(
+        'PASSWORD_PEPPER is not defined',
+      );
     });
   });
 

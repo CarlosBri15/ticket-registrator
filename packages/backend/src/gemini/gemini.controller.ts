@@ -1,4 +1,11 @@
-import { Controller, Post, UploadedFile, UseGuards, UseInterceptors, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+  BadRequestException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GeminiService } from './gemini.service';

@@ -12,7 +12,8 @@ describe('StorageService', () => {
   let mockFileBucket: any;
   let mockFile: any;
 
-  const mockSignedUrl = 'https://storage.googleapis.com/bucket/file.jpg?signed=1';
+  const mockSignedUrl =
+    'https://storage.googleapis.com/bucket/file.jpg?signed=1';
 
   beforeEach(async () => {
     mockFile = {
@@ -20,7 +21,10 @@ describe('StorageService', () => {
       getSignedUrl: jest.fn().mockResolvedValue([mockSignedUrl]),
       delete: jest.fn().mockResolvedValue(undefined),
       createWriteStream: jest.fn().mockReturnValue({
-        on: jest.fn().mockImplementation(function (event: string, cb: Function) {
+        on: jest.fn().mockImplementation(function (
+          event: string,
+          cb: Function,
+        ) {
           if (event === 'finish') setTimeout(() => cb(), 0);
           return this;
         }),
@@ -51,7 +55,9 @@ describe('StorageService', () => {
     }).compile();
 
     service = module.get<StorageService>(StorageService);
-    (service as any).storage = { bucket: jest.fn().mockReturnValue(mockFileBucket) };
+    (service as any).storage = {
+      bucket: jest.fn().mockReturnValue(mockFileBucket),
+    };
     (service as any).bucketName = 'fake-bucket';
   });
 
@@ -122,7 +128,9 @@ describe('StorageService', () => {
     it('should throw StorageFileNotFoundException if file does not exist', async () => {
       mockFile.exists.mockResolvedValue([false]);
 
-      await expect(service.findFile('missing.jpg')).rejects.toThrow(StorageFileNotFoundException);
+      await expect(service.findFile('missing.jpg')).rejects.toThrow(
+        StorageFileNotFoundException,
+      );
     });
   });
 
@@ -139,13 +147,17 @@ describe('StorageService', () => {
       error.code = 404;
       mockFile.delete.mockRejectedValue(error);
 
-      await expect(service.removeFile('missing.jpg')).rejects.toThrow(StorageFileNotFoundException);
+      await expect(service.removeFile('missing.jpg')).rejects.toThrow(
+        StorageFileNotFoundException,
+      );
     });
 
     it('should throw StorageRemoveException for other errors', async () => {
       mockFile.delete.mockRejectedValue(new Error('Unknown error'));
 
-      await expect(service.removeFile('file.jpg')).rejects.toThrow(StorageRemoveException);
+      await expect(service.removeFile('file.jpg')).rejects.toThrow(
+        StorageRemoveException,
+      );
     });
   });
 
@@ -167,8 +179,12 @@ describe('StorageService', () => {
 
     it('should throw StorageUploadException if stream errors', async () => {
       mockFile.createWriteStream.mockReturnValue({
-        on: jest.fn().mockImplementation(function (event: string, cb: Function) {
-          if (event === 'error') setTimeout(() => cb(new Error('Stream error')), 0);
+        on: jest.fn().mockImplementation(function (
+          event: string,
+          cb: Function,
+        ) {
+          if (event === 'error')
+            setTimeout(() => cb(new Error('Stream error')), 0);
           return this;
         }),
         end: jest.fn(),
@@ -180,7 +196,9 @@ describe('StorageService', () => {
         buffer: Buffer.from('bad'),
       } as Express.Multer.File;
 
-      await expect(service.uploadFile(file)).rejects.toThrow(StorageUploadException);
+      await expect(service.uploadFile(file)).rejects.toThrow(
+        StorageUploadException,
+      );
     });
   });
 });

@@ -67,7 +67,10 @@ describe('OrganizationService', () => {
       providers: [
         OrganizationService,
         { provide: OrganizationRepository, useValue: repositoryMock },
-        { provide: OrganizationAuthorizationService, useValue: authServiceMock },
+        {
+          provide: OrganizationAuthorizationService,
+          useValue: authServiceMock,
+        },
         { provide: DepartmentService, useValue: {} },
         { provide: CryptoService, useValue: cryptoServiceMock },
       ],
@@ -84,18 +87,24 @@ describe('OrganizationService', () => {
 
       const result = await service.findAll(globalRequester);
 
-      expect(authServiceMock.validateCanViewAll).toHaveBeenCalledWith(globalRequester);
+      expect(authServiceMock.validateCanViewAll).toHaveBeenCalledWith(
+        globalRequester,
+      );
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('company-1');
       expect(result[0].name).toBe('Acme Corp');
     });
 
     it('should throw OrganizationUnauthorizedException if not authorized', async () => {
-      (authServiceMock.validateCanViewAll as jest.Mock).mockImplementation(() => {
-        throw new OrganizationUnauthorizedException();
-      });
+      (authServiceMock.validateCanViewAll as jest.Mock).mockImplementation(
+        () => {
+          throw new OrganizationUnauthorizedException();
+        },
+      );
 
-      await expect(service.findAll(companyRequester)).rejects.toThrow(OrganizationUnauthorizedException);
+      await expect(service.findAll(companyRequester)).rejects.toThrow(
+        OrganizationUnauthorizedException,
+      );
     });
   });
 
@@ -114,7 +123,9 @@ describe('OrganizationService', () => {
     it('should throw OrganizationNotFoundException if not found', async () => {
       (repositoryMock.findById as jest.Mock).mockResolvedValue(undefined);
 
-      await expect(service.findOne('unknown-id')).rejects.toThrow(OrganizationNotFoundException);
+      await expect(service.findOne('unknown-id')).rejects.toThrow(
+        OrganizationNotFoundException,
+      );
     });
   });
 
@@ -125,18 +136,28 @@ describe('OrganizationService', () => {
 
     it('should update and return mapped organization', async () => {
       (repositoryMock.findById as jest.Mock).mockResolvedValue(mockCompany);
-      (repositoryMock.update as jest.Mock).mockResolvedValue({ ...mockCompany, orgName: 'New Name' });
+      (repositoryMock.update as jest.Mock).mockResolvedValue({
+        ...mockCompany,
+        orgName: 'New Name',
+      });
 
       const result = await service.update(globalRequester, 'company-1', dto);
 
-      expect(authServiceMock.validateCanUpdate).toHaveBeenCalledWith(globalRequester, 'company-1');
+      expect(authServiceMock.validateCanUpdate).toHaveBeenCalledWith(
+        globalRequester,
+        'company-1',
+      );
       expect(result.name).toBe('New Name');
     });
 
     it('should return existing organization if dto has no name', async () => {
       (repositoryMock.findById as jest.Mock).mockResolvedValue(mockCompany);
 
-      const result = await service.update(globalRequester, 'company-1', {} as any);
+      const result = await service.update(
+        globalRequester,
+        'company-1',
+        {} as any,
+      );
 
       expect(repositoryMock.update).not.toHaveBeenCalled();
       expect(result.name).toBe('Acme Corp');
@@ -145,19 +166,21 @@ describe('OrganizationService', () => {
     it('should throw OrganizationNotFoundException if company not found', async () => {
       (repositoryMock.findById as jest.Mock).mockResolvedValue(undefined);
 
-      await expect(service.update(globalRequester, 'unknown-id', dto)).rejects.toThrow(
-        OrganizationNotFoundException,
-      );
+      await expect(
+        service.update(globalRequester, 'unknown-id', dto),
+      ).rejects.toThrow(OrganizationNotFoundException);
     });
 
     it('should throw OrganizationUnauthorizedException if not authorized', async () => {
-      (authServiceMock.validateCanUpdate as jest.Mock).mockImplementation(() => {
-        throw new OrganizationUnauthorizedException();
-      });
-
-      await expect(service.update(companyRequester, 'other-company', dto)).rejects.toThrow(
-        OrganizationUnauthorizedException,
+      (authServiceMock.validateCanUpdate as jest.Mock).mockImplementation(
+        () => {
+          throw new OrganizationUnauthorizedException();
+        },
       );
+
+      await expect(
+        service.update(companyRequester, 'other-company', dto),
+      ).rejects.toThrow(OrganizationUnauthorizedException);
     });
   });
 
@@ -165,7 +188,9 @@ describe('OrganizationService', () => {
 
   describe('softDelete', () => {
     it('should soft delete and return { deleted: true }', async () => {
-      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(mockCompany);
+      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(
+        mockCompany,
+      );
       (repositoryMock.transaction as jest.Mock).mockImplementation((cb) =>
         cb({
           update: jest.fn().mockReturnThis(),
@@ -180,16 +205,20 @@ describe('OrganizationService', () => {
 
       const result = await service.softDelete(globalRequester, 'company-1');
 
-      expect(authServiceMock.validateCanDelete).toHaveBeenCalledWith(globalRequester);
+      expect(authServiceMock.validateCanDelete).toHaveBeenCalledWith(
+        globalRequester,
+      );
       expect(result).toEqual({ deleted: true });
     });
 
     it('should throw OrganizationNotFoundException if company not found', async () => {
-      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(undefined);
-
-      await expect(service.softDelete(globalRequester, 'unknown-id')).rejects.toThrow(
-        OrganizationNotFoundException,
+      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(
+        undefined,
       );
+
+      await expect(
+        service.softDelete(globalRequester, 'unknown-id'),
+      ).rejects.toThrow(OrganizationNotFoundException);
     });
 
     it('should throw OrganizationAlreadyDeletedException if already deleted', async () => {
@@ -198,19 +227,21 @@ describe('OrganizationService', () => {
         deletedAt: new Date(),
       });
 
-      await expect(service.softDelete(globalRequester, 'company-1')).rejects.toThrow(
-        OrganizationAlreadyDeletedException,
-      );
+      await expect(
+        service.softDelete(globalRequester, 'company-1'),
+      ).rejects.toThrow(OrganizationAlreadyDeletedException);
     });
 
     it('should throw OrganizationUnauthorizedException if not authorized', async () => {
-      (authServiceMock.validateCanDelete as jest.Mock).mockImplementation(() => {
-        throw new OrganizationUnauthorizedException();
-      });
-
-      await expect(service.softDelete(companyRequester, 'company-1')).rejects.toThrow(
-        OrganizationUnauthorizedException,
+      (authServiceMock.validateCanDelete as jest.Mock).mockImplementation(
+        () => {
+          throw new OrganizationUnauthorizedException();
+        },
       );
+
+      await expect(
+        service.softDelete(companyRequester, 'company-1'),
+      ).rejects.toThrow(OrganizationUnauthorizedException);
     });
   });
 
@@ -225,15 +256,21 @@ describe('OrganizationService', () => {
     it('should throw OrganizationConflictException if company name already exists', async () => {
       (repositoryMock.findByName as jest.Mock).mockResolvedValue(mockCompany);
 
-      await expect(service.onboard(globalRequester, dto)).rejects.toThrow(OrganizationConflictException);
+      await expect(service.onboard(globalRequester, dto)).rejects.toThrow(
+        OrganizationConflictException,
+      );
     });
 
     it('should throw OrganizationUnauthorizedException if requester is not global', async () => {
-      (authServiceMock.validateCanCreate as jest.Mock).mockImplementation(() => {
-        throw new OrganizationUnauthorizedException();
-      });
+      (authServiceMock.validateCanCreate as jest.Mock).mockImplementation(
+        () => {
+          throw new OrganizationUnauthorizedException();
+        },
+      );
 
-      await expect(service.onboard(companyRequester, dto)).rejects.toThrow(OrganizationUnauthorizedException);
+      await expect(service.onboard(companyRequester, dto)).rejects.toThrow(
+        OrganizationUnauthorizedException,
+      );
     });
 
     it('should throw BadRequestException if unassigned department not found', async () => {
@@ -249,7 +286,9 @@ describe('OrganizationService', () => {
         }),
       );
 
-      await expect(service.onboard(globalRequester, dto)).rejects.toThrow(BadRequestException);
+      await expect(service.onboard(globalRequester, dto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException if admin role not found', async () => {
@@ -257,7 +296,9 @@ describe('OrganizationService', () => {
       (repositoryMock.transaction as jest.Mock).mockImplementation(async (cb) =>
         cb({
           query: {
-            departments: { findFirst: jest.fn().mockResolvedValue({ id: 'unassigned-dept' }) },
+            departments: {
+              findFirst: jest.fn().mockResolvedValue({ id: 'unassigned-dept' }),
+            },
             roles: { findFirst: jest.fn().mockResolvedValue(null) },
             users: { findFirst: jest.fn() },
           },
@@ -265,7 +306,9 @@ describe('OrganizationService', () => {
         }),
       );
 
-      await expect(service.onboard(globalRequester, dto)).rejects.toThrow(BadRequestException);
+      await expect(service.onboard(globalRequester, dto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw OrganizationConflictException if admin email already in use', async () => {
@@ -273,27 +316,41 @@ describe('OrganizationService', () => {
 
       const insertMock = jest.fn().mockReturnValue({
         values: jest.fn().mockReturnValue({
-          returning: jest.fn().mockResolvedValue([{ id: 'company-new', orgName: 'New Corp' }]),
+          returning: jest
+            .fn()
+            .mockResolvedValue([{ id: 'company-new', orgName: 'New Corp' }]),
         }),
       });
 
       (repositoryMock.transaction as jest.Mock).mockImplementation(async (cb) =>
         cb({
           query: {
-            departments: { findFirst: jest.fn().mockResolvedValue({ id: 'unassigned-dept' }) },
-            roles: { findFirst: jest.fn().mockResolvedValue({ id: 'role-admin', name: 'Admin' }) },
-            users: { findFirst: jest.fn().mockResolvedValue({ id: 'existing-user' }) },
+            departments: {
+              findFirst: jest.fn().mockResolvedValue({ id: 'unassigned-dept' }),
+            },
+            roles: {
+              findFirst: jest
+                .fn()
+                .mockResolvedValue({ id: 'role-admin', name: 'Admin' }),
+            },
+            users: {
+              findFirst: jest.fn().mockResolvedValue({ id: 'existing-user' }),
+            },
           },
           insert: insertMock,
         }),
       );
 
-      await expect(service.onboard(globalRequester, dto)).rejects.toThrow(OrganizationConflictException);
+      await expect(service.onboard(globalRequester, dto)).rejects.toThrow(
+        OrganizationConflictException,
+      );
     });
 
     it('should create company and admin successfully (happy path)', async () => {
       (repositoryMock.findByName as jest.Mock).mockResolvedValue(undefined);
-      (cryptoServiceMock.hashPassword as jest.Mock).mockResolvedValue('hashed-pw');
+      (cryptoServiceMock.hashPassword as jest.Mock).mockResolvedValue(
+        'hashed-pw',
+      );
 
       const mockCreatedCompany = {
         id: 'company-new',
@@ -313,9 +370,17 @@ describe('OrganizationService', () => {
       const combinedInsert = jest.fn().mockImplementation(() => {
         insertCallIndex++;
         if (insertCallIndex === 1) {
-          return { values: jest.fn().mockReturnValue({ returning: jest.fn().mockResolvedValue([mockCreatedCompany]) }) };
+          return {
+            values: jest.fn().mockReturnValue({
+              returning: jest.fn().mockResolvedValue([mockCreatedCompany]),
+            }),
+          };
         } else if (insertCallIndex === 2) {
-          return { values: jest.fn().mockReturnValue({ returning: jest.fn().mockResolvedValue([mockCreatedAdmin]) }) };
+          return {
+            values: jest.fn().mockReturnValue({
+              returning: jest.fn().mockResolvedValue([mockCreatedAdmin]),
+            }),
+          };
         } else {
           return { values: jest.fn().mockResolvedValue([]) };
         }
@@ -324,8 +389,14 @@ describe('OrganizationService', () => {
       (repositoryMock.transaction as jest.Mock).mockImplementation(async (cb) =>
         cb({
           query: {
-            departments: { findFirst: jest.fn().mockResolvedValue({ id: 'unassigned-dept' }) },
-            roles: { findFirst: jest.fn().mockResolvedValue({ id: 'role-admin', name: 'Admin' }) },
+            departments: {
+              findFirst: jest.fn().mockResolvedValue({ id: 'unassigned-dept' }),
+            },
+            roles: {
+              findFirst: jest
+                .fn()
+                .mockResolvedValue({ id: 'role-admin', name: 'Admin' }),
+            },
             users: { findFirst: jest.fn().mockResolvedValue(null) },
           },
           insert: combinedInsert,
@@ -342,13 +413,17 @@ describe('OrganizationService', () => {
 
   describe('softDelete with users and reports', () => {
     it('should soft delete company with users and reports', async () => {
-      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(mockCompany);
+      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(
+        mockCompany,
+      );
 
       const updateMock = jest.fn().mockReturnThis();
       const setMock = jest.fn().mockReturnThis();
       const whereMock = jest.fn().mockResolvedValue([]);
 
-      const findManyUsers = jest.fn().mockResolvedValue([{ id: 'user-1' }, { id: 'user-2' }]);
+      const findManyUsers = jest
+        .fn()
+        .mockResolvedValue([{ id: 'user-1' }, { id: 'user-2' }]);
       const findManyReports = jest.fn().mockResolvedValue([{ id: 'report-1' }]);
 
       (repositoryMock.transaction as jest.Mock).mockImplementation((cb) =>
@@ -368,7 +443,9 @@ describe('OrganizationService', () => {
     });
 
     it('should soft delete company with users but no reports', async () => {
-      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(mockCompany);
+      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(
+        mockCompany,
+      );
 
       (repositoryMock.transaction as jest.Mock).mockImplementation((cb) =>
         cb({
@@ -376,7 +453,9 @@ describe('OrganizationService', () => {
           set: jest.fn().mockReturnThis(),
           where: jest.fn().mockResolvedValue([]),
           query: {
-            users: { findMany: jest.fn().mockResolvedValue([{ id: 'user-1' }]) },
+            users: {
+              findMany: jest.fn().mockResolvedValue([{ id: 'user-1' }]),
+            },
             reports: { findMany: jest.fn().mockResolvedValue([]) },
           },
         }),

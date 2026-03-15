@@ -9,7 +9,10 @@ describe('GeminiService', () => {
 
   beforeEach(async () => {
     mockGenerateContent = jest.fn().mockResolvedValue({
-      response: { text: () => JSON.stringify({ total: 42.5, currency: 'USD', date: '2024-01-15' }) },
+      response: {
+        text: () =>
+          JSON.stringify({ total: 42.5, currency: 'USD', date: '2024-01-15' }),
+      },
     });
 
     const configServiceMock = {
@@ -27,7 +30,9 @@ describe('GeminiService', () => {
         factory: (configService: ConfigService) => {
           const svc = new GeminiService(configService);
           (svc as any).genAI = {
-            getGenerativeModel: () => ({ generateContent: mockGenerateContent }),
+            getGenerativeModel: () => ({
+              generateContent: mockGenerateContent,
+            }),
           };
           return svc;
         },
@@ -57,7 +62,9 @@ describe('GeminiService', () => {
     it('should throw GeminiExtractionException if Gemini call fails', async () => {
       mockGenerateContent.mockRejectedValueOnce(new Error('API error'));
 
-      await expect(service.extractReceipt('base64-data')).rejects.toThrow(GeminiExtractionException);
+      await expect(service.extractReceipt('base64-data')).rejects.toThrow(
+        GeminiExtractionException,
+      );
     });
 
     it('should throw GeminiExtractionException if response is not valid JSON', async () => {
@@ -65,7 +72,9 @@ describe('GeminiService', () => {
         response: { text: () => 'not-valid-json{{' },
       });
 
-      await expect(service.extractReceipt('base64-data')).rejects.toThrow(GeminiExtractionException);
+      await expect(service.extractReceipt('base64-data')).rejects.toThrow(
+        GeminiExtractionException,
+      );
     });
   });
 });

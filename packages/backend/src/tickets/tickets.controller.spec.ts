@@ -48,7 +48,11 @@ describe('TicketsController', () => {
       serviceMock.create.mockResolvedValue({ id: 'ticket-1' });
 
       const result = await controller.create(requester, 'report-1', file);
-      expect(serviceMock.create).toHaveBeenCalledWith(requester, 'report-1', file);
+      expect(serviceMock.create).toHaveBeenCalledWith(
+        requester,
+        'report-1',
+        file,
+      );
       expect(result.id).toBe('ticket-1');
     });
   });
@@ -57,10 +61,23 @@ describe('TicketsController', () => {
     it('should call service.updateStatus', async () => {
       const requester = { id: 'user-1' } as any;
       const dto = { status: TicketStatus.APPROVED, approved_amount: 100 };
-      serviceMock.updateStatus.mockResolvedValue({ id: 'ticket-1', status: TicketStatus.APPROVED });
+      serviceMock.updateStatus.mockResolvedValue({
+        id: 'ticket-1',
+        status: TicketStatus.APPROVED,
+      });
 
-      const result = await controller.updateStatus(requester, 'report-1', 'ticket-1', dto);
-      expect(serviceMock.updateStatus).toHaveBeenCalledWith(requester, 'report-1', 'ticket-1', dto);
+      const result = await controller.updateStatus(
+        requester,
+        'report-1',
+        'ticket-1',
+        dto,
+      );
+      expect(serviceMock.updateStatus).toHaveBeenCalledWith(
+        requester,
+        'report-1',
+        'ticket-1',
+        dto,
+      );
       expect(result.status).toBe(TicketStatus.APPROVED);
     });
   });
@@ -81,8 +98,16 @@ describe('TicketsController', () => {
       const requester = { id: 'user-1' } as any;
       serviceMock.findOne.mockResolvedValue({ id: 'ticket-1' } as any);
 
-      const result = await controller.findOne(requester, 'report-1', 'ticket-1');
-      expect(serviceMock.findOne).toHaveBeenCalledWith(requester, 'report-1', 'ticket-1');
+      const result = await controller.findOne(
+        requester,
+        'report-1',
+        'ticket-1',
+      );
+      expect(serviceMock.findOne).toHaveBeenCalledWith(
+        requester,
+        'report-1',
+        'ticket-1',
+      );
       expect(result).toEqual({ id: 'ticket-1' });
     });
   });
@@ -94,7 +119,12 @@ describe('TicketsController', () => {
       serviceMock.update.mockResolvedValue({ id: 'ticket-1' } as any);
 
       await controller.update(requester, 'report-1', 'ticket-1', dto);
-      expect(serviceMock.update).toHaveBeenCalledWith(requester, 'report-1', 'ticket-1', dto);
+      expect(serviceMock.update).toHaveBeenCalledWith(
+        requester,
+        'report-1',
+        'ticket-1',
+        dto,
+      );
     });
   });
 
@@ -104,7 +134,11 @@ describe('TicketsController', () => {
       serviceMock.remove.mockResolvedValue({ deleted: true });
 
       const result = await controller.remove(requester, 'report-1', 'ticket-1');
-      expect(serviceMock.remove).toHaveBeenCalledWith(requester, 'report-1', 'ticket-1');
+      expect(serviceMock.remove).toHaveBeenCalledWith(
+        requester,
+        'report-1',
+        'ticket-1',
+      );
       expect(result).toEqual({ deleted: true });
     });
   });
@@ -112,10 +146,20 @@ describe('TicketsController', () => {
   describe('getImage', () => {
     it('should call service.getTicketImageUrl', async () => {
       const requester = { id: 'user-1' } as any;
-      serviceMock.getTicketImageUrl.mockResolvedValue({ url: 'https://cdn.example.com/img.jpg' });
+      serviceMock.getTicketImageUrl.mockResolvedValue({
+        url: 'https://cdn.example.com/img.jpg',
+      });
 
-      const result = await controller.getImage(requester, 'report-1', 'ticket-1');
-      expect(serviceMock.getTicketImageUrl).toHaveBeenCalledWith(requester, 'report-1', 'ticket-1');
+      const result = await controller.getImage(
+        requester,
+        'report-1',
+        'ticket-1',
+      );
+      expect(serviceMock.getTicketImageUrl).toHaveBeenCalledWith(
+        requester,
+        'report-1',
+        'ticket-1',
+      );
       expect(result.url).toBe('https://cdn.example.com/img.jpg');
     });
   });

@@ -42,7 +42,9 @@ describe('Roles Exceptions', () => {
     });
 
     it('should use custom message', () => {
-      const ex = new RoleSystemModificationException('System role cannot be changed');
+      const ex = new RoleSystemModificationException(
+        'System role cannot be changed',
+      );
       expect(ex.message).toBe('System role cannot be changed');
     });
   });

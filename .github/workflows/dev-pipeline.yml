@@ -52,7 +52,7 @@ jobs:
       - name: Build Shared Package
         run: npm run build -w @ticket-registrator/shared
       - name: Run Linter
-        continue-on-error: true
+        continue-on-error: false
         working-directory: packages/backend
         run: npm run lint
       - name: Run Unit Tests

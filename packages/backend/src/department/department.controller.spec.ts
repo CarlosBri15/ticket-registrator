@@ -8,7 +8,12 @@ describe('DepartmentController', () => {
   let controller: DepartmentController;
   let serviceMock: jest.Mocked<Partial<DepartmentService>>;
 
-  const requester = { id: 'user-1', roleHierarchy: 100, companyId: 'comp-1', departmentIds: [] } as any;
+  const requester = {
+    id: 'user-1',
+    roleHierarchy: 100,
+    companyId: 'comp-1',
+    departmentIds: [],
+  } as any;
 
   beforeEach(async () => {
     serviceMock = {
@@ -23,7 +28,10 @@ describe('DepartmentController', () => {
       controllers: [DepartmentController],
       providers: [
         { provide: DepartmentService, useValue: serviceMock },
-        { provide: RolesService, useValue: { getPermissionsForRoles: jest.fn() } },
+        {
+          provide: RolesService,
+          useValue: { getPermissionsForRoles: jest.fn() },
+        },
         Reflector,
       ],
     }).compile();
@@ -55,7 +63,10 @@ describe('DepartmentController', () => {
 
       const result = await controller.findAll(requester, 'comp-1');
 
-      expect(serviceMock.findAllByCompany).toHaveBeenCalledWith(requester, 'comp-1');
+      expect(serviceMock.findAllByCompany).toHaveBeenCalledWith(
+        requester,
+        'comp-1',
+      );
       expect(result).toBe(expected);
     });
   });
@@ -67,7 +78,11 @@ describe('DepartmentController', () => {
 
       const result = await controller.findOne(requester, 'comp-1', 'dept-1');
 
-      expect(serviceMock.findOne).toHaveBeenCalledWith(requester, 'comp-1', 'dept-1');
+      expect(serviceMock.findOne).toHaveBeenCalledWith(
+        requester,
+        'comp-1',
+        'dept-1',
+      );
       expect(result).toBe(expected);
     });
   });
@@ -78,9 +93,19 @@ describe('DepartmentController', () => {
       const expected = { id: 'dept-1', departmentName: 'Updated' };
       (serviceMock.update as jest.Mock).mockResolvedValue(expected);
 
-      const result = await controller.update(requester, 'comp-1', 'dept-1', dto);
+      const result = await controller.update(
+        requester,
+        'comp-1',
+        'dept-1',
+        dto,
+      );
 
-      expect(serviceMock.update).toHaveBeenCalledWith(requester, 'comp-1', 'dept-1', dto);
+      expect(serviceMock.update).toHaveBeenCalledWith(
+        requester,
+        'comp-1',
+        'dept-1',
+        dto,
+      );
       expect(result).toBe(expected);
     });
   });
@@ -92,7 +117,11 @@ describe('DepartmentController', () => {
 
       const result = await controller.softDelete(requester, 'comp-1', 'dept-1');
 
-      expect(serviceMock.softDelete).toHaveBeenCalledWith(requester, 'comp-1', 'dept-1');
+      expect(serviceMock.softDelete).toHaveBeenCalledWith(
+        requester,
+        'comp-1',
+        'dept-1',
+      );
       expect(result).toBe(expected);
     });
   });

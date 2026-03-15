@@ -4,7 +4,11 @@ import { CryptoService } from '../crypto/crypto.service';
 import { RolesRepository } from '../roles/roles.repository';
 import { PermissionsService } from '../permissions/permissions.service';
 import { DB_CONNECTION } from '../db/db.module';
-import { Roles, ROLE_HIERARCHY, ROLE_DEFAULT_PERMISSIONS } from '@ticket-registrator/shared';
+import {
+  Roles,
+  ROLE_HIERARCHY,
+  ROLE_DEFAULT_PERMISSIONS,
+} from '@ticket-registrator/shared';
 
 jest.mock('drizzle-orm/postgres-js/migrator', () => ({
   migrate: jest.fn().mockResolvedValue(undefined),
@@ -42,7 +46,9 @@ describe('SeedService', () => {
         users: { findFirst: jest.fn().mockResolvedValue(null) },
       },
       insert: jest.fn().mockReturnValue({
-        values: jest.fn().mockReturnValue({ returning: jest.fn().mockResolvedValue([{ id: 'user-1' }]) }),
+        values: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([{ id: 'user-1' }]),
+        }),
       }),
     };
 
@@ -72,7 +78,9 @@ describe('SeedService', () => {
         rolePermissions: { message: 'done' },
       } as any);
       jest.spyOn(service as any, 'seedSuperAdmin').mockResolvedValue(undefined);
-      jest.spyOn(service, 'seedUnassignedDepartment').mockResolvedValue(undefined);
+      jest
+        .spyOn(service, 'seedUnassignedDepartment')
+        .mockResolvedValue(undefined);
 
       await service.onApplicationBootstrap();
 
@@ -81,7 +89,9 @@ describe('SeedService', () => {
 
     it('should stop seeding if migration fails', async () => {
       const { migrate } = require('drizzle-orm/postgres-js/migrator');
-      (migrate as jest.Mock).mockRejectedValueOnce(new Error('migration failed'));
+      (migrate as jest.Mock).mockRejectedValueOnce(
+        new Error('migration failed'),
+      );
 
       jest.spyOn(service, 'seedSystemAll').mockResolvedValue({} as any);
 
@@ -91,7 +101,9 @@ describe('SeedService', () => {
     });
 
     it('should not crash if seeding throws', async () => {
-      jest.spyOn(service, 'seedSystemAll').mockRejectedValue(new Error('seed error'));
+      jest
+        .spyOn(service, 'seedSystemAll')
+        .mockRejectedValue(new Error('seed error'));
 
       await expect(service.onApplicationBootstrap()).resolves.not.toThrow();
     });
@@ -99,9 +111,15 @@ describe('SeedService', () => {
 
   describe('seedSystemAll', () => {
     it('should call all seed methods and return combined result', async () => {
-      jest.spyOn(service, 'seedDefaultPermissions').mockResolvedValue({ message: 'perms' } as any);
-      jest.spyOn(service, 'seedDefaultRoles').mockResolvedValue({ message: 'roles' } as any);
-      jest.spyOn(service, 'seedDefaultRolePermissions').mockResolvedValue({ message: 'rolePerms' } as any);
+      jest
+        .spyOn(service, 'seedDefaultPermissions')
+        .mockResolvedValue({ message: 'perms' } as any);
+      jest
+        .spyOn(service, 'seedDefaultRoles')
+        .mockResolvedValue({ message: 'roles' } as any);
+      jest
+        .spyOn(service, 'seedDefaultRolePermissions')
+        .mockResolvedValue({ message: 'rolePerms' } as any);
 
       const result = await service.seedSystemAll();
       expect(result.permissions).toEqual({ message: 'perms' });
@@ -149,7 +167,9 @@ describe('SeedService', () => {
         hierarchy: ROLE_HIERARCHY[roleName as keyof typeof ROLE_HIERARCHY],
         description: `System default role: ${roleName}`,
       }));
-      rolesRepositoryMock.findAllSystemRoles.mockResolvedValue(allExistingRoles);
+      rolesRepositoryMock.findAllSystemRoles.mockResolvedValue(
+        allExistingRoles,
+      );
       rolesRepositoryMock.create.mockClear();
       rolesRepositoryMock.update.mockClear();
 
@@ -192,13 +212,17 @@ describe('SeedService', () => {
       ]);
 
       const result = await service.seedDefaultRolePermissions();
-      expect(rolesRepositoryMock.bulkInsertRolePermissions).not.toHaveBeenCalled();
+      expect(
+        rolesRepositoryMock.bulkInsertRolePermissions,
+      ).not.toHaveBeenCalled();
       expect(result.message).toContain('already seeded');
     });
 
     it('should skip role entries not in roleMap', async () => {
       rolesRepositoryMock.findAllSystemRoles.mockResolvedValue([]);
-      rolesRepositoryMock.findAllPermissions.mockResolvedValue([{ id: 'p1', name: 'some-perm' }]);
+      rolesRepositoryMock.findAllPermissions.mockResolvedValue([
+        { id: 'p1', name: 'some-perm' },
+      ]);
       rolesRepositoryMock.findAllRolePermissions.mockResolvedValue([]);
 
       const result = await service.seedDefaultRolePermissions();
@@ -228,10 +252,14 @@ describe('SeedService', () => {
 
   describe('seedSuperAdmin (private, tested via onApplicationBootstrap)', () => {
     it('should create SuperAdmin user when not existing', async () => {
-      dbMock.query.roles.findFirst.mockResolvedValue({ id: 'superadmin-role-id' });
+      dbMock.query.roles.findFirst.mockResolvedValue({
+        id: 'superadmin-role-id',
+      });
       dbMock.query.users.findFirst.mockResolvedValue(null);
       jest.spyOn(service, 'seedSystemAll').mockResolvedValue({} as any);
-      jest.spyOn(service, 'seedUnassignedDepartment').mockResolvedValue(undefined);
+      jest
+        .spyOn(service, 'seedUnassignedDepartment')
+        .mockResolvedValue(undefined);
 
       await service.onApplicationBootstrap();
 
@@ -240,10 +268,14 @@ describe('SeedService', () => {
     });
 
     it('should skip creating SuperAdmin when already exists', async () => {
-      dbMock.query.roles.findFirst.mockResolvedValue({ id: 'superadmin-role-id' });
+      dbMock.query.roles.findFirst.mockResolvedValue({
+        id: 'superadmin-role-id',
+      });
       dbMock.query.users.findFirst.mockResolvedValue({ id: 'existing-user' });
       jest.spyOn(service, 'seedSystemAll').mockResolvedValue({} as any);
-      jest.spyOn(service, 'seedUnassignedDepartment').mockResolvedValue(undefined);
+      jest
+        .spyOn(service, 'seedUnassignedDepartment')
+        .mockResolvedValue(undefined);
       dbMock.insert.mockClear();
 
       await service.onApplicationBootstrap();
@@ -254,7 +286,9 @@ describe('SeedService', () => {
     it('should handle missing SuperAdmin role gracefully', async () => {
       dbMock.query.roles.findFirst.mockResolvedValue(null);
       jest.spyOn(service, 'seedSystemAll').mockResolvedValue({} as any);
-      jest.spyOn(service, 'seedUnassignedDepartment').mockResolvedValue(undefined);
+      jest
+        .spyOn(service, 'seedUnassignedDepartment')
+        .mockResolvedValue(undefined);
 
       await expect(service.onApplicationBootstrap()).resolves.not.toThrow();
     });

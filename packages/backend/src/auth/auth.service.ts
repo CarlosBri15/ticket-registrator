@@ -11,7 +11,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly cryptoService: CryptoService,
-  ) { }
+  ) {}
 
   async login(loginDto: LoginDto): Promise<ILoginResponse> {
     const user = await this.usersService.findByEmail(loginDto.email as string);
@@ -26,7 +26,7 @@ export class AuthService {
     if (!isValid) throw new UnauthorizedException('Invalid credentials');
 
     const role = user.role;
-    const departmentIds = (user as any).usersToDepartments.map((ud: any) => ud.departmentId);
+    const departmentIds = user.usersToDepartments.map((ud) => ud.departmentId);
 
     const payload = {
       sub: user.id,

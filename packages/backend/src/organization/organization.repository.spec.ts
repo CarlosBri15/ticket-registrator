@@ -137,7 +137,9 @@ describe('OrganizationRepository', () => {
       const updated = { ...mockCompany, orgName: 'New Name' };
       dbMock.returning.mockResolvedValue([updated]);
 
-      const result = await repository.update('company-1', { orgName: 'New Name' });
+      const result = await repository.update('company-1', {
+        orgName: 'New Name',
+      });
 
       expect(dbMock.update).toHaveBeenCalledWith(schema.companies);
       expect(result?.orgName).toBe('New Name');

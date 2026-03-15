@@ -10,11 +10,7 @@ import { ReportsModule } from '../reports/reports.module';
 @Module({
   imports: [GeminiModule, StorageModule, ReportsModule],
   controllers: [TicketsController],
-  providers: [
-    TicketsService,
-    TicketsRepository,
-    TicketsAuthorizationService
-  ],
+  providers: [TicketsService, TicketsRepository, TicketsAuthorizationService],
   exports: [TicketsService, TicketsRepository],
 })
-export class TicketsModule { }
+export class TicketsModule {}
