@@ -35,7 +35,7 @@ export class TicketsService {
 
   async create(requester: UserPayload, reportId: string, file: Express.Multer.File): Promise<ITicket> {
     const report = await this.reportsRepository.findById(reportId) as Report | undefined;
-    if (!report || !report.isVisible) throw new ReportNotFoundException(reportId);
+    if (!report || report.deletedAt) throw new ReportNotFoundException(reportId);
 
     if (!(await this.ticketsAuthService.validateCanModifyReport(requester, report))) {
       throw new TicketUnauthorizedException('You can only add tickets to your own reports');
@@ -81,7 +81,6 @@ export class TicketsService {
       convertedCurrency: geminiData.converted_currency ?? null,
       cgsBucketLinkJustification: geminiData.cgs_bucket_link_justification ?? null,
       lastFourDigits: geminiData.card_last_4 ?? null,
-      isVisible: true,
       version: 1,
     };
 
@@ -97,7 +96,7 @@ export class TicketsService {
 
   async findAll(requester: UserPayload, reportId: string): Promise<ITicket[]> {
     const report = await this.reportsRepository.findById(reportId) as Report | undefined;
-    if (!report || !report.isVisible) throw new ReportNotFoundException(reportId);
+    if (!report || report.deletedAt) throw new ReportNotFoundException(reportId);
 
     if (!(await this.ticketsAuthService.validateCanViewReport(requester, report))) {
       throw new TicketUnauthorizedException();
@@ -109,7 +108,7 @@ export class TicketsService {
 
   async findOne(requester: UserPayload, reportId: string, ticketId: string): Promise<ITicket> {
     const report = await this.reportsRepository.findById(reportId) as Report | undefined;
-    if (!report || !report.isVisible) throw new ReportNotFoundException(reportId);
+    if (!report || report.deletedAt) throw new ReportNotFoundException(reportId);
 
     if (!(await this.ticketsAuthService.validateCanViewReport(requester, report))) {
       throw new TicketUnauthorizedException();
@@ -123,7 +122,7 @@ export class TicketsService {
 
   async update(requester: UserPayload, reportId: string, ticketId: string, dto: UpdateTicketFieldsDto): Promise<ITicket> {
     const report = await this.reportsRepository.findById(reportId) as Report | undefined;
-    if (!report || !report.isVisible) throw new ReportNotFoundException(reportId);
+    if (!report || report.deletedAt) throw new ReportNotFoundException(reportId);
 
     if (!(await this.ticketsAuthService.validateCanModifyReport(requester, report))) {
       throw new TicketUnauthorizedException();
@@ -216,7 +215,7 @@ export class TicketsService {
 
   async updateStatus(requester: UserPayload, reportId: string, ticketId: string, dto: UpdateTicketStatusDto): Promise<ITicket> {
     const report = await this.reportsRepository.findById(reportId) as Report | undefined;
-    if (!report || !report.isVisible) throw new ReportNotFoundException(reportId);
+    if (!report || report.deletedAt) throw new ReportNotFoundException(reportId);
 
     if (report.status !== ReportStatus.SUBMITTED) {
       throw new TicketStatusConflictException('Tickets can only be reviewed after report submission');
@@ -248,7 +247,7 @@ export class TicketsService {
 
   async remove(requester: UserPayload, reportId: string, ticketId: string) {
     const report = await this.reportsRepository.findById(reportId) as Report | undefined;
-    if (!report || !report.isVisible) throw new ReportNotFoundException(reportId);
+    if (!report || report.deletedAt) throw new ReportNotFoundException(reportId);
 
     if (!(await this.ticketsAuthService.validateCanModifyReport(requester, report))) {
       throw new TicketUnauthorizedException();
@@ -265,8 +264,8 @@ export class TicketsService {
       ticketId,
       reportId,
       version: ticket.version,
-      oldSnapshot: { isVisible: true },
-      newSnapshot: { isVisible: false },
+      oldSnapshot: { deletedAt: null },
+      newSnapshot: { deletedAt: new Date() },
     };
 
     await this.ticketsRepository.softDelete(ticketId, historyData);

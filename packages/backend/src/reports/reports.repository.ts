@@ -13,7 +13,7 @@ export class ReportsRepository {
 
     async findById(id: string): Promise<Report | undefined> {
         return this.db.query.reports.findFirst({
-            where: eq(schema.reports.id, id),
+            where: and(eq(schema.reports.id, id), isNull(schema.reports.deletedAt)),
         });
     }
 
@@ -48,7 +48,7 @@ export class ReportsRepository {
         return this.db.query.reports.findMany({
             where: and(
                 eq(schema.reports.userId, userId),
-                eq(schema.reports.isVisible, true)
+                isNull(schema.reports.deletedAt)
             ),
         });
     }
@@ -97,7 +97,7 @@ export class ReportsRepository {
     async softDelete(id: string): Promise<boolean> {
         const [updated] = await this.db
             .update(schema.reports)
-            .set({ isVisible: false, updatedAt: new Date() })
+            .set({ deletedAt: new Date(), updatedAt: new Date() })
             .where(eq(schema.reports.id, id))
             .returning();
         return !!updated;

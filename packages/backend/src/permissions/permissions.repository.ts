@@ -14,7 +14,7 @@ export class PermissionsRepository {
 
     async findAll(): Promise<Permission[]> {
         return this.db.query.permissions.findMany({
-            where: eq(schema.permissions.isVisible, true),
+            where: isNull(schema.permissions.deletedAt),
             orderBy: [desc(schema.permissions.createdAt)],
         });
     }
@@ -23,7 +23,7 @@ export class PermissionsRepository {
         return this.db.query.permissions.findFirst({
             where: and(
                 eq(schema.permissions.id, id),
-                eq(schema.permissions.isVisible, true)
+                isNull(schema.permissions.deletedAt)
             )
         });
     }
@@ -32,7 +32,7 @@ export class PermissionsRepository {
         return this.db.query.permissions.findFirst({
             where: and(
                 eq(schema.permissions.name, name),
-                eq(schema.permissions.isVisible, true)
+                isNull(schema.permissions.deletedAt)
             )
         });
     }
@@ -75,7 +75,7 @@ export class PermissionsRepository {
             .onConflictDoUpdate({
                 target: schema.permissions.name,
                 set: {
-                    isVisible: true,
+                    deletedAt: null,
                     updatedAt: new Date(),
                 },
             });

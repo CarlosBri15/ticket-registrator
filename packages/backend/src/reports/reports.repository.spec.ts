@@ -154,8 +154,8 @@ describe('ReportsRepository', () => {
     });
 
     describe('softDelete', () => {
-        it('should update isVisible to false', async () => {
-            dbMock.returning.mockResolvedValue([{ id: 'r1', isVisible: false }]);
+        it('should update deletedAt', async () => {
+            dbMock.returning.mockResolvedValue([{ id: 'r1', deletedAt: new Date() }]);
             await repository.softDelete('r1');
             expect(dbMock.update).toHaveBeenCalledWith(schema.reports);
         });

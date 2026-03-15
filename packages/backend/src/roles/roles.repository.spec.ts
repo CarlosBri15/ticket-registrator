@@ -82,7 +82,7 @@ describe('RolesRepository', () => {
 
     describe('update', () => {
         it('should call db.update with schema.roles', async () => {
-            await repository.update('role-1', { isVisible: false });
+            await repository.update('role-1', { deletedAt: new Date() });
             expect(dbMock.update).toHaveBeenCalled();
         });
     });

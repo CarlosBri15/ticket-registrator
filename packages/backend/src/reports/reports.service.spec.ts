@@ -88,7 +88,7 @@ describe('ReportsService', () => {
       const mockReport = {
         id: 'report-1',
         userId: 'user-1',
-        isVisible: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         startDate: new Date(),
@@ -107,7 +107,7 @@ describe('ReportsService', () => {
     });
 
     it('should throw ReportUnauthorizedException if not authorized', async () => {
-      const mockReport = { id: 'report-1', userId: 'other-user', isVisible: true };
+      const mockReport = { id: 'report-1', userId: 'other-user', deletedAt: null };
       repositoryMock.findById.mockResolvedValue(mockReport);
       authServiceMock.canViewReport.mockResolvedValue(false);
 
@@ -286,7 +286,6 @@ describe('ReportsService', () => {
         start_date: new Date('2024-01-01'),
         end_date: new Date('2024-12-31'),
         type: 'TRAVEL',
-        isVisible: true,
       });
       expect(result.name).toBe('New');
     });

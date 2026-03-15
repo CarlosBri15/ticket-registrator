@@ -35,10 +35,10 @@ export const tickets = pgTable("tickets", {
   llmSuggestedCurrency: varchar("llm_suggested_currency", { length: 10 }),
   approvedAmount: integer("approved_amount").default(0).notNull(),
 
-
-  isVisible: boolean("is_visible").default(true).notNull(),
+  flag: boolean("flag").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const ticketRelations = relations(tickets, ({ one, many }) => ({

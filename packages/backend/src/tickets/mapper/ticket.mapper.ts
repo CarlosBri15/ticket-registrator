@@ -20,6 +20,7 @@ export const mapTicketToITicket = (ticketDoc: Ticket & { items?: Item[] }): ITic
   converted_currency: ticketDoc.convertedCurrency,
   cgs_bucket_link_justification: ticketDoc.cgsBucketLinkJustification,
   last_four_digits: ticketDoc.lastFourDigits,
+  flag: ticketDoc.flag,
   items: ticketDoc.items?.map(item => ({
     id: item.id,
     name: item.name,

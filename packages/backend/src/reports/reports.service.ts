@@ -47,7 +47,6 @@ export class ReportsService {
       endDate: new Date(dto.end_date!),
       currency: dto.currency,
       type: dto.type ?? '',
-      isVisible: dto.isVisible ?? true,
     } as any);
 
     this.logger.log(`Report created: ${report.id} by user ${requester.id}`);
@@ -67,7 +66,7 @@ export class ReportsService {
   async findAllReports(requester: UserPayload): Promise<IReport[]> {
     const authorityFilter = this.buildAuthorityFilter(requester);
     const { data } = await this.reportsRepository.findWithFilters({
-      where: and(authorityFilter, eq(schema.reports.isVisible, true))!,
+      where: and(authorityFilter, isNull(schema.reports.deletedAt))!,
     });
 
     return data.map(report => mapReportToIReport(report));
@@ -78,7 +77,7 @@ export class ReportsService {
     const offset = (page - 1) * limit;
 
     const authorityFilter = this.buildAuthorityFilter(requester);
-    const queryFilters: SQL[] = [eq(schema.reports.isVisible, true)];
+    const queryFilters: SQL[] = [isNull(schema.reports.deletedAt)];
 
     if (userId) queryFilters.push(eq(schema.reports.userId, userId));
     if (name) queryFilters.push(ilike(schema.reports.name, `%${name}%`));
@@ -104,7 +103,7 @@ export class ReportsService {
 
   async findOne(requester: UserPayload, reportId: string): Promise<IReport> {
     const report = await this.reportsRepository.findById(reportId);
-    if (!report || !report.isVisible) throw new ReportNotFoundException(reportId);
+    if (!report || report.deletedAt) throw new ReportNotFoundException(reportId);
 
     const allowed = await this.reportsAuthorizationService.canViewReport(requester, report);
     if (!allowed) throw new ReportUnauthorizedException();
@@ -121,7 +120,7 @@ export class ReportsService {
       and(
         eq(schema.reports.userId, requester.id),
         eq(schema.reports.status, ReportStatus.CREATED),
-        eq(schema.reports.isVisible, true)
+        isNull(schema.reports.deletedAt)
       )!
     );
 
@@ -135,7 +134,7 @@ export class ReportsService {
       { status: dto.status as string, updatedAt: new Date() },
       and(
         eq(schema.reports.status, ReportStatus.SUBMITTED),
-        eq(schema.reports.isVisible, true)
+        isNull(schema.reports.deletedAt)
       )!
     );
 
@@ -152,7 +151,7 @@ export class ReportsService {
       and(
         eq(schema.reports.userId, requester.id),
         eq(schema.reports.status, ReportStatus.CREATED),
-        eq(schema.reports.isVisible, true)
+        isNull(schema.reports.deletedAt)
       )!
     );
 
@@ -168,8 +167,8 @@ export class ReportsService {
     if (report.status !== ReportStatus.CREATED) throw new ReportStatusConflictException('Cannot remove a report after submission');
 
     await this.reportsRepository.transaction(async (tx) => {
-      await tx.update(schema.reports).set({ isVisible: false, updatedAt: new Date() }).where(eq(schema.reports.id, reportId));
-      await tx.update(schema.tickets).set({ isVisible: false, updatedAt: new Date() }).where(eq(schema.tickets.reportId, reportId));
+      await tx.update(schema.reports).set({ deletedAt: new Date(), updatedAt: new Date() }).where(eq(schema.reports.id, reportId));
+      await tx.update(schema.tickets).set({ deletedAt: new Date(), updatedAt: new Date() }).where(eq(schema.tickets.reportId, reportId));
     });
 
     this.logger.log(`Report removed (soft-delete): ${reportId} by user ${requester.id}`);
@@ -203,7 +202,6 @@ export class ReportsService {
     if (dto.start_date !== undefined) updateData.startDate = new Date(dto.start_date);
     if (dto.end_date !== undefined) updateData.endDate = new Date(dto.end_date);
     if (dto.type !== undefined) updateData.type = dto.type;
-    if (dto.isVisible !== undefined) updateData.isVisible = dto.isVisible;
     return updateData;
   }
 }

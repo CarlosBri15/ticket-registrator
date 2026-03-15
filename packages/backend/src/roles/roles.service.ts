@@ -68,7 +68,7 @@ export class RolesService {
 
     this.rolesAuthService.validateHierarchy(requester.roleHierarchy, role.hierarchy);
 
-    await this.rolesRepository.update(roleId, { isVisible: false });
+    await this.rolesRepository.update(roleId, { deletedAt: new Date() });
 
     this.logger.log(`Role soft deleted: ${roleId} by user ${requester.id}`);
     return { deleted: true };

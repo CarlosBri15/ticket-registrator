@@ -27,7 +27,7 @@ describe('mapTicketToITicket', () => {
     llmSuggestedAmount: null,
     llmSuggestedCurrency: null,
     approvedAmount: 0,
-    isVisible: true,
+    flag: false,
     deletedAt: null,
     createdAt: now,
     updatedAt: now,

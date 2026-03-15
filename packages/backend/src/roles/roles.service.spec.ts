@@ -96,7 +96,7 @@ describe('RolesService', () => {
       const result = await service.softDelete('1', 'comp-1', requester);
 
       expect(result.deleted).toBe(true);
-      expect(repositoryMock.update).toHaveBeenCalledWith('1', { isVisible: false });
+      expect(repositoryMock.update).toHaveBeenCalledWith('1', { deletedAt: expect.any(Date) });
     });
 
     it('should throw if role is system', async () => {

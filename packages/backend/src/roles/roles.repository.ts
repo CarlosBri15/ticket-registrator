@@ -16,7 +16,7 @@ export class RolesRepository {
     async findAllSystemRoles(): Promise<Role[]> {
         return this.db.query.roles.findMany({
             where: and(
-                eq(schema.roles.isVisible, true),
+                isNull(schema.roles.deletedAt),
                 isNull(schema.roles.companyId)
             ),
             orderBy: [desc(schema.roles.hierarchy)],
@@ -26,7 +26,7 @@ export class RolesRepository {
     async findAllCompanyRoles(companyId: string): Promise<Role[]> {
         return this.db.query.roles.findMany({
             where: and(
-                eq(schema.roles.isVisible, true),
+                isNull(schema.roles.deletedAt),
                 or(
                     eq(schema.roles.companyId, companyId),
                     isNull(schema.roles.companyId)
@@ -40,7 +40,7 @@ export class RolesRepository {
         return this.db.query.roles.findFirst({
             where: and(
                 eq(schema.roles.id, id),
-                eq(schema.roles.isVisible, true)
+                isNull(schema.roles.deletedAt)
             )
         });
     }
@@ -50,7 +50,7 @@ export class RolesRepository {
             where: and(
                 eq(schema.roles.name, name),
                 companyId ? eq(schema.roles.companyId, companyId) : isNull(schema.roles.companyId),
-                eq(schema.roles.isVisible, true)
+                isNull(schema.roles.deletedAt)
             )
         });
     }
@@ -98,7 +98,7 @@ export class RolesRepository {
         return this.db.query.roles.findMany({
             where: and(
                 inArray(schema.roles.name, roleNames),
-                eq(schema.roles.isVisible, true),
+                isNull(schema.roles.deletedAt),
                 or(
                     companyId ? eq(schema.roles.companyId, companyId) : isNull(schema.roles.companyId),
                     isNull(schema.roles.companyId)
@@ -118,7 +118,7 @@ export class RolesRepository {
         return this.db.query.roles.findFirst({
             where: and(
                 eq(schema.roles.id, roleId),
-                eq(schema.roles.isVisible, true),
+                isNull(schema.roles.deletedAt),
                 or(
                     companyId ? eq(schema.roles.companyId, companyId) : isNull(schema.roles.companyId),
                     isNull(schema.roles.companyId)

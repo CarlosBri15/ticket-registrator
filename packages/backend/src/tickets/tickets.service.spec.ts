@@ -61,7 +61,7 @@ describe('TicketsService', () => {
   });
 
   const mockReport = { id: 'report-1', userId: 'user-1', status: ReportStatus.CREATED, isVisible: true, currency: 'EUR' };
-  const mockTicket = { id: 'ticket-1', reportId: 'report-1', userId: 'user-1', status: TicketStatus.PENDING, lifecycle: TicketLifecycle.DRAFT, version: 1, isVisible: true };
+  const mockTicket = { id: 'ticket-1', reportId: 'report-1', userId: 'user-1', status: TicketStatus.PENDING, lifecycle: TicketLifecycle.DRAFT, version: 1 };
 
   describe('create', () => {
     it('should create a ticket successfully', async () => {
@@ -84,7 +84,7 @@ describe('TicketsService', () => {
     });
 
     it('should throw ReportNotFoundException when report is not visible', async () => {
-      reportsRepositoryMock.findById.mockResolvedValue({ ...mockReport, isVisible: false });
+      reportsRepositoryMock.findById.mockResolvedValue({ ...mockReport, deletedAt: new Date() });
       await expect(service.create(requester, 'report-1', { buffer: Buffer.from('f') } as any))
         .rejects.toThrow(ReportNotFoundException);
     });

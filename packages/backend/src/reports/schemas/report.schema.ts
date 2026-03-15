@@ -19,9 +19,9 @@ export const reports = pgTable("reports", {
     currency: varchar("currency", { length: 10 }).notNull(),
     type: varchar("type", { length: 50 }).notNull(),
     status: varchar("status", { length: 50 }).default(ReportStatus.CREATED).notNull(),
-    isVisible: boolean("is_visible").default(true).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at"),
 });
 
 export const reportRelations = relations(reports, ({ one, many }) => ({
