@@ -15,7 +15,7 @@ export class StorageService {
   private readonly bucketName: string;
 
   constructor(private readonly configService: ConfigService) {
-    const storageOptions: any = {
+    const storageOptions: { projectId?: string; keyFilename?: string } = {
       projectId: configService.get<string>('GCP_PROJECT_ID'),
     };
 
@@ -77,8 +77,8 @@ export class StorageService {
     try {
       await file.delete();
       this.logger.log(`File removed: ${fileName}`);
-    } catch (error: any) {
-      if (error.code === 404) {
+    } catch (error: unknown) {
+      if ((error as { code?: number }).code === 404) {
         throw new StorageFileNotFoundException(fileName);
       }
       this.logger.error(`Remove failed for file ${fileName}`, error);

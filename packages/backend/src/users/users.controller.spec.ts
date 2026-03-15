@@ -21,7 +21,10 @@ describe('UsersController', () => {
       controllers: [UsersController],
       providers: [
         { provide: UsersService, useValue: serviceMock },
-        { provide: RolesService, useValue: { getPermissionsForRoles: jest.fn() } },
+        {
+          provide: RolesService,
+          useValue: { getPermissionsForRoles: jest.fn() },
+        },
         Reflector,
       ],
     }).compile();
@@ -36,20 +39,42 @@ describe('UsersController', () => {
   describe('create', () => {
     it('should call service.create', async () => {
       const dto = { name: 'John', email: 'john@example.com' } as any;
-      const req = { user: { roleId: 'r1', roleName: 'Employee', roleHierarchy: 10, companyId: 'c1', departmentIds: [], permissions: [] } };
+      const req = {
+        user: {
+          roleId: 'r1',
+          roleName: 'Employee',
+          roleHierarchy: 10,
+          companyId: 'c1',
+          departmentIds: [],
+          permissions: [],
+        },
+      };
       (serviceMock.create as jest.Mock).mockResolvedValue({ id: 'user-1' });
 
-      await controller.create(dto, req);
-      expect(serviceMock.create).toHaveBeenCalledWith(dto, expect.objectContaining({ roleId: 'r1' }));
+      await controller.create(dto, req.user as any);
+      expect(serviceMock.create).toHaveBeenCalledWith(
+        dto,
+        expect.objectContaining({ roleId: 'r1' }),
+      );
     });
   });
 
   describe('findAll', () => {
     it('should call service.findAll', async () => {
-      const req = { user: { id: 'u1', roleId: 'r1', roleName: 'Employee', roleHierarchy: 10, companyId: 'c1', departmentIds: [], permissions: [] } };
+      const req = {
+        user: {
+          id: 'u1',
+          roleId: 'r1',
+          roleName: 'Employee',
+          roleHierarchy: 10,
+          companyId: 'c1',
+          departmentIds: [],
+          permissions: [],
+        },
+      };
       (serviceMock.findAll as jest.Mock).mockResolvedValue([]);
 
-      await controller.findAll(req);
+      await controller.findAll(req.user as any);
       expect(serviceMock.findAll).toHaveBeenCalled();
     });
   });
@@ -59,29 +84,56 @@ describe('UsersController', () => {
       const req = { user: { id: 'user-1' } };
       (serviceMock.findMe as jest.Mock).mockResolvedValue({ id: 'user-1' });
 
-      await controller.findMe(req);
+      await controller.findMe(req.user as any);
       expect(serviceMock.findMe).toHaveBeenCalledWith('user-1');
     });
   });
 
   describe('update', () => {
     it('should call service.update', async () => {
-      const req = { user: { id: 'u1', roleId: 'r1', roleName: 'Employee', roleHierarchy: 10, companyId: 'c1', departmentIds: [], permissions: [] } };
+      const req = {
+        user: {
+          id: 'u1',
+          roleId: 'r1',
+          roleName: 'Employee',
+          roleHierarchy: 10,
+          companyId: 'c1',
+          departmentIds: [],
+          permissions: [],
+        },
+      };
       const dto = { name: 'Updated' } as any;
       (serviceMock.update as jest.Mock).mockResolvedValue({ id: 'user-1' });
 
-      await controller.update(req, 'user-1', dto);
-      expect(serviceMock.update).toHaveBeenCalledWith('user-1', dto, expect.objectContaining({ id: 'u1' }));
+      await controller.update(req.user as any, 'user-1', dto);
+      expect(serviceMock.update).toHaveBeenCalledWith(
+        'user-1',
+        dto,
+        expect.objectContaining({ id: 'u1' }),
+      );
     });
   });
 
   describe('remove', () => {
     it('should call service.remove', async () => {
-      const req = { user: { id: 'u1', roleId: 'r1', roleName: 'Employee', roleHierarchy: 10, companyId: 'c1', departmentIds: [], permissions: [] } };
+      const req = {
+        user: {
+          id: 'u1',
+          roleId: 'r1',
+          roleName: 'Employee',
+          roleHierarchy: 10,
+          companyId: 'c1',
+          departmentIds: [],
+          permissions: [],
+        },
+      };
       (serviceMock.remove as jest.Mock).mockResolvedValue({ deleted: true });
 
-      await controller.remove('user-1', req);
-      expect(serviceMock.remove).toHaveBeenCalledWith('user-1', expect.objectContaining({ id: 'u1' }));
+      await controller.remove('user-1', req.user as any);
+      expect(serviceMock.remove).toHaveBeenCalledWith(
+        'user-1',
+        expect.objectContaining({ id: 'u1' }),
+      );
     });
   });
 });

@@ -29,7 +29,9 @@ describe('DepartmentAuthorizationService', () => {
       providers: [DepartmentAuthorizationService],
     }).compile();
 
-    service = module.get<DepartmentAuthorizationService>(DepartmentAuthorizationService);
+    service = module.get<DepartmentAuthorizationService>(
+      DepartmentAuthorizationService,
+    );
   });
 
   it('should be defined', () => {
@@ -40,27 +42,33 @@ describe('DepartmentAuthorizationService', () => {
 
   describe('validateCompanyAccess', () => {
     it('should allow global admin to access any company', () => {
-      expect(() => service.validateCompanyAccess(globalRequester, 'other-company')).not.toThrow();
+      expect(() =>
+        service.validateCompanyAccess(globalRequester, 'other-company'),
+      ).not.toThrow();
     });
 
     it('should allow user to access their own company', () => {
-      expect(() => service.validateCompanyAccess(companyRequester, 'company-1')).not.toThrow();
+      expect(() =>
+        service.validateCompanyAccess(companyRequester, 'company-1'),
+      ).not.toThrow();
     });
 
     it('should allow department user to access their own company', () => {
-      expect(() => service.validateCompanyAccess(deptRequester, 'company-1')).not.toThrow();
+      expect(() =>
+        service.validateCompanyAccess(deptRequester, 'company-1'),
+      ).not.toThrow();
     });
 
     it('should throw DepartmentUnauthorizedException for different company', () => {
-      expect(() => service.validateCompanyAccess(companyRequester, 'other-company')).toThrow(
-        DepartmentUnauthorizedException,
-      );
+      expect(() =>
+        service.validateCompanyAccess(companyRequester, 'other-company'),
+      ).toThrow(DepartmentUnauthorizedException);
     });
 
     it('should throw DepartmentUnauthorizedException for dept user in different company', () => {
-      expect(() => service.validateCompanyAccess(deptRequester, 'other-company')).toThrow(
-        DepartmentUnauthorizedException,
-      );
+      expect(() =>
+        service.validateCompanyAccess(deptRequester, 'other-company'),
+      ).toThrow(DepartmentUnauthorizedException);
     });
   });
 
@@ -68,23 +76,27 @@ describe('DepartmentAuthorizationService', () => {
 
   describe('validateCanManage', () => {
     it('should allow global admin to manage any department', () => {
-      expect(() => service.validateCanManage(globalRequester, 'any-company')).not.toThrow();
+      expect(() =>
+        service.validateCanManage(globalRequester, 'any-company'),
+      ).not.toThrow();
     });
 
     it('should allow company admin to manage their own company departments', () => {
-      expect(() => service.validateCanManage(companyRequester, 'company-1')).not.toThrow();
+      expect(() =>
+        service.validateCanManage(companyRequester, 'company-1'),
+      ).not.toThrow();
     });
 
     it('should throw DepartmentUnauthorizedException for company admin in another company', () => {
-      expect(() => service.validateCanManage(companyRequester, 'other-company')).toThrow(
-        DepartmentUnauthorizedException,
-      );
+      expect(() =>
+        service.validateCanManage(companyRequester, 'other-company'),
+      ).toThrow(DepartmentUnauthorizedException);
     });
 
     it('should throw DepartmentUnauthorizedException for department-level user', () => {
-      expect(() => service.validateCanManage(deptRequester, 'company-1')).toThrow(
-        DepartmentUnauthorizedException,
-      );
+      expect(() =>
+        service.validateCanManage(deptRequester, 'company-1'),
+      ).toThrow(DepartmentUnauthorizedException);
     });
   });
 });

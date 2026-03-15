@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { OrganizationService } from './organization.service';
 import { OnboardOrganizationDto } from './dto/onboard-organization.dto';
@@ -16,7 +25,10 @@ export class OrganizationController {
 
   @RequireAnyPermission(permissions.CREATE_COMPANY)
   @Post('onboard')
-  onboard(@CurrentUser() requester: UserPayload, @Body() dto: OnboardOrganizationDto) {
+  onboard(
+    @CurrentUser() requester: UserPayload,
+    @Body() dto: OnboardOrganizationDto,
+  ) {
     return this.organizationService.onboard(requester, dto);
   }
 

@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { DepartmentService } from './department.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
@@ -26,7 +35,10 @@ export class DepartmentController {
 
   @RequireAnyPermission(permissions.VIEW_DEPARTMENTS)
   @Get()
-  findAll(@CurrentUser() requester: UserPayload, @Param('companyId') companyId: string) {
+  findAll(
+    @CurrentUser() requester: UserPayload,
+    @Param('companyId') companyId: string,
+  ) {
     return this.departmentService.findAllByCompany(requester, companyId);
   }
 

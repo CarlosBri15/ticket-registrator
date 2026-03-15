@@ -36,7 +36,7 @@ export class GeminiService {
       ]);
 
       const responseText = result.response.text();
-      const parsed = JSON.parse(responseText);
+      const parsed = JSON.parse(responseText) as IReceiptExtraction;
 
       this.logger.log('Receipt extraction successful');
       return parsed;

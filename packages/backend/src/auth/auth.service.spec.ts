@@ -64,13 +64,17 @@ describe('AuthService', () => {
 
     it('should throw UnauthorizedException when user not found', async () => {
       usersServiceMock.findByEmail.mockResolvedValue(null);
-      await expect(service.login(loginDto as any)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto as any)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException when password is invalid', async () => {
       usersServiceMock.findByEmail.mockResolvedValue(mockUser);
       cryptoServiceMock.comparePassword.mockResolvedValue(false);
-      await expect(service.login(loginDto as any)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto as any)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should include all payload fields in the JWT', async () => {
@@ -90,7 +94,10 @@ describe('AuthService', () => {
     });
 
     it('should handle user with no role', async () => {
-      usersServiceMock.findByEmail.mockResolvedValue({ ...mockUser, role: null });
+      usersServiceMock.findByEmail.mockResolvedValue({
+        ...mockUser,
+        role: null,
+      });
       cryptoServiceMock.comparePassword.mockResolvedValue(true);
 
       const result = await service.login(loginDto as any);
@@ -98,7 +105,10 @@ describe('AuthService', () => {
     });
 
     it('should handle user with no departments', async () => {
-      usersServiceMock.findByEmail.mockResolvedValue({ ...mockUser, usersToDepartments: [] });
+      usersServiceMock.findByEmail.mockResolvedValue({
+        ...mockUser,
+        usersToDepartments: [],
+      });
       cryptoServiceMock.comparePassword.mockResolvedValue(true);
 
       const result = await service.login(loginDto as any);

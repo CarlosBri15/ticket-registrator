@@ -1,4 +1,9 @@
-import { Injectable, OnApplicationBootstrap, Inject, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnApplicationBootstrap,
+  Inject,
+  Logger,
+} from '@nestjs/common';
 import { CryptoService } from '../crypto/crypto.service';
 import { RolesRepository } from '../roles/roles.repository';
 import { PermissionsService } from '../permissions/permissions.service';
@@ -25,13 +30,16 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly cryptoService: CryptoService,
     private readonly rolesRepository: RolesRepository,
     private readonly permissionsService: PermissionsService,
-    @Inject(DB_CONNECTION) private readonly db: PostgresJsDatabase<typeof schema>,
+    @Inject(DB_CONNECTION)
+    private readonly db: PostgresJsDatabase<typeof schema>,
   ) {}
 
   async onApplicationBootstrap() {
     this.logger.log('--- AUTO MIGRATIONS START ---');
     try {
-      await migrate(this.db, { migrationsFolder: join(process.cwd(), 'drizzle') });
+      await migrate(this.db, {
+        migrationsFolder: join(process.cwd(), 'drizzle'),
+      });
       this.logger.log('--- AUTO MIGRATIONS FINISHED ---');
     } catch (error) {
       this.logger.error('--- MIGRATIONS FAILED ---', error);
@@ -54,7 +62,11 @@ export class SeedService implements OnApplicationBootstrap {
     const permsResult = await this.seedDefaultPermissions();
     const rolesResult = await this.seedDefaultRoles();
     const rolePermsResult = await this.seedDefaultRolePermissions();
-    return { permissions: permsResult, roles: rolesResult, rolePermissions: rolePermsResult };
+    return {
+      permissions: permsResult,
+      roles: rolesResult,
+      rolePermissions: rolePermsResult,
+    };
   }
 
   async seedDefaultPermissions() {
@@ -64,7 +76,7 @@ export class SeedService implements OnApplicationBootstrap {
   async seedDefaultRoles() {
     const rolesToSeed = Object.values(Roles);
     const existingRoles = await this.rolesRepository.findAllSystemRoles();
-    const existingMap = new Map(existingRoles.map(r => [r.name, r]));
+    const existingMap = new Map(existingRoles.map((r) => [r.name, r]));
 
     let seededCount = 0;
     let updatedCount = 0;
@@ -75,49 +87,80 @@ export class SeedService implements OnApplicationBootstrap {
       const description = `System default role: ${roleName}`;
 
       if (existing) {
-        if (existing.hierarchy !== hierarchy || existing.description !== description) {
-          await this.rolesRepository.update(existing.id, { hierarchy, description, isVisible: true });
+        if (
+          existing.hierarchy !== hierarchy ||
+          existing.description !== description
+        ) {
+          await this.rolesRepository.update(existing.id, {
+            hierarchy,
+            description,
+            isVisible: true,
+          });
           updatedCount++;
         }
       } else {
-        await this.rolesRepository.create({ name: roleName, hierarchy, isSystem: true, companyId: null, description });
+        await this.rolesRepository.create({
+          name: roleName,
+          hierarchy,
+          isSystem: true,
+          companyId: null,
+          description,
+        });
         seededCount++;
       }
     }
 
-    this.logger.log(`Seeding roles: ${seededCount} new, ${updatedCount} updated`);
-    return { message: `Processed ${rolesToSeed.length} system roles (${seededCount} new, ${updatedCount} updated)` };
+    this.logger.log(
+      `Seeding roles: ${seededCount} new, ${updatedCount} updated`,
+    );
+    return {
+      message: `Processed ${rolesToSeed.length} system roles (${seededCount} new, ${updatedCount} updated)`,
+    };
   }
 
   async seedDefaultRolePermissions() {
     const allRoles = await this.rolesRepository.findAllSystemRoles();
     const allPerms = await this.rolesRepository.findAllPermissions();
 
-    const roleMap = new Map(allRoles.map(r => [r.name, r.id]));
-    const permMap = new Map(allPerms.map(p => [p.name, p.id]));
+    const roleMap = new Map(allRoles.map((r) => [r.name, r.id]));
+    const permMap = new Map(allPerms.map((p) => [p.name, p.id]));
 
-    const existingMappings = await this.rolesRepository.findAllRolePermissions(null);
-    const existingSet = new Set(existingMappings.map(rp => `${rp.roleId}-${rp.permissionId}`));
+    const existingMappings =
+      await this.rolesRepository.findAllRolePermissions(null);
+    const existingSet = new Set(
+      existingMappings.map((rp) => `${rp.roleId}-${rp.permissionId}`),
+    );
 
     const valuesToInsert: InsertRolePermission[] = [];
 
-    for (const [roleName, assignedPerms] of Object.entries(ROLE_DEFAULT_PERMISSIONS)) {
+    for (const [roleName, assignedPerms] of Object.entries(
+      ROLE_DEFAULT_PERMISSIONS,
+    )) {
       const roleId = roleMap.get(roleName);
       if (!roleId) continue;
       for (const permName of assignedPerms) {
         const permId = permMap.get(permName);
         if (!permId) continue;
         if (!existingSet.has(`${roleId}-${permId}`)) {
-          valuesToInsert.push({ roleId, permissionId: permId, companyId: null });
+          valuesToInsert.push({
+            roleId,
+            permissionId: permId,
+            companyId: null,
+          });
         }
       }
     }
 
-    if (valuesToInsert.length === 0) return { message: 'All default role-permissions already seeded' };
+    if (valuesToInsert.length === 0)
+      return { message: 'All default role-permissions already seeded' };
 
     await this.rolesRepository.bulkInsertRolePermissions(valuesToInsert);
-    this.logger.log(`Seeded ${valuesToInsert.length} role-permissions mappings`);
-    return { message: `Seeded ${valuesToInsert.length} role-permissions mappings` };
+    this.logger.log(
+      `Seeded ${valuesToInsert.length} role-permissions mappings`,
+    );
+    return {
+      message: `Seeded ${valuesToInsert.length} role-permissions mappings`,
+    };
   }
 
   async seedUnassignedDepartment() {
@@ -127,9 +170,11 @@ export class SeedService implements OnApplicationBootstrap {
     if (!existing) {
       await this.db.insert(schema.departments).values({
         departmentName: UNASSIGNED_DEPARTMENT_NAME,
-        companyId: null as any,
+        companyId: null,
       });
-      this.logger.log(`Global '${UNASSIGNED_DEPARTMENT_NAME}' department seeded.`);
+      this.logger.log(
+        `Global '${UNASSIGNED_DEPARTMENT_NAME}' department seeded.`,
+      );
     }
   }
 
@@ -148,14 +193,17 @@ export class SeedService implements OnApplicationBootstrap {
     });
 
     if (!existingSuperAdmin) {
-      await this.db.insert(schema.users).values({
-        name: 'Super',
-        surname: 'Admin',
-        username: 'SuperAdmin',
-        email: 'superadmin@system.com',
-        password: await this.cryptoService.hashPassword('SuperAdmin'),
-        roleId: superAdminRole.id,
-      }).returning();
+      await this.db
+        .insert(schema.users)
+        .values({
+          name: 'Super',
+          surname: 'Admin',
+          username: 'SuperAdmin',
+          email: 'superadmin@system.com',
+          password: await this.cryptoService.hashPassword('SuperAdmin'),
+          roleId: superAdminRole.id,
+        })
+        .returning();
       this.logger.log('SuperAdmin user created successfully');
     } else {
       this.logger.log('SuperAdmin user already exists.');

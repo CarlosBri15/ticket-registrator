@@ -1,7 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
-import { UpdateReportFieldsDto, UpdateReportStatusDto } from './dto/update-report.dto';
+import {
+  UpdateReportFieldsDto,
+  UpdateReportStatusDto,
+} from './dto/update-report.dto';
 import { permissions } from '@ticket-registrator/shared';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -12,11 +25,14 @@ import type { UserPayload } from '../auth/decorators/current-user.decorator';
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @Controller('reports')
 export class ReportsController {
-  constructor(private readonly reportsService: ReportsService) { }
+  constructor(private readonly reportsService: ReportsService) {}
 
   @RequireAnyPermission(permissions.CREATE_REPORTS)
   @Post()
-  create(@CurrentUser() user: UserPayload, @Body() createReportDto: CreateReportDto) {
+  create(
+    @CurrentUser() user: UserPayload,
+    @Body() createReportDto: CreateReportDto,
+  ) {
     return this.reportsService.create(user, createReportDto);
   }
 
@@ -45,13 +61,16 @@ export class ReportsController {
       name,
       startDate,
       endDate,
-      status: status as any,
+      status,
     });
   }
 
   @RequireAnyPermission(permissions.VIEW_REPORTS)
   @Get('user/:userId')
-  findUserReports(@CurrentUser() user: UserPayload, @Param('userId') userId?: string) {
+  findUserReports(
+    @CurrentUser() user: UserPayload,
+    @Param('userId') userId?: string,
+  ) {
     return this.reportsService.findUserReports(user, userId ?? user.id);
   }
 

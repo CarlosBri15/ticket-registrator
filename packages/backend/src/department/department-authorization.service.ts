@@ -12,8 +12,12 @@ export class DepartmentAuthorizationService {
     const isSameCompany = requester.companyId === companyId;
 
     if (!isGlobal && !isSameCompany) {
-      this.logger.warn(`User ${requester.id} tried to access departments of company ${companyId}`);
-      throw new DepartmentUnauthorizedException('You can only access departments within your own company');
+      this.logger.warn(
+        `User ${requester.id} tried to access departments of company ${companyId}`,
+      );
+      throw new DepartmentUnauthorizedException(
+        'You can only access departments within your own company',
+      );
     }
   }
 
@@ -24,8 +28,12 @@ export class DepartmentAuthorizationService {
       requester.companyId === companyId;
 
     if (!isGlobal && !isCompanyAdmin) {
-      this.logger.warn(`User ${requester.id} tried to manage departments of company ${companyId}`);
-      throw new DepartmentUnauthorizedException('Only company administrators or higher can manage departments');
+      this.logger.warn(
+        `User ${requester.id} tried to manage departments of company ${companyId}`,
+      );
+      throw new DepartmentUnauthorizedException(
+        'Only company administrators or higher can manage departments',
+      );
     }
   }
 }

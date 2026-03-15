@@ -14,13 +14,7 @@ export const receiptSchema = {
         city: { type: SchemaType.STRING },
         formatted_address: { type: SchemaType.STRING },
       },
-      required: [
-        'street',
-        'number',
-        'zip_code',
-        'city',
-        'formatted_address',
-      ],
+      required: ['street', 'number', 'zip_code', 'city', 'formatted_address'],
     },
 
     date: { type: SchemaType.STRING },

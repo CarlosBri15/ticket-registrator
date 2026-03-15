@@ -15,7 +15,10 @@ export class ReportsAuthorizationService {
     return user;
   }
 
-  async canViewUserReports(requester: UserPayload, targetUserId: string): Promise<boolean> {
+  async canViewUserReports(
+    requester: UserPayload,
+    targetUserId: string,
+  ): Promise<boolean> {
     if (requester.id === targetUserId) return true;
 
     const targetUser = await this.getVisibleUser(targetUserId);
@@ -36,17 +39,22 @@ export class ReportsAuthorizationService {
     if (
       requesterHierarchy >= AUTHORITY_LEVELS.DEPARTMENT &&
       targetUser.companyId === requester.companyId &&
-      targetDeptIds.some(id => requester.departmentIds.includes(id)) &&
+      targetDeptIds.some((id) => requester.departmentIds.includes(id)) &&
       targetHierarchy < requesterHierarchy
     ) {
       return true;
     }
 
-    this.logger.warn(`Authorization failed: User ${requester.id} attempted to view reports of user ${targetUserId}`);
+    this.logger.warn(
+      `Authorization failed: User ${requester.id} attempted to view reports of user ${targetUserId}`,
+    );
     return false;
   }
 
-  async canViewReport(requester: UserPayload, report: any): Promise<boolean> {
+  async canViewReport(
+    requester: UserPayload,
+    report: { userId: string },
+  ): Promise<boolean> {
     return this.canViewUserReports(requester, report.userId);
   }
 }

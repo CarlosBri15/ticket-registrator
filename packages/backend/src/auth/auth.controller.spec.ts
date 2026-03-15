@@ -25,11 +25,16 @@ describe('AuthController', () => {
   });
 
   describe('login', () => {
-    const loginDto = { email: 'user@example.com', password: 'password123' } as any;
+    const loginDto = {
+      email: 'user@example.com',
+      password: 'password123',
+    } as any;
 
     it('should call authService.login, set cookie, and return access_token', async () => {
       const token = 'jwt-token';
-      (serviceMock.login as jest.Mock).mockResolvedValue({ access_token: token });
+      (serviceMock.login as jest.Mock).mockResolvedValue({
+        access_token: token,
+      });
 
       const resMock = { cookie: jest.fn() } as any;
 
@@ -45,10 +50,14 @@ describe('AuthController', () => {
     });
 
     it('should propagate UnauthorizedException from service', async () => {
-      (serviceMock.login as jest.Mock).mockRejectedValue(new UnauthorizedException('Invalid credentials'));
+      (serviceMock.login as jest.Mock).mockRejectedValue(
+        new UnauthorizedException('Invalid credentials'),
+      );
       const resMock = { cookie: jest.fn() } as any;
 
-      await expect(controller.login(loginDto, resMock)).rejects.toThrow(UnauthorizedException);
+      await expect(controller.login(loginDto, resMock)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 

@@ -9,8 +9,9 @@ import { DEFAULT_DEPARTMENTS } from '@ticket-registrator/shared';
 @Injectable()
 export class DepartmentRepository {
   constructor(
-    @Inject(DB_CONNECTION) private readonly db: PostgresJsDatabase<typeof schema>,
-  ) { }
+    @Inject(DB_CONNECTION)
+    private readonly db: PostgresJsDatabase<typeof schema>,
+  ) {}
 
   async findAllByCompany(companyId: string): Promise<Department[]> {
     return this.db.query.departments.findMany({
@@ -21,7 +22,10 @@ export class DepartmentRepository {
     });
   }
 
-  async findOne(companyId: string, departmentId: string): Promise<Department | undefined> {
+  async findOne(
+    companyId: string,
+    departmentId: string,
+  ): Promise<Department | undefined> {
     return this.db.query.departments.findFirst({
       where: and(
         eq(schema.departments.id, departmentId),
@@ -31,7 +35,10 @@ export class DepartmentRepository {
     });
   }
 
-  async findByIdIncludingDeleted(companyId: string, departmentId: string): Promise<Department | undefined> {
+  async findByIdIncludingDeleted(
+    companyId: string,
+    departmentId: string,
+  ): Promise<Department | undefined> {
     return this.db.query.departments.findFirst({
       where: and(
         eq(schema.departments.id, departmentId),
@@ -40,7 +47,10 @@ export class DepartmentRepository {
     });
   }
 
-  async findByName(companyId: string, name: string): Promise<Department | undefined> {
+  async findByName(
+    companyId: string,
+    name: string,
+  ): Promise<Department | undefined> {
     return this.db.query.departments.findFirst({
       where: and(
         eq(schema.departments.companyId, companyId),
@@ -66,11 +76,17 @@ export class DepartmentRepository {
   }
 
   async create(data: InsertDepartment): Promise<Department> {
-    const [department] = await this.db.insert(schema.departments).values(data).returning();
+    const [department] = await this.db
+      .insert(schema.departments)
+      .values(data)
+      .returning();
     return department;
   }
 
-  async update(departmentId: string, data: Partial<InsertDepartment>): Promise<Department | undefined> {
+  async update(
+    departmentId: string,
+    data: Partial<InsertDepartment>,
+  ): Promise<Department | undefined> {
     const [updated] = await this.db
       .update(schema.departments)
       .set({ ...data, updatedAt: new Date() })
@@ -80,12 +96,22 @@ export class DepartmentRepository {
   }
 
   async seedDefaultDepartments(companyId: string): Promise<Department[]> {
-    return this.db.insert(schema.departments).values(
-      DEFAULT_DEPARTMENTS.map((name) => ({ companyId, departmentName: name })),
-    ).returning();
+    return this.db
+      .insert(schema.departments)
+      .values(
+        DEFAULT_DEPARTMENTS.map((name) => ({
+          companyId,
+          departmentName: name,
+        })),
+      )
+      .returning();
   }
 
-  async transaction<T>(callback: (tx: any) => Promise<T>): Promise<T> {
-    return this.db.transaction(callback);
+  async transaction<T>(
+    callback: (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
+  ): Promise<T> {
+    return this.db.transaction(
+      callback as (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
+    );
   }
 }

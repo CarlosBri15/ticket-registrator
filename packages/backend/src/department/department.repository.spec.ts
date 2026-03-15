@@ -53,7 +53,9 @@ describe('DepartmentRepository', () => {
 
       const result = await repository.findAllByCompany('company-1');
 
-      expect(dbMock.query.departments.findMany).toHaveBeenCalledWith({ where: expect.anything() });
+      expect(dbMock.query.departments.findMany).toHaveBeenCalledWith({
+        where: expect.anything(),
+      });
       expect(result).toEqual([mockDepartment]);
     });
   });
@@ -85,7 +87,10 @@ describe('DepartmentRepository', () => {
       const deleted = { ...mockDepartment, deletedAt: new Date() };
       dbMock.query.departments.findFirst.mockResolvedValue(deleted);
 
-      const result = await repository.findByIdIncludingDeleted('company-1', 'dept-1');
+      const result = await repository.findByIdIncludingDeleted(
+        'company-1',
+        'dept-1',
+      );
 
       expect(result?.deletedAt).not.toBeNull();
     });
@@ -130,7 +135,10 @@ describe('DepartmentRepository', () => {
     it('should insert and return the created department', async () => {
       dbMock.returning.mockResolvedValue([mockDepartment]);
 
-      const result = await repository.create({ companyId: 'company-1', departmentName: 'Finance' });
+      const result = await repository.create({
+        companyId: 'company-1',
+        departmentName: 'Finance',
+      });
 
       expect(dbMock.insert).toHaveBeenCalledWith(schema.departments);
       expect(result).toEqual(mockDepartment);
@@ -144,7 +152,9 @@ describe('DepartmentRepository', () => {
       const updated = { ...mockDepartment, departmentName: 'Operations' };
       dbMock.returning.mockResolvedValue([updated]);
 
-      const result = await repository.update('dept-1', { departmentName: 'Operations' });
+      const result = await repository.update('dept-1', {
+        departmentName: 'Operations',
+      });
 
       expect(dbMock.update).toHaveBeenCalledWith(schema.departments);
       expect(result?.departmentName).toBe('Operations');
@@ -153,7 +163,9 @@ describe('DepartmentRepository', () => {
     it('should return undefined if not found', async () => {
       dbMock.returning.mockResolvedValue([]);
 
-      const result = await repository.update('non-existent', { departmentName: 'X' });
+      const result = await repository.update('non-existent', {
+        departmentName: 'X',
+      });
 
       expect(result).toBeUndefined();
     });
@@ -163,7 +175,11 @@ describe('DepartmentRepository', () => {
 
   describe('findCompanyById', () => {
     it('should return company if found', async () => {
-      const mockCompany = { id: 'company-1', orgName: 'Acme Corp', deletedAt: null };
+      const mockCompany = {
+        id: 'company-1',
+        orgName: 'Acme Corp',
+        deletedAt: null,
+      };
       dbMock.query.companies.findFirst.mockResolvedValue(mockCompany);
 
       const result = await repository.findCompanyById('company-1');

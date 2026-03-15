@@ -16,14 +16,22 @@ export class RolesService {
   constructor(
     private readonly rolesRepository: RolesRepository,
     private readonly rolesAuthService: RolesAuthorizationService,
-  ) { }
+  ) {}
 
   async create(companyId: string, dto: CreateRoleDto, requester: UserPayload) {
-    this.rolesAuthService.validateHierarchy(requester.roleHierarchy, dto.hierarchy!);
+    this.rolesAuthService.validateHierarchy(
+      requester.roleHierarchy,
+      dto.hierarchy!,
+    );
 
-    const existing = await this.rolesRepository.findByNameAndCompany(dto.name!, companyId);
+    const existing = await this.rolesRepository.findByNameAndCompany(
+      dto.name!,
+      companyId,
+    );
     if (existing) {
-      throw new RoleConflictException(`Role "${dto.name}" already exists in your company`);
+      throw new RoleConflictException(
+        `Role "${dto.name}" already exists in your company`,
+      );
     }
 
     const role = await this.rolesRepository.create({
@@ -63,10 +71,15 @@ export class RolesService {
     }
 
     if (role.isSystem) {
-      throw new RoleSystemModificationException('System roles cannot be deleted');
+      throw new RoleSystemModificationException(
+        'System roles cannot be deleted',
+      );
     }
 
-    this.rolesAuthService.validateHierarchy(requester.roleHierarchy, role.hierarchy);
+    this.rolesAuthService.validateHierarchy(
+      requester.roleHierarchy,
+      role.hierarchy,
+    );
 
     await this.rolesRepository.update(roleId, { deletedAt: new Date() });
 
@@ -74,8 +87,15 @@ export class RolesService {
     return { deleted: true };
   }
 
-  async getPermissionsForRoles(roleNames: string[], companyId: string | null): Promise<string[]> {
-    const rolesWithPermissions = await this.rolesRepository.getRolePermissionsByNames(roleNames, companyId);
+  async getPermissionsForRoles(
+    roleNames: string[],
+    companyId: string | null,
+  ): Promise<string[]> {
+    const rolesWithPermissions =
+      await this.rolesRepository.getRolePermissionsByNames(
+        roleNames,
+        companyId,
+      );
 
     const permissionNames = new Set<string>();
     for (const role of rolesWithPermissions) {
@@ -87,10 +107,14 @@ export class RolesService {
     return [...permissionNames];
   }
 
-  async getPermissionsForRoleId(roleId: string, companyId: string | null): Promise<string[]> {
-    const roleWithPermissions = await this.rolesRepository.getRolePermissionsById(roleId, companyId);
+  async getPermissionsForRoleId(
+    roleId: string,
+    companyId: string | null,
+  ): Promise<string[]> {
+    const roleWithPermissions =
+      await this.rolesRepository.getRolePermissionsById(roleId, companyId);
     if (!roleWithPermissions) return [];
 
-    return roleWithPermissions.rolePermissions.map(rp => rp.permission.name);
+    return roleWithPermissions.rolePermissions.map((rp) => rp.permission.name);
   }
 }

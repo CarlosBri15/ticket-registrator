@@ -1,5 +1,9 @@
 import { mapTicketToITicket } from './ticket.mapper';
-import { TicketStatus, TicketLifecycle, ItemStatus } from '@ticket-registrator/shared';
+import {
+  TicketStatus,
+  TicketLifecycle,
+  ItemStatus,
+} from '@ticket-registrator/shared';
 
 describe('mapTicketToITicket', () => {
   const now = new Date('2024-05-10T09:00:00.000Z');
@@ -74,7 +78,11 @@ describe('mapTicketToITicket', () => {
   });
 
   it('should fallback to current ISO string when createdAt is undefined', () => {
-    const result = mapTicketToITicket({ ...baseTicket, createdAt: undefined as any, items: [] });
+    const result = mapTicketToITicket({
+      ...baseTicket,
+      createdAt: undefined as any,
+      items: [],
+    });
     expect(result.createdAt).toBeTruthy();
     expect(typeof result.createdAt).toBe('string');
   });
@@ -117,8 +125,26 @@ describe('mapTicketToITicket', () => {
 
   it('should map multiple items correctly', () => {
     const items = [
-      { id: 'item-1', ticketId: 'ticket-1', name: 'Coffee', amount: 4.5, currency: 'USD', status: ItemStatus.PENDING, createdAt: now, updatedAt: now },
-      { id: 'item-2', ticketId: 'ticket-1', name: 'Taxi', amount: 12.0, currency: 'USD', status: ItemStatus.APPROVED, createdAt: now, updatedAt: now },
+      {
+        id: 'item-1',
+        ticketId: 'ticket-1',
+        name: 'Coffee',
+        amount: 4.5,
+        currency: 'USD',
+        status: ItemStatus.PENDING,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: 'item-2',
+        ticketId: 'ticket-1',
+        name: 'Taxi',
+        amount: 12.0,
+        currency: 'USD',
+        status: ItemStatus.APPROVED,
+        createdAt: now,
+        updatedAt: now,
+      },
     ];
 
     const result = mapTicketToITicket({ ...baseTicket, items });

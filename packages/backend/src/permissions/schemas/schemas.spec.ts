@@ -1,5 +1,8 @@
 import { permissions } from './permission.schema';
-import { rolePermissions, rolePermissionsRelations } from './role-permission.schema';
+import {
+  rolePermissions,
+  rolePermissionsRelations,
+} from './role-permission.schema';
 
 describe('Permissions Schemas', () => {
   it('should export permissions table', () => {

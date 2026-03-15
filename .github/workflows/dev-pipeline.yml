@@ -14,7 +14,6 @@ jobs:
       frontend: ${{ steps.filter.outputs.frontend }}
       mobile: ${{ steps.filter.outputs.mobile }}
       shared: ${{ steps.filter.outputs.shared }}
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -32,30 +31,48 @@ jobs:
               - 'packages/shared/**'
             shared:
               - 'packages/shared/**'
-      - id: set-matrix
-        run: |
-          MATRIX="["
-          if [ "${{ steps.filter.outputs.backend }}" == "true" ]; then MATRIX="${MATRIX}\"backend\","; fi
-          if [ "${{ steps.filter.outputs.frontend }}" == "true" ]; then MATRIX="${MATRIX}\"frontend\","; fi
-          if [ "${{ steps.filter.outputs.mobile }}" == "true" ]; then MATRIX="${MATRIX}\"mobile\","; fi
-          if [ "${{ steps.filter.outputs.shared }}" == "true" ]; then MATRIX="${MATRIX}\"shared\","; fi
-          if [ "$MATRIX" == "[" ]; then
-            MATRIX="[]"
-          else
-            MATRIX="${MATRIX%,}]"
-          fi
-          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
-  # 1. CI: Tests, Lint and Sonar Analysis
-  ci:
-    name: CI (${{ matrix.project }})
+  # 1. CI Jobs per project
+  ci-backend:
+    name: CI (backend)
     needs: changes
-    if: ${{ needs.changes.outputs.matrix != '[]' }}
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        project: ${{ fromJSON(needs.changes.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Run Linter
+        continue-on-error: false
+        working-directory: packages/backend
+        run: npm run lint
+      - name: Run Unit Tests
+        working-directory: packages/backend
+        run: npm test -- --coverage --watchAll=false
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: packages/backend
+          args: >
+            -Dsonar.qualitygate.wait=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  ci-frontend:
+    name: CI (frontend)
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -71,15 +88,85 @@ jobs:
         run: npm run build -w @ticket-registrator/shared
       - name: Run Linter
         continue-on-error: true
-        working-directory: packages/${{ matrix.project }}
+        working-directory: packages/frontend
         run: npm run lint
       - name: Run Unit Tests
-        working-directory: packages/${{ matrix.project }}
+        working-directory: packages/frontend
         run: npm test -- --coverage --watchAll=false
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         with:
-          projectBaseDir: packages/${{ matrix.project }}
+          projectBaseDir: packages/frontend
+          args: >
+            -Dsonar.qualitygate.wait=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  ci-mobile:
+    name: CI (mobile)
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Run Linter
+        continue-on-error: true
+        working-directory: packages/mobile
+        run: npm run lint
+      - name: Run Unit Tests
+        working-directory: packages/mobile
+        run: npm test -- --coverage --watchAll=false
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: packages/mobile
+          args: >
+            -Dsonar.qualitygate.wait=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  ci-shared:
+    name: CI (shared)
+    needs: changes
+    if: needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Run Linter
+        continue-on-error: true
+        working-directory: packages/shared
+        run: npm run lint
+      - name: Run Unit Tests
+        working-directory: packages/shared
+        run: npm test -- --coverage --watchAll=false
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: packages/shared
           args: >
             -Dsonar.qualitygate.wait=true
         env:
@@ -89,8 +176,8 @@ jobs:
   # 2. Deploy Backend
   deploy-backend:
     name: Deploy Backend
-    needs: [changes, ci]
-    if: ${{ always() && needs.changes.outputs.backend == 'true' && (needs.ci.result == 'success' || needs.ci.result == 'skipped') }}
+    needs: [changes, ci-backend]
+    if: always() && needs.changes.outputs.backend == 'true' && (needs.ci-backend.result == 'success' || needs.ci-backend.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
@@ -126,8 +213,8 @@ jobs:
   # 3. Deploy Frontend
   deploy-frontend:
     name: Deploy Frontend
-    needs: [changes, ci]
-    if: ${{ always() && needs.changes.outputs.frontend == 'true' && (needs.ci.result == 'success' || needs.ci.result == 'skipped') }}
+    needs: [changes, ci-frontend]
+    if: always() && needs.changes.outputs.frontend == 'true' && (needs.ci-frontend.result == 'success' || needs.ci-frontend.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -180,7 +267,7 @@ jobs:
   # 5. Alert on Failure (ANY PART)
   notify-failure:
     name: Notify Failure
-    needs: [ci, deploy-backend, deploy-frontend]
+    needs: [ci-backend, ci-frontend, ci-mobile, ci-shared, deploy-backend, deploy-frontend]
     runs-on: ubuntu-latest
     if: failure()
     steps:

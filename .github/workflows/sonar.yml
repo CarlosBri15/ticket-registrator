@@ -3,11 +3,11 @@ name: SonarQube Monorepo Analysis
 on:
   push:
     branches:
-      - main
+      - dev
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - dev 
+      - dev
 
 jobs:
   # 0. Detect Changes
@@ -18,7 +18,6 @@ jobs:
       frontend: ${{ steps.filter.outputs.frontend }}
       mobile: ${{ steps.filter.outputs.mobile }}
       shared: ${{ steps.filter.outputs.shared }}
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -36,86 +35,223 @@ jobs:
               - 'packages/shared/**'
             shared:
               - 'packages/shared/**'
-      - id: set-matrix
-        run: |
-          MATRIX="["
-          if [ "${{ steps.filter.outputs.backend }}" == "true" ]; then MATRIX="${MATRIX}\"backend\","; fi
-          if [ "${{ steps.filter.outputs.frontend }}" == "true" ]; then MATRIX="${MATRIX}\"frontend\","; fi
-          if [ "${{ steps.filter.outputs.mobile }}" == "true" ]; then MATRIX="${MATRIX}\"mobile\","; fi
-          if [ "${{ steps.filter.outputs.shared }}" == "true" ]; then MATRIX="${MATRIX}\"shared\","; fi
-          if [ "$MATRIX" == "[" ]; then
-            MATRIX="[]"
-          else
-            MATRIX="${MATRIX%,}]"
-          fi
-          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
-  sonarcloud:
-    name: Analyze ${{ matrix.project }}
+  analyze-backend:
+    name: Analyze backend
     needs: changes
-    if: ${{ needs.changes.outputs.matrix != '[]' }}
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        project: ${{ fromJSON(needs.changes.outputs.matrix) }}
-
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: package-lock.json
-
       - name: Install dependencies
         run: npm install
-
       - name: Build Shared Package
         run: npm run build -w @ticket-registrator/shared
-
       - name: Run Linter
         continue-on-error: true
-        working-directory: packages/${{ matrix.project }}
+        working-directory: packages/backend
         run: npm run lint
-
       - name: Run Unit Tests
-        working-directory: packages/${{ matrix.project }}
+        working-directory: packages/backend
         run: npm test -- --coverage --watchAll=false
-
-      - name: SonarCloud Scan (${{ matrix.project }})
+      - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         with:
-          projectBaseDir: packages/${{ matrix.project }}
+          projectBaseDir: packages/backend
           args: >
             -Dsonar.qualitygate.wait=true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
       - name: Notify CI Status (Discord)
         if: always()
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_CI }}
           status: ${{ job.status }}
-          title: "CI: ${{ matrix.project }}"
+          title: "CI: backend"
           description: "Tests, Lint and Sonar analysis completed."
           url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           noprefix: true
-
       - name: Notify Alert on Failure (Discord)
         if: failure()
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_ALERTS }}
           status: ${{ job.status }}
-          content: "@here ⚠️ El flujo de CI ha fallado en el paquete **${{ matrix.project }}**"
-          title: "CI FAILURE: ${{ matrix.project }}"
+          content: "@here ⚠️ El flujo de CI ha fallado en el paquete **backend**"
+          title: "CI FAILURE: backend"
+          description: "Revisa los logs y el estado de SonarCloud para más detalles."
+          url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          color: 0xff0000
+
+  analyze-frontend:
+    name: Analyze frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Run Linter
+        continue-on-error: true
+        working-directory: packages/frontend
+        run: npm run lint
+      - name: Run Unit Tests
+        working-directory: packages/frontend
+        run: npm test -- --coverage --watchAll=false
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: packages/frontend
+          args: >
+            -Dsonar.qualitygate.wait=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Notify CI Status (Discord)
+        if: always()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_CI }}
+          status: ${{ job.status }}
+          title: "CI: frontend"
+          description: "Tests, Lint and Sonar analysis completed."
+          url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          noprefix: true
+      - name: Notify Alert on Failure (Discord)
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_ALERTS }}
+          status: ${{ job.status }}
+          content: "@here ⚠️ El flujo de CI ha fallado en el paquete **frontend**"
+          title: "CI FAILURE: frontend"
+          description: "Revisa los logs y el estado de SonarCloud para más detalles."
+          url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          color: 0xff0000
+
+  analyze-mobile:
+    name: Analyze mobile
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Run Linter
+        continue-on-error: true
+        working-directory: packages/mobile
+        run: npm run lint
+      - name: Run Unit Tests
+        working-directory: packages/mobile
+        run: npm test -- --coverage --watchAll=false
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: packages/mobile
+          args: >
+            -Dsonar.qualitygate.wait=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Notify CI Status (Discord)
+        if: always()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_CI }}
+          status: ${{ job.status }}
+          title: "CI: mobile"
+          description: "Tests, Lint and Sonar analysis completed."
+          url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          noprefix: true
+      - name: Notify Alert on Failure (Discord)
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_ALERTS }}
+          status: ${{ job.status }}
+          content: "@here ⚠️ El flujo de CI ha fallado en el paquete **mobile**"
+          title: "CI FAILURE: mobile"
+          description: "Revisa los logs y el estado de SonarCloud para más detalles."
+          url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          color: 0xff0000
+
+  analyze-shared:
+    name: Analyze shared
+    needs: changes
+    if: needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Run Linter
+        continue-on-error: true
+        working-directory: packages/shared
+        run: npm run lint
+      - name: Run Unit Tests
+        working-directory: packages/shared
+        run: npm test -- --coverage --watchAll=false
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: packages/shared
+          args: >
+            -Dsonar.qualitygate.wait=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Notify CI Status (Discord)
+        if: always()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_CI }}
+          status: ${{ job.status }}
+          title: "CI: shared"
+          description: "Tests, Lint and Sonar analysis completed."
+          url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          noprefix: true
+      - name: Notify Alert on Failure (Discord)
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_ALERTS }}
+          status: ${{ job.status }}
+          content: "@here ⚠️ El flujo de CI ha fallado en el paquete **shared**"
+          title: "CI FAILURE: shared"
           description: "Revisa los logs y el estado de SonarCloud para más detalles."
           url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           color: 0xff0000

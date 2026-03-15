@@ -74,41 +74,59 @@ describe('DepartmentService', () => {
     const dto = { name: 'Marketing' } as any;
 
     it('should create and return mapped department', async () => {
-      (repositoryMock.findCompanyById as jest.Mock).mockResolvedValue({ id: 'company-1' });
+      (repositoryMock.findCompanyById as jest.Mock).mockResolvedValue({
+        id: 'company-1',
+      });
       (repositoryMock.findByName as jest.Mock).mockResolvedValue(undefined);
-      (repositoryMock.create as jest.Mock).mockResolvedValue({ ...mockDepartment, departmentName: 'Marketing' });
+      (repositoryMock.create as jest.Mock).mockResolvedValue({
+        ...mockDepartment,
+        departmentName: 'Marketing',
+      });
 
       const result = await service.create(companyRequester, 'company-1', dto);
 
-      expect(authServiceMock.validateCanManage).toHaveBeenCalledWith(companyRequester, 'company-1');
+      expect(authServiceMock.validateCanManage).toHaveBeenCalledWith(
+        companyRequester,
+        'company-1',
+      );
       expect(result.name).toBe('Marketing');
     });
 
     it('should throw DepartmentNotFoundException if company not found', async () => {
-      (repositoryMock.findCompanyById as jest.Mock).mockResolvedValue(undefined);
-
-      await expect(service.create(companyRequester, 'company-1', dto)).rejects.toThrow(
-        DepartmentNotFoundException,
+      (repositoryMock.findCompanyById as jest.Mock).mockResolvedValue(
+        undefined,
       );
+
+      await expect(
+        service.create(companyRequester, 'company-1', dto),
+      ).rejects.toThrow(DepartmentNotFoundException);
     });
 
     it('should throw DepartmentConflictException if department name already exists', async () => {
-      (repositoryMock.findCompanyById as jest.Mock).mockResolvedValue({ id: 'company-1' });
-      (repositoryMock.findByName as jest.Mock).mockResolvedValue(mockDepartment);
-
-      await expect(service.create(companyRequester, 'company-1', { name: 'Finance' } as any)).rejects.toThrow(
-        DepartmentConflictException,
+      (repositoryMock.findCompanyById as jest.Mock).mockResolvedValue({
+        id: 'company-1',
+      });
+      (repositoryMock.findByName as jest.Mock).mockResolvedValue(
+        mockDepartment,
       );
+
+      await expect(
+        service.create(companyRequester, 'company-1', {
+          name: 'Finance',
+        } as any),
+      ).rejects.toThrow(DepartmentConflictException);
     });
 
     it('should throw DepartmentUnauthorizedException if not authorized', async () => {
-      (authServiceMock.validateCanManage as jest.Mock).mockImplementation(() => {
-        throw new DepartmentUnauthorizedException();
-      });
-
-      await expect(service.create(lowRequester, 'company-1', dto)).rejects.toThrow(
-        DepartmentUnauthorizedException,
+      (authServiceMock.validateCanManage as jest.Mock).mockImplementation(
+        () => {
+          throw new DepartmentUnauthorizedException();
+        },
       );
+
+      await expect(
+        service.create(lowRequester, 'company-1', dto),
+      ).rejects.toThrow(DepartmentUnauthorizedException);
     });
   });
 
@@ -116,23 +134,33 @@ describe('DepartmentService', () => {
 
   describe('findAllByCompany', () => {
     it('should return mapped departments', async () => {
-      (repositoryMock.findAllByCompany as jest.Mock).mockResolvedValue([mockDepartment]);
+      (repositoryMock.findAllByCompany as jest.Mock).mockResolvedValue([
+        mockDepartment,
+      ]);
 
-      const result = await service.findAllByCompany(companyRequester, 'company-1');
+      const result = await service.findAllByCompany(
+        companyRequester,
+        'company-1',
+      );
 
-      expect(authServiceMock.validateCompanyAccess).toHaveBeenCalledWith(companyRequester, 'company-1');
+      expect(authServiceMock.validateCompanyAccess).toHaveBeenCalledWith(
+        companyRequester,
+        'company-1',
+      );
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('Finance');
     });
 
     it('should throw DepartmentUnauthorizedException if not authorized', async () => {
-      (authServiceMock.validateCompanyAccess as jest.Mock).mockImplementation(() => {
-        throw new DepartmentUnauthorizedException();
-      });
-
-      await expect(service.findAllByCompany(lowRequester, 'other-company')).rejects.toThrow(
-        DepartmentUnauthorizedException,
+      (authServiceMock.validateCompanyAccess as jest.Mock).mockImplementation(
+        () => {
+          throw new DepartmentUnauthorizedException();
+        },
       );
+
+      await expect(
+        service.findAllByCompany(lowRequester, 'other-company'),
+      ).rejects.toThrow(DepartmentUnauthorizedException);
     });
   });
 
@@ -142,7 +170,11 @@ describe('DepartmentService', () => {
     it('should return mapped department if found', async () => {
       (repositoryMock.findOne as jest.Mock).mockResolvedValue(mockDepartment);
 
-      const result = await service.findOne(companyRequester, 'company-1', 'dept-1');
+      const result = await service.findOne(
+        companyRequester,
+        'company-1',
+        'dept-1',
+      );
 
       expect(result.id).toBe('dept-1');
       expect(result.name).toBe('Finance');
@@ -151,9 +183,9 @@ describe('DepartmentService', () => {
     it('should throw DepartmentNotFoundException if not found', async () => {
       (repositoryMock.findOne as jest.Mock).mockResolvedValue(undefined);
 
-      await expect(service.findOne(companyRequester, 'company-1', 'unknown')).rejects.toThrow(
-        DepartmentNotFoundException,
-      );
+      await expect(
+        service.findOne(companyRequester, 'company-1', 'unknown'),
+      ).rejects.toThrow(DepartmentNotFoundException);
     });
   });
 
@@ -162,18 +194,34 @@ describe('DepartmentService', () => {
   describe('update', () => {
     it('should update and return mapped department', async () => {
       (repositoryMock.findOne as jest.Mock).mockResolvedValue(mockDepartment);
-      (repositoryMock.update as jest.Mock).mockResolvedValue({ ...mockDepartment, departmentName: 'Operations' });
+      (repositoryMock.update as jest.Mock).mockResolvedValue({
+        ...mockDepartment,
+        departmentName: 'Operations',
+      });
 
-      const result = await service.update(companyRequester, 'company-1', 'dept-1', { name: 'Operations' } as any);
+      const result = await service.update(
+        companyRequester,
+        'company-1',
+        'dept-1',
+        { name: 'Operations' } as any,
+      );
 
-      expect(authServiceMock.validateCanManage).toHaveBeenCalledWith(companyRequester, 'company-1');
+      expect(authServiceMock.validateCanManage).toHaveBeenCalledWith(
+        companyRequester,
+        'company-1',
+      );
       expect(result.name).toBe('Operations');
     });
 
     it('should return existing department if dto has no name', async () => {
       (repositoryMock.findOne as jest.Mock).mockResolvedValue(mockDepartment);
 
-      const result = await service.update(companyRequester, 'company-1', 'dept-1', {} as any);
+      const result = await service.update(
+        companyRequester,
+        'company-1',
+        'dept-1',
+        {} as any,
+      );
 
       expect(repositoryMock.update).not.toHaveBeenCalled();
       expect(result.name).toBe('Finance');
@@ -183,7 +231,9 @@ describe('DepartmentService', () => {
       (repositoryMock.findOne as jest.Mock).mockResolvedValue(undefined);
 
       await expect(
-        service.update(companyRequester, 'company-1', 'unknown', { name: 'X' } as any),
+        service.update(companyRequester, 'company-1', 'unknown', {
+          name: 'X',
+        } as any),
       ).rejects.toThrow(DepartmentNotFoundException);
     });
   });
@@ -192,8 +242,12 @@ describe('DepartmentService', () => {
 
   describe('softDelete', () => {
     it('should soft delete and return { deleted: true }', async () => {
-      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(mockDepartment);
-      (repositoryMock.findUnassigned as jest.Mock).mockResolvedValue({ id: 'unassigned-dept' });
+      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(
+        mockDepartment,
+      );
+      (repositoryMock.findUnassigned as jest.Mock).mockResolvedValue({
+        id: 'unassigned-dept',
+      });
       (repositoryMock.transaction as jest.Mock).mockImplementation((cb) =>
         cb({
           update: jest.fn().mockReturnThis(),
@@ -208,18 +262,27 @@ describe('DepartmentService', () => {
         }),
       );
 
-      const result = await service.softDelete(companyRequester, 'company-1', 'dept-1');
+      const result = await service.softDelete(
+        companyRequester,
+        'company-1',
+        'dept-1',
+      );
 
-      expect(authServiceMock.validateCanManage).toHaveBeenCalledWith(companyRequester, 'company-1');
+      expect(authServiceMock.validateCanManage).toHaveBeenCalledWith(
+        companyRequester,
+        'company-1',
+      );
       expect(result).toEqual({ deleted: true });
     });
 
     it('should throw DepartmentNotFoundException if department not found', async () => {
-      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(undefined);
-
-      await expect(service.softDelete(companyRequester, 'company-1', 'unknown')).rejects.toThrow(
-        DepartmentNotFoundException,
+      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(
+        undefined,
       );
+
+      await expect(
+        service.softDelete(companyRequester, 'company-1', 'unknown'),
+      ).rejects.toThrow(DepartmentNotFoundException);
     });
 
     it('should throw DepartmentAlreadyDeletedException if already deleted', async () => {
@@ -228,27 +291,34 @@ describe('DepartmentService', () => {
         deletedAt: new Date(),
       });
 
-      await expect(service.softDelete(companyRequester, 'company-1', 'dept-1')).rejects.toThrow(
-        DepartmentAlreadyDeletedException,
-      );
+      await expect(
+        service.softDelete(companyRequester, 'company-1', 'dept-1'),
+      ).rejects.toThrow(DepartmentAlreadyDeletedException);
     });
 
     it('should throw DepartmentConflictException if Unassigned department not found', async () => {
-      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(mockDepartment);
+      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(
+        mockDepartment,
+      );
       (repositoryMock.findUnassigned as jest.Mock).mockResolvedValue(undefined);
 
-      await expect(service.softDelete(companyRequester, 'company-1', 'dept-1')).rejects.toThrow(
-        DepartmentConflictException,
-      );
+      await expect(
+        service.softDelete(companyRequester, 'company-1', 'dept-1'),
+      ).rejects.toThrow(DepartmentConflictException);
     });
 
     it('should reassign users to unassigned dept when userIds.length > 0', async () => {
-      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(mockDepartment);
-      (repositoryMock.findUnassigned as jest.Mock).mockResolvedValue({ id: 'unassigned-dept' });
+      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(
+        mockDepartment,
+      );
+      (repositoryMock.findUnassigned as jest.Mock).mockResolvedValue({
+        id: 'unassigned-dept',
+      });
 
-      const findManySpy = jest.fn()
-        .mockResolvedValueOnce([{ userId: 'user-1' }])  // users in the dept
-        .mockResolvedValueOnce([]);                       // no remaining depts → insert to unassigned
+      const findManySpy = jest
+        .fn()
+        .mockResolvedValueOnce([{ userId: 'user-1' }]) // users in the dept
+        .mockResolvedValueOnce([]); // no remaining depts → insert to unassigned
 
       (repositoryMock.transaction as jest.Mock).mockImplementation((cb: any) =>
         cb({
@@ -262,15 +332,24 @@ describe('DepartmentService', () => {
         }),
       );
 
-      const result = await service.softDelete(companyRequester, 'company-1', 'dept-1');
+      const result = await service.softDelete(
+        companyRequester,
+        'company-1',
+        'dept-1',
+      );
       expect(result).toEqual({ deleted: true });
     });
 
     it('should NOT reassign user to unassigned when they still have other departments', async () => {
-      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(mockDepartment);
-      (repositoryMock.findUnassigned as jest.Mock).mockResolvedValue({ id: 'unassigned-dept' });
+      (repositoryMock.findByIdIncludingDeleted as jest.Mock).mockResolvedValue(
+        mockDepartment,
+      );
+      (repositoryMock.findUnassigned as jest.Mock).mockResolvedValue({
+        id: 'unassigned-dept',
+      });
 
-      const findManySpy = jest.fn()
+      const findManySpy = jest
+        .fn()
         .mockResolvedValueOnce([{ userId: 'user-1' }])
         .mockResolvedValueOnce([{ userId: 'user-1', departmentId: 'other' }]);
 
@@ -286,7 +365,11 @@ describe('DepartmentService', () => {
         }),
       );
 
-      const result = await service.softDelete(companyRequester, 'company-1', 'dept-1');
+      const result = await service.softDelete(
+        companyRequester,
+        'company-1',
+        'dept-1',
+      );
       expect(result).toEqual({ deleted: true });
     });
   });
@@ -295,11 +378,15 @@ describe('DepartmentService', () => {
 
   describe('seedDefaultDepartments', () => {
     it('should return mapped departments from repository', async () => {
-      (repositoryMock.seedDefaultDepartments as jest.Mock).mockResolvedValue([mockDepartment]);
+      (repositoryMock.seedDefaultDepartments as jest.Mock).mockResolvedValue([
+        mockDepartment,
+      ]);
 
       const result = await service.seedDefaultDepartments('company-1');
 
-      expect(repositoryMock.seedDefaultDepartments).toHaveBeenCalledWith('company-1');
+      expect(repositoryMock.seedDefaultDepartments).toHaveBeenCalledWith(
+        'company-1',
+      );
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('Finance');
     });

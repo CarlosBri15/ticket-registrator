@@ -56,13 +56,16 @@ describe('ReportsController', () => {
 
   describe('findAllPaginated', () => {
     it('should call service with correct parameters', async () => {
-      mockReportsService.findAllReportsPaginated.mockResolvedValue({ data: [], total: 0 });
+      mockReportsService.findAllReportsPaginated.mockResolvedValue({
+        data: [],
+        total: 0,
+      });
 
       await controller.findAllPaginated(mockUserPayload as any, '1', '10');
 
       expect(service.findAllReportsPaginated).toHaveBeenCalledWith(
         mockUserPayload,
-        expect.objectContaining({ page: 1, limit: 10 })
+        expect.objectContaining({ page: 1, limit: 10 }),
       );
     });
   });
@@ -71,20 +74,32 @@ describe('ReportsController', () => {
     it('should call service.updateStatus', async () => {
       const dto = { status: 'Approved' } as any;
       await controller.updateStatus(mockUserPayload as any, 'rep-1', dto);
-      expect(service.updateStatus).toHaveBeenCalledWith(mockUserPayload, 'rep-1', dto);
+      expect(service.updateStatus).toHaveBeenCalledWith(
+        mockUserPayload,
+        'rep-1',
+        dto,
+      );
     });
   });
 
   describe('submitReport', () => {
     it('should call service.submitReport', async () => {
       await controller.submitReport(mockUserPayload as any, 'rep-1');
-      expect(service.submitReport).toHaveBeenCalledWith(mockUserPayload, 'rep-1');
+      expect(service.submitReport).toHaveBeenCalledWith(
+        mockUserPayload,
+        'rep-1',
+      );
     });
   });
 
   describe('create', () => {
     it('should call service.create', async () => {
-      const dto = { name: 'Trip', start_date: '2024-01-01', end_date: '2024-01-05', currency: 'USD' } as any;
+      const dto = {
+        name: 'Trip',
+        start_date: '2024-01-01',
+        end_date: '2024-01-05',
+        currency: 'USD',
+      } as any;
       mockReportsService.create.mockResolvedValue({ id: 'rep-1' });
 
       const result = await controller.create(mockUserPayload as any, dto);
@@ -107,14 +122,20 @@ describe('ReportsController', () => {
       mockReportsService.findUserReports.mockResolvedValue([]);
 
       await controller.findUserReports(mockUserPayload as any, 'target-user');
-      expect(service.findUserReports).toHaveBeenCalledWith(mockUserPayload, 'target-user');
+      expect(service.findUserReports).toHaveBeenCalledWith(
+        mockUserPayload,
+        'target-user',
+      );
     });
 
     it('should use requester id when no userId is given', async () => {
       mockReportsService.findUserReports.mockResolvedValue([]);
 
       await controller.findUserReports(mockUserPayload as any, undefined);
-      expect(service.findUserReports).toHaveBeenCalledWith(mockUserPayload, mockUserPayload.id);
+      expect(service.findUserReports).toHaveBeenCalledWith(
+        mockUserPayload,
+        mockUserPayload.id,
+      );
     });
   });
 
@@ -131,10 +152,17 @@ describe('ReportsController', () => {
   describe('update', () => {
     it('should call service.update', async () => {
       const dto = { name: 'Updated' } as any;
-      mockReportsService.update.mockResolvedValue({ id: 'rep-1', name: 'Updated' } as any);
+      mockReportsService.update.mockResolvedValue({
+        id: 'rep-1',
+        name: 'Updated',
+      } as any);
 
       await controller.update(mockUserPayload as any, 'rep-1', dto);
-      expect(service.update).toHaveBeenCalledWith(mockUserPayload, 'rep-1', dto);
+      expect(service.update).toHaveBeenCalledWith(
+        mockUserPayload,
+        'rep-1',
+        dto,
+      );
     });
   });
 
