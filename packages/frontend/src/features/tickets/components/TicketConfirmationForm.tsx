@@ -86,7 +86,7 @@ export const TicketConfirmationForm = ({
     setFormData((prev) => ({ ...prev, [name as FieldKey]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     onConfirm({
       location_name:    formData.location_name    || null,

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Wallet,
   Plane,
@@ -43,7 +44,42 @@ import type { Locale } from "date-fns";
 import type { IReport } from "@ticket-registrator/shared";
 import { getMonthlyExpenses, getExpensesByType } from "../../utils/reportAnalytics";
 
+// ---------- Helpers ----------
+
+const getStatusClasses = (status: string) => {
+  const s = status.toUpperCase();
+  if (s === "APPROVED" || s === ReportStatus.APPROVED.toUpperCase()) return "bg-green-50 text-green-600";
+  if (s === "DECLINED" || s === "REJECTED" || s === ReportStatus.DECLINED.toUpperCase()) return "bg-red-50 text-accent";
+  return "bg-gray-50 text-gray-400";
+};
+
+const getReportsSummary = (reports: IReport[]) => {
+  return reports.reduce((acc, r) => {
+    const status = r.status.toUpperCase();
+    if (["CREATED", "DRAFT", "PENDING", "SUBMITTED"].includes(status)) acc.active.push(r);
+    if (["APPROVED", "PAID", "REJECTED", "DECLINED"].includes(status)) acc.completed.push(r);
+    if (status === "SUBMITTED") acc.pending.push(r);
+    return acc;
+  }, { active: [] as IReport[], completed: [] as IReport[], pending: [] as IReport[] });
+};
+
+const getAmountsSummary = (reports: IReport[]) => {
+  return reports.reduce((acc, r) => {
+    const s = r.status.toUpperCase();
+    if (s === "SUBMITTED") acc.pending += r.requested_amount;
+    if (s === "APPROVED") acc.approved += (r.approved_amount || 0);
+    if (s === "DECLINED" || s === "REJECTED") acc.rejectedCount++;
+    return acc;
+  }, { pending: 0, approved: 0, rejectedCount: 0 });
+};
+
 // ---------- Sub-components ----------
+
+const StatusBadgeSmall = ({ status }: { status: string }) => (
+  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${getStatusClasses(status)}`}>
+    {status.charAt(0).toUpperCase()}
+  </div>
+);
 
 const ActiveTripCard = ({
   currentTrip,
@@ -409,6 +445,66 @@ const DashboardHeader = ({
   </div>
 );
 
+const TeamKpis = ({ teamMemberCount, pendingCount, t }: { teamMemberCount: number; pendingCount: number; t: any }) => (
+  <>
+    <StatCard
+      title={t("home.teamMembers")}
+      value={teamMemberCount.toString()}
+      icon={<Users className="w-5 h-5" />}
+      subtitle={t("home.activeMembers")}
+    />
+    <div className={`relative overflow-hidden rounded-[2rem] p-6 flex flex-col gap-4 border shadow-sm transition-all duration-300 ${pendingCount > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-gray-100"}`}>
+      {pendingCount > 0 && (
+        <div className="absolute top-0 right-0 w-36 h-36 bg-amber-100/50 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      )}
+      <div className="relative z-10 flex items-start justify-between">
+        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${pendingCount > 0 ? "text-amber-600" : "text-gray-400"}`}>
+          {t("home.pendingApprovals")}
+        </p>
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${pendingCount > 0 ? "bg-amber-100 text-amber-600" : "bg-gray-50 text-gray-300"}`}>
+          <AlertCircle className="w-5 h-5" />
+        </div>
+      </div>
+      <h3 className={`relative z-10 text-3xl font-black tracking-tighter ${pendingCount > 0 ? "text-amber-700" : "text-dark"}`}>
+        {pendingCount}
+      </h3>
+      <p className={`relative z-10 text-xs font-bold ${pendingCount > 0 ? "text-amber-600/70" : "text-gray-400"}`}>
+        {pendingCount > 0 ? t("home.requiresReview") : t("home.noPending")}
+      </p>
+    </div>
+  </>
+);
+
+const UserKpis = ({ activeCount, rejectedCount, t }: { activeCount: number; rejectedCount: number; t: any }) => (
+  <>
+    <StatCard
+      title={t("home.activeTrips")}
+      value={activeCount.toString()}
+      icon={<Plane className="w-5 h-5" />}
+      subtitle={t("home.activeTripsSubtitle")}
+    />
+    <div className={`relative overflow-hidden rounded-[2rem] p-6 flex flex-col gap-4 border shadow-sm transition-all duration-300 ${rejectedCount > 0 ? "bg-accent/5 border-accent/20" : "bg-white border-gray-100"}`}>
+      {rejectedCount > 0 && (
+        <div className="absolute top-0 right-0 w-36 h-36 bg-accent/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      )}
+      <div className="relative z-10 flex items-start justify-between">
+        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${rejectedCount > 0 ? "text-accent/70" : "text-gray-400"}`}>
+          {t("home.rejectedItems")}
+        </p>
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${rejectedCount > 0 ? "bg-accent/10 text-accent" : "bg-gray-50 text-gray-300"}`}>
+          <AlertCircle className="w-5 h-5" />
+        </div>
+      </div>
+      <h3 className={`relative z-10 text-3xl font-black tracking-tighter ${rejectedCount > 0 ? "text-accent" : "text-dark"}`}>
+        {rejectedCount}
+      </h3>
+      <p className={`relative z-10 text-xs font-bold ${rejectedCount > 0 ? "text-accent/60" : "text-gray-400"}`}>
+        {rejectedCount > 0 ? t("home.requiresAttention") : t("home.noIncidents")}
+      </p>
+    </div>
+  </>
+);
+
 const KpisGrid = ({
   amounts, reportsByStatus, showTeamStats, teamMemberCount, t
 }: {
@@ -425,61 +521,17 @@ const KpisGrid = ({
     />
 
     {showTeamStats ? (
-      <>
-        <StatCard
-          title={t("home.teamMembers")}
-          value={teamMemberCount.toString()}
-          icon={<Users className="w-5 h-5" />}
-          subtitle={t("home.activeMembers")}
-        />
-        <div className={`relative overflow-hidden rounded-[2rem] p-6 flex flex-col gap-4 border shadow-sm transition-all duration-300 ${reportsByStatus.pending.length > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-gray-100"}`}>
-          {reportsByStatus.pending.length > 0 && (
-            <div className="absolute top-0 right-0 w-36 h-36 bg-amber-100/50 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-          )}
-          <div className="relative z-10 flex items-start justify-between">
-            <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${reportsByStatus.pending.length > 0 ? "text-amber-600" : "text-gray-400"}`}>
-              {t("home.pendingApprovals")}
-            </p>
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${reportsByStatus.pending.length > 0 ? "bg-amber-100 text-amber-600" : "bg-gray-50 text-gray-300"}`}>
-              <AlertCircle className="w-5 h-5" />
-            </div>
-          </div>
-          <h3 className={`relative z-10 text-3xl font-black tracking-tighter ${reportsByStatus.pending.length > 0 ? "text-amber-700" : "text-dark"}`}>
-            {reportsByStatus.pending.length}
-          </h3>
-          <p className={`relative z-10 text-xs font-bold ${reportsByStatus.pending.length > 0 ? "text-amber-600/70" : "text-gray-400"}`}>
-            {reportsByStatus.pending.length > 0 ? t("home.requiresReview") : t("home.noPending")}
-          </p>
-        </div>
-      </>
+      <TeamKpis 
+        teamMemberCount={teamMemberCount} 
+        pendingCount={reportsByStatus.pending.length} 
+        t={t} 
+      />
     ) : (
-      <>
-        <StatCard
-          title={t("home.activeTrips")}
-          value={reportsByStatus.active.length.toString()}
-          icon={<Plane className="w-5 h-5" />}
-          subtitle={t("home.activeTripsSubtitle")}
-        />
-        <div className={`relative overflow-hidden rounded-[2rem] p-6 flex flex-col gap-4 border shadow-sm transition-all duration-300 ${amounts.rejectedCount > 0 ? "bg-accent/5 border-accent/20" : "bg-white border-gray-100"}`}>
-          {amounts.rejectedCount > 0 && (
-            <div className="absolute top-0 right-0 w-36 h-36 bg-accent/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-          )}
-          <div className="relative z-10 flex items-start justify-between">
-            <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${amounts.rejectedCount > 0 ? "text-accent/70" : "text-gray-400"}`}>
-              {t("home.rejectedItems")}
-            </p>
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${amounts.rejectedCount > 0 ? "bg-accent/10 text-accent" : "bg-gray-50 text-gray-300"}`}>
-              <AlertCircle className="w-5 h-5" />
-            </div>
-          </div>
-          <h3 className={`relative z-10 text-3xl font-black tracking-tighter ${amounts.rejectedCount > 0 ? "text-accent" : "text-dark"}`}>
-            {amounts.rejectedCount}
-          </h3>
-          <p className={`relative z-10 text-xs font-bold ${amounts.rejectedCount > 0 ? "text-accent/60" : "text-gray-400"}`}>
-            {amounts.rejectedCount > 0 ? t("home.requiresAttention") : t("home.noIncidents")}
-          </p>
-        </div>
-      </>
+      <UserKpis 
+        activeCount={reportsByStatus.active.length} 
+        rejectedCount={amounts.rejectedCount} 
+        t={t} 
+      />
     )}
   </div>
 );
@@ -495,7 +547,10 @@ const MainDashboardGrid = ({
         <div className="w-7 h-7 bg-brand/10 rounded-xl flex items-center justify-center">
           {showTeamStats ? <Clock className="w-4 h-4 text-brand" /> : <TrendingUp className="w-4 h-4 text-brand" />}
         </div>
-        {showTeamStats && canApprove ? t("home.pendingApprovals") : showTeamStats ? t("home.teamReports") : t("home.activeTrip")}
+        {(() => {
+          if (showTeamStats) return canApprove ? t("home.pendingApprovals") : t("home.teamReports");
+          return t("home.activeTrip");
+        })()}
       </h2>
 
       {(() => {
@@ -561,9 +616,7 @@ const MainDashboardGrid = ({
                 className="w-full text-left p-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors group"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${report.status === ReportStatus.APPROVED ? "bg-green-50 text-green-600" : report.status === ReportStatus.DECLINED ? "bg-red-50 text-accent" : "bg-gray-50 text-gray-400"}`}>
-                    {report.name.charAt(0).toUpperCase()}
-                  </div>
+                  <StatusBadgeSmall status={report.status} />
                   <div className="min-w-0">
                     <p className="font-bold text-dark text-sm truncate group-hover:text-brand transition-colors">{report.name}</p>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{format(new Date(report.end_date), "dd MMM yyyy", { locale: dateLocale })}</p>
@@ -610,7 +663,17 @@ export const DashboardPage = () => {
   const { isSelf } = useScope();
   const { can } = usePermissions();
 
-  if (reportsLoading) {
+  const data = useMemo(() => {
+    if (!reports) return null;
+    return {
+      reportsByStatus: getReportsSummary(reports),
+      amounts: getAmountsSummary(reports),
+      currentTrip: getReportsSummary(reports).active.find((r) => r.status.toUpperCase() !== "SUBMITTED") || null,
+      teamMemberCount: users?.length ?? 0,
+    };
+  }, [reports, users]);
+
+  if (reportsLoading || !data) {
     return (
       <div className="space-y-8 pb-10">
         <div className="h-28 bg-white rounded-[2.5rem] border border-gray-100 animate-pulse" />
@@ -625,28 +688,14 @@ export const DashboardPage = () => {
     );
   }
 
+  const { reportsByStatus, amounts, currentTrip, teamMemberCount } = data;
   const dateLocale = i18n.language.startsWith("es") ? es : enUS;
-
-  const reportsByStatus = reports?.reduce((acc, r) => {
-    const status = r.status.toUpperCase();
-    if (["CREATED", "DRAFT", "PENDING", "SUBMITTED"].includes(status)) acc.active.push(r);
-    if (["APPROVED", "PAID", "REJECTED", "DECLINED"].includes(status)) acc.completed.push(r);
-    if (status === "SUBMITTED") acc.pending.push(r);
-    return acc;
-  }, { active: [] as IReport[], completed: [] as IReport[], pending: [] as IReport[] }) || { active: [], completed: [], pending: [] };
-
-  const currentTrip = reportsByStatus.active.find((r) => r.status.toUpperCase() !== "SUBMITTED") || null;
-
-  const amounts = reports?.reduce((acc, r) => {
-    if (r.status === ReportStatus.SUBMITTED) acc.pending += r.requested_amount;
-    if (r.status === ReportStatus.APPROVED) acc.approved += (r.approved_amount || 0);
-    if (r.status === ReportStatus.DECLINED) acc.rejectedCount++;
-    return acc;
-  }, { pending: 0, approved: 0, rejectedCount: 0 }) || { pending: 0, approved: 0, rejectedCount: 0 };
-
-  const teamMemberCount = users?.length ?? 0;
   const currentHour = new Date().getHours();
-  const greetingKey = currentHour < 12 ? "home.greetingMorning" : currentHour < 19 ? "home.greetingAfternoon" : "home.greetingEvening";
+  const greetingKey = (() => {
+    if (currentHour < 12) return "home.greetingMorning";
+    if (currentHour < 19) return "home.greetingAfternoon";
+    return "home.greetingEvening";
+  })();
   const firstName = user?.name?.split(" ")[0] || "Usuario";
   const canApprove = can("approve_reports");
   const showTeamStats = !isSelf;

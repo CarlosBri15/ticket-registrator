@@ -254,8 +254,10 @@ export const AppLayout = () => {
 
       {/* Mobile overlay */}
       {isMobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+        <button
+          type="button"
+          aria-label="Close menu"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden border-none w-full h-full cursor-default"
           onClick={closeMobile}
         />
       )}
