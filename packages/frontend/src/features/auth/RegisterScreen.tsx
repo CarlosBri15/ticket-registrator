@@ -57,7 +57,7 @@ export const RegisterForm = () => {
                         </div>
                         <div className="flex items-end justify-between h-32 gap-2">
                             {[40, 70, 45, 90, 60, 80].map((h, i) => (
-                                <div key={i} className="w-full bg-white/10 rounded-t-sm hover:bg-brand/50 transition-colors duration-500" style={{ height: `${h}%` }}></div>
+                                <div key={`bar-${i}-${h}`} className="w-full bg-white/10 rounded-t-sm hover:bg-brand/50 transition-colors duration-500" style={{ height: `${h}%` }}></div>
                             ))}
                         </div>
                     </div>
@@ -86,8 +86,8 @@ export const RegisterForm = () => {
                         t('register.benefit1'),
                         t('register.benefit2'),
                         t('register.benefit3')
-                    ].map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-3 text-gray-300">
+                    ].map((item) => (
+                        <div key={item} className="flex items-center gap-3 text-gray-300">
                             <CheckCircle2 className="w-5 h-5 text-brand" />
                             <span>{item}</span>
                         </div>

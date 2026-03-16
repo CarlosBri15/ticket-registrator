@@ -43,7 +43,7 @@ const CreateRoleModal = ({
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm((p) => ({ ...p, [k]: k === "hierarchy" ? Number(e.target.value) : e.target.value }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.BaseSyntheticEvent) => {
     e.preventDefault();
     mutation.mutate({ name: form.name, hierarchy: form.hierarchy, description: form.description || undefined });
   };
@@ -59,10 +59,14 @@ const CreateRoleModal = ({
           required
         />
         <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+          <label
+            htmlFor="role-hierarchy"
+            className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
+          >
             Nivel de jerarquía *
           </label>
           <select
+            id="role-hierarchy"
             className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-dark focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30"
             value={form.hierarchy}
             onChange={set("hierarchy")}
@@ -75,10 +79,14 @@ const CreateRoleModal = ({
           </select>
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+          <label
+            htmlFor="role-description"
+            className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
+          >
             Descripción
           </label>
           <textarea
+            id="role-description"
             className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-dark placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30 resize-none"
             value={form.description}
             onChange={set("description")}
@@ -174,6 +182,42 @@ export const RolesScreen = () => {
     );
   }
 
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center py-32">
+          <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-gray-500 font-medium">Cargando roles...</p>
+        </div>
+      );
+    }
+
+    if (!roles || roles.length === 0) {
+      return (
+        <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
+          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Shield className="w-10 h-10 text-gray-300" />
+          </div>
+          <h3 className="text-2xl font-black text-dark mb-3">No hay roles</h3>
+          <p className="text-gray-400 max-w-sm mx-auto">Crea el primer rol personalizado.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {roles.map((role) => (
+          <RoleCard
+            key={role.id}
+            role={role}
+            canDelete={can("delete_roles")}
+            onDelete={(id) => deleteMutation.mutate(id)}
+          />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       {/* Header */}
@@ -196,31 +240,7 @@ export const RolesScreen = () => {
       </div>
 
       {/* Content */}
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-32">
-          <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-gray-500 font-medium">Cargando roles...</p>
-        </div>
-      ) : !roles || roles.length === 0 ? (
-        <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
-          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Shield className="w-10 h-10 text-gray-300" />
-          </div>
-          <h3 className="text-2xl font-black text-dark mb-3">No hay roles</h3>
-          <p className="text-gray-400 max-w-sm mx-auto">Crea el primer rol personalizado.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {roles.map((role) => (
-            <RoleCard
-              key={role.id}
-              role={role}
-              canDelete={can("delete_roles")}
-              onDelete={(id) => deleteMutation.mutate(id)}
-            />
-          ))}
-        </div>
-      )}
+      {renderContent()}
 
       {companyId && (
         <CreateRoleModal

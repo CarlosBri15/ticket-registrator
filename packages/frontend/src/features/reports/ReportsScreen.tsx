@@ -110,6 +110,7 @@ const FilterBar = ({
           />
           {search && (
             <button
+              type="button"
               onClick={() => onSearchChange("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
             >
@@ -119,6 +120,7 @@ const FilterBar = ({
         </div>
         {hasActiveFilters && (
           <button
+            type="button"
             onClick={onClear}
             className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl text-xs font-black text-accent border border-accent/20 bg-accent/5 hover:bg-accent/10 transition-colors whitespace-nowrap"
           >
@@ -134,6 +136,7 @@ const FilterBar = ({
         {STATUS_OPTIONS.map((s) => (
           <button
             key={s}
+            type="button"
             onClick={() => onStatusChange(s)}
             className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${
               statusFilter === s
@@ -246,6 +249,120 @@ export const ReportsScreen = () => {
   const totalFiltered = filteredActive.length + filteredCompleted.length;
   const totalAll = (reports?.length ?? 0);
 
+  const renderActiveTrips = () => {
+    if (isLoading) {
+      return (
+        <div className="space-y-4">
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      );
+    }
+
+    if (filteredActive.length > 0) {
+      return (
+        <div className="space-y-4">
+          {filteredActive.map((report, idx) => (
+            <button
+              key={report.id}
+              type="button"
+              onClick={() => navigate(`/trips/${report.id}`)}
+              className={`w-full text-left group relative bg-white rounded-[2.5rem] border p-8 shadow-sm hover:shadow-xl hover:shadow-brand/8 transition-all duration-500 cursor-pointer overflow-hidden ${
+                idx === 0 ? "border-brand/20" : "border-gray-100"
+              }`}
+            >
+              {idx === 0 && (
+                <div className="absolute top-0 right-0 w-56 h-56 bg-brand/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-brand/8 transition-colors duration-700 pointer-events-none" />
+              )}
+
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-5">
+                  <StatusBadge status={report.status} size="md" />
+                  <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[10px] font-mono text-gray-400 border border-gray-100">
+                    #{(report.id || "").substring(0, 8)}
+                  </span>
+                </div>
+
+                <h3 className={`font-black text-dark mb-4 leading-tight group-hover:text-brand transition-colors duration-300 ${
+                  idx === 0 ? "text-2xl md:text-3xl" : "text-xl"
+                }`}>
+                  {report.name}
+                </h3>
+
+                <div className="flex flex-wrap gap-2.5">
+                  <span className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-100">
+                    <Calendar className="w-3.5 h-3.5 text-brand" />
+                    {format(new Date(report.start_date), "dd MMM", { locale: dateLocale })} — {format(new Date(report.end_date), "dd MMM yyyy", { locale: dateLocale })}
+                  </span>
+                  {report.type && (
+                    <span className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-100">
+                      <Wallet className="w-3.5 h-3.5 text-brand" />
+                      {report.type}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="relative z-10 pt-6 border-t border-gray-100 mt-6 flex flex-col sm:flex-row items-end sm:items-center justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                    {t("reportDetail.totalRequested")}
+                  </p>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-3xl font-black text-dark tracking-tighter">
+                      {report.requested_amount?.toLocaleString() ?? "—"}
+                    </span>
+                    <span className="text-sm font-bold text-gray-400">{report.currency}</span>
+                  </div>
+                </div>
+                <Button
+                  className="w-full sm:w-auto px-8 rounded-2xl"
+                  onClick={(e) => { e.stopPropagation(); navigate(`/trips/${report.id}`); }}
+                >
+                  {t("home.scanTicket")}
+                  <ArrowUpRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </Button>
+              </div>
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    if (hasActiveFilters) {
+      return (
+        <div className="bg-gray-50/80 rounded-[2.5rem] border border-dashed border-gray-200 p-12 flex flex-col items-center justify-center text-center min-h-[200px]">
+          <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 border border-gray-100">
+            <Search className="w-7 h-7 text-gray-300" />
+          </div>
+          <p className="text-gray-400 font-semibold text-sm max-w-xs leading-relaxed">
+            {t("trips.noResultsFilter")}
+          </p>
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="mt-4 text-xs font-black text-brand hover:underline uppercase tracking-widest"
+          >
+            {t("trips.filterClearAll")}
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-gray-50/80 rounded-[2.5rem] border border-dashed border-gray-200 p-12 flex flex-col items-center justify-center text-center min-h-[280px]">
+        <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-5 border border-gray-100">
+          <Plane className="w-8 h-8 text-gray-300" />
+        </div>
+        <p className="text-gray-500 font-semibold mb-6 max-w-xs text-sm leading-relaxed">{t("trips.noActiveTrips")}</p>
+        <Button onClick={() => setIsModalOpen(true)} variant="outline" className="w-auto bg-white hover:bg-brand/5 border-gray-200 text-dark font-bold">
+          <Plus className="w-4 h-4 mr-2" />
+          {t("home.createFirst")}
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-700 pb-20">
 
@@ -340,107 +457,7 @@ export const ReportsScreen = () => {
               )}
             </div>
 
-            {isLoading ? (
-              <div className="space-y-4">
-                <SkeletonCard />
-                <SkeletonCard />
-              </div>
-            ) : filteredActive.length > 0 ? (
-              <div className="space-y-4">
-                {filteredActive.map((report, idx) => (
-                  <div
-                    key={report.id}
-                    onClick={() => navigate(`/trips/${report.id}`)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/trips/${report.id}`); }}
-                    role="button"
-                    tabIndex={0}
-                    className={`group relative bg-white rounded-[2.5rem] border p-8 shadow-sm hover:shadow-xl hover:shadow-brand/8 transition-all duration-500 cursor-pointer overflow-hidden ${
-                      idx === 0 ? "border-brand/20" : "border-gray-100"
-                    }`}
-                  >
-                    {idx === 0 && (
-                      <div className="absolute top-0 right-0 w-56 h-56 bg-brand/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-brand/8 transition-colors duration-700 pointer-events-none" />
-                    )}
-
-                    <div className="relative z-10">
-                      <div className="flex justify-between items-start mb-5">
-                        <StatusBadge status={report.status} size="md" />
-                        <span className="bg-gray-50 px-3 py-1.5 rounded-full text-[10px] font-mono text-gray-400 border border-gray-100">
-                          #{(report.id || "").substring(0, 8)}
-                        </span>
-                      </div>
-
-                      <h3 className={`font-black text-dark mb-4 leading-tight group-hover:text-brand transition-colors duration-300 ${
-                        idx === 0 ? "text-2xl md:text-3xl" : "text-xl"
-                      }`}>
-                        {report.name}
-                      </h3>
-
-                      <div className="flex flex-wrap gap-2.5">
-                        <span className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-100">
-                          <Calendar className="w-3.5 h-3.5 text-brand" />
-                          {format(new Date(report.start_date), "dd MMM", { locale: dateLocale })} — {format(new Date(report.end_date), "dd MMM yyyy", { locale: dateLocale })}
-                        </span>
-                        {report.type && (
-                          <span className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-100">
-                            <Wallet className="w-3.5 h-3.5 text-brand" />
-                            {report.type}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="relative z-10 pt-6 border-t border-gray-100 mt-6 flex flex-col sm:flex-row items-end sm:items-center justify-between gap-4">
-                      <div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                          {t("reportDetail.totalRequested")}
-                        </p>
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-3xl font-black text-dark tracking-tighter">
-                            {report.requested_amount?.toLocaleString() ?? "—"}
-                          </span>
-                          <span className="text-sm font-bold text-gray-400">{report.currency}</span>
-                        </div>
-                      </div>
-                      <Button
-                        className="w-full sm:w-auto px-8 rounded-2xl"
-                        onClick={(e) => { e.stopPropagation(); navigate(`/trips/${report.id}`); }}
-                      >
-                        {t("home.scanTicket")}
-                        <ArrowUpRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : hasActiveFilters ? (
-              /* No results matching filters */
-              <div className="bg-gray-50/80 rounded-[2.5rem] border border-dashed border-gray-200 p-12 flex flex-col items-center justify-center text-center min-h-[200px]">
-                <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 border border-gray-100">
-                  <Search className="w-7 h-7 text-gray-300" />
-                </div>
-                <p className="text-gray-400 font-semibold text-sm max-w-xs leading-relaxed">
-                  {t("trips.noResultsFilter")}
-                </p>
-                <button
-                  onClick={clearFilters}
-                  className="mt-4 text-xs font-black text-brand hover:underline uppercase tracking-widest"
-                >
-                  {t("trips.filterClearAll")}
-                </button>
-              </div>
-            ) : (
-              <div className="bg-gray-50/80 rounded-[2.5rem] border border-dashed border-gray-200 p-12 flex flex-col items-center justify-center text-center min-h-[280px]">
-                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-5 border border-gray-100">
-                  <Plane className="w-8 h-8 text-gray-300" />
-                </div>
-                <p className="text-gray-500 font-semibold mb-6 max-w-xs text-sm leading-relaxed">{t("trips.noActiveTrips")}</p>
-                <Button onClick={() => setIsModalOpen(true)} variant="outline" className="w-auto bg-white hover:bg-brand/5 border-gray-200 text-dark font-bold">
-                  <Plus className="w-4 h-4 mr-2" />
-                  {t("home.createFirst")}
-                </Button>
-              </div>
-            )}
+            {renderActiveTrips()}
           </section>
 
           {/* History sidebar */}
@@ -505,13 +522,11 @@ export const ReportsScreen = () => {
                   ) : (
                     <>
                       {filteredCompleted.slice(0, 4).map((report, idx) => (
-                        <div
+                        <button
                           key={report.id}
+                          type="button"
                           onClick={() => navigate(`/trips/${report.id}`)}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/trips/${report.id}`); }}
-                          role="button"
-                          tabIndex={0}
-                          className={`px-5 py-4 hover:bg-gray-50/80 cursor-pointer transition-colors flex items-center gap-3 group ${
+                          className={`w-full text-left px-5 py-4 hover:bg-gray-50/80 cursor-pointer flex items-center gap-3 group ${
                             idx < Math.min(filteredCompleted.length, 4) - 1 ? "border-b border-gray-50" : ""
                           }`}
                         >
@@ -531,11 +546,12 @@ export const ReportsScreen = () => {
                             <span className="text-[10px] text-gray-400 font-medium">{report.currency}</span>
                             <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-brand transition-colors ml-0.5" />
                           </div>
-                        </div>
+                        </button>
                       ))}
                       {filteredCompleted.length > 4 && (
                         <div className="px-5 py-3 bg-gray-50/80 text-center border-t border-gray-100">
                           <button
+                            type="button"
                             className="text-[10px] font-black text-brand hover:underline uppercase tracking-widest"
                             onClick={() => navigate("/trips")}
                           >

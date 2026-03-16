@@ -17,12 +17,12 @@ export const Modal = ({ isOpen, onClose, title, subtitle, children }: ModalProps
 
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleEscape);
+      globalThis.addEventListener("keydown", handleEscape);
     }
 
     return () => {
       document.body.style.overflow = "unset";
-      window.removeEventListener("keydown", handleEscape);
+      globalThis.removeEventListener("keydown", handleEscape);
     };
   }, [isOpen, onClose]);
 
@@ -31,9 +31,11 @@ export const Modal = ({ isOpen, onClose, title, subtitle, children }: ModalProps
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-dark/50 backdrop-blur-md animate-in fade-in duration-300"
+      <button
+        type="button"
+        className="absolute inset-0 bg-dark/50 backdrop-blur-md animate-in fade-in duration-300 w-full h-full border-none outline-none"
         onClick={onClose}
+        aria-label="Cerrar modal"
       />
 
       {/* Modal */}

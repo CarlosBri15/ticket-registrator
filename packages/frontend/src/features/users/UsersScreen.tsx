@@ -39,7 +39,7 @@ const CreateUserModal = ({
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((p) => ({ ...p, [k]: e.target.value }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.BaseSyntheticEvent) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) return;
     mutation.mutate({ ...form, departmentIds: [] });
@@ -59,10 +59,14 @@ const CreateUserModal = ({
           <Input label="Confirmar *" type="password" value={form.confirmPassword} onChange={set("confirmPassword")} placeholder="••••••••" required />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+          <label
+            htmlFor="user-role"
+            className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
+          >
             Rol *
           </label>
           <select
+            id="user-role"
             className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-dark focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30"
             value={form.roleId}
             onChange={set("roleId")}
@@ -138,6 +142,7 @@ const UserRow = ({
         </span>
         {canDelete && (
           <button
+            type="button"
             onClick={() => onDelete(user.id)}
             className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
             title="Eliminar usuario"
@@ -155,9 +160,12 @@ export const UsersScreen = () => {
   const { scope, isGlobal } = useScope();
   const { activeCompanyId } = useScopeContext();
 
-  const companyId = isGlobal
-    ? activeCompanyId
-    : (scope as any).companyId ?? null;
+  const getCompanyId = () => {
+    if (isGlobal) return activeCompanyId;
+    return (scope as any)?.companyId ?? null;
+  };
+
+  const companyId = getCompanyId();
 
   const { data: users, isLoading } = useUsersQuery();
   const { data: roles } = useRolesQuery(companyId ?? undefined);
@@ -209,36 +217,46 @@ export const UsersScreen = () => {
       </div>
 
       {/* Content */}
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-32">
-          <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-gray-500 font-medium">Cargando usuarios...</p>
-        </div>
-      ) : !filtered || filtered.length === 0 ? (
-        <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
-          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Users className="w-10 h-10 text-gray-300" />
+      {(() => {
+        if (isLoading) {
+          return (
+            <div className="flex flex-col items-center justify-center py-32">
+              <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-gray-500 font-medium">Cargando usuarios...</p>
+            </div>
+          );
+        }
+
+        if (!filtered || filtered.length === 0) {
+          return (
+            <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
+              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Users className="w-10 h-10 text-gray-300" />
+              </div>
+              <h3 className="text-2xl font-black text-dark mb-3">
+                {search ? "Sin resultados" : "No hay usuarios"}
+              </h3>
+              <p className="text-gray-400 max-w-sm mx-auto">
+                {search ? "Prueba con otra búsqueda." : "Crea el primer usuario de tu organización."}
+              </p>
+            </div>
+          );
+        }
+
+        return (
+          <div className="space-y-3">
+            {filtered.map((user) => (
+              <UserRow
+                key={user.id}
+                user={user}
+                roles={roles}
+                canDelete={can("delete_users")}
+                onDelete={(id) => deleteMutation.mutate(id)}
+              />
+            ))}
           </div>
-          <h3 className="text-2xl font-black text-dark mb-3">
-            {search ? "Sin resultados" : "No hay usuarios"}
-          </h3>
-          <p className="text-gray-400 max-w-sm mx-auto">
-            {search ? "Prueba con otra búsqueda." : "Crea el primer usuario de tu organización."}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((user) => (
-            <UserRow
-              key={user.id}
-              user={user}
-              roles={roles}
-              canDelete={can("delete_users")}
-              onDelete={(id) => deleteMutation.mutate(id)}
-            />
-          ))}
-        </div>
-      )}
+        );
+      })()}
 
       <CreateUserModal
         isOpen={isCreateOpen}

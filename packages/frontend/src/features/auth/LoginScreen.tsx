@@ -129,9 +129,13 @@ export const LoginForm = () => {
                                 autoComplete="current-password"
                             />
                             <div className="flex justify-end">
-                                <a href="#" className="text-xs font-semibold text-brand hover:text-brand-hover transition-colors">
+                                <button
+                                    type="button"
+                                    onClick={() => {}}
+                                    className="text-xs font-semibold text-brand hover:text-brand-hover transition-colors"
+                                >
                                     {t('auth.forgotPassword')}
-                                </a>
+                                </button>
                             </div>
                         </div>
 

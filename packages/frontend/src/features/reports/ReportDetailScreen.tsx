@@ -190,6 +190,108 @@ export const ReportDetailScreen = () => {
     );
   }
 
+  const renderTicketsContent = () => {
+    if (isLoadingTickets) {
+      return (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => <TicketSkeleton key={i} />)}
+        </div>
+      );
+    }
+
+    if (tickets && tickets.length > 0) {
+      return (
+        <div className="space-y-3">
+          {tickets.map((ticket) => (
+            <button
+              key={ticket.id}
+              type="button"
+              onClick={() => handleTicketClick(ticket)}
+              className="w-full text-left group bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-lg hover:shadow-brand/8 hover:border-brand/15 transition-all duration-300 cursor-pointer p-5 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-12 h-12 bg-brand/5 rounded-2xl flex items-center justify-center group-hover:bg-brand/10 transition-colors shrink-0 border border-brand/10">
+                  <FileText className="w-5 h-5 text-brand/40 group-hover:text-brand/60 transition-colors" />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="font-black text-dark group-hover:text-brand transition-colors truncate text-sm">
+                    {ticket.location_name || t("reportDetail.noTicketName")}
+                  </h4>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {ticket.date && (
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        {format(new Date(ticket.date), "dd MMM yyyy", { locale: dateLocale })}
+                      </span>
+                    )}
+                    {ticket.expense_type && (
+                      <span className="text-[10px] bg-brand/5 text-brand/70 px-2 py-0.5 rounded-full font-black uppercase tracking-wider border border-brand/10">
+                        {ticket.expense_type}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0 ml-3">
+                <div className="text-right">
+                  <p className="font-black text-dark text-base leading-tight">
+                    {ticket.amount != null ? ticket.amount.toLocaleString() : "—"}
+                    <span className="text-[10px] text-gray-400 font-medium ml-1">{ticket.currency}</span>
+                  </p>
+                  <div className="mt-1">
+                    <StatusBadge status={ticket.status} size="sm" />
+                  </div>
+                </div>
+                {isEditable && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteTicket(e, ticket)}
+                    className="w-8 h-8 rounded-xl bg-red-50 text-red-300 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 border border-red-100"
+                    title={t("common.delete")}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <ArrowRight className="w-4 h-4 text-gray-200 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
+              </div>
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => isEditable && setIsUploadModalOpen(true)}
+        disabled={!isEditable}
+        className={`w-full bg-white/60 backdrop-blur-sm rounded-[2.5rem] border-2 border-dashed border-gray-200 p-16 text-center transition-all duration-500 ${isEditable ? "hover:bg-white hover:border-brand/30 cursor-pointer group" : "cursor-default"}`}
+      >
+        <div className="relative w-20 h-20 mx-auto mb-6">
+          <div className="absolute inset-0 bg-brand/5 rounded-2xl group-hover:scale-110 transition-transform duration-500" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <FileText className="w-9 h-9 text-gray-300 group-hover:text-brand/40 transition-colors" />
+          </div>
+          {isEditable && (
+            <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-xl shadow-md flex items-center justify-center border border-gray-100 group-hover:rotate-12 transition-transform">
+              <Plus className="w-3.5 h-3.5 text-brand" />
+            </div>
+          )}
+        </div>
+        <h3 className="text-xl font-black text-dark mb-2 tracking-tight">{t("reportDetail.startDigitalizing")}</h3>
+        <p className="text-gray-400 text-sm mb-8 max-w-xs mx-auto leading-relaxed">
+          {t("reportDetail.digitalizeDesc")}
+        </p>
+        {isEditable && (
+          <Button variant="outline" className="w-auto mx-auto border-gray-200 hover:border-brand/30 font-bold">
+            <ScanLine className="w-4 h-4 mr-2" />
+            {t("reportDetail.scanFirstTicket")}
+          </Button>
+        )}
+      </button>
+    );
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-20">
 
@@ -396,6 +498,7 @@ export const ReportDetailScreen = () => {
             </div>
             {isEditable && tickets && tickets.length > 0 && (
               <button
+                type="button"
                 onClick={() => setIsUploadModalOpen(true)}
                 className="flex items-center gap-1.5 text-brand text-xs font-black hover:underline"
               >
@@ -405,99 +508,7 @@ export const ReportDetailScreen = () => {
             )}
           </div>
 
-          {isLoadingTickets ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => <TicketSkeleton key={i} />)}
-            </div>
-          ) : tickets && tickets.length > 0 ? (
-            <div className="space-y-3">
-              {tickets.map((ticket) => (
-                <div
-                  key={ticket.id}
-                  onClick={() => handleTicketClick(ticket)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleTicketClick(ticket); }}
-                  role="button"
-                  tabIndex={0}
-                  className="group bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-lg hover:shadow-brand/8 hover:border-brand/15 transition-all duration-300 cursor-pointer p-5 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-12 h-12 bg-brand/5 rounded-2xl flex items-center justify-center group-hover:bg-brand/10 transition-colors shrink-0 border border-brand/10">
-                      <FileText className="w-5 h-5 text-brand/40 group-hover:text-brand/60 transition-colors" />
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="font-black text-dark group-hover:text-brand transition-colors truncate text-sm">
-                        {ticket.location_name || t("reportDetail.noTicketName")}
-                      </h4>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        {ticket.date && (
-                          <span className="text-[10px] text-gray-400 font-medium">
-                            {format(new Date(ticket.date), "dd MMM yyyy", { locale: dateLocale })}
-                          </span>
-                        )}
-                        {ticket.expense_type && (
-                          <span className="text-[10px] bg-brand/5 text-brand/70 px-2 py-0.5 rounded-full font-black uppercase tracking-wider border border-brand/10">
-                            {ticket.expense_type}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 shrink-0 ml-3">
-                    <div className="text-right">
-                      <p className="font-black text-dark text-base leading-tight">
-                        {ticket.amount != null ? ticket.amount.toLocaleString() : "—"}
-                        <span className="text-[10px] text-gray-400 font-medium ml-1">{ticket.currency}</span>
-                      </p>
-                      <div className="mt-1">
-                        <StatusBadge status={ticket.status} size="sm" />
-                      </div>
-                    </div>
-                    {isEditable && (
-                      <button
-                        onClick={(e) => handleDeleteTicket(e, ticket)}
-                        className="w-8 h-8 rounded-xl bg-red-50 text-red-300 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 border border-red-100"
-                        title={t("common.delete")}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                    <ArrowRight className="w-4 h-4 text-gray-200 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div
-              onClick={() => isEditable && setIsUploadModalOpen(true)}
-              onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && isEditable) setIsUploadModalOpen(true); }}
-              role="button"
-              tabIndex={isEditable ? 0 : -1}
-              className={`bg-white/60 backdrop-blur-sm rounded-[2.5rem] border-2 border-dashed border-gray-200 p-16 text-center transition-all duration-500 ${isEditable ? "hover:bg-white hover:border-brand/30 cursor-pointer group" : ""}`}
-            >
-              <div className="relative w-20 h-20 mx-auto mb-6">
-                <div className="absolute inset-0 bg-brand/5 rounded-2xl group-hover:scale-110 transition-transform duration-500" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <FileText className="w-9 h-9 text-gray-300 group-hover:text-brand/40 transition-colors" />
-                </div>
-                {isEditable && (
-                  <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-xl shadow-md flex items-center justify-center border border-gray-100 group-hover:rotate-12 transition-transform">
-                    <Plus className="w-3.5 h-3.5 text-brand" />
-                  </div>
-                )}
-              </div>
-              <h3 className="text-xl font-black text-dark mb-2 tracking-tight">{t("reportDetail.startDigitalizing")}</h3>
-              <p className="text-gray-400 text-sm mb-8 max-w-xs mx-auto leading-relaxed">
-                {t("reportDetail.digitalizeDesc")}
-              </p>
-              {isEditable && (
-                <Button variant="outline" className="w-auto mx-auto border-gray-200 hover:border-brand/30 font-bold">
-                  <ScanLine className="w-4 h-4 mr-2" />
-                  {t("reportDetail.scanFirstTicket")}
-                </Button>
-              )}
-            </div>
-          )}
+          {renderTicketsContent()}
         </div>
 
         {/* Financial sidebar */}

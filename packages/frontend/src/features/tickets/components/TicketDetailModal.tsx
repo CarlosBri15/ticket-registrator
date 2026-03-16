@@ -72,40 +72,50 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket, reportId }: TicketD
             </div>
 
             <div className="bg-gray-50 rounded-2xl p-4 overflow-hidden flex flex-col items-center justify-center min-h-[200px] border border-gray-100 group relative">
-                {isLoadingImage ? (
-                    <div className="flex flex-col items-center gap-2">
-                        <Loader2 className="w-6 h-6 text-brand animate-spin" />
-                        <p className="text-xs text-gray-400 font-medium">Cargando imagen...</p>
-                    </div>
-                ) : imageData?.url ? (
-                    <>
-                        <img
-                            src={imageData.url}
-                            alt="Ticket"
-                            className="max-h-60 rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-500 cursor-pointer"
-                            onClick={() => window.open(imageData.url, '_blank')}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') window.open(imageData.url, '_blank'); }}
-                            role="button"
-                            tabIndex={0}
-                        />
-                        <div className="absolute inset-0 bg-dark/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                            <a
-                                href={imageData.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="bg-white text-dark px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
-                            >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                                Ver pantalla completa
-                            </a>
+                {(() => {
+                    if (isLoadingImage) {
+                        return (
+                            <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="w-6 h-6 text-brand animate-spin" />
+                                <p className="text-xs text-gray-400 font-medium">Cargando imagen...</p>
+                            </div>
+                        );
+                    }
+                    if (imageData?.url) {
+                        return (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => window.open(imageData.url, '_blank')}
+                                    className="max-h-60 rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-500 cursor-pointer overflow-hidden"
+                                >
+                                    <img
+                                        src={imageData.url}
+                                        alt="Ticket"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </button>
+                                <div className="absolute inset-0 bg-dark/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                                    <a
+                                        href={imageData.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="bg-white text-dark px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                        Ver pantalla completa
+                                    </a>
+                                </div>
+                            </>
+                        );
+                    }
+                    return (
+                        <div className="text-center">
+                            <ImageIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                            <p className="text-xs text-gray-400 font-medium">No hay imagen disponible</p>
                         </div>
-                    </>
-                ) : (
-                    <div className="text-center">
-                        <ImageIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                        <p className="text-xs text-gray-400 font-medium">No hay imagen disponible</p>
-                    </div>
-                )}
+                    );
+                })()}
             </div>
         </div>
 
@@ -114,7 +124,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket, reportId }: TicketD
             <div className="max-h-40 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
             {ticket.items && ticket.items.length > 0 ? (
                 ticket.items.map((item, index) => (
-                <div key={index} className="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                <div key={`item-${item.name}-${index}`} className="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
                     <span className="text-sm font-medium text-dark">{item.name}</span>
                     <span className="text-sm font-bold text-brand">{item.amount} {item.currency}</span>
                 </div>

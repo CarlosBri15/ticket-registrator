@@ -32,11 +32,11 @@ const DepartmentModal = ({
 
   const isEditing = !!department;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.BaseSyntheticEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     if (isEditing) {
-      updateMutation.mutate({ id: department!.id, data: { name } });
+      updateMutation.mutate({ id: department.id, data: { name } });
     } else {
       createMutation.mutate({ name });
     }
@@ -77,9 +77,12 @@ export const DepartmentsScreen = () => {
   const { scope, isGlobal } = useScope();
   const { activeCompanyId } = useScopeContext();
 
-  const companyId = isGlobal
-    ? activeCompanyId
-    : (scope as any).companyId ?? null;
+  const getCompanyId = () => {
+    if (isGlobal) return activeCompanyId;
+    return (scope as any)?.companyId ?? null;
+  };
+
+  const companyId = getCompanyId();
 
   const { data: departments, isLoading } = useDepartmentsQuery(companyId ?? undefined);
   const deleteMutation = useDeleteDepartmentMutation(companyId ?? "");
@@ -140,60 +143,72 @@ export const DepartmentsScreen = () => {
       </div>
 
       {/* Content */}
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-32">
-          <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-gray-500 font-medium">Cargando departamentos...</p>
-        </div>
-      ) : !filtered || filtered.length === 0 ? (
-        <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
-          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Layers className="w-10 h-10 text-gray-300" />
-          </div>
-          <h3 className="text-2xl font-black text-dark mb-3">
-            {search ? "Sin resultados" : "No hay departamentos"}
-          </h3>
-          <p className="text-gray-400 max-w-sm mx-auto">
-            {search ? "Prueba con otra búsqueda." : "Crea el primer departamento de tu organización."}
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((dept) => (
-            <div
-              key={dept.id}
-              className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 bg-brand/10 rounded-2xl flex items-center justify-center shrink-0">
-                    <Layers className="w-5 h-5 text-brand" />
+      {(() => {
+        if (isLoading) {
+          return (
+            <div className="flex flex-col items-center justify-center py-32">
+              <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-gray-500 font-medium">Cargando departamentos...</p>
+            </div>
+          );
+        }
+
+        if (!filtered || filtered.length === 0) {
+          return (
+            <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
+              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Layers className="w-10 h-10 text-gray-300" />
+              </div>
+              <h3 className="text-2xl font-black text-dark mb-3">
+                {search ? "Sin resultados" : "No hay departamentos"}
+              </h3>
+              <p className="text-gray-400 max-w-sm mx-auto">
+                {search ? "Prueba con otra búsqueda." : "Crea el primer departamento de tu organización."}
+              </p>
+            </div>
+          );
+        }
+
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((dept) => (
+              <div
+                key={dept.id}
+                className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 bg-brand/10 rounded-2xl flex items-center justify-center shrink-0">
+                      <Layers className="w-5 h-5 text-brand" />
+                    </div>
+                    <p className="font-bold text-dark truncate">{dept.name}</p>
                   </div>
-                  <p className="font-bold text-dark truncate">{dept.name}</p>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  {can("edit_departments") && (
-                    <button
-                      onClick={() => openEdit(dept)}
-                      className="p-2 text-gray-300 hover:text-brand hover:bg-brand/10 rounded-xl transition-all"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                  )}
-                  {can("delete_departments") && (
-                    <button
-                      onClick={() => deleteMutation.mutate(dept.id)}
-                      className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {can("edit_departments") && (
+                      <button
+                        type="button"
+                        onClick={() => openEdit(dept)}
+                        className="p-2 text-gray-300 hover:text-brand hover:bg-brand/10 rounded-xl transition-all"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    )}
+                    {can("delete_departments") && (
+                      <button
+                        type="button"
+                        onClick={() => deleteMutation.mutate(dept.id)}
+                        className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        );
+      })()}
 
       {companyId && (
         <DepartmentModal

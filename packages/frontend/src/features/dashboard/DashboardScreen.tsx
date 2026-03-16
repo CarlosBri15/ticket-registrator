@@ -62,12 +62,10 @@ const ActiveTripCard = ({
     tickets?.reduce((acc: number, tk: any) => acc + (tk.amount || 0), 0) ?? 0;
 
   return (
-    <div
+    <button
+      type="button"
       onClick={() => navigate(`/trips/${currentTrip.id}`)}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/trips/${currentTrip.id}`); }}
-      role="button"
-      tabIndex={0}
-      className="relative bg-white rounded-[2.5rem] p-8 shadow-sm border border-brand/10 overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-brand/10 transition-all duration-500"
+      className="w-full text-left relative bg-white rounded-[2.5rem] p-8 shadow-sm border border-brand/10 overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-brand/10 transition-all duration-500"
     >
       <div className="absolute top-0 right-0 w-60 h-60 bg-brand/5 rounded-full -translate-y-1/3 translate-x-1/3 group-hover:scale-125 transition-transform duration-700" />
       <div className="absolute bottom-0 left-0 w-32 h-32 bg-secondary/5 rounded-full translate-y-1/2 -translate-x-1/4" />
@@ -111,7 +109,7 @@ const ActiveTripCard = ({
           </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 };
 
@@ -143,13 +141,11 @@ const PendingApprovalsList = ({
     <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
       <div className="divide-y divide-gray-50">
         {reports.slice(0, 6).map((report) => (
-          <div
+          <button
             key={report.id}
+            type="button"
             onClick={() => navigate(`/trips/${report.id}`)}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/trips/${report.id}`); }}
-            role="button"
-            tabIndex={0}
-            className="p-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors group"
+            className="w-full text-left p-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors group"
           >
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 bg-brand/10 rounded-xl flex items-center justify-center font-black text-sm text-brand shrink-0">
@@ -175,7 +171,7 @@ const PendingApprovalsList = ({
               <StatusBadge status={report.status} size="sm" />
               <ChevronRight className="w-4 h-4 text-gray-200 group-hover:text-brand group-hover:translate-x-1 transition-all" />
             </div>
-          </div>
+          </button>
         ))}
       </div>
       {reports.length > 6 && (
@@ -323,8 +319,8 @@ const AnalyticsSection = ({ reports }: { reports: IReport[] }) => {
                   outerRadius={72}
                   paddingAngle={3}
                 >
-                  {byType.map((_, i) => (
-                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                  {byType.map((item, i) => (
+                    <Cell key={`cell-${item.type}-${i}`} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip
@@ -401,9 +397,13 @@ export const DashboardPage = () => {
 
   const teamMemberCount = users?.length ?? 0;
 
-  const hour = new Date().getHours();
-  const greetingKey =
-    hour < 12 ? "home.greetingMorning" : hour < 19 ? "home.greetingAfternoon" : "home.greetingEvening";
+  const getGreetingKey = (currentHour: number) => {
+    if (currentHour < 12) return "home.greetingMorning";
+    if (currentHour < 19) return "home.greetingAfternoon";
+    return "home.greetingEvening";
+  };
+
+  const greetingKey = getGreetingKey(new Date().getHours());
   const firstName = user?.name?.split(" ")[0] || "Usuario";
 
   const canApprove = can("approve_reports");
@@ -615,45 +615,53 @@ export const DashboardPage = () => {
                 <TrendingUp className="w-4 h-4 text-brand" />
               )}
             </div>
-            {showTeamStats && canApprove
-              ? t("home.pendingApprovals")
-              : showTeamStats
-              ? t("home.teamReports")
-              : t("home.activeTrip")}
+            {(() => {
+              if (showTeamStats && canApprove) return t("home.pendingApprovals");
+              if (showTeamStats) return t("home.teamReports");
+              return t("home.activeTrip");
+            })()}
           </h2>
 
-          {showTeamStats ? (
-            <PendingApprovalsList
-              reports={canApprove ? pendingApprovals : activeReports}
-              navigate={navigate}
-              dateLocale={dateLocale}
-              t={t}
-            />
-          ) : currentTrip ? (
-            <ActiveTripCard
-              currentTrip={currentTrip}
-              navigate={navigate}
-              dateLocale={dateLocale}
-              t={t}
-            />
-          ) : (
-            <div className="bg-white rounded-[2.5rem] border border-dashed border-gray-200 p-14 text-center flex flex-col items-center min-h-[280px] justify-center hover:border-brand/30 hover:bg-gray-50/30 transition-all duration-300 group">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-5 group-hover:bg-brand/5 transition-colors">
-                <Plane className="w-8 h-8 text-gray-300 group-hover:text-brand/40 transition-colors" />
+          {(() => {
+            if (showTeamStats) {
+              return (
+                <PendingApprovalsList
+                  reports={canApprove ? pendingApprovals : activeReports}
+                  navigate={navigate}
+                  dateLocale={dateLocale}
+                  t={t}
+                />
+              );
+            }
+            if (currentTrip) {
+              return (
+                <ActiveTripCard
+                  currentTrip={currentTrip}
+                  navigate={navigate}
+                  dateLocale={dateLocale}
+                  t={t}
+                />
+              );
+            }
+            return (
+              <div className="bg-white rounded-[2.5rem] border border-dashed border-gray-200 p-14 text-center flex flex-col items-center min-h-[280px] justify-center hover:border-brand/30 hover:bg-gray-50/30 transition-all duration-300 group">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-5 group-hover:bg-brand/5 transition-colors">
+                  <Plane className="w-8 h-8 text-gray-300 group-hover:text-brand/40 transition-colors" />
+                </div>
+                <p className="text-gray-400 font-semibold mb-6 max-w-xs leading-relaxed">
+                  {t("trips.noActiveTrips")}
+                </p>
+                <Button
+                  variant="secondary"
+                  className="w-auto bg-white border-gray-200"
+                  onClick={() => navigate("/trips")}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {t("home.createFirst")}
+                </Button>
               </div>
-              <p className="text-gray-400 font-semibold mb-6 max-w-xs leading-relaxed">
-                {t("trips.noActiveTrips")}
-              </p>
-              <Button
-                variant="secondary"
-                className="w-auto bg-white border-gray-200"
-                onClick={() => navigate("/trips")}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {t("home.createFirst")}
-              </Button>
-            </div>
-          )}
+            );
+          })()}
         </section>
 
         {/* Right: Recent Activity */}
@@ -680,47 +688,49 @@ export const DashboardPage = () => {
               </div>
             ) : (
               <div className="divide-y divide-gray-50">
-                {completedReports.slice(0, 5).map((report) => (
-                  <div
-                    key={report.id}
-                    onClick={() => navigate(`/trips/${report.id}`)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/trips/${report.id}`); }}
-                    role="button"
-                    tabIndex={0}
-                    className="p-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors group"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
-                          report.status === ReportStatus.APPROVED
-                            ? "bg-green-50 text-green-600"
-                            : report.status === ReportStatus.DECLINED
-                            ? "bg-red-50 text-accent"
-                            : "bg-gray-50 text-gray-400"
-                        }`}
-                      >
-                        {report.name.charAt(0).toUpperCase()}
+                {completedReports.slice(0, 5).map((report) => {
+                  const getStatusClasses = (status: string) => {
+                    if (status === ReportStatus.APPROVED) return "bg-green-50 text-green-600";
+                    if (status === ReportStatus.DECLINED) return "bg-red-50 text-accent";
+                    return "bg-gray-50 text-gray-400";
+                  };
+
+                  return (
+                    <button
+                      key={report.id}
+                      type="button"
+                      onClick={() => navigate(`/trips/${report.id}`)}
+                      className="w-full text-left p-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${getStatusClasses(
+                            report.status
+                          )}`}
+                        >
+                          {report.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-dark text-sm truncate group-hover:text-brand transition-colors">
+                            {report.name}
+                          </p>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
+                            {format(new Date(report.end_date), "dd MMM yyyy", { locale: dateLocale })}
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-dark text-sm truncate group-hover:text-brand transition-colors">
-                          {report.name}
-                        </p>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
-                          {format(new Date(report.end_date), "dd MMM yyyy", { locale: dateLocale })}
-                        </p>
+                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                        <div className="text-right">
+                          <span className="font-black text-dark text-sm block leading-none">
+                            {report.approved_amount || report.requested_amount}
+                            <span className="text-[9px] font-bold text-gray-400 ml-0.5">{report.currency}</span>
+                          </span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-200 group-hover:text-brand group-hover:translate-x-1 transition-all" />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0 ml-2">
-                      <div className="text-right">
-                        <span className="font-black text-dark text-sm block leading-none">
-                          {report.approved_amount || report.requested_amount}
-                          <span className="text-[9px] font-bold text-gray-400 ml-0.5">{report.currency}</span>
-                        </span>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-gray-200 group-hover:text-brand group-hover:translate-x-1 transition-all" />
-                    </div>
-                  </div>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
