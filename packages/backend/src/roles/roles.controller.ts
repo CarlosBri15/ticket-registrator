@@ -83,6 +83,15 @@ export class CompanyRolesController {
     return this.rolesService.findOne(id, companyId);
   }
 
+  @RequireAnyPermission(permissions.VIEW_ROLES, permissions.MANAGE_PERMISSIONS)
+  @Get(':id/permissions')
+  getRolePermissions(
+    @Param('companyId') companyId: string,
+    @Param('id') id: string,
+  ) {
+    return this.rolesService.getPermissionObjectsForRole(id, companyId);
+  }
+
   @RequireAnyPermission(permissions.DELETE_ROLES)
   @Delete(':id')
   softDelete(

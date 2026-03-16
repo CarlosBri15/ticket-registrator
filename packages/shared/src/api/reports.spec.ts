@@ -63,6 +63,28 @@ describe('reportsApi', () => {
         });
     });
 
+    describe('updateStatus', () => {
+        it('should call PATCH /reports/:id/status with status body', async () => {
+            const report = { id: 'abc', status: 'Approved' };
+            mockClient.patch.mockResolvedValue({ data: report });
+
+            const result = await api.updateStatus('abc', 'Approved');
+
+            expect(mockClient.patch).toHaveBeenCalledWith('/reports/abc/status', { status: 'Approved' });
+            expect(result).toEqual(report);
+        });
+
+        it('should call PATCH /reports/:id/status with Declined status', async () => {
+            const report = { id: 'abc', status: 'Declined' };
+            mockClient.patch.mockResolvedValue({ data: report });
+
+            const result = await api.updateStatus('abc', 'Declined');
+
+            expect(mockClient.patch).toHaveBeenCalledWith('/reports/abc/status', { status: 'Declined' });
+            expect(result).toEqual(report);
+        });
+    });
+
     describe('delete', () => {
         it('should call DELETE /reports/:id', async () => {
             mockClient.delete.mockResolvedValue({ data: undefined });

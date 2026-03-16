@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from '../api/clientContainer';
-import { ITicket } from "src/interfaces/tickets/ticket.interface";
+import { ITicket } from "../interfaces/tickets/ticket.interface";
 
 export const useTicketsQuery = (reportId: string) => {
     return useQuery({

@@ -4,11 +4,13 @@ export * from './interfaces/users/createUser.interface';
 
 // Auth
 export * from './interfaces/auth/loginResponse.interface';
+export * from './interfaces/auth/currentUser.interface';
 export * from './schemas/auth/login.schema'
 export * from './schemas/auth/register.schema';
 
 // Users
 export * from './schemas/users/updateUser.schema';
+export * from './schemas/users/createUser.schema';
 
 // Reports
 export * from './interfaces/reports/report.interface';
@@ -35,6 +37,17 @@ export * from './api/clientContainer';
 export * from './hooks/useAuth';
 export * from './hooks/useReports';
 export * from './hooks/useTickets';
+export * from './hooks/useUsers';
+export * from './hooks/useDepartments';
+export * from './hooks/useRoles';
+export * from './hooks/useOrganizations';
+export * from './hooks/usePermissions';
+export * from './hooks/usePermissionsManagement';
+export * from './hooks/useScope';
+
+// Shared components (React.Fragment only — compatible with web and mobile)
+export * from './components/PermissionGuard';
+export * from './components/ScopeProvider';
 
 // I18n
 export * from './i18n';
@@ -57,7 +70,14 @@ export * from './schemas/department/updateDepartment.schema';
 // Pagination
 export * from './interfaces/pagination/pagination.interface';
 
+// Scope
+export * from './interfaces/scope/scope.interface';
+
+// Component interfaces
+export * from './interfaces/permissions/permissionGuard.interface';
+
 // Roles
+export * from './interfaces/roles/role.interface';
 export * from './schemas/roles/createRole.schema';
 
 // Permissions

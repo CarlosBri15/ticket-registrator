@@ -18,7 +18,7 @@ import {
   ChevronRight
 } from 'lucide-react-native';
 import { Button } from '../../src/components/Button';
-import { useUserQuery, useReportsQuery } from '@ticket-registrator/shared';
+import { useUserQuery, useReportsQuery, ReportStatus } from '@ticket-registrator/shared';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -32,7 +32,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     PENDING: { bg: 'bg-amber-100', text: 'text-amber-600' },
   };
 
-  const config = colors[status] || colors.DRAFT;
+  const config = colors[status.toUpperCase()] || colors.DRAFT;
 
   return (
     <View className={`${config.bg} px-2 py-0.5 rounded-full`}>
@@ -55,8 +55,8 @@ export default function HomeScreen() {
   }, [refetch]);
 
   const totalSpent = reports?.reduce((acc, r) => acc + (r.requested_amount || 0), 0) || 0;
-  const activeTrips = reports?.filter(r => r.status === 'DRAFT' || r.status === 'PENDING').length || 0;
-  const rejectedItems = reports?.filter(r => r.status === 'REJECTED').length || 0;
+  const activeTrips = reports?.filter(r => r.status === ReportStatus.CREATED || r.status === ReportStatus.SUBMITTED).length || 0;
+  const rejectedItems = reports?.filter(r => r.status === ReportStatus.DECLINED).length || 0;
 
   const getGreetingKey = () => {
     const hour = new Date().getHours();
@@ -149,7 +149,7 @@ export default function HomeScreen() {
         </ScrollView>
 
         {/* Active Trip Card */}
-        {reports?.find(r => r.status === 'DRAFT') && (
+        {reports?.find(r => r.status === ReportStatus.CREATED) && (
             <View className="mb-8">
             <View className="flex-row items-center mb-4">
                 <Plane size={18} color="#336b87" />
@@ -157,7 +157,7 @@ export default function HomeScreen() {
             </View>
 
             {(() => {
-                const activeTrip = reports.find(r => r.status === 'DRAFT')!;
+                const activeTrip = reports.find(r => r.status === ReportStatus.CREATED)!;
                 return (
                     <TouchableOpacity 
                         onPress={() => router.push(`/(app)/trips/${activeTrip.id}`)}
