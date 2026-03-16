@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ReportDetailScreen } from './ReportDetailScreen';
 
@@ -136,5 +136,73 @@ describe('ReportDetailScreen', () => {
     });
     renderScreen();
     expect(screen.getByText('reportDetail.startDigitalizing')).toBeInTheDocument();
+  });
+
+  it('shows ticket loading skeleton when tickets are loading', () => {
+    (useReportQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: {
+        id: 'r1', name: 'Viaje Madrid', status: 'CREATED',
+        start_date: '2024-01-01', end_date: '2024-01-05',
+        requested_amount: 300, approved_amount: null, currency: 'EUR',
+      },
+      isLoading: false,
+      isError: false,
+    });
+    (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: undefined, isLoading: true });
+    const { container } = renderScreen();
+    expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
+  });
+
+  it('renders tickets list when tickets are available', () => {
+    (useReportQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: {
+        id: 'r1', name: 'Viaje Madrid', status: 'CREATED',
+        start_date: '2024-01-01', end_date: '2024-01-05',
+        requested_amount: 300, approved_amount: null, currency: 'EUR',
+      },
+      isLoading: false,
+      isError: false,
+    });
+    (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [
+        { id: 't1', location_name: 'Restaurante Sol', amount: 25, currency: 'EUR', status: 'PENDING', date: '2024-01-10', expense_type: 'Comida' },
+        { id: 't2', location_name: 'Hotel Central', amount: 120, currency: 'EUR', status: 'APPROVED', date: '2024-01-11', expense_type: 'Alojamiento' },
+      ],
+      isLoading: false,
+    });
+    renderScreen();
+    expect(screen.getByText('Restaurante Sol')).toBeInTheDocument();
+    expect(screen.getByText('Hotel Central')).toBeInTheDocument();
+  });
+
+  it('shows delete confirm dialog when delete button is clicked', () => {
+    (useReportQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: {
+        id: 'r1', name: 'Viaje Madrid', status: 'CREATED',
+        start_date: '2024-01-01', end_date: '2024-01-05',
+        requested_amount: 300, approved_amount: null, currency: 'EUR',
+      },
+      isLoading: false,
+      isError: false,
+    });
+    renderScreen();
+    fireEvent.click(screen.getByText('common.delete'));
+    expect(screen.getByText('reportDetail.deleteReport')).toBeInTheDocument();
+    expect(screen.getByText('reportDetail.confirmDelete')).toBeInTheDocument();
+  });
+
+  it('shows decline confirm dialog when decline button is clicked', () => {
+    (useReportQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: {
+        id: 'r1', name: 'Viaje Madrid', status: 'SUBMITTED',
+        start_date: '2024-01-01', end_date: '2024-01-05',
+        requested_amount: 300, approved_amount: null, currency: 'EUR',
+      },
+      isLoading: false,
+      isError: false,
+    });
+    renderScreen();
+    fireEvent.click(screen.getAllByText('reportDetail.declineReport')[0]);
+    expect(screen.getByText('reportDetail.confirmDecline')).toBeInTheDocument();
   });
 });

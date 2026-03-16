@@ -78,4 +78,39 @@ describe('TicketConfirmationForm', () => {
     );
     expect(screen.getByText('Descartar')).toBeInTheDocument();
   });
+
+  it('shows missing fields section when ticket has null fields', () => {
+    const partialTicket = {
+      id: 't2', location_name: null, amount: null, currency: null,
+      status: 'PENDING', date: null, expense_type: null,
+      location_address: null, payment_type: null,
+    };
+    render(
+      <TicketConfirmationForm
+        ticket={partialTicket as any}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Completa estos campos')).toBeInTheDocument();
+    expect(screen.getByLabelText('Establecimiento *')).toBeInTheDocument();
+  });
+
+  it('renders items list when ticket has items', () => {
+    render(
+      <TicketConfirmationForm
+        ticket={{
+          ...mockTicket,
+          items: [
+            { name: 'Menú del día', amount: 12.5, currency: 'EUR' },
+            { name: 'Bebida', amount: 2.5, currency: 'EUR' },
+          ],
+        } as any}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Menú del día')).toBeInTheDocument();
+    expect(screen.getByText('Bebida')).toBeInTheDocument();
+  });
 });

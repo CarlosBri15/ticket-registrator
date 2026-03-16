@@ -6,7 +6,7 @@ import { Button } from "../../../components/ui/Button";
 
 interface TicketConfirmationFormProps {
   ticket: ITicket;
-  onConfirm: (updatedTicket: Partial<ITicket>) => Promise<void>;
+  onConfirm: (updatedTicket: Partial<ITicket>) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }

@@ -6,6 +6,14 @@ vi.mock('@ticket-registrator/shared', () => ({
   useTicketImageQuery: vi.fn(),
 }));
 
+vi.mock('date-fns', () => ({
+  format: () => '10 Jan 2024',
+}));
+vi.mock('date-fns/locale', () => ({
+  es: {},
+  enUS: {},
+}));
+
 vi.mock('lucide-react', () => ({
   MapPin: () => null,
   CreditCard: () => null,
@@ -82,5 +90,31 @@ describe('TicketDetailModal', () => {
   it('renders nothing when modal is closed', () => {
     const { container } = renderModal({ isOpen: false });
     expect(container.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('renders image and full-screen link when imageData has url', () => {
+    (useTicketImageQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: { url: 'http://example.com/ticket.jpg' },
+      isLoading: false,
+    });
+    renderModal();
+    const img = screen.getByAltText('Ticket');
+    expect(img).toBeInTheDocument();
+    expect((img as HTMLImageElement).src).toBe('http://example.com/ticket.jpg');
+    expect(screen.getByText('Ver pantalla completa')).toBeInTheDocument();
+  });
+
+  it('renders items list when ticket has items', () => {
+    renderModal({
+      ticket: {
+        ...mockTicket,
+        items: [
+          { name: 'Café con leche', amount: 3.5, currency: 'EUR' },
+          { name: 'Tostada', amount: 2.0, currency: 'EUR' },
+        ],
+      } as any,
+    });
+    expect(screen.getByText('Café con leche')).toBeInTheDocument();
+    expect(screen.getByText('Tostada')).toBeInTheDocument();
   });
 });

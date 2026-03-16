@@ -75,7 +75,7 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
     }
   };
 
-  const handleUpload = async () => {
+  const handleUpload = () => {
     if (!file) return;
 
     const formData = new FormData();
@@ -84,7 +84,7 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
     uploadMutation.mutate({ reportId, formData });
   };
 
-  const handleConfirm = async (updatedData: Partial<ITicket>) => {
+  const handleConfirm = (updatedData: Partial<ITicket>) => {
     if (!extractedTicket) return;
     updateMutation.mutate({
       reportId,
@@ -93,7 +93,7 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
     });
   };
 
-  const handleDiscard = async () => {
+  const handleDiscard = () => {
     if (!extractedTicket) {
       setFile(null);
       return;

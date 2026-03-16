@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { PermissionsScreen } from './PermissionsScreen';
 
@@ -110,5 +110,33 @@ describe('PermissionsScreen', () => {
     });
     renderScreen();
     expect(screen.getByText('SuperAdmin')).toBeInTheDocument();
+  });
+
+  it('shows loading spinner when roles are loading', () => {
+    (useRolesQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: undefined, isLoading: true });
+    const { container } = renderScreen();
+    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+  });
+
+  it('shows role header and permission grid when a role is selected', () => {
+    (useRolesQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'r1', name: 'Manager', companyId: 'c1', hierarchy: 50 }],
+      isLoading: false,
+    });
+    (useAllPermissionsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'p1', name: 'view_users', description: 'Ver usuarios' }],
+      isLoading: false,
+    });
+    (useRolePermissionsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'p1', name: 'view_users' }],
+      isLoading: false,
+    });
+
+    renderScreen();
+    fireEvent.click(screen.getByText('Manager'));
+
+    expect(screen.getByText('1 permisos asignados')).toBeInTheDocument();
+    expect(screen.getByText('Usuarios')).toBeInTheDocument();
+    expect(screen.getByText('Ver usuarios')).toBeInTheDocument();
   });
 });
