@@ -43,7 +43,7 @@ export const TicketConfirmationForm = ({
     location_name:    ticket.location_name    || "",
     location_address: ticket.location_address || "",
     date:             ticket.date ? new Date(ticket.date).toISOString().split("T")[0] : "",
-    amount:           ticket.amount != null   ? ticket.amount.toString() : "",
+    amount:           ticket.amount == null   ? "" : ticket.amount.toString(),
     currency:         ticket.currency         || "",
     payment_type:     ticket.payment_type     || "",
     expense_type:     ticket.expense_type     || "",
@@ -75,8 +75,8 @@ export const TicketConfirmationForm = ({
       }
     }
     if (key === "amount") {
-      const n = parseFloat(raw);
-      return isNaN(n) ? raw : `${n.toFixed(2)} ${formData.currency || ""}`;
+      const n = Number.parseFloat(raw);
+      return Number.isNaN(n) ? raw : `${n.toFixed(2)} ${formData.currency || ""}`;
     }
     return raw;
   };
@@ -86,13 +86,13 @@ export const TicketConfirmationForm = ({
     setFormData((prev) => ({ ...prev, [name as FieldKey]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onConfirm({
       location_name:    formData.location_name    || null,
       location_address: formData.location_address || null,
       date:             formData.date             || null,
-      amount:           formData.amount ? parseFloat(formData.amount) : null,
+      amount:           formData.amount ? Number.parseFloat(formData.amount) : null,
       currency:         formData.currency         || null,
       payment_type:     formData.payment_type     || null,
       expense_type:     formData.expense_type     || null,
@@ -215,7 +215,7 @@ export const TicketConfirmationForm = ({
             <div className="max-h-40 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
               {ticket.items.map((item, index) => (
                 <div
-                  key={index}
+                  key={item.id || `${item.name}-${index}`}
                   className="flex justify-between items-center bg-white/80 p-3 rounded-xl border border-white/50 shadow-sm"
                 >
                   <span className="text-sm font-medium text-dark truncate mr-3">{item.name}</span>

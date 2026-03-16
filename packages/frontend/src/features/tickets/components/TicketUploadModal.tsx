@@ -64,13 +64,13 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files?.[0]) {
       setFile(e.dataTransfer.files[0]);
     }
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files?.[0]) {
       setFile(e.target.files[0]);
     }
   };
@@ -111,19 +111,19 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
       <div className="space-y-6">
         {step === 'upload' ? (
           <>
-            <div
+            <label
               onDragOver={onDragOver}
               onDragLeave={onDragLeave}
               onDrop={onDrop}
               className={`
-                relative border-2 border-dashed rounded-[2rem] p-10 transition-all duration-300 flex flex-col items-center justify-center
+                relative border-2 border-dashed rounded-[2rem] p-10 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer
                 ${isDragging ? 'border-brand bg-brand/5' : 'border-gray-200 bg-gray-50/50 hover:bg-white hover:border-brand/30'}
                 ${file ? 'border-green-500/50 bg-green-50/10' : ''}
               `}
             >
               <input
                 type="file"
-                className="absolute inset-0 opacity-0 cursor-pointer"
+                className="sr-only"
                 onChange={handleFileChange}
                 accept="image/*,application/pdf"
                 disabled={uploadMutation.isPending}
@@ -157,7 +157,7 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
                   </div>
                 </div>
               )}
-            </div>
+            </label>
 
             <div className="bg-amber-50 p-4 rounded-2xl flex gap-3 border border-amber-100">
                 <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />

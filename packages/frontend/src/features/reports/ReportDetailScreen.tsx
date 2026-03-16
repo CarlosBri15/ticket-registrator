@@ -235,7 +235,7 @@ export const ReportDetailScreen = () => {
               <div className="flex items-center gap-3 shrink-0 ml-3">
                 <div className="text-right">
                   <p className="font-black text-dark text-base leading-tight">
-                    {ticket.amount != null ? ticket.amount.toLocaleString() : "—"}
+                    {ticket.amount == null ? "—" : ticket.amount.toLocaleString()}
                     <span className="text-[10px] text-gray-400 font-medium ml-1">{ticket.currency}</span>
                   </p>
                   <div className="mt-1">

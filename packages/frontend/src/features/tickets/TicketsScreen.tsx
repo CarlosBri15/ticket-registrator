@@ -55,13 +55,11 @@ const ReportTicketGroup = ({
       </button>
 
       {filtered.map((ticket) => (
-        <div
+        <button
           key={ticket.id}
+          type="button"
           onClick={() => onTicketClick(ticket, report.id)}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onTicketClick(ticket, report.id); }}
-          role="button"
-          tabIndex={0}
-          className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md hover:border-brand/20 transition-all cursor-pointer group flex items-center justify-between"
+          className="w-full bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md hover:border-brand/20 transition-all cursor-pointer group flex items-center justify-between text-left"
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center group-hover:bg-brand/5 transition-colors shrink-0">
@@ -93,7 +91,7 @@ const ReportTicketGroup = ({
             </div>
             <ArrowRight className="w-4 h-4 text-gray-200 group-hover:text-brand group-hover:translate-x-1 transition-all" />
           </div>
-        </div>
+        </button>
       ))}
     </div>
   );
@@ -141,34 +139,44 @@ export const AllTicketsScreen = () => {
       </div>
 
       {/* Content */}
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-32">
-          <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-gray-500 font-medium">Cargando tickets...</p>
-        </div>
-      ) : !reports || reports.length === 0 ? (
-        <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
-          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Receipt className="w-10 h-10 text-gray-300" />
+      {(() => {
+        if (isLoading) {
+          return (
+            <div className="flex flex-col items-center justify-center py-32">
+              <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-gray-500 font-medium">Cargando tickets...</p>
+            </div>
+          );
+        }
+
+        if (!reports || reports.length === 0) {
+          return (
+            <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
+              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Receipt className="w-10 h-10 text-gray-300" />
+              </div>
+              <h3 className="text-2xl font-black text-dark mb-3">No hay tickets registrados</h3>
+              <p className="text-gray-400 max-w-sm mx-auto">
+                Sube tickets de gasto desde tus viajes para verlos listados aqui.
+              </p>
+            </div>
+          );
+        }
+
+        return (
+          <div className="space-y-8">
+            {reports.map((report) => (
+              <ReportTicketGroup
+                key={report.id}
+                report={report}
+                onTicketClick={handleTicketClick}
+                dateLocale={dateLocale}
+                search={search}
+              />
+            ))}
           </div>
-          <h3 className="text-2xl font-black text-dark mb-3">No hay tickets registrados</h3>
-          <p className="text-gray-400 max-w-sm mx-auto">
-            Sube tickets de gasto desde tus viajes para verlos listados aqui.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {reports.map((report) => (
-            <ReportTicketGroup
-              key={report.id}
-              report={report}
-              onTicketClick={handleTicketClick}
-              dateLocale={dateLocale}
-              search={search}
-            />
-          ))}
-        </div>
-      )}
+        );
+      })()}
 
       <TicketDetailModal
         isOpen={isDetailOpen}

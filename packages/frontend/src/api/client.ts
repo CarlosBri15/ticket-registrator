@@ -14,8 +14,8 @@ const tokenProvider: TokenProvider = {
     },
     onUnauthorized: () => {
         const publicPaths = ['/login', '/register'];
-        if (!publicPaths.includes(window.location.pathname)) {
-            window.location.href = '/login';
+        if (!publicPaths.includes(globalThis.location.pathname)) {
+            globalThis.location.href = '/login';
         }
     }
 };

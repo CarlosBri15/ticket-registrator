@@ -14,7 +14,7 @@ import { Modal } from "../../components/ui/Modal";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
-type AdminEntry = { name: string; surname: string; email: string };
+type AdminEntry = { id: string; name: string; surname: string; email: string };
 
 const OnboardModal = ({
   isOpen,
@@ -25,20 +25,24 @@ const OnboardModal = ({
 }) => {
   const mutation = useOnboardOrganizationMutation({ onSuccess: onClose });
   const [companyName, setCompanyName] = useState("");
-  const [admins, setAdmins] = useState<AdminEntry[]>([{ name: "", surname: "", email: "" }]);
+  const [admins, setAdmins] = useState<AdminEntry[]>([
+    { id: crypto.randomUUID(), name: "", surname: "", email: "" }
+  ]);
 
-  const updateAdmin = (index: number, field: keyof AdminEntry, value: string) => {
-    setAdmins((prev) => {
-      const next = [...prev];
-      next[index] = { ...next[index], [field]: value };
-      return next;
-    });
+  const updateAdmin = (id: string, field: keyof AdminEntry, value: string) => {
+    setAdmins((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, [field]: value } : a))
+    );
   };
 
-  const addAdmin = () => setAdmins((prev) => [...prev, { name: "", surname: "", email: "" }]);
-  const removeAdmin = (index: number) => setAdmins((prev) => prev.filter((_, i) => i !== index));
+  const addAdmin = () => setAdmins((prev) => [
+    ...prev,
+    { id: crypto.randomUUID(), name: "", surname: "", email: "" }
+  ]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const removeAdmin = (id: string) => setAdmins((prev) => prev.filter((a) => a.id !== id));
+
+  const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     mutation.mutate({
       company: { name: companyName },
@@ -63,9 +67,9 @@ const OnboardModal = ({
 
         <div>
           <div className="flex items-center justify-between mb-3">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
               Administradores iniciales *
-            </label>
+            </span>
             {admins.length < 3 && (
               <button
                 type="button"
@@ -78,13 +82,13 @@ const OnboardModal = ({
           </div>
           <div className="space-y-4">
             {admins.map((admin, i) => (
-              <div key={i} className="p-4 bg-gray-50 rounded-2xl space-y-3">
+              <div key={admin.id} className="p-4 bg-gray-50 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Admin {i + 1}</p>
                   {admins.length > 1 && (
                     <button
                       type="button"
-                      onClick={() => removeAdmin(i)}
+                      onClick={() => removeAdmin(admin.id)}
                       className="text-xs text-red-400 hover:text-red-600 font-bold"
                     >
                       Quitar
@@ -95,14 +99,14 @@ const OnboardModal = ({
                   <Input
                     label="Nombre *"
                     value={admin.name}
-                    onChange={(e) => updateAdmin(i, "name", e.target.value)}
+                    onChange={(e) => updateAdmin(admin.id, "name", e.target.value)}
                     placeholder="Carlos"
                     required
                   />
                   <Input
                     label="Apellido *"
                     value={admin.surname}
-                    onChange={(e) => updateAdmin(i, "surname", e.target.value)}
+                    onChange={(e) => updateAdmin(admin.id, "surname", e.target.value)}
                     placeholder="García"
                     required
                   />
@@ -111,7 +115,7 @@ const OnboardModal = ({
                   label="Email *"
                   type="email"
                   value={admin.email}
-                  onChange={(e) => updateAdmin(i, "email", e.target.value)}
+                  onChange={(e) => updateAdmin(admin.id, "email", e.target.value)}
                   placeholder="carlos@acme.com"
                   required
                 />
@@ -149,14 +153,12 @@ const OrgCard = ({
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
 }) => (
-  <div
-    className={`bg-white p-6 rounded-[2rem] border transition-all cursor-pointer group ${
+  <button
+    type="button"
+    className={`w-full text-left bg-white p-6 rounded-[2rem] border transition-all cursor-pointer group ${
       isActive ? "border-brand shadow-lg shadow-brand/10" : "border-gray-100 shadow-sm hover:shadow-md hover:border-brand/20"
     }`}
     onClick={() => onSelect(org.id)}
-    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(org.id); }}
-    role="button"
-    tabIndex={0}
   >
     <div className="flex items-start justify-between gap-3">
       <div className="flex items-center gap-3 min-w-0">
@@ -189,7 +191,7 @@ const OrgCard = ({
         <ChevronRight className={`w-4 h-4 transition-colors ${isActive ? "text-brand" : "text-gray-200 group-hover:text-brand"}`} />
       </div>
     </div>
-  </div>
+  </button>
 );
 
 export const OrganizationsScreen = () => {
@@ -239,33 +241,43 @@ export const OrganizationsScreen = () => {
       )}
 
       {/* Content */}
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-32">
-          <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-gray-500 font-medium">Cargando organizaciones...</p>
-        </div>
-      ) : !organizations || organizations.length === 0 ? (
-        <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
-          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Globe className="w-10 h-10 text-gray-300" />
+      {(() => {
+        if (isLoading) {
+          return (
+            <div className="flex flex-col items-center justify-center py-32">
+              <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-gray-500 font-medium">Cargando organizaciones...</p>
+            </div>
+          );
+        }
+
+        if (!organizations || organizations.length === 0) {
+          return (
+            <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
+              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Globe className="w-10 h-10 text-gray-300" />
+              </div>
+              <h3 className="text-2xl font-black text-dark mb-3">No hay organizaciones</h3>
+              <p className="text-gray-400 max-w-sm mx-auto">Crea la primera organización del sistema.</p>
+            </div>
+          );
+        }
+
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {organizations.map((org) => (
+              <OrgCard
+                key={org.id}
+                org={org}
+                isActive={activeCompanyId === org.id}
+                canDelete={can("delete_company")}
+                onSelect={handleSelect}
+                onDelete={(id) => deleteMutation.mutate(id)}
+              />
+            ))}
           </div>
-          <h3 className="text-2xl font-black text-dark mb-3">No hay organizaciones</h3>
-          <p className="text-gray-400 max-w-sm mx-auto">Crea la primera organización del sistema.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {organizations.map((org) => (
-            <OrgCard
-              key={org.id}
-              org={org}
-              isActive={activeCompanyId === org.id}
-              canDelete={can("delete_company")}
-              onSelect={handleSelect}
-              onDelete={(id) => deleteMutation.mutate(id)}
-            />
-          ))}
-        </div>
-      )}
+        );
+      })()}
 
       <OnboardModal isOpen={isOnboardOpen} onClose={() => setIsOnboardOpen(false)} />
     </div>

@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
+  PieChart, Pie, Legend,
 } from "recharts";
 import { Button } from "../../components/ui/Button";
 import { StatCard } from "../../components/ui/StatCard";
@@ -238,11 +238,20 @@ const QuickActionsGrid = ({
 
 const CHART_COLORS = ["#6366F1", "#8B5CF6", "#A78BFA", "#C4B5FD", "#DDD6FE", "#EDE9FE"];
 
+const LegendFormatter = (value: string) => (
+  <span style={{ fontSize: 11, fontWeight: 700, color: "#6B7280" }}>
+    {value.length > 18 ? value.substring(0, 16) + "…" : value}
+  </span>
+);
+
 const AnalyticsSection = ({ reports }: { reports: IReport[] }) => {
   const { t } = useTranslation();
 
   const monthly = getMonthlyExpenses(reports, 6);
-  const byType = getExpensesByType(reports);
+  const byType = getExpensesByType(reports).map((item, i) => ({
+    ...item,
+    fill: CHART_COLORS[i % CHART_COLORS.length]
+  }));
 
   const hasMonthly = monthly.length > 0;
   const hasType = byType.length > 0;
@@ -318,11 +327,8 @@ const AnalyticsSection = ({ reports }: { reports: IReport[] }) => {
                   innerRadius={48}
                   outerRadius={72}
                   paddingAngle={3}
-                >
-                  {byType.map((item, i) => (
-                    <Cell key={`cell-${item.type}-${i}`} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
+                  isAnimationActive={false}
+                />
                 <Tooltip
                   contentStyle={{
                     borderRadius: "1rem",
@@ -336,11 +342,7 @@ const AnalyticsSection = ({ reports }: { reports: IReport[] }) => {
                 <Legend
                   iconType="circle"
                   iconSize={8}
-                  formatter={(value) => (
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#6B7280" }}>
-                      {value.length > 18 ? value.substring(0, 16) + "…" : value}
-                    </span>
-                  )}
+                  formatter={LegendFormatter}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -357,7 +359,247 @@ const AnalyticsSection = ({ reports }: { reports: IReport[] }) => {
   );
 };
 
-// ---------- Main Page ----------
+// ---------- Main Page Components ----------
+
+const DashboardHeader = ({
+  user, t, i18n, firstName, greetingKey, navigate
+}: {
+  user: any; t: any; i18n: any; firstName: string; greetingKey: string; navigate: any
+}) => (
+  <div className="relative bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm overflow-hidden">
+    <div className="absolute top-0 right-0 w-80 h-80 bg-brand/5 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+    <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-secondary/5 rounded-full translate-y-2/3 pointer-events-none" />
+    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex items-center gap-5">
+        <div className="relative shrink-0">
+          <div className="w-14 h-14 bg-brand rounded-2xl flex items-center justify-center shadow-xl shadow-brand/25 text-white font-black text-xl select-none">
+            {user?.name?.charAt(0).toUpperCase() ?? <Sparkles className="w-6 h-6" />}
+          </div>
+          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-gray-400 mb-0.5 capitalize">
+            {new Date().toLocaleDateString(i18n.language, {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            })}
+          </p>
+          <h1 className="text-2xl font-black text-dark tracking-tight">
+            {t(greetingKey, { name: firstName })} 👋
+          </h1>
+          {user?.roleName && (
+            <span className="inline-block mt-1 text-[10px] font-black uppercase tracking-widest text-brand/60 bg-brand/5 px-2.5 py-0.5 rounded-full">
+              {user.roleName}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="flex gap-3 shrink-0">
+        <Button variant="secondary" className="w-auto px-6" onClick={() => navigate("/trips")}>
+          <FileText className="w-4 h-4 mr-2" />
+          {t("trips.title")}
+        </Button>
+        <Button className="w-auto px-6 shadow-xl shadow-brand/20" onClick={() => navigate("/trips")}>
+          <Plus className="w-4 h-4 mr-2" />
+          {t("home.newTrip")}
+        </Button>
+      </div>
+    </div>
+  </div>
+);
+
+const KpisGrid = ({
+  amounts, reportsByStatus, showTeamStats, teamMemberCount, t
+}: {
+  amounts: any; reportsByStatus: any; showTeamStats: boolean; teamMemberCount: number; t: any
+}) => (
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <StatCard
+      variant="primary"
+      title={t("home.pendingReimbursement")}
+      value={`${amounts.pending.toFixed(2)} €`}
+      icon={<Wallet className="w-5 h-5" />}
+      trend={amounts.pending > 0 ? t("home.inProcess") : t("home.upToDate")}
+      trendUp={false}
+    />
+
+    {showTeamStats ? (
+      <>
+        <StatCard
+          title={t("home.teamMembers")}
+          value={teamMemberCount.toString()}
+          icon={<Users className="w-5 h-5" />}
+          subtitle={t("home.activeMembers")}
+        />
+        <div className={`relative overflow-hidden rounded-[2rem] p-6 flex flex-col gap-4 border shadow-sm transition-all duration-300 ${reportsByStatus.pending.length > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-gray-100"}`}>
+          {reportsByStatus.pending.length > 0 && (
+            <div className="absolute top-0 right-0 w-36 h-36 bg-amber-100/50 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+          )}
+          <div className="relative z-10 flex items-start justify-between">
+            <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${reportsByStatus.pending.length > 0 ? "text-amber-600" : "text-gray-400"}`}>
+              {t("home.pendingApprovals")}
+            </p>
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${reportsByStatus.pending.length > 0 ? "bg-amber-100 text-amber-600" : "bg-gray-50 text-gray-300"}`}>
+              <AlertCircle className="w-5 h-5" />
+            </div>
+          </div>
+          <h3 className={`relative z-10 text-3xl font-black tracking-tighter ${reportsByStatus.pending.length > 0 ? "text-amber-700" : "text-dark"}`}>
+            {reportsByStatus.pending.length}
+          </h3>
+          <p className={`relative z-10 text-xs font-bold ${reportsByStatus.pending.length > 0 ? "text-amber-600/70" : "text-gray-400"}`}>
+            {reportsByStatus.pending.length > 0 ? t("home.requiresReview") : t("home.noPending")}
+          </p>
+        </div>
+      </>
+    ) : (
+      <>
+        <StatCard
+          title={t("home.activeTrips")}
+          value={reportsByStatus.active.length.toString()}
+          icon={<Plane className="w-5 h-5" />}
+          subtitle={t("home.activeTripsSubtitle")}
+        />
+        <div className={`relative overflow-hidden rounded-[2rem] p-6 flex flex-col gap-4 border shadow-sm transition-all duration-300 ${amounts.rejectedCount > 0 ? "bg-accent/5 border-accent/20" : "bg-white border-gray-100"}`}>
+          {amounts.rejectedCount > 0 && (
+            <div className="absolute top-0 right-0 w-36 h-36 bg-accent/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+          )}
+          <div className="relative z-10 flex items-start justify-between">
+            <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${amounts.rejectedCount > 0 ? "text-accent/70" : "text-gray-400"}`}>
+              {t("home.rejectedItems")}
+            </p>
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${amounts.rejectedCount > 0 ? "bg-accent/10 text-accent" : "bg-gray-50 text-gray-300"}`}>
+              <AlertCircle className="w-5 h-5" />
+            </div>
+          </div>
+          <h3 className={`relative z-10 text-3xl font-black tracking-tighter ${amounts.rejectedCount > 0 ? "text-accent" : "text-dark"}`}>
+            {amounts.rejectedCount}
+          </h3>
+          <p className={`relative z-10 text-xs font-bold ${amounts.rejectedCount > 0 ? "text-accent/60" : "text-gray-400"}`}>
+            {amounts.rejectedCount > 0 ? t("home.requiresAttention") : t("home.noIncidents")}
+          </p>
+        </div>
+      </>
+    )}
+  </div>
+);
+
+const MainDashboardGrid = ({
+  showTeamStats, canApprove, reportsByStatus, currentTrip, navigate, dateLocale, t, amounts
+}: {
+  showTeamStats: boolean; canApprove: boolean; reportsByStatus: any; currentTrip: any; navigate: any; dateLocale: Locale; t: any; amounts: any
+}) => (
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+    <section className="lg:col-span-2 space-y-5">
+      <h2 className="text-lg font-black text-dark flex items-center gap-3 tracking-tight">
+        <div className="w-7 h-7 bg-brand/10 rounded-xl flex items-center justify-center">
+          {showTeamStats ? <Clock className="w-4 h-4 text-brand" /> : <TrendingUp className="w-4 h-4 text-brand" />}
+        </div>
+        {showTeamStats && canApprove ? t("home.pendingApprovals") : showTeamStats ? t("home.teamReports") : t("home.activeTrip")}
+      </h2>
+
+      {(() => {
+        if (showTeamStats) {
+          return (
+            <PendingApprovalsList
+              reports={canApprove ? reportsByStatus.pending : reportsByStatus.active}
+              navigate={navigate}
+              dateLocale={dateLocale}
+              t={t}
+            />
+          );
+        }
+        if (currentTrip) {
+          return (
+            <ActiveTripCard
+              currentTrip={currentTrip}
+              navigate={navigate}
+              dateLocale={dateLocale}
+              t={t}
+            />
+          );
+        }
+        return (
+          <div className="bg-white rounded-[2.5rem] border border-dashed border-gray-200 p-14 text-center flex flex-col items-center min-h-[280px] justify-center hover:border-brand/30 hover:bg-gray-50/30 transition-all duration-300 group">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-5 group-hover:bg-brand/5 transition-colors">
+              <Plane className="w-8 h-8 text-gray-300 group-hover:text-brand/40 transition-colors" />
+            </div>
+            <p className="text-gray-400 font-semibold mb-6 max-w-xs leading-relaxed">{t("trips.noActiveTrips")}</p>
+            <Button variant="secondary" className="w-auto bg-white border-gray-200" onClick={() => navigate("/trips")}>
+              <Plus className="w-4 h-4 mr-2" /> {t("home.createFirst")}
+            </Button>
+          </div>
+        );
+      })()}
+    </section>
+
+    <section className="space-y-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-black text-dark flex items-center gap-3 tracking-tight">
+          <div className="w-7 h-7 bg-gray-100 rounded-xl flex items-center justify-center">
+            <Clock className="w-4 h-4 text-gray-400" />
+          </div>
+          {t("home.recentActivity")}
+        </h2>
+        <button onClick={() => navigate("/trips")} className="text-[10px] font-black text-brand uppercase tracking-widest hover:underline underline-offset-2">
+          {t("common.viewAll")}
+        </button>
+      </div>
+
+      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+        {reportsByStatus.completed.length === 0 ? (
+          <div className="p-10 text-center">
+            <p className="text-sm text-gray-400 font-medium">{t("trips.noCompletedTrips")}</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {reportsByStatus.completed.slice(0, 5).map((report: any) => (
+              <button
+                key={report.id}
+                type="button"
+                onClick={() => navigate(`/trips/${report.id}`)}
+                className="w-full text-left p-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors group"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${report.status === ReportStatus.APPROVED ? "bg-green-50 text-green-600" : report.status === ReportStatus.DECLINED ? "bg-red-50 text-accent" : "bg-gray-50 text-gray-400"}`}>
+                    {report.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-dark text-sm truncate group-hover:text-brand transition-colors">{report.name}</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{format(new Date(report.end_date), "dd MMM yyyy", { locale: dateLocale })}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                  <div className="text-right">
+                    <span className="font-black text-dark text-sm block leading-none">
+                      {report.approved_amount || report.requested_amount}
+                      <span className="text-[9px] font-bold text-gray-400 ml-0.5">{report.currency}</span>
+                    </span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-200 group-hover:text-brand group-hover:translate-x-1 transition-all" />
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showTeamStats && amounts.approved > 0 && (
+        <div className="bg-green-50 rounded-[2rem] p-5 border border-green-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-green-600 uppercase tracking-widest">{t("home.totalApproved")}</p>
+              <p className="text-xl font-black text-green-700 tracking-tighter">{amounts.approved.toFixed(2)} €</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  </div>
+);
 
 export const DashboardPage = () => {
   const { t, i18n } = useTranslation();
@@ -368,56 +610,12 @@ export const DashboardPage = () => {
   const { isSelf } = useScope();
   const { can } = usePermissions();
 
-  const dateLocale = i18n.language.startsWith("es") ? es : enUS;
-
-  const activeReports =
-    reports?.filter((r) =>
-      ["CREATED", "DRAFT", "PENDING", "SUBMITTED"].includes(r.status.toUpperCase())
-    ) || [];
-  const completedReports =
-    reports?.filter((r) =>
-      ["APPROVED", "PAID", "REJECTED", "DECLINED"].includes(r.status.toUpperCase())
-    ) || [];
-  const pendingApprovals =
-    reports?.filter((r) => r.status.toUpperCase() === "SUBMITTED") || [];
-  const currentTrip = activeReports.find(
-    (r) => r.status.toUpperCase() !== "SUBMITTED"
-  ) || null;
-
-  const pendingAmount =
-    reports?.reduce(
-      (acc, r) => acc + (r.status === ReportStatus.SUBMITTED ? r.requested_amount : 0),
-      0
-    ) || 0;
-  const approvedAmount =
-    reports?.reduce(
-      (acc, r) => acc + (r.status === ReportStatus.APPROVED ? (r.approved_amount || 0) : 0),
-      0
-    ) || 0;
-
-  const teamMemberCount = users?.length ?? 0;
-
-  const getGreetingKey = (currentHour: number) => {
-    if (currentHour < 12) return "home.greetingMorning";
-    if (currentHour < 19) return "home.greetingAfternoon";
-    return "home.greetingEvening";
-  };
-
-  const greetingKey = getGreetingKey(new Date().getHours());
-  const firstName = user?.name?.split(" ")[0] || "Usuario";
-
-  const canApprove = can("approve_reports");
-  const showTeamStats = !isSelf;
-  const showManagementLinks = can("view_users") || can("view_departments") || can("view_roles");
-
   if (reportsLoading) {
     return (
       <div className="space-y-8 pb-10">
         <div className="h-28 bg-white rounded-[2.5rem] border border-gray-100 animate-pulse" />
         <div className="grid grid-cols-3 gap-5">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-36 bg-white rounded-[2rem] border border-gray-100 animate-pulse" />
-          ))}
+          {[1, 2, 3].map((i) => <div key={i} className="h-36 bg-white rounded-[2rem] border border-gray-100 animate-pulse" />)}
         </div>
         <div className="grid grid-cols-3 gap-10">
           <div className="col-span-2 h-72 bg-white rounded-[2.5rem] border border-gray-100 animate-pulse" />
@@ -427,344 +625,53 @@ export const DashboardPage = () => {
     );
   }
 
+  const dateLocale = i18n.language.startsWith("es") ? es : enUS;
+
+  const reportsByStatus = reports?.reduce((acc, r) => {
+    const status = r.status.toUpperCase();
+    if (["CREATED", "DRAFT", "PENDING", "SUBMITTED"].includes(status)) acc.active.push(r);
+    if (["APPROVED", "PAID", "REJECTED", "DECLINED"].includes(status)) acc.completed.push(r);
+    if (status === "SUBMITTED") acc.pending.push(r);
+    return acc;
+  }, { active: [] as IReport[], completed: [] as IReport[], pending: [] as IReport[] }) || { active: [], completed: [], pending: [] };
+
+  const currentTrip = reportsByStatus.active.find((r) => r.status.toUpperCase() !== "SUBMITTED") || null;
+
+  const amounts = reports?.reduce((acc, r) => {
+    if (r.status === ReportStatus.SUBMITTED) acc.pending += r.requested_amount;
+    if (r.status === ReportStatus.APPROVED) acc.approved += (r.approved_amount || 0);
+    if (r.status === ReportStatus.DECLINED) acc.rejectedCount++;
+    return acc;
+  }, { pending: 0, approved: 0, rejectedCount: 0 }) || { pending: 0, approved: 0, rejectedCount: 0 };
+
+  const teamMemberCount = users?.length ?? 0;
+  const currentHour = new Date().getHours();
+  const greetingKey = currentHour < 12 ? "home.greetingMorning" : currentHour < 19 ? "home.greetingAfternoon" : "home.greetingEvening";
+  const firstName = user?.name?.split(" ")[0] || "Usuario";
+  const canApprove = can("approve_reports");
+  const showTeamStats = !isSelf;
+  const showManagementLinks = can("view_users") || can("view_departments") || can("view_roles");
+
   return (
     <div className="space-y-10 animate-in fade-in duration-500 pb-10">
+      <DashboardHeader
+        user={user} t={t} i18n={i18n} firstName={firstName}
+        greetingKey={greetingKey} navigate={navigate}
+      />
 
-      {/* 1. HEADER */}
-      <div className="relative bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-brand/5 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-secondary/5 rounded-full translate-y-2/3 pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
-            <div className="relative shrink-0">
-              <div className="w-14 h-14 bg-brand rounded-2xl flex items-center justify-center shadow-xl shadow-brand/25 text-white font-black text-xl select-none">
-                {user?.name?.charAt(0).toUpperCase() ?? <Sparkles className="w-6 h-6" />}
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-400 mb-0.5 capitalize">
-                {new Date().toLocaleDateString(i18n.language, {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                })}
-              </p>
-              <h1 className="text-2xl font-black text-dark tracking-tight">
-                {t(greetingKey, { name: firstName })} 👋
-              </h1>
-              {user?.roleName && (
-                <span className="inline-block mt-1 text-[10px] font-black uppercase tracking-widest text-brand/60 bg-brand/5 px-2.5 py-0.5 rounded-full">
-                  {user.roleName}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex gap-3 shrink-0">
-            <Button variant="secondary" className="w-auto px-6" onClick={() => navigate("/trips")}>
-              <FileText className="w-4 h-4 mr-2" />
-              {t("trips.title")}
-            </Button>
-            <Button
-              className="w-auto px-6 shadow-xl shadow-brand/20"
-              onClick={() => navigate("/trips")}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {t("home.newTrip")}
-            </Button>
-          </div>
-        </div>
-      </div>
+      <KpisGrid
+        amounts={amounts} reportsByStatus={reportsByStatus}
+        showTeamStats={showTeamStats} teamMemberCount={teamMemberCount} t={t}
+      />
 
-      {/* 2. KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <StatCard
-          variant="primary"
-          title={t("home.pendingReimbursement")}
-          value={`${pendingAmount.toFixed(2)} €`}
-          icon={<Wallet className="w-5 h-5" />}
-          trend={pendingAmount > 0 ? t("home.inProcess") : t("home.upToDate")}
-          trendUp={false}
-        />
+      <MainDashboardGrid
+        showTeamStats={showTeamStats} canApprove={canApprove}
+        reportsByStatus={reportsByStatus} currentTrip={currentTrip}
+        navigate={navigate} dateLocale={dateLocale} t={t} amounts={amounts}
+      />
 
-        {showTeamStats ? (
-          <>
-            <StatCard
-              title={t("home.teamMembers")}
-              value={teamMemberCount.toString()}
-              icon={<Users className="w-5 h-5" />}
-              subtitle={t("home.activeMembers")}
-            />
-            <div
-              className={`relative overflow-hidden rounded-[2rem] p-6 flex flex-col gap-4 border shadow-sm transition-all duration-300 ${
-                pendingApprovals.length > 0
-                  ? "bg-amber-50 border-amber-200"
-                  : "bg-white border-gray-100"
-              }`}
-            >
-              {pendingApprovals.length > 0 && (
-                <div className="absolute top-0 right-0 w-36 h-36 bg-amber-100/50 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-              )}
-              <div className="relative z-10 flex items-start justify-between">
-                <p
-                  className={`text-[10px] font-black uppercase tracking-[0.2em] ${
-                    pendingApprovals.length > 0 ? "text-amber-600" : "text-gray-400"
-                  }`}
-                >
-                  {t("home.pendingApprovals")}
-                </p>
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                    pendingApprovals.length > 0
-                      ? "bg-amber-100 text-amber-600"
-                      : "bg-gray-50 text-gray-300"
-                  }`}
-                >
-                  <AlertCircle className="w-5 h-5" />
-                </div>
-              </div>
-              <h3
-                className={`relative z-10 text-3xl font-black tracking-tighter ${
-                  pendingApprovals.length > 0 ? "text-amber-700" : "text-dark"
-                }`}
-              >
-                {pendingApprovals.length}
-              </h3>
-              <p
-                className={`relative z-10 text-xs font-bold ${
-                  pendingApprovals.length > 0 ? "text-amber-600/70" : "text-gray-400"
-                }`}
-              >
-                {pendingApprovals.length > 0 ? t("home.requiresReview") : t("home.noPending")}
-              </p>
-            </div>
-          </>
-        ) : (
-          <>
-            <StatCard
-              title={t("home.activeTrips")}
-              value={activeReports.length.toString()}
-              icon={<Plane className="w-5 h-5" />}
-              subtitle={t("home.activeTripsSubtitle")}
-            />
-            <div
-              className={`relative overflow-hidden rounded-[2rem] p-6 flex flex-col gap-4 border shadow-sm transition-all duration-300 ${
-                reports?.filter((r) => r.status === ReportStatus.DECLINED).length
-                  ? "bg-accent/5 border-accent/20"
-                  : "bg-white border-gray-100"
-              }`}
-            >
-              {(reports?.filter((r) => r.status === ReportStatus.DECLINED).length ?? 0) > 0 && (
-                <div className="absolute top-0 right-0 w-36 h-36 bg-accent/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-              )}
-              <div className="relative z-10 flex items-start justify-between">
-                <p
-                  className={`text-[10px] font-black uppercase tracking-[0.2em] ${
-                    (reports?.filter((r) => r.status === ReportStatus.DECLINED).length ?? 0) > 0
-                      ? "text-accent/70"
-                      : "text-gray-400"
-                  }`}
-                >
-                  {t("home.rejectedItems")}
-                </p>
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                    (reports?.filter((r) => r.status === ReportStatus.DECLINED).length ?? 0) > 0
-                      ? "bg-accent/10 text-accent"
-                      : "bg-gray-50 text-gray-300"
-                  }`}
-                >
-                  <AlertCircle className="w-5 h-5" />
-                </div>
-              </div>
-              <h3
-                className={`relative z-10 text-3xl font-black tracking-tighter ${
-                  (reports?.filter((r) => r.status === ReportStatus.DECLINED).length ?? 0) > 0
-                    ? "text-accent"
-                    : "text-dark"
-                }`}
-              >
-                {reports?.filter((r) => r.status === ReportStatus.DECLINED).length ?? 0}
-              </h3>
-              <p
-                className={`relative z-10 text-xs font-bold ${
-                  (reports?.filter((r) => r.status === ReportStatus.DECLINED).length ?? 0) > 0
-                    ? "text-accent/60"
-                    : "text-gray-400"
-                }`}
-              >
-                {(reports?.filter((r) => r.status === ReportStatus.DECLINED).length ?? 0) > 0
-                  ? t("home.requiresAttention")
-                  : t("home.noIncidents")}
-              </p>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* 3. MAIN GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-
-        {/* Left: Active Trip (employee) OR Pending Approvals (manager+) */}
-        <section className="lg:col-span-2 space-y-5">
-          <h2 className="text-lg font-black text-dark flex items-center gap-3 tracking-tight">
-            <div className="w-7 h-7 bg-brand/10 rounded-xl flex items-center justify-center">
-              {showTeamStats ? (
-                <Clock className="w-4 h-4 text-brand" />
-              ) : (
-                <TrendingUp className="w-4 h-4 text-brand" />
-              )}
-            </div>
-            {(() => {
-              if (showTeamStats && canApprove) return t("home.pendingApprovals");
-              if (showTeamStats) return t("home.teamReports");
-              return t("home.activeTrip");
-            })()}
-          </h2>
-
-          {(() => {
-            if (showTeamStats) {
-              return (
-                <PendingApprovalsList
-                  reports={canApprove ? pendingApprovals : activeReports}
-                  navigate={navigate}
-                  dateLocale={dateLocale}
-                  t={t}
-                />
-              );
-            }
-            if (currentTrip) {
-              return (
-                <ActiveTripCard
-                  currentTrip={currentTrip}
-                  navigate={navigate}
-                  dateLocale={dateLocale}
-                  t={t}
-                />
-              );
-            }
-            return (
-              <div className="bg-white rounded-[2.5rem] border border-dashed border-gray-200 p-14 text-center flex flex-col items-center min-h-[280px] justify-center hover:border-brand/30 hover:bg-gray-50/30 transition-all duration-300 group">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-5 group-hover:bg-brand/5 transition-colors">
-                  <Plane className="w-8 h-8 text-gray-300 group-hover:text-brand/40 transition-colors" />
-                </div>
-                <p className="text-gray-400 font-semibold mb-6 max-w-xs leading-relaxed">
-                  {t("trips.noActiveTrips")}
-                </p>
-                <Button
-                  variant="secondary"
-                  className="w-auto bg-white border-gray-200"
-                  onClick={() => navigate("/trips")}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {t("home.createFirst")}
-                </Button>
-              </div>
-            );
-          })()}
-        </section>
-
-        {/* Right: Recent Activity */}
-        <section className="space-y-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-dark flex items-center gap-3 tracking-tight">
-              <div className="w-7 h-7 bg-gray-100 rounded-xl flex items-center justify-center">
-                <Clock className="w-4 h-4 text-gray-400" />
-              </div>
-              {t("home.recentActivity")}
-            </h2>
-            <button
-              onClick={() => navigate("/trips")}
-              className="text-[10px] font-black text-brand uppercase tracking-widest hover:underline underline-offset-2"
-            >
-              {t("common.viewAll")}
-            </button>
-          </div>
-
-          <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
-            {completedReports.length === 0 ? (
-              <div className="p-10 text-center">
-                <p className="text-sm text-gray-400 font-medium">{t("trips.noCompletedTrips")}</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-50">
-                {completedReports.slice(0, 5).map((report) => {
-                  const getStatusClasses = (status: string) => {
-                    if (status === ReportStatus.APPROVED) return "bg-green-50 text-green-600";
-                    if (status === ReportStatus.DECLINED) return "bg-red-50 text-accent";
-                    return "bg-gray-50 text-gray-400";
-                  };
-
-                  return (
-                    <button
-                      key={report.id}
-                      type="button"
-                      onClick={() => navigate(`/trips/${report.id}`)}
-                      className="w-full text-left p-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors group"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${getStatusClasses(
-                            report.status
-                          )}`}
-                        >
-                          {report.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-dark text-sm truncate group-hover:text-brand transition-colors">
-                            {report.name}
-                          </p>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
-                            {format(new Date(report.end_date), "dd MMM yyyy", { locale: dateLocale })}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <div className="text-right">
-                          <span className="font-black text-dark text-sm block leading-none">
-                            {report.approved_amount || report.requested_amount}
-                            <span className="text-[9px] font-bold text-gray-400 ml-0.5">{report.currency}</span>
-                          </span>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-gray-200 group-hover:text-brand group-hover:translate-x-1 transition-all" />
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Approved total — only for managers+ */}
-          {showTeamStats && approvedAmount > 0 && (
-            <div className="bg-green-50 rounded-[2rem] p-5 border border-green-100 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-green-600 uppercase tracking-widest">
-                    {t("home.totalApproved")}
-                  </p>
-                  <p className="text-xl font-black text-green-700 tracking-tighter">
-                    {approvedAmount.toFixed(2)} €
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
-      </div>
-
-      {/* 4. QUICK MANAGEMENT LINKS (managers+) */}
-      {showManagementLinks && (
-        <QuickActionsGrid navigate={navigate} can={can} />
-      )}
-
-      {/* 5. ANALYTICS — shown to everyone with data */}
-      {reports && reports.length > 0 && (
-        <AnalyticsSection reports={reports} />
-      )}
+      {showManagementLinks && <QuickActionsGrid navigate={navigate} can={can} />}
+      {reports && reports.length > 0 && <AnalyticsSection reports={reports} />}
     </div>
   );
 };

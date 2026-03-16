@@ -238,34 +238,35 @@ export const PermissionsScreen = () => {
         {/* ── Left: Role list ── */}
         <div className="space-y-3">
           <p className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Roles</p>
-          {loadingRoles ? (
-            <div className="flex justify-center py-8">
-              <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : !roles || roles.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">No hay roles disponibles.</p>
-          ) : (
-            <div className="space-y-2">
-              {roles.map((role) => (
-                <RoleItem
-                  key={role.id}
-                  role={role}
-                  isSelected={selectedRoleId === role.id}
-                  onSelect={() => setSelectedRoleId(role.id)}
-                />
-              ))}
-            </div>
-          )}
+          {(() => {
+            if (loadingRoles) {
+              return (
+                <div className="flex justify-center py-8">
+                  <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+                </div>
+              );
+            }
+            if (!roles || roles.length === 0) {
+              return <p className="text-sm text-gray-400 text-center py-8">No hay roles disponibles.</p>;
+            }
+            return (
+              <div className="space-y-2">
+                {roles.map((role) => (
+                  <RoleItem
+                    key={role.id}
+                    role={role}
+                    isSelected={selectedRoleId === role.id}
+                    onSelect={() => setSelectedRoleId(role.id)}
+                  />
+                ))}
+              </div>
+            );
+          })()}
         </div>
 
         {/* ── Right: Permission grid ── */}
         <div>
-          {!selectedRole ? (
-            <div className="flex flex-col items-center justify-center py-32 bg-white rounded-[2rem] border border-dashed border-gray-200 text-center">
-              <Shield className="w-12 h-12 text-gray-200 mb-4" />
-              <p className="text-gray-400 font-medium">Selecciona un rol para ver sus permisos</p>
-            </div>
-          ) : (
+          {selectedRole ? (
             <div className="space-y-6">
               {/* Role header */}
               <div className="flex items-center gap-3 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
@@ -322,6 +323,11 @@ export const PermissionsScreen = () => {
                   })}
                 </div>
               )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-32 bg-white rounded-[2rem] border border-dashed border-gray-200 text-center">
+              <Shield className="w-12 h-12 text-gray-200 mb-4" />
+              <p className="text-gray-400 font-medium">Selecciona un rol para ver sus permisos</p>
             </div>
           )}
         </div>
