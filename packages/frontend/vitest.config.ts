@@ -27,6 +27,8 @@ export default defineConfig({
       { find: /^react-router$/, replacement: path.resolve(__dirname, '../../node_modules/react-router/dist/index.js') },
       { find: '@tanstack/react-query', replacement: path.resolve(__dirname, '../../node_modules/@tanstack/react-query') },
       { find: 'react-i18next', replacement: path.resolve(__dirname, '../../node_modules/react-i18next') },
+      { find: /^react-hook-form$/, replacement: path.resolve(__dirname, '../../node_modules/react-hook-form/dist/index.cjs') },
+      { find: /^@hookform\/resolvers(.*)/, replacement: path.resolve(__dirname, '../../node_modules/@hookform/resolvers$1') },
       { find: '@ticket-registrator/shared', replacement: path.resolve(__dirname, '../shared/src/index.ts') },
     ],
   },

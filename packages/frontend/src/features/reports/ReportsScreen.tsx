@@ -1,14 +1,28 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useReportsQuery } from "@ticket-registrator/shared";
 import { Button } from "../../components/ui/Button";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { Modal } from "../../components/ui/Modal";
 import { ReportForm } from "./components/ReportForm";
-import { Plus, Calendar, ArrowUpRight, Clock, CheckCircle, Plane, Wallet, ChevronRight, BarChart3, MapPin } from "lucide-react";
+import {
+  Plus, Calendar, ArrowUpRight, Clock, CheckCircle, Plane, Wallet,
+  ChevronRight, BarChart3, MapPin, Search, X, Filter,
+} from "lucide-react";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import {
+  filterBySearch,
+  filterByStatus,
+  filterByDateRange,
+} from "../../utils/reportAnalytics";
+
+// ---------- Status filter chips ----------
+
+const STATUS_OPTIONS = ["ALL", "CREATED", "SUBMITTED", "APPROVED", "DECLINED"];
+
+// ---------- Skeleton loaders ----------
 
 const SkeletonCard = () => (
   <div className="bg-white rounded-[2.5rem] border border-gray-100 p-8 animate-pulse">
@@ -54,24 +68,186 @@ const SkeletonSidebar = () => (
   </div>
 );
 
+// ---------- Filter bar ----------
+
+interface FilterBarProps {
+  search: string;
+  onSearchChange: (v: string) => void;
+  statusFilter: string;
+  onStatusChange: (v: string) => void;
+  dateFrom: string;
+  onDateFromChange: (v: string) => void;
+  dateTo: string;
+  onDateToChange: (v: string) => void;
+  hasActiveFilters: boolean;
+  onClear: () => void;
+  totalCount: number;
+  filteredCount: number;
+}
+
+const FilterBar = ({
+  search, onSearchChange,
+  statusFilter, onStatusChange,
+  dateFrom, onDateFromChange,
+  dateTo, onDateToChange,
+  hasActiveFilters, onClear,
+  totalCount, filteredCount,
+}: FilterBarProps) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-5 space-y-4">
+      {/* Row 1: Search + active filter badge */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder={t("trips.filterSearch")}
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium text-dark placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30 transition-all"
+          />
+          {search && (
+            <button
+              onClick={() => onSearchChange("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+        {hasActiveFilters && (
+          <button
+            onClick={onClear}
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl text-xs font-black text-accent border border-accent/20 bg-accent/5 hover:bg-accent/10 transition-colors whitespace-nowrap"
+          >
+            <X className="w-3 h-3" />
+            {t("trips.filterClearAll")}
+          </button>
+        )}
+      </div>
+
+      {/* Row 2: Status chips + date range */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Filter className="w-3.5 h-3.5 text-gray-300 shrink-0" />
+        {STATUS_OPTIONS.map((s) => (
+          <button
+            key={s}
+            onClick={() => onStatusChange(s)}
+            className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${
+              statusFilter === s
+                ? "bg-brand text-white shadow-sm shadow-brand/20"
+                : "bg-gray-50 text-gray-400 border border-gray-100 hover:border-brand/30 hover:text-brand"
+            }`}
+          >
+            {s === "ALL" ? t("trips.filterAll") : t(`status.${s}`)}
+          </button>
+        ))}
+
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 rounded-xl px-3 py-1.5">
+            <Calendar className="w-3.5 h-3.5 text-gray-300" />
+            <span className="text-[11px] font-black text-gray-400 uppercase tracking-wide">
+              {t("trips.filterDateFrom")}
+            </span>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => onDateFromChange(e.target.value)}
+              className="text-[11px] font-bold text-dark bg-transparent focus:outline-none cursor-pointer w-24"
+            />
+          </div>
+          <span className="text-gray-300 text-xs">—</span>
+          <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 rounded-xl px-3 py-1.5">
+            <Calendar className="w-3.5 h-3.5 text-gray-300" />
+            <span className="text-[11px] font-black text-gray-400 uppercase tracking-wide">
+              {t("trips.filterDateTo")}
+            </span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => onDateToChange(e.target.value)}
+              className="text-[11px] font-bold text-dark bg-transparent focus:outline-none cursor-pointer w-24"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Results count */}
+      {hasActiveFilters && (
+        <p className="text-[11px] font-bold text-gray-400">
+          {t("trips.filterResultsCount", { count: filteredCount })}{" "}
+          <span className="text-gray-300">/ {totalCount}</span>
+        </p>
+      )}
+    </div>
+  );
+};
+
+// ---------- Main Screen ----------
+
 export const ReportsScreen = () => {
   const { t, i18n } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { data: reports, isLoading } = useReportsQuery();
   const navigate = useNavigate();
 
+  // Filter state
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
   const dateLocale = i18n.language.startsWith("es") ? es : enUS;
 
-  const activeReports = reports?.filter(r => ["CREATED", "DRAFT", "PENDING", "SUBMITTED"].includes(r.status.toUpperCase())) || [];
-  const completedReports = reports?.filter(r => ["APPROVED", "PAID", "REJECTED"].includes(r.status.toUpperCase())) || [];
+  const hasActiveFilters = !!(search.trim() || statusFilter !== "ALL" || dateFrom || dateTo);
 
-  const historyStats = {
-    totalCompleted: completedReports.length,
-    totalSpent: completedReports.reduce((acc, curr) => acc + (curr.approved_amount || 0), 0),
+  const clearFilters = () => {
+    setSearch("");
+    setStatusFilter("ALL");
+    setDateFrom("");
+    setDateTo("");
   };
 
+  // All reports split by completion
+  const allActive = useMemo(
+    () => reports?.filter(r => ["CREATED", "DRAFT", "PENDING", "SUBMITTED"].includes(r.status.toUpperCase())) || [],
+    [reports],
+  );
+  const allCompleted = useMemo(
+    () => reports?.filter(r => ["APPROVED", "PAID", "REJECTED", "DECLINED"].includes(r.status.toUpperCase())) || [],
+    [reports],
+  );
+
+  // Apply filters to ACTIVE reports
+  const filteredActive = useMemo(() => {
+    let list = allActive;
+    list = filterBySearch(list, search);
+    if (statusFilter !== "ALL") list = filterByStatus(list, statusFilter);
+    list = filterByDateRange(list, dateFrom || null, dateTo || null);
+    return list;
+  }, [allActive, search, statusFilter, dateFrom, dateTo]);
+
+  // Apply filters to COMPLETED reports (sidebar only filtered by search/date, not status chips)
+  const filteredCompleted = useMemo(() => {
+    let list = allCompleted;
+    list = filterBySearch(list, search);
+    if (statusFilter !== "ALL") list = filterByStatus(list, statusFilter);
+    list = filterByDateRange(list, dateFrom || null, dateTo || null);
+    return list;
+  }, [allCompleted, search, statusFilter, dateFrom, dateTo]);
+
+  const historyStats = {
+    totalCompleted: filteredCompleted.length,
+    totalSpent: filteredCompleted.reduce((acc, curr) => acc + (curr.approved_amount || 0), 0),
+  };
+
+  const totalFiltered = filteredActive.length + filteredCompleted.length;
+  const totalAll = (reports?.length ?? 0);
+
   return (
-    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700 pb-20">
+    <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-700 pb-20">
 
       {/* Header */}
       <div className="relative bg-brand rounded-[2rem] px-8 py-6 overflow-hidden shadow-xl shadow-brand/20">
@@ -98,6 +274,24 @@ export const ReportsScreen = () => {
         </div>
       </div>
 
+      {/* Filter bar — only when there are reports */}
+      {!isLoading && (reports?.length ?? 0) > 0 && (
+        <FilterBar
+          search={search}
+          onSearchChange={setSearch}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          dateFrom={dateFrom}
+          onDateFromChange={setDateFrom}
+          dateTo={dateTo}
+          onDateToChange={setDateTo}
+          hasActiveFilters={hasActiveFilters}
+          onClear={clearFilters}
+          totalCount={totalAll}
+          filteredCount={totalFiltered}
+        />
+      )}
+
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -117,7 +311,7 @@ export const ReportsScreen = () => {
         />
       </Modal>
 
-      {/* Empty state - no reports at all */}
+      {/* Empty state — no reports at all */}
       {!isLoading && reports?.length === 0 && (
         <div className="text-center py-24 bg-white rounded-[3rem] border border-dashed border-gray-200 shadow-inner px-6">
           <div className="w-24 h-24 bg-brand/5 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -139,9 +333,9 @@ export const ReportsScreen = () => {
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 bg-brand rounded-full animate-pulse" />
               <h2 className="text-sm font-black text-dark uppercase tracking-widest">{t("home.activeTrip")}</h2>
-              {!isLoading && activeReports.length > 0 && (
+              {!isLoading && filteredActive.length > 0 && (
                 <span className="text-[10px] font-black bg-brand/10 text-brand px-2.5 py-1 rounded-full">
-                  {activeReports.length}
+                  {filteredActive.length}
                 </span>
               )}
             </div>
@@ -151,14 +345,18 @@ export const ReportsScreen = () => {
                 <SkeletonCard />
                 <SkeletonCard />
               </div>
-            ) : activeReports.length > 0 ? (
+            ) : filteredActive.length > 0 ? (
               <div className="space-y-4">
-                {activeReports.map((report, idx) => (
+                {filteredActive.map((report, idx) => (
                   <div
                     key={report.id}
                     onClick={() => navigate(`/trips/${report.id}`)}
-                    className={`group relative bg-white rounded-[2.5rem] border p-8 shadow-sm hover:shadow-xl hover:shadow-brand/8 transition-all duration-500 cursor-pointer overflow-hidden ${idx === 0 ? "border-brand/20" : "border-gray-100"
-                      }`}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/trips/${report.id}`); }}
+                    role="button"
+                    tabIndex={0}
+                    className={`group relative bg-white rounded-[2.5rem] border p-8 shadow-sm hover:shadow-xl hover:shadow-brand/8 transition-all duration-500 cursor-pointer overflow-hidden ${
+                      idx === 0 ? "border-brand/20" : "border-gray-100"
+                    }`}
                   >
                     {idx === 0 && (
                       <div className="absolute top-0 right-0 w-56 h-56 bg-brand/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-brand/8 transition-colors duration-700 pointer-events-none" />
@@ -172,8 +370,9 @@ export const ReportsScreen = () => {
                         </span>
                       </div>
 
-                      <h3 className={`font-black text-dark mb-4 leading-tight group-hover:text-brand transition-colors duration-300 ${idx === 0 ? "text-2xl md:text-3xl" : "text-xl"
-                        }`}>
+                      <h3 className={`font-black text-dark mb-4 leading-tight group-hover:text-brand transition-colors duration-300 ${
+                        idx === 0 ? "text-2xl md:text-3xl" : "text-xl"
+                      }`}>
                         {report.name}
                       </h3>
 
@@ -213,6 +412,22 @@ export const ReportsScreen = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : hasActiveFilters ? (
+              /* No results matching filters */
+              <div className="bg-gray-50/80 rounded-[2.5rem] border border-dashed border-gray-200 p-12 flex flex-col items-center justify-center text-center min-h-[200px]">
+                <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 border border-gray-100">
+                  <Search className="w-7 h-7 text-gray-300" />
+                </div>
+                <p className="text-gray-400 font-semibold text-sm max-w-xs leading-relaxed">
+                  {t("trips.noResultsFilter")}
+                </p>
+                <button
+                  onClick={clearFilters}
+                  className="mt-4 text-xs font-black text-brand hover:underline uppercase tracking-widest"
+                >
+                  {t("trips.filterClearAll")}
+                </button>
               </div>
             ) : (
               <div className="bg-gray-50/80 rounded-[2.5rem] border border-dashed border-gray-200 p-12 flex flex-col items-center justify-center text-center min-h-[280px]">
@@ -265,7 +480,7 @@ export const ReportsScreen = () => {
                       </p>
                       <p className="text-xl font-black text-dark leading-none mt-0.5">
                         {historyStats.totalSpent.toLocaleString()}{" "}
-                        <span className="text-xs text-gray-400 font-bold">{completedReports[0]?.currency || "EUR"}</span>
+                        <span className="text-xs text-gray-400 font-bold">{filteredCompleted[0]?.currency || "EUR"}</span>
                       </p>
                     </div>
                   </div>
@@ -278,21 +493,27 @@ export const ReportsScreen = () => {
                     <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t("trips.history")}</h3>
                   </div>
 
-                  {completedReports.length === 0 ? (
+                  {filteredCompleted.length === 0 ? (
                     <div className="p-8 text-center">
                       <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center mx-auto mb-3">
                         <Clock className="w-5 h-5 text-gray-300" />
                       </div>
-                      <p className="text-xs text-gray-400 font-medium">{t("trips.noCompletedTrips")}</p>
+                      <p className="text-xs text-gray-400 font-medium">
+                        {hasActiveFilters ? t("trips.noResultsFilter") : t("trips.noCompletedTrips")}
+                      </p>
                     </div>
                   ) : (
                     <>
-                      {completedReports.slice(0, 4).map((report, idx) => (
+                      {filteredCompleted.slice(0, 4).map((report, idx) => (
                         <div
                           key={report.id}
                           onClick={() => navigate(`/trips/${report.id}`)}
-                          className={`px-5 py-4 hover:bg-gray-50/80 cursor-pointer transition-colors flex items-center gap-3 group ${idx < Math.min(completedReports.length, 4) - 1 ? "border-b border-gray-50" : ""
-                            }`}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/trips/${report.id}`); }}
+                          role="button"
+                          tabIndex={0}
+                          className={`px-5 py-4 hover:bg-gray-50/80 cursor-pointer transition-colors flex items-center gap-3 group ${
+                            idx < Math.min(filteredCompleted.length, 4) - 1 ? "border-b border-gray-50" : ""
+                          }`}
                         >
                           <div className="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-brand/10 transition-colors">
                             <Plane className="w-3.5 h-3.5 text-gray-400 group-hover:text-brand transition-colors" />
@@ -312,7 +533,7 @@ export const ReportsScreen = () => {
                           </div>
                         </div>
                       ))}
-                      {completedReports.length > 4 && (
+                      {filteredCompleted.length > 4 && (
                         <div className="px-5 py-3 bg-gray-50/80 text-center border-t border-gray-100">
                           <button
                             className="text-[10px] font-black text-brand hover:underline uppercase tracking-widest"
@@ -328,7 +549,6 @@ export const ReportsScreen = () => {
               </>
             )}
           </section>
-
         </div>
       )}
     </div>

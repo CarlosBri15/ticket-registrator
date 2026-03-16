@@ -17,7 +17,12 @@ import {
   Shield,
   Layers,
   Lock,
+  BarChart2,
 } from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from "recharts";
 import { Button } from "../../components/ui/Button";
 import { StatCard } from "../../components/ui/StatCard";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -36,6 +41,7 @@ import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import type { Locale } from "date-fns";
 import type { IReport } from "@ticket-registrator/shared";
+import { getMonthlyExpenses, getExpensesByType } from "../../utils/reportAnalytics";
 
 // ---------- Sub-components ----------
 
@@ -58,6 +64,9 @@ const ActiveTripCard = ({
   return (
     <div
       onClick={() => navigate(`/trips/${currentTrip.id}`)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/trips/${currentTrip.id}`); }}
+      role="button"
+      tabIndex={0}
       className="relative bg-white rounded-[2.5rem] p-8 shadow-sm border border-brand/10 overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-brand/10 transition-all duration-500"
     >
       <div className="absolute top-0 right-0 w-60 h-60 bg-brand/5 rounded-full -translate-y-1/3 translate-x-1/3 group-hover:scale-125 transition-transform duration-700" />
@@ -137,6 +146,9 @@ const PendingApprovalsList = ({
           <div
             key={report.id}
             onClick={() => navigate(`/trips/${report.id}`)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/trips/${report.id}`); }}
+            role="button"
+            tabIndex={0}
             className="p-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors group"
           >
             <div className="flex items-center gap-3 min-w-0">
@@ -221,6 +233,129 @@ const QuickActionsGrid = ({
             </span>
           </button>
         ))}
+      </div>
+    </section>
+  );
+};
+
+// ---------- Analytics ----------
+
+const CHART_COLORS = ["#6366F1", "#8B5CF6", "#A78BFA", "#C4B5FD", "#DDD6FE", "#EDE9FE"];
+
+const AnalyticsSection = ({ reports }: { reports: IReport[] }) => {
+  const { t } = useTranslation();
+
+  const monthly = getMonthlyExpenses(reports, 6);
+  const byType = getExpensesByType(reports);
+
+  const hasMonthly = monthly.length > 0;
+  const hasType = byType.length > 0;
+
+  if (!hasMonthly && !hasType) return null;
+
+  return (
+    <section className="space-y-4">
+      <h2 className="text-lg font-black text-dark flex items-center gap-3 tracking-tight">
+        <div className="w-7 h-7 bg-brand/10 rounded-xl flex items-center justify-center">
+          <BarChart2 className="w-4 h-4 text-brand" />
+        </div>
+        {t("analytics.title")}
+      </h2>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly bar chart */}
+        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 space-y-4">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+            {t("analytics.monthlyExpenses")}
+          </p>
+          {hasMonthly ? (
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={monthly} barSize={28} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 11, fontWeight: 700, fill: "#9CA3AF" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fontWeight: 700, fill: "#D1D5DB" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: "1rem",
+                    border: "1px solid #F3F4F6",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                  formatter={(value: any) => [`${Number(value).toFixed(2)}`, t("analytics.totalAmount")]}
+                  cursor={{ fill: "#F9FAFB" }}
+                />
+                <Bar dataKey="amount" radius={[8, 8, 0, 0]} fill="#6366F1" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[180px] flex items-center justify-center">
+              <p className="text-sm text-gray-400 font-medium text-center max-w-[180px] leading-relaxed">
+                {t("analytics.noData")}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Type donut chart */}
+        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 space-y-4">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+            {t("analytics.expensesByType")}
+          </p>
+          {hasType ? (
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart>
+                <Pie
+                  data={byType}
+                  dataKey="amount"
+                  nameKey="type"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={48}
+                  outerRadius={72}
+                  paddingAngle={3}
+                >
+                  {byType.map((_, i) => (
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: "1rem",
+                    border: "1px solid #F3F4F6",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                  formatter={(value: any) => [`${Number(value).toFixed(2)}`, t("analytics.totalAmount")]}
+                />
+                <Legend
+                  iconType="circle"
+                  iconSize={8}
+                  formatter={(value) => (
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#6B7280" }}>
+                      {value.length > 18 ? value.substring(0, 16) + "…" : value}
+                    </span>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[180px] flex items-center justify-center">
+              <p className="text-sm text-gray-400 font-medium text-center max-w-[180px] leading-relaxed">
+                {t("analytics.noData")}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -549,6 +684,9 @@ export const DashboardPage = () => {
                   <div
                     key={report.id}
                     onClick={() => navigate(`/trips/${report.id}`)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/trips/${report.id}`); }}
+                    role="button"
+                    tabIndex={0}
                     className="p-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
@@ -611,6 +749,11 @@ export const DashboardPage = () => {
       {/* 4. QUICK MANAGEMENT LINKS (managers+) */}
       {showManagementLinks && (
         <QuickActionsGrid navigate={navigate} can={can} />
+      )}
+
+      {/* 5. ANALYTICS — shown to everyone with data */}
+      {reports && reports.length > 0 && (
+        <AnalyticsSection reports={reports} />
       )}
     </div>
   );

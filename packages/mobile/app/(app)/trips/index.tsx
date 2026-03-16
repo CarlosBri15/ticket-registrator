@@ -1,6 +1,6 @@
 import { View, Text, FlatList, TouchableOpacity, RefreshControl, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useReportsQuery } from '@ticket-registrator/shared';
+import { useReportsQuery, ReportStatus } from '@ticket-registrator/shared';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -125,7 +125,7 @@ export default function TripsScreen() {
                             <View className="flex-1 mr-4">
                                 <View className="flex-row items-center mb-2">
                                     <View className={`w-2 h-2 rounded-full mr-2 ${
-                                        item.status === 'APPROVED' ? 'bg-green-500' : 'bg-red-500'
+                                        item.status === ReportStatus.APPROVED ? 'bg-green-500' : 'bg-red-500'
                                     }`} />
                                     <Text className="text-xs font-bold text-gray-400 uppercase tracking-wide">
                                         {t(`status.${item.status}`)}

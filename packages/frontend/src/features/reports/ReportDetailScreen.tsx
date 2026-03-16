@@ -415,6 +415,9 @@ export const ReportDetailScreen = () => {
                 <div
                   key={ticket.id}
                   onClick={() => handleTicketClick(ticket)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleTicketClick(ticket); }}
+                  role="button"
+                  tabIndex={0}
                   className="group bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-lg hover:shadow-brand/8 hover:border-brand/15 transition-all duration-300 cursor-pointer p-5 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-4 min-w-0">
@@ -467,6 +470,9 @@ export const ReportDetailScreen = () => {
           ) : (
             <div
               onClick={() => isEditable && setIsUploadModalOpen(true)}
+              onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && isEditable) setIsUploadModalOpen(true); }}
+              role="button"
+              tabIndex={isEditable ? 0 : -1}
               className={`bg-white/60 backdrop-blur-sm rounded-[2.5rem] border-2 border-dashed border-gray-200 p-16 text-center transition-all duration-500 ${isEditable ? "hover:bg-white hover:border-brand/30 cursor-pointer group" : ""}`}
             >
               <div className="relative w-20 h-20 mx-auto mb-6">

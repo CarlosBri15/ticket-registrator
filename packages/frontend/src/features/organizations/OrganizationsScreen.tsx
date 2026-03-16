@@ -154,6 +154,9 @@ const OrgCard = ({
       isActive ? "border-brand shadow-lg shadow-brand/10" : "border-gray-100 shadow-sm hover:shadow-md hover:border-brand/20"
     }`}
     onClick={() => onSelect(org.id)}
+    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(org.id); }}
+    role="button"
+    tabIndex={0}
   >
     <div className="flex items-start justify-between gap-3">
       <div className="flex items-center gap-3 min-w-0">

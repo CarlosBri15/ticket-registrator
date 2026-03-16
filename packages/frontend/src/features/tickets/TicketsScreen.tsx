@@ -58,6 +58,9 @@ const ReportTicketGroup = ({
         <div
           key={ticket.id}
           onClick={() => onTicketClick(ticket, report.id)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onTicketClick(ticket, report.id); }}
+          role="button"
+          tabIndex={0}
           className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md hover:border-brand/20 transition-all cursor-pointer group flex items-center justify-between"
         >
           <div className="flex items-center gap-4">

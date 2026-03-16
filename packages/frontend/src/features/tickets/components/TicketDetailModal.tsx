@@ -84,6 +84,9 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket, reportId }: TicketD
                             alt="Ticket"
                             className="max-h-60 rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-500 cursor-pointer"
                             onClick={() => window.open(imageData.url, '_blank')}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') window.open(imageData.url, '_blank'); }}
+                            role="button"
+                            tabIndex={0}
                         />
                         <div className="absolute inset-0 bg-dark/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
                             <a

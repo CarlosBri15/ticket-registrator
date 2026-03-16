@@ -41,4 +41,37 @@ describe('api/client', () => {
     tokenProvider.removeToken();
     expect(localStorage.getItem('access_token')).toBeNull();
   });
+
+  it('tokenProvider.onUnauthorized redirects to /login when not on public path', async () => {
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      writable: true,
+      value: { pathname: '/home', href: '' },
+    });
+    const { tokenProvider } = await import('./client');
+    tokenProvider.onUnauthorized!();
+    expect(window.location.href).toBe('/login');
+  });
+
+  it('tokenProvider.onUnauthorized does not redirect when on /login', async () => {
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      writable: true,
+      value: { pathname: '/login', href: '' },
+    });
+    const { tokenProvider } = await import('./client');
+    tokenProvider.onUnauthorized!();
+    expect(window.location.href).toBe('');
+  });
+
+  it('tokenProvider.onUnauthorized does not redirect when on /register', async () => {
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      writable: true,
+      value: { pathname: '/register', href: '' },
+    });
+    const { tokenProvider } = await import('./client');
+    tokenProvider.onUnauthorized!();
+    expect(window.location.href).toBe('');
+  });
 });
