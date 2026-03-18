@@ -24,9 +24,7 @@ export class PermissionsService {
   constructor(
     private readonly permissionsRepository: PermissionsRepository,
     private readonly permissionsAuthService: PermissionsAuthorizationService,
-  ) {}
-
-  // --- Catalog Management ---
+  ) { }
 
   async findAll(): Promise<IPermission[]> {
     return this.permissionsRepository.findAll();
@@ -94,8 +92,6 @@ export class PermissionsService {
     return { deleted: true };
   }
 
-  // --- Assignments & Overrides ---
-
   async assignToRole(
     dto: AssignPermissionDto,
     requester: UserPayload,
@@ -133,8 +129,6 @@ export class PermissionsService {
     );
     return { unassigned: true };
   }
-
-  // --- Seeding Logic ---
 
   async seedDefaultPermissions() {
     const permValues = Object.values(sharedPermissions);

@@ -100,7 +100,6 @@ export class UsersRepository {
         }
       }
 
-      // Return the updated user with relations
       return tx.query.users.findFirst({
         where: eq(schema.users.id, id),
         with: {

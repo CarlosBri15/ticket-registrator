@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layers, Search, Plus, Trash2, Pencil, Building2 } from "lucide-react";
 import {
   useDepartmentsQuery,
@@ -13,6 +13,9 @@ import { useScopeContext } from "@ticket-registrator/shared";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
+
+const PAGE_SIZE = 10;
 
 const DepartmentModal = ({
   isOpen,
@@ -90,6 +93,9 @@ export const DepartmentsScreen = () => {
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState<IDepartment | undefined>();
+  const [page, setPage] = useState(1);
+
+  useEffect(() => { setPage(1); }, [search]);
 
   const openCreate = () => { setEditing(undefined); setIsModalOpen(true); };
   const openEdit = (dept: IDepartment) => { setEditing(dept); setIsModalOpen(true); };
@@ -98,6 +104,9 @@ export const DepartmentsScreen = () => {
   const filtered = departments?.filter((d) =>
     !search || d.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const paginated = filtered?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.ceil((filtered?.length ?? 0) / PAGE_SIZE);
 
   if (!companyId) {
     return (
@@ -170,8 +179,9 @@ export const DepartmentsScreen = () => {
         }
 
         return (
+          <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((dept) => (
+            {paginated!.map((dept) => (
               <div
                 key={dept.id}
                 className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all"
@@ -206,6 +216,14 @@ export const DepartmentsScreen = () => {
                 </div>
               </div>
             ))}
+          </div>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              totalItems={filtered.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+            />
           </div>
         );
       })()}

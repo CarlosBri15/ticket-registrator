@@ -123,7 +123,7 @@ describe('TicketsService', () => {
 
     it('should throw TicketUnauthorizedException when user cannot modify report', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(false);
+      ticketsAuthMock.validateCanModifyReport.mockReturnValue(false);
       await expect(
         service.create(requester, 'report-1', {
           buffer: Buffer.from('f'),
@@ -256,7 +256,7 @@ describe('TicketsService', () => {
 
     it('should throw TicketUnauthorizedException when user cannot modify report', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(false);
+      ticketsAuthMock.validateCanModifyReport.mockReturnValue(false);
       await expect(
         service.update(requester, 'report-1', 'ticket-1', {}),
       ).rejects.toThrow(TicketUnauthorizedException);
@@ -430,7 +430,7 @@ describe('TicketsService', () => {
 
     it('should throw TicketUnauthorizedException when user cannot modify report', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(false);
+      ticketsAuthMock.validateCanModifyReport.mockReturnValue(false);
       await expect(
         service.remove(requester, 'report-1', 'ticket-1'),
       ).rejects.toThrow(TicketUnauthorizedException);

@@ -90,4 +90,15 @@ describe('RegisterForm', () => {
     renderRegister();
     expect(screen.getByText('Email already exists')).toBeInTheDocument();
   });
+
+  it('onSuccess navigates to /login', () => {
+    let capturedOnSuccess: (() => void) | undefined;
+    mockUseRegisterMutation.mockImplementation((opts: any) => {
+      capturedOnSuccess = opts?.onSuccess;
+      return { mutate: mockMutate, isPending: false, isError: false, error: null };
+    });
+    renderRegister();
+    capturedOnSuccess?.();
+    expect(mockNavigate).toHaveBeenCalledWith('/login');
+  });
 });

@@ -15,7 +15,7 @@ export const useAllPermissionsQuery = () => {
 export const useRolePermissionsQuery = (companyId?: string, roleId?: string) => {
     return useQuery({
         queryKey: ['roles', companyId, roleId, 'permissions'],
-        queryFn: () => api.roles().getRolePermissions(companyId!, roleId!),
+        queryFn: () => api.roles().getRolePermissions(companyId, roleId),
         enabled: !!companyId && !!roleId,
     });
 };

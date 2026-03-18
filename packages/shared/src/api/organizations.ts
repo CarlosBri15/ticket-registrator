@@ -1,5 +1,6 @@
 import { AxiosInstance } from 'axios';
-import { IOrganization, IOnboardResponse } from '../interfaces/organization/organization.interface';
+import { IOrganization } from '../interfaces/organization/organization.interface';
+import { IOnboardResponse } from '../interfaces/organization/onboardResponse.interface';
 import { OnboardOrganizationSchema } from '../schemas/organization/onboardOrganization.schema';
 import { UpdateOrganizationSchema } from '../schemas/organization/updateOrganization.schema';
 

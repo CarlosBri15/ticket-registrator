@@ -12,7 +12,7 @@ export const useReportsQuery = () => {
 export const useReportQuery = (id?: string) => {
     return useQuery({
         queryKey: ['reports', id],
-        queryFn: () => api.reports().getOne(id!),
+        queryFn: () => api.reports().getOne(id),
         enabled: !!id,
     });
 };
@@ -26,7 +26,7 @@ export const useCreateReportMutation = (options?: any) => {
             if (options?.onSuccess) options.onSuccess();
         },
         onError: (error: any) => {
-             if (options?.onError) options.onError(error);
+            if (options?.onError) options.onError(error);
         }
     });
 };

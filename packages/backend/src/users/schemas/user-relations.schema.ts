@@ -3,7 +3,6 @@ import { relations } from 'drizzle-orm';
 import { users } from './user.schema';
 import { departments } from '../../department/schema/department.schema';
 
-// Junction table for Users <-> Departments
 export const usersToDepartments = pgTable(
   'users_to_departments',
   {
@@ -17,9 +16,9 @@ export const usersToDepartments = pgTable(
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     deletedAt: timestamp('deleted_at'),
   },
-  (t) => ({
-    pk: primaryKey({ columns: [t.userId, t.departmentId] }),
-  }),
+  (t) => [
+    primaryKey({ columns: [t.userId, t.departmentId] }),
+  ],
 );
 
 export const usersToDepartmentsRelations = relations(

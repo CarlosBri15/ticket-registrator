@@ -19,7 +19,6 @@ export const rolePermissions = pgTable('role_permissions', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-// A junction table requires relations to both of its connected tables
 export const rolePermissionsRelations = relations(
   rolePermissions,
   ({ one }) => ({

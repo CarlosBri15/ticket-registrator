@@ -38,7 +38,7 @@ export const createApiClient = (
                     tokenProvider.onUnauthorized();
                 }
             }
-            return Promise.reject(error);
+            throw error;
         }
     );
 

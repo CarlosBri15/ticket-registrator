@@ -41,7 +41,7 @@ export class ReportsService {
   constructor(
     private readonly reportsRepository: ReportsRepository,
     private readonly reportsAuthorizationService: ReportsAuthorizationService,
-  ) {}
+  ) { }
 
   async create(requester: UserPayload, dto: CreateReportDto): Promise<IReport> {
     await this.reportsAuthorizationService.getVisibleUser(requester.id);
@@ -226,7 +226,7 @@ export class ReportsService {
 
   async remove(requester: UserPayload, reportId: string) {
     const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.userId !== requester.id)
+    if (report?.userId !== requester.id)
       throw new ReportNotFoundException(reportId);
     if (report.status !== ReportStatus.CREATED)
       throw new ReportStatusConflictException(

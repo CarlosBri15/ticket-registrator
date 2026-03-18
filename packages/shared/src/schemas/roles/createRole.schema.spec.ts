@@ -21,8 +21,8 @@ describe('createRoleSchema', () => {
         expect(result.success).toBe(false);
     });
 
-    it('should fail with hierarchy above 4', () => {
-        const result = createRoleSchema.safeParse({ name: 'Auditor', hierarchy: 5 });
+    it('should fail with hierarchy above 99', () => {
+        const result = createRoleSchema.safeParse({ name: 'Auditor', hierarchy: 100 });
         expect(result.success).toBe(false);
     });
 
@@ -36,8 +36,8 @@ describe('createRoleSchema', () => {
         expect(result.success).toBe(false);
     });
 
-    it('should accept boundary hierarchy values (1 and 4)', () => {
+    it('should accept boundary hierarchy values (1 and 99)', () => {
         expect(createRoleSchema.safeParse({ name: 'Role1', hierarchy: 1 }).success).toBe(true);
-        expect(createRoleSchema.safeParse({ name: 'Role4', hierarchy: 4 }).success).toBe(true);
+        expect(createRoleSchema.safeParse({ name: 'Role99', hierarchy: 99 }).success).toBe(true);
     });
 });

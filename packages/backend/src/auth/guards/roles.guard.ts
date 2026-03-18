@@ -12,7 +12,7 @@ type RequestUser = { role?: RoleType };
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(private readonly reflector: Reflector) { }
 
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<RoleType[]>(
@@ -28,7 +28,7 @@ export class RolesGuard implements CanActivate {
       .switchToHttp()
       .getRequest<{ user?: RequestUser }>();
 
-    if (!user || !user.role) {
+    if (!user?.role) {
       throw new ForbiddenException('User lacks necessary role');
     }
 

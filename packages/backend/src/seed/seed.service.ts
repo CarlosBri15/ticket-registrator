@@ -191,7 +191,9 @@ export class SeedService implements OnApplicationBootstrap {
       where: eq(schema.users.username, 'SuperAdmin'),
     });
 
-    if (!existingSuperAdmin) {
+    if (existingSuperAdmin) {
+      this.logger.log('SuperAdmin user already exists.');
+    } else {
       await this.db
         .insert(schema.users)
         .values({
@@ -204,8 +206,6 @@ export class SeedService implements OnApplicationBootstrap {
         })
         .returning();
       this.logger.log('SuperAdmin user created successfully');
-    } else {
-      this.logger.log('SuperAdmin user already exists.');
     }
   }
 }

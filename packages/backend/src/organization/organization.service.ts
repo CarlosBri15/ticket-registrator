@@ -6,7 +6,7 @@ import {
   IOnboardResponse,
   Roles,
 } from '@ticket-registrator/shared';
-import { randomBytes } from 'crypto';
+import { randomBytes } from 'node:crypto';
 import { OnboardOrganizationDto } from './dto/onboard-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { OrganizationRepository } from './organization.repository';
@@ -31,7 +31,7 @@ export class OrganizationService {
     private readonly organizationAuthService: OrganizationAuthorizationService,
     private readonly departmentService: DepartmentService,
     private readonly cryptoService: CryptoService,
-  ) {}
+  ) { }
 
   async onboard(
     requester: UserPayload,

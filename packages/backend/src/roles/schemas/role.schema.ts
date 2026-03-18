@@ -12,13 +12,13 @@ import { rolePermissions } from '../../permissions/schemas/role-permission.schem
 
 export const roles = pgTable('roles', {
   id: uuid('id').primaryKey().defaultRandom(),
-  name: varchar('name', { length: 100 }).notNull(), // e.g. "Super Admin", "Admin", "Controller", "Manager", "Employee"
+  name: varchar('name', { length: 100 }).notNull(),
   description: varchar('description', { length: 255 }),
   companyId: uuid('company_id').references(() => companies.id, {
     onDelete: 'cascade',
-  }), // Can be null if the role is a system-level role (e.g. system-wide SuperAdmin)
-  isSystem: boolean('is_system').default(false).notNull(), // Flag to prevent companies from editing default roles
-  hierarchy: integer('hierarchy').notNull(), // e.g. Employee=1, Manager=2, Controller=3, Admin=4, SuperAdmin=5
+  }),
+  isSystem: boolean('is_system').default(false).notNull(),
+  hierarchy: integer('hierarchy').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
