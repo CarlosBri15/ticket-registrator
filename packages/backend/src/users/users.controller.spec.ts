@@ -40,12 +40,12 @@ describe('UsersController', () => {
     it('should call service.create', async () => {
       const dto = { name: 'John', email: 'john@example.com' } as any;
       const user = {
-          roleId: 'r1',
-          roleName: 'Employee',
-          roleHierarchy: 10,
-          companyId: 'c1',
-          departmentIds: [],
-          permissions: [],
+        roleId: 'r1',
+        roleName: 'Employee',
+        roleHierarchy: 10,
+        companyId: 'c1',
+        departmentIds: [],
+        permissions: [],
       };
       (serviceMock.create as jest.Mock).mockResolvedValue({ id: 'user-1' });
 
@@ -57,13 +57,13 @@ describe('UsersController', () => {
   describe('findAll', () => {
     it('should call service.findAll', async () => {
       const user = {
-          id: 'u1',
-          roleId: 'r1',
-          roleName: 'Employee',
-          roleHierarchy: 10,
-          companyId: 'c1',
-          departmentIds: [],
-          permissions: [],
+        id: 'u1',
+        roleId: 'r1',
+        roleName: 'Employee',
+        roleHierarchy: 10,
+        companyId: 'c1',
+        departmentIds: [],
+        permissions: [],
       };
       (serviceMock.findAll as jest.Mock).mockResolvedValue([]);
 
@@ -85,13 +85,13 @@ describe('UsersController', () => {
   describe('update', () => {
     it('should call service.update', async () => {
       const user = {
-          id: 'u1',
-          roleId: 'r1',
-          roleName: 'Employee',
-          roleHierarchy: 10,
-          companyId: 'c1',
-          departmentIds: [],
-          permissions: [],
+        id: 'u1',
+        roleId: 'r1',
+        roleName: 'Employee',
+        roleHierarchy: 10,
+        companyId: 'c1',
+        departmentIds: [],
+        permissions: [],
       };
       const dto = { name: 'Updated' } as any;
       (serviceMock.update as jest.Mock).mockResolvedValue({ id: 'user-1' });
@@ -104,13 +104,13 @@ describe('UsersController', () => {
   describe('remove', () => {
     it('should call service.remove', async () => {
       const user = {
-          id: 'u1',
-          roleId: 'r1',
-          roleName: 'Employee',
-          roleHierarchy: 10,
-          companyId: 'c1',
-          departmentIds: [],
-          permissions: [],
+        id: 'u1',
+        roleId: 'r1',
+        roleName: 'Employee',
+        roleHierarchy: 10,
+        companyId: 'c1',
+        departmentIds: [],
+        permissions: [],
       };
       (serviceMock.remove as jest.Mock).mockResolvedValue({ deleted: true });
 

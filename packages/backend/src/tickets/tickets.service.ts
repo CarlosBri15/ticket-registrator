@@ -54,9 +54,9 @@ export class TicketsService {
       throw new ReportNotFoundException(reportId);
 
     if (
-      !(this.ticketsAuthService.validateCanModifyReport(
+      !(await this.ticketsAuthService.validateCanModifyReport(
         requester,
-        report
+        report,
       ))
     ) {
       throw new TicketUnauthorizedException(
@@ -267,10 +267,8 @@ export class TicketsService {
       );
     }
 
-    const currentTicket = (await this.ticketsRepository.findById(ticketId)) as
-      | Ticket
-      | undefined;
-    if (currentTicket?.reportId !== reportId)
+    const currentTicket = await this.ticketsRepository.findById(ticketId);
+    if (!currentTicket || currentTicket.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     const oldSnapshot = {
@@ -312,7 +310,7 @@ export class TicketsService {
       throw new ReportNotFoundException(reportId);
 
     if (
-      !(this.ticketsAuthService.validateCanModifyReport(
+      !(await this.ticketsAuthService.validateCanModifyReport(
         requester,
         report,
       ))
@@ -326,10 +324,8 @@ export class TicketsService {
       );
     }
 
-    const ticket = (await this.ticketsRepository.findById(ticketId)) as
-      | Ticket
-      | undefined;
-    if (ticket?.reportId !== reportId)
+    const ticket = await this.ticketsRepository.findById(ticketId);
+    if (!ticket || ticket.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     const historyData: typeof schema.ticketHistories.$inferInsert = {
@@ -369,10 +365,10 @@ export class TicketsService {
       throw new ReportNotFoundException(reportId);
 
     if (
-      !this.ticketsAuthService.validateCanModifyReport(
-        requester, // Fixed missing await-non-promise
+      !(await this.ticketsAuthService.validateCanModifyReport(
+        requester,
         report,
-      )
+      ))
     ) {
       throw new TicketUnauthorizedException();
     }
@@ -383,10 +379,8 @@ export class TicketsService {
       );
     }
 
-    const currentTicket = (await this.ticketsRepository.findById(ticketId)) as
-      | Ticket
-      | undefined;
-    if (currentTicket?.reportId !== reportId)
+    const currentTicket = await this.ticketsRepository.findById(ticketId);
+    if (!currentTicket || currentTicket.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     return { report, currentTicket };
@@ -425,7 +419,8 @@ export class TicketsService {
 
     for (const mapping of fieldsMapping) {
       if (dto[mapping.dtoKey] !== undefined) {
-        (update as any)[mapping.updateKey] = dto[mapping.dtoKey];
+        const up = update as Record<string, unknown>;
+        up[mapping.updateKey] = dto[mapping.dtoKey];
         if (mapping.meaningful) meaningfulChange = true;
       }
     }
@@ -458,9 +453,14 @@ export class TicketsService {
     const oldSnapshot: Partial<InsertTicket> = {};
     const newSnapshot: Partial<InsertTicket> = {};
 
+    const oldSnap = oldSnapshot as Record<string, unknown>;
+    const newSnap = newSnapshot as Record<string, unknown>;
+    const curr = currentTicket as Record<string, unknown>;
+    const upd = update as Record<string, unknown>;
+
     for (const key of Object.keys(update)) {
-      (oldSnapshot as any)[key] = (currentTicket as any)[key];
-      (newSnapshot as any)[key] = (update as any)[key];
+      oldSnap[key] = curr[key];
+      newSnap[key] = upd[key];
     }
 
     if (meaningfulChange) {

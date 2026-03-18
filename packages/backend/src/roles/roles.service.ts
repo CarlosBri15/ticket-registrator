@@ -16,7 +16,7 @@ export class RolesService {
   constructor(
     private readonly rolesRepository: RolesRepository,
     private readonly rolesAuthService: RolesAuthorizationService,
-  ) { }
+  ) {}
 
   async create(companyId: string, dto: CreateRoleDto, requester: UserPayload) {
     this.rolesAuthService.validateHierarchy(

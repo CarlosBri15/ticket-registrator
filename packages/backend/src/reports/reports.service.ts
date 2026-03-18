@@ -51,7 +51,7 @@ export class ReportsService {
   constructor(
     private readonly reportsRepository: ReportsRepository,
     private readonly reportsAuthorizationService: ReportsAuthorizationService,
-  ) { }
+  ) {}
 
   async create(requester: UserPayload, dto: CreateReportDto): Promise<IReport> {
     await this.reportsAuthorizationService.getVisibleUser(requester.id);

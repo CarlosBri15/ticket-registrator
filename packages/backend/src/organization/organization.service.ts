@@ -31,7 +31,7 @@ export class OrganizationService {
     private readonly organizationAuthService: OrganizationAuthorizationService,
     private readonly departmentService: DepartmentService,
     private readonly cryptoService: CryptoService,
-  ) { }
+  ) {}
 
   async onboard(
     requester: UserPayload,

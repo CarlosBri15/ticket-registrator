@@ -36,4 +36,4 @@ import { CryptoModule } from './crypto/crypto.module';
     SeedModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

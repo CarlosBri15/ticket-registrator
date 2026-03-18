@@ -21,7 +21,7 @@ import { permissions } from '@ticket-registrator/shared';
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @RequireAnyPermission(permissions.CREATE_USERS)
   @Post()

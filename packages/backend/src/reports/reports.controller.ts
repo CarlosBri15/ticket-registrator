@@ -26,7 +26,7 @@ import type { UserPayload } from '../auth/decorators/current-user.decorator';
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @Controller('reports')
 export class ReportsController {
-  constructor(private readonly reportsService: ReportsService) { }
+  constructor(private readonly reportsService: ReportsService) {}
 
   @RequireAnyPermission(permissions.CREATE_REPORTS)
   @Post()

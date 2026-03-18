@@ -9,7 +9,7 @@ export class TicketsRepository {
   constructor(
     @Inject(DB_CONNECTION)
     private readonly db: PostgresJsDatabase<typeof schema>,
-  ) { }
+  ) {}
 
   async findById(id: string) {
     return this.db.query.tickets.findFirst({
@@ -112,6 +112,7 @@ export class TicketsRepository {
   async transaction<T>(
     callback: (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
   ): Promise<T> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return this.db.transaction(callback as any);
   }
 }

@@ -80,23 +80,26 @@ describe('UsersRepository', () => {
       };
       dbMock.transaction.mockImplementation(async (cb: any) => cb(txMock));
 
-      const result = await repository.create({ email: 'test@test.com' } as any, ['dept-1']);
+      const result = await repository.create(
+        { email: 'test@test.com' } as any,
+        ['dept-1'],
+      );
       expect(result).toEqual({ id: 'u1' });
       expect(txMock.insert).toHaveBeenCalledTimes(2); // user and usersToDepartments
     });
 
     it('should handle creation without departments', async () => {
-        const txMock = {
-          insert: jest.fn().mockReturnThis(),
-          values: jest.fn().mockReturnThis(),
-          returning: jest.fn().mockResolvedValue([{ id: 'u1' }]),
-        };
-        dbMock.transaction.mockImplementation(async (cb: any) => cb(txMock));
-  
-        const result = await repository.create({ email: 'test@test.com' } as any);
-        expect(result).toEqual({ id: 'u1' });
-        expect(txMock.insert).toHaveBeenCalledTimes(1);
-      });
+      const txMock = {
+        insert: jest.fn().mockReturnThis(),
+        values: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([{ id: 'u1' }]),
+      };
+      dbMock.transaction.mockImplementation(async (cb: any) => cb(txMock));
+
+      const result = await repository.create({ email: 'test@test.com' } as any);
+      expect(result).toEqual({ id: 'u1' });
+      expect(txMock.insert).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('update', () => {
@@ -108,7 +111,9 @@ describe('UsersRepository', () => {
         delete: jest.fn().mockReturnThis(),
         insert: jest.fn().mockReturnThis(),
         values: jest.fn().mockReturnThis(),
-        query: { users: { findFirst: jest.fn().mockResolvedValue({ id: 'u1' }) } },
+        query: {
+          users: { findFirst: jest.fn().mockResolvedValue({ id: 'u1' }) },
+        },
       };
       dbMock.transaction.mockImplementation(async (cb: any) => cb(txMock));
 
@@ -120,18 +125,20 @@ describe('UsersRepository', () => {
     });
 
     it('should only update user if departments not provided', async () => {
-        const txMock = {
-          update: jest.fn().mockReturnThis(),
-          set: jest.fn().mockReturnThis(),
-          where: jest.fn().mockReturnThis(),
-          query: { users: { findFirst: jest.fn().mockResolvedValue({ id: 'u1' }) } },
-        };
-        dbMock.transaction.mockImplementation(async (cb: any) => cb(txMock));
-  
-        const result = await repository.update('u1', { name: 'New' });
-        expect(result).toEqual({ id: 'u1' });
-        expect(txMock.update).toHaveBeenCalled();
-      });
+      const txMock = {
+        update: jest.fn().mockReturnThis(),
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        query: {
+          users: { findFirst: jest.fn().mockResolvedValue({ id: 'u1' }) },
+        },
+      };
+      dbMock.transaction.mockImplementation(async (cb: any) => cb(txMock));
+
+      const result = await repository.update('u1', { name: 'New' });
+      expect(result).toEqual({ id: 'u1' });
+      expect(txMock.update).toHaveBeenCalled();
+    });
   });
 
   describe('softDelete', () => {

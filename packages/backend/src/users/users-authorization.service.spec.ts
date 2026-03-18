@@ -19,7 +19,9 @@ describe('UsersAuthorizationService', () => {
 
   describe('validateCanCreateAdmin', () => {
     it('should return true if permission exists', () => {
-      expect(service.validateCanCreateAdmin([permissions.CREATE_ADMINS])).toBe(true);
+      expect(service.validateCanCreateAdmin([permissions.CREATE_ADMINS])).toBe(
+        true,
+      );
     });
 
     it('should return false if permission does not exist', () => {
@@ -40,15 +42,33 @@ describe('UsersAuthorizationService', () => {
 
   describe('validateDepartmentAssignment', () => {
     it('should return true if requester is high hierarchy', () => {
-      expect(service.validateDepartmentAssignment(AUTHORITY_LEVELS.COMPANY, [], ['dept-1'])).toBe(true);
+      expect(
+        service.validateDepartmentAssignment(
+          AUTHORITY_LEVELS.COMPANY,
+          [],
+          ['dept-1'],
+        ),
+      ).toBe(true);
     });
 
     it('should return true if manager assign their own departments', () => {
-      expect(service.validateDepartmentAssignment(AUTHORITY_LEVELS.DEPARTMENT, ['dept-1'], ['dept-1'])).toBe(true);
+      expect(
+        service.validateDepartmentAssignment(
+          AUTHORITY_LEVELS.DEPARTMENT,
+          ['dept-1'],
+          ['dept-1'],
+        ),
+      ).toBe(true);
     });
 
     it('should return false if manager assign departments they dont belong to', () => {
-      expect(service.validateDepartmentAssignment(AUTHORITY_LEVELS.DEPARTMENT, ['dept-1'], ['dept-1', 'dept-2'])).toBe(false);
+      expect(
+        service.validateDepartmentAssignment(
+          AUTHORITY_LEVELS.DEPARTMENT,
+          ['dept-1'],
+          ['dept-1', 'dept-2'],
+        ),
+      ).toBe(false);
     });
   });
 
@@ -61,38 +81,82 @@ describe('UsersAuthorizationService', () => {
     };
 
     it('should return true for self update if has permission', () => {
-      expect(service.validateCanUpdateUser(requester, { id: 'req-1' } as any)).toBe(true);
+      expect(
+        service.validateCanUpdateUser(requester, { id: 'req-1' } as any),
+      ).toBe(true);
     });
 
     it('should return false for self update without permission', () => {
-      expect(service.validateCanUpdateUser({ ...requester, permissions: [] }, { id: 'req-1' } as any)).toBe(false);
+      expect(
+        service.validateCanUpdateUser({ ...requester, permissions: [] }, {
+          id: 'req-1',
+        } as any),
+      ).toBe(false);
     });
 
     it('should return false if requester hierarchy < DEPARTMENT', () => {
-      expect(service.validateCanUpdateUser({ ...requester, roleHierarchy: 1, id: 'req-2' }, { id: 'req-1' } as any)).toBe(false);
+      expect(
+        service.validateCanUpdateUser(
+          { ...requester, roleHierarchy: 1, id: 'req-2' },
+          { id: 'req-1' } as any,
+        ),
+      ).toBe(false);
     });
 
     it('should return false if outside company and not global', () => {
-      expect(service.validateCanUpdateUser({ ...requester, id: 'req-2' }, { id: 'target-1', companyId: 'company-2' } as any)).toBe(false);
+      expect(
+        service.validateCanUpdateUser({ ...requester, id: 'req-2' }, {
+          id: 'target-1',
+          companyId: 'company-2',
+        } as any),
+      ).toBe(false);
     });
 
     it('should return true if global requester updating different company', () => {
-      expect(service.validateCanUpdateUser({ ...requester, roleHierarchy: AUTHORITY_LEVELS.GLOBAL, id: 'req-2' }, { id: 'target-1', companyId: 'company-2' } as any)).toBe(true);
+      expect(
+        service.validateCanUpdateUser(
+          { ...requester, roleHierarchy: AUTHORITY_LEVELS.GLOBAL, id: 'req-2' },
+          { id: 'target-1', companyId: 'company-2' } as any,
+        ),
+      ).toBe(true);
     });
 
     it('should return false if target hierarchy >= requester hierarchy (at company level)', () => {
-      const targetUser = { id: 'target-1', companyId: 'company-1', role: { hierarchy: AUTHORITY_LEVELS.COMPANY } };
-      expect(service.validateCanUpdateUser({ ...requester, id: 'req-2' }, targetUser as any)).toBe(false);
+      const targetUser = {
+        id: 'target-1',
+        companyId: 'company-1',
+        role: { hierarchy: AUTHORITY_LEVELS.COMPANY },
+      };
+      expect(
+        service.validateCanUpdateUser(
+          { ...requester, id: 'req-2' },
+          targetUser as any,
+        ),
+      ).toBe(false);
     });
 
     it('should return true if target hierarchy < requester hierarchy', () => {
-      const targetUser = { id: 'target-1', companyId: 'company-1', role: { hierarchy: 1 } };
-      expect(service.validateCanUpdateUser({ ...requester, id: 'req-2' }, targetUser as any)).toBe(true);
+      const targetUser = {
+        id: 'target-1',
+        companyId: 'company-1',
+        role: { hierarchy: 1 },
+      };
+      expect(
+        service.validateCanUpdateUser(
+          { ...requester, id: 'req-2' },
+          targetUser as any,
+        ),
+      ).toBe(true);
     });
-     
+
     it('should handle target user with no role hierarchy yet (defaults to 0)', () => {
-        const targetUser = { id: 'target-1', companyId: 'company-1', role: null };
-        expect(service.validateCanUpdateUser({ ...requester, id: 'req-2' }, targetUser as any)).toBe(true);
+      const targetUser = { id: 'target-1', companyId: 'company-1', role: null };
+      expect(
+        service.validateCanUpdateUser(
+          { ...requester, id: 'req-2' },
+          targetUser as any,
+        ),
+      ).toBe(true);
     });
   });
 

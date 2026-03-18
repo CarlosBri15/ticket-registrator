@@ -16,9 +16,7 @@ export const usersToDepartments = pgTable(
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     deletedAt: timestamp('deleted_at'),
   },
-  (t) => [
-    primaryKey({ columns: [t.userId, t.departmentId] }),
-  ],
+  (t) => [primaryKey({ columns: [t.userId, t.departmentId] })],
 );
 
 export const usersToDepartmentsRelations = relations(
