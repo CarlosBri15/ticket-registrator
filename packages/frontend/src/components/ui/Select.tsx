@@ -36,7 +36,7 @@ export const Select = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
-  const selectId = id ?? `select-${label.toLowerCase().replace(/\s+/g, '-')}`;
+  const selectId = id ?? `select-${label.toLowerCase().replaceAll(/\s+/g, '-')}`;
 
   const selectedLabel = options.find((o) => o.value === value)?.label;
   const displayValue = selectedLabel ?? placeholder;
@@ -113,7 +113,6 @@ export const Select = ({
           ref={triggerRef}
           id={selectId}
           type="button"
-          role="combobox"
           aria-haspopup="listbox"
           aria-expanded={open}
           aria-controls={`${selectId}-listbox`}
@@ -136,7 +135,7 @@ export const Select = ({
 
         {/* Dropdown panel — rendered via portal to escape overflow:hidden containers */}
         {open && createPortal(
-          <ul
+          <div
             id={`${selectId}-listbox`}
             role="listbox"
             aria-label={label}
@@ -145,21 +144,22 @@ export const Select = ({
             className="bg-white border border-gray-200 rounded-xl shadow-xl py-1.5 max-h-60 overflow-y-auto"
           >
             {options.length === 0 ? (
-              <li className="px-4 py-3 text-sm text-gray-400 font-medium text-center">
+              <div className="px-4 py-3 text-sm text-gray-400 font-medium text-center">
                 Sin opciones disponibles
-              </li>
+              </div>
             ) : (
               options.map((opt) => {
                 const isSelected = opt.value === value;
                 return (
-                  <li
+                  <button
                     key={opt.value}
+                    type="button"
                     role="option"
                     aria-selected={isSelected}
-                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => handleSelect(opt.value)}
+                    onMouseDown={(e) => e.preventDefault()}
                     className={[
-                      'flex items-center justify-between px-4 py-2.5 text-sm font-medium cursor-pointer transition-colors',
+                      'w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium transition-colors text-left',
                       isSelected
                         ? 'bg-brand/10 text-brand'
                         : 'text-dark hover:bg-brand/5 hover:text-brand',
@@ -167,11 +167,11 @@ export const Select = ({
                   >
                     <span>{opt.label}</span>
                     {isSelected && <Check className="w-4 h-4 shrink-0" aria-hidden={true} />}
-                  </li>
+                  </button>
                 );
               })
             )}
-          </ul>,
+          </div>,
           document.body,
         )}
       </div>

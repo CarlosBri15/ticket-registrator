@@ -50,7 +50,7 @@ export const CreateUserModal = ({
     form.password === form.confirmPassword &&
     !!form.roleId;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!isValid) return;
     mutation.mutate({

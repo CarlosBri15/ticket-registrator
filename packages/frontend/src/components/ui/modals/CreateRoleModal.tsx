@@ -52,9 +52,9 @@ export const CreateRoleModal = ({
   const [hierarchyStr, setHierarchyStr] = useState("10");
   const [description, setDescription] = useState("");
 
-  const hierarchyNum = parseInt(hierarchyStr, 10);
+  const hierarchyNum = Number.parseInt(hierarchyStr, 10);
   const hierarchyValid =
-    !isNaN(hierarchyNum) && hierarchyNum >= 1 && hierarchyNum <= 99;
+    !Number.isNaN(hierarchyNum) && hierarchyNum >= 1 && hierarchyNum <= 99;
   const hierarchyMeta = hierarchyValid ? getHierarchyMeta(hierarchyNum) : null;
 
   const isValid = name.trim().length >= 2 && hierarchyValid;
@@ -63,7 +63,7 @@ export const CreateRoleModal = ({
     ? [...existingRoles].sort((a, b) => b.hierarchy - a.hierarchy)
     : [];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!isValid) return;
     mutation.mutate({

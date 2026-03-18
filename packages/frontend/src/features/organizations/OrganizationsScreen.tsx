@@ -162,6 +162,47 @@ export const OrganizationsScreen = () => {
     o.name.toLowerCase().includes(search.toLowerCase()),
   );
 
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center py-32">
+          <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+        </div>
+      );
+    }
+
+    if (!filtered || filtered.length === 0) {
+      return (
+        <div className="text-center py-32 bg-white rounded-[2rem] border border-dashed border-gray-200">
+          <Globe className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+          <h3 className="text-xl font-black text-gray-300 mb-2">
+            {search ? "Sin resultados" : "No hay organizaciones"}
+          </h3>
+          <p className="text-sm text-gray-300">
+            {search ? "Prueba con otra búsqueda." : "Crea la primera organización usando el botón superior."}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {filtered.map((org) => (
+            <OrgCard
+              key={org.id}
+              org={org}
+              onClick={() => navigate(`/organizations/${org.id}`)}
+            />
+          ))}
+        </div>
+        <p className="text-xs text-gray-400 text-center mt-4">
+          {filtered.length} de {organizations?.length ?? 0} organizaciones
+        </p>
+      </>
+    );
+  };
+
   return (
     <div className="animate-in fade-in duration-500 pb-20">
       {/* Header */}
@@ -194,36 +235,7 @@ export const OrganizationsScreen = () => {
       </div>
 
       {/* Content */}
-      {isLoading ? (
-        <div className="flex justify-center py-32">
-          <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : !filtered || filtered.length === 0 ? (
-        <div className="text-center py-32 bg-white rounded-[2rem] border border-dashed border-gray-200">
-          <Globe className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-          <h3 className="text-xl font-black text-gray-300 mb-2">
-            {search ? "Sin resultados" : "No hay organizaciones"}
-          </h3>
-          <p className="text-sm text-gray-300">
-            {search ? "Prueba con otra búsqueda." : "Crea la primera organización usando el botón superior."}
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {filtered.map((org) => (
-              <OrgCard
-                key={org.id}
-                org={org}
-                onClick={() => navigate(`/organizations/${org.id}`)}
-              />
-            ))}
-          </div>
-          <p className="text-xs text-gray-400 text-center mt-4">
-            {filtered.length} de {organizations?.length ?? 0} organizaciones
-          </p>
-        </>
-      )}
+      {renderContent()}
 
       <OnboardModal isOpen={isOnboardOpen} onClose={() => setIsOnboardOpen(false)} />
     </div>

@@ -70,41 +70,24 @@ export const AssignPermissionsModal = ({
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!allPermissions || !assignedPermissions) return;
 
     const originalSet = new Set(assignedPermissions.map((p) => p.id));
-
     const toAdd = [...localAssigned].filter((id) => !originalSet.has(id));
     const toRemove = [...originalSet].filter((id) => !localAssigned.has(id));
 
-    const allOps: Promise<void>[] = [];
+    const allOps = [
+      ...toAdd.map((permissionId) =>
+        assignMutation.mutateAsync({ roleId, permissionId, companyId, _companyId: companyId })
+      ),
+      ...toRemove.map((permissionId) =>
+        unassignMutation.mutateAsync({ roleId, permissionId, companyId })
+      ),
+    ];
 
-    toAdd.forEach((permissionId) => {
-      allOps.push(
-        new Promise<void>((resolve) => {
-          assignMutation.mutate(
-            { roleId, permissionId, companyId, _companyId: companyId },
-            { onSuccess: () => resolve(), onError: () => resolve() }
-          );
-        })
-      );
-    });
-
-    toRemove.forEach((permissionId) => {
-      allOps.push(
-        new Promise<void>((resolve) => {
-          unassignMutation.mutate(
-            { roleId, permissionId, companyId },
-            { onSuccess: () => resolve(), onError: () => resolve() }
-          );
-        })
-      );
-    });
-
-    Promise.all(allOps).then(() => {
-      onClose();
-    });
+    await Promise.allSettled(allOps);
+    onClose();
   };
 
   // Group permissions by resource
@@ -112,14 +95,14 @@ export const AssignPermissionsModal = ({
   if (allPermissions) {
     for (const perm of allPermissions) {
       const resource = getPermissionResource(perm.name);
-      if (!groupedPermissions[resource]) {
-        groupedPermissions[resource] = [];
-      }
-      groupedPermissions[resource]!.push(perm);
+      groupedPermissions[resource] ??= [];
+      groupedPermissions[resource].push(perm);
     }
   }
 
-  const sortedGroups = Object.keys(groupedPermissions).sort();
+  const sortedGroups = Object.keys(groupedPermissions).sort((a, b) =>
+    a.localeCompare(b)
+  );
   const totalCount = allPermissions?.length ?? 0;
   const selectedCount = localAssigned.size;
 

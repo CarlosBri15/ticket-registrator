@@ -50,6 +50,304 @@ const getHierarchyColor = (h: number) => {
   return "bg-gray-100 text-gray-600";
 };
 
+// ─── Sub-components for Tabs ──────────────────────────────────────────────────
+
+const OverviewTab = ({ org }: { org: any }) => (
+  <div className="space-y-4">
+    <div className="grid grid-cols-2 gap-4 text-sm">
+      <div>
+        <p className="text-xs text-gray-400 font-medium mb-1">Nombre</p>
+        <p className="font-bold text-dark">{org.name}</p>
+      </div>
+      <div>
+        <p className="text-xs text-gray-400 font-medium mb-1">ID</p>
+        <p className="font-mono text-xs text-gray-500 break-all">{org.id}</p>
+      </div>
+      <div>
+        <p className="text-xs text-gray-400 font-medium mb-1">Creada</p>
+        <p className="font-bold text-dark">
+          {format(new Date(org.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
+        </p>
+      </div>
+      <div>
+        <p className="text-xs text-gray-400 font-medium mb-1">Actualizada</p>
+        <p className="font-bold text-dark">
+          {format(new Date(org.updatedAt), "dd/MM/yyyy HH:mm", { locale: es })}
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
+const DepartmentsTab = ({
+  loading,
+  filtered,
+  search,
+  setSearch,
+  onCreate,
+  onEdit,
+  onDelete,
+  canCreate,
+  canEdit,
+  canDelete,
+}: {
+  loading: boolean;
+  filtered: IDepartment[] | undefined;
+  search: string;
+  setSearch: (v: string) => void;
+  onCreate: () => void;
+  onEdit: (d: IDepartment) => void;
+  onDelete: (id: string) => void;
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+}) => {
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+          <input
+            type="text"
+            placeholder="Buscar departamento..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-dark placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30 transition-all"
+          />
+        </div>
+        {canCreate && (
+          <Button onClick={onCreate} className="shrink-0">
+            <Plus className="w-4 h-4 mr-1.5" />
+            Nuevo
+          </Button>
+        )}
+      </div>
+
+      {!filtered || filtered.length === 0 ? (
+        <div className="text-center py-16 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+          <Layers className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+          <p className="text-sm font-bold text-gray-400">Sin departamentos</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((dept) => (
+            <div
+              key={dept.id}
+              className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100"
+            >
+              <div className="w-9 h-9 bg-brand/10 rounded-xl flex items-center justify-center shrink-0">
+                <Layers className="w-4 h-4 text-brand" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-dark text-sm truncate">{dept.name}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {format(new Date(dept.createdAt), "dd MMM yyyy", { locale: es })}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => onEdit(dept)}
+                    className="p-2 text-gray-300 hover:text-brand hover:bg-brand/10 rounded-xl transition-all"
+                    title="Editar departamento"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                )}
+                {canDelete && (
+                  <button
+                    type="button"
+                    onClick={() => onDelete(dept.id)}
+                    className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                    title="Eliminar departamento"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const UsersTab = ({
+  loading,
+  filtered,
+  search,
+  setSearch,
+  onCreate,
+  canCreate,
+  getRoleName,
+}: {
+  loading: boolean;
+  filtered: any[];
+  search: string;
+  setSearch: (v: string) => void;
+  onCreate: () => void;
+  canCreate: boolean;
+  getRoleName: (roleId: string) => string;
+}) => {
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+          <input
+            type="text"
+            placeholder="Buscar usuario..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-dark placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30 transition-all"
+          />
+        </div>
+        {canCreate && (
+          <Button onClick={onCreate} className="shrink-0">
+            <Plus className="w-4 h-4 mr-1.5" />
+            Nuevo
+          </Button>
+        )}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+          <UserCircle className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+          <p className="text-sm font-bold text-gray-400">Sin usuarios</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((user) => (
+            <div
+              key={user.id}
+              className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100"
+            >
+              <div className="w-9 h-9 bg-brand/10 rounded-xl flex items-center justify-center shrink-0">
+                <UserCircle className="w-4 h-4 text-brand" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-dark text-sm truncate">
+                  {user.name} {user.surname}
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                  {user.email} · @{user.username}
+                </p>
+              </div>
+              <span className="text-xs bg-brand/10 text-brand px-2.5 py-1 rounded-full font-bold shrink-0">
+                {getRoleName(user.roleId)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const RolesTab = ({
+  loading,
+  roles,
+  search,
+  setSearch,
+  onCreate,
+  canCreate,
+}: {
+  loading: boolean;
+  roles: any[] | undefined;
+  search: string;
+  setSearch: (v: string) => void;
+  onCreate: () => void;
+  canCreate: boolean;
+}) => {
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const filtered = roles?.filter((r) =>
+    !search || r.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+          <input
+            type="text"
+            placeholder="Buscar rol..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-dark placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30 transition-all"
+          />
+        </div>
+        {canCreate && (
+          <Button onClick={onCreate} className="shrink-0">
+            <Plus className="w-4 h-4 mr-1.5" />
+            Nuevo
+          </Button>
+        )}
+      </div>
+
+      {!filtered || filtered.length === 0 ? (
+        <div className="text-center py-16 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+          <Shield className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+          <p className="text-sm font-bold text-gray-400">
+            {search ? "Sin resultados" : "Sin roles"}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((role) => (
+            <div
+              key={role.id}
+              className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100"
+            >
+              <div className="w-9 h-9 bg-brand/10 rounded-xl flex items-center justify-center shrink-0">
+                <Shield className="w-4 h-4 text-brand" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-dark text-sm truncate">{role.name}</p>
+                {role.description && (
+                  <p className="text-xs text-gray-400 truncate mt-0.5">{role.description}</p>
+                )}
+              </div>
+              <span
+                className={`text-xs px-2.5 py-1 rounded-full font-bold shrink-0 ${getHierarchyColor(
+                  role.hierarchy
+                )}`}
+              >
+                {getHierarchyLabel(role.hierarchy)} · {role.hierarchy}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── Department Modal ─────────────────────────────────────────────────────────
 
 const DepartmentModal = ({
@@ -69,7 +367,7 @@ const DepartmentModal = ({
   const createMutation = useCreateDepartmentMutation(companyId, { onSuccess: onClose });
   const updateMutation = useUpdateDepartmentMutation(companyId, { onSuccess: onClose });
 
-  const handleSubmit = (e: React.BaseSyntheticEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     if (isEditing) {
@@ -309,223 +607,44 @@ export const OrganizationDetailScreen = () => {
 
         {/* Tab content */}
         <div className="p-6">
-          {/* ── Resumen ── */}
-          {activeTab === "overview" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-xs text-gray-400 font-medium mb-1">Nombre</p>
-                  <p className="font-bold text-dark">{org.name}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-medium mb-1">ID</p>
-                  <p className="font-mono text-xs text-gray-500 break-all">{org.id}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-medium mb-1">Creada</p>
-                  <p className="font-bold text-dark">
-                    {format(new Date(org.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-medium mb-1">Actualizada</p>
-                  <p className="font-bold text-dark">
-                    {format(new Date(org.updatedAt), "dd/MM/yyyy HH:mm", { locale: es })}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeTab === "overview" && <OverviewTab org={org} />}
 
-          {/* ── Departamentos ── */}
           {activeTab === "departments" && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                  <input
-                    type="text"
-                    placeholder="Buscar departamento..."
-                    value={deptSearch}
-                    onChange={(e) => setDeptSearch(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-dark placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30 transition-all"
-                  />
-                </div>
-                {can("create_departments") && (
-                  <Button onClick={openCreateDept} className="shrink-0">
-                    <Plus className="w-4 h-4 mr-1.5" />
-                    Nuevo
-                  </Button>
-                )}
-              </div>
-
-              {loadingDepts ? (
-                <div className="flex justify-center py-12">
-                  <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : !filteredDepts || filteredDepts.length === 0 ? (
-                <div className="text-center py-16 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                  <Layers className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                  <p className="text-sm font-bold text-gray-400">Sin departamentos</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredDepts.map((dept) => (
-                    <div
-                      key={dept.id}
-                      className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100"
-                    >
-                      <div className="w-9 h-9 bg-brand/10 rounded-xl flex items-center justify-center shrink-0">
-                        <Layers className="w-4 h-4 text-brand" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-dark text-sm truncate">{dept.name}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {format(new Date(dept.createdAt), "dd MMM yyyy", { locale: es })}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        {can("edit_departments") && (
-                          <button
-                            type="button"
-                            onClick={() => openEditDept(dept)}
-                            className="p-2 text-gray-300 hover:text-brand hover:bg-brand/10 rounded-xl transition-all"
-                            title="Editar departamento"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                        )}
-                        {can("delete_departments") && (
-                          <button
-                            type="button"
-                            onClick={() => deleteDeptMutation.mutate(dept.id)}
-                            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                            title="Eliminar departamento"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <DepartmentsTab
+              loading={loadingDepts}
+              filtered={filteredDepts}
+              search={deptSearch}
+              setSearch={setDeptSearch}
+              onCreate={openCreateDept}
+              onEdit={openEditDept}
+              onDelete={(id) => deleteDeptMutation.mutate(id)}
+              canCreate={can("create_departments")}
+              canEdit={can("edit_departments")}
+              canDelete={can("delete_departments")}
+            />
           )}
 
-          {/* ── Usuarios ── */}
           {activeTab === "users" && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                  <input
-                    type="text"
-                    placeholder="Buscar usuario..."
-                    value={userSearch}
-                    onChange={(e) => setUserSearch(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-dark placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30 transition-all"
-                  />
-                </div>
-                {can("create_users") && (
-                  <Button onClick={() => setIsCreateUserOpen(true)} className="shrink-0">
-                    <Plus className="w-4 h-4 mr-1.5" />
-                    Nuevo
-                  </Button>
-                )}
-              </div>
-
-              {loadingUsers ? (
-                <div className="flex justify-center py-12">
-                  <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : filteredUsers.length === 0 ? (
-                <div className="text-center py-16 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                  <UserCircle className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                  <p className="text-sm font-bold text-gray-400">Sin usuarios</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100"
-                    >
-                      <div className="w-9 h-9 bg-brand/10 rounded-xl flex items-center justify-center shrink-0">
-                        <UserCircle className="w-4 h-4 text-brand" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-dark text-sm truncate">
-                          {user.name} {user.surname}
-                        </p>
-                        <p className="text-xs text-gray-400 truncate">{user.email} · @{user.username}</p>
-                      </div>
-                      <span className="text-xs bg-brand/10 text-brand px-2.5 py-1 rounded-full font-bold shrink-0">
-                        {getRoleName(user.roleId)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <UsersTab
+              loading={loadingUsers}
+              filtered={filteredUsers}
+              search={userSearch}
+              setSearch={setUserSearch}
+              onCreate={() => setIsCreateUserOpen(true)}
+              canCreate={can("create_users")}
+              getRoleName={getRoleName}
+            />
           )}
 
-          {/* ── Roles ── */}
           {activeTab === "roles" && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                  <input
-                    type="text"
-                    placeholder="Buscar rol..."
-                    value={roleSearch}
-                    onChange={(e) => setRoleSearch(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-dark placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30 transition-all"
-                  />
-                </div>
-                {can("create_roles") && (
-                  <Button onClick={() => setIsCreateRoleOpen(true)} className="shrink-0">
-                    <Plus className="w-4 h-4 mr-1.5" />
-                    Nuevo
-                  </Button>
-                )}
-              </div>
-              <div className="space-y-2">
-              {loadingRoles ? (
-                <div className="flex justify-center py-12">
-                  <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : !roles || roles.filter(r => !roleSearch || r.name.toLowerCase().includes(roleSearch.toLowerCase())).length === 0 ? (
-                <div className="text-center py-16 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                  <Shield className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                  <p className="text-sm font-bold text-gray-400">{roleSearch ? "Sin resultados" : "Sin roles"}</p>
-                </div>
-              ) : (
-                roles.filter(r => !roleSearch || r.name.toLowerCase().includes(roleSearch.toLowerCase())).map((role) => (
-                  <div
-                    key={role.id}
-                    className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100"
-                  >
-                    <div className="w-9 h-9 bg-brand/10 rounded-xl flex items-center justify-center shrink-0">
-                      <Shield className="w-4 h-4 text-brand" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-dark text-sm truncate">{role.name}</p>
-                      {role.description && (
-                        <p className="text-xs text-gray-400 truncate mt-0.5">{role.description}</p>
-                      )}
-                    </div>
-                    <span
-                      className={`text-xs px-2.5 py-1 rounded-full font-bold shrink-0 ${getHierarchyColor(role.hierarchy)}`}
-                    >
-                      {getHierarchyLabel(role.hierarchy)} · {role.hierarchy}
-                    </span>
-                  </div>
-                ))
-              )}
-              </div>
-            </div>
+            <RolesTab
+              loading={loadingRoles}
+              roles={roles}
+              search={roleSearch}
+              setSearch={setRoleSearch}
+              onCreate={() => setIsCreateRoleOpen(true)}
+              canCreate={can("create_roles")}
+            />
           )}
         </div>
       </div>
