@@ -52,15 +52,15 @@ describe('TicketsAuthorizationService', () => {
   describe('validateCanModifyReport', () => {
     const requester = { id: 'user-1' } as any;
 
-    it('should allow if requester is the owner', () => {
+    it('should allow if requester is the owner', async () => {
       expect(
-        service.validateCanModifyReport(requester, { userId: 'user-1' }),
+        await service.validateCanModifyReport(requester, { userId: 'user-1' }),
       ).toBe(true);
     });
 
-    it('should NOT allow if requester is NOT the owner', () => {
+    it('should NOT allow if requester is NOT the owner', async () => {
       expect(
-        service.validateCanModifyReport(requester, { userId: 'user-2' }),
+        await service.validateCanModifyReport(requester, { userId: 'user-2' }),
       ).toBe(false);
     });
   });

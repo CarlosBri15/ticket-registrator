@@ -17,7 +17,7 @@ import {
   TicketStatusConflictException,
 } from './exceptions/tickets.exceptions';
 import { ReportNotFoundException } from '../reports/exceptions/reports.exceptions';
-
+import { CryptoService } from '../crypto/crypto.service';
 describe('TicketsService', () => {
   let service: TicketsService;
   let ticketsRepositoryMock: any;
@@ -25,6 +25,7 @@ describe('TicketsService', () => {
   let ticketsAuthMock: any;
   let geminiServiceMock: any;
   let storageServiceMock: any;
+  let cryptoServiceMock: any;
 
   const requester = { id: 'user-1' } as any;
 
@@ -32,6 +33,7 @@ describe('TicketsService', () => {
     ticketsRepositoryMock = {
       findById: jest.fn(),
       findByReportId: jest.fn(),
+      findAllFingerprints: jest.fn().mockResolvedValue([]),
       create: jest.fn(),
       updateWithHistory: jest.fn(),
       softDelete: jest.fn(),
@@ -50,6 +52,11 @@ describe('TicketsService', () => {
       uploadFile: jest.fn(),
       findFile: jest.fn(),
     };
+    cryptoServiceMock = {
+      hashPassword: jest.fn(),
+      generatePerceptualHash: jest.fn(),
+      calculateHammingDistance: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -59,6 +66,7 @@ describe('TicketsService', () => {
         { provide: TicketsAuthorizationService, useValue: ticketsAuthMock },
         { provide: GeminiService, useValue: geminiServiceMock },
         { provide: StorageService, useValue: storageServiceMock },
+        { provide: CryptoService, useValue: cryptoServiceMock },
       ],
     }).compile();
 
@@ -91,6 +99,8 @@ describe('TicketsService', () => {
         items: [],
         total: 10,
       });
+      cryptoServiceMock.generatePerceptualHash.mockResolvedValue('hash|1.0');
+      cryptoServiceMock.calculateHammingDistance.mockReturnValue(100);
       ticketsRepositoryMock.create.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
 
@@ -123,7 +133,7 @@ describe('TicketsService', () => {
 
     it('should throw TicketUnauthorizedException when user cannot modify report', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(false);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(false);
       await expect(
         service.create(requester, 'report-1', {
           buffer: Buffer.from('f'),
@@ -156,6 +166,8 @@ describe('TicketsService', () => {
         payment_method: 'CARD',
         expense_type: 'MEALS',
       });
+      cryptoServiceMock.generatePerceptualHash.mockResolvedValue('hash|1.0');
+      cryptoServiceMock.calculateHammingDistance.mockReturnValue(100);
       ticketsRepositoryMock.create.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
 
@@ -175,6 +187,8 @@ describe('TicketsService', () => {
         date: '0000-00-00',
         total: 0,
       });
+      cryptoServiceMock.generatePerceptualHash.mockResolvedValue('hash|1.0');
+      cryptoServiceMock.calculateHammingDistance.mockReturnValue(100);
       ticketsRepositoryMock.create.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
 
@@ -256,7 +270,7 @@ describe('TicketsService', () => {
 
     it('should throw TicketUnauthorizedException when user cannot modify report', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(false);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(false);
       await expect(
         service.update(requester, 'report-1', 'ticket-1', {}),
       ).rejects.toThrow(TicketUnauthorizedException);
@@ -430,7 +444,7 @@ describe('TicketsService', () => {
 
     it('should throw TicketUnauthorizedException when user cannot modify report', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
-      ticketsAuthMock.validateCanModifyReport.mockReturnValue(false);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(false);
       await expect(
         service.remove(requester, 'report-1', 'ticket-1'),
       ).rejects.toThrow(TicketUnauthorizedException);
