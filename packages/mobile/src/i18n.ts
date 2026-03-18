@@ -20,7 +20,7 @@ i18n
     interpolation: {
       escapeValue: false,
     },
-    compatibilityJSON: 'v3', // Required for Android compatibility
+    compatibilityJSON: 'v4', // Required for Android compatibility
   });
 
 export default i18n;

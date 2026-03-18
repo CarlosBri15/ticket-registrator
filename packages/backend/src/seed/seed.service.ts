@@ -18,7 +18,7 @@ import {
 } from '@ticket-registrator/shared';
 import { InsertRolePermission } from '../permissions/schemas/role-permission.schema';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import { join } from 'path';
+import { join } from 'node:path';
 
 export const UNASSIGNED_DEPARTMENT_NAME = 'Unassigned';
 

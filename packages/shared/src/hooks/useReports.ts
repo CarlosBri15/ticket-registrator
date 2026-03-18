@@ -46,6 +46,22 @@ export const useSubmitReportMutation = (options?: any) => {
     });
 };
 
+export const useUpdateReportStatusMutation = (options?: any) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, status }: { id: string; status: string }) =>
+            api.reports().updateStatus(id, status),
+        onSuccess: (data, { id }) => {
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
+            queryClient.invalidateQueries({ queryKey: ['reports', id] });
+            if (options?.onSuccess) options.onSuccess(data);
+        },
+        onError: (error: any) => {
+            if (options?.onError) options.onError(error);
+        },
+    });
+};
+
 export const useDeleteReportMutation = (options?: any) => {
     const queryClient = useQueryClient();
     return useMutation({
