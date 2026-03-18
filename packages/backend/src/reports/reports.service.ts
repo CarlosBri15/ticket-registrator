@@ -34,6 +34,16 @@ import {
   ReportStatusConflictException,
 } from './exceptions/reports.exceptions';
 
+interface PaginatedFilters {
+  page?: number | string;
+  limit?: number | string;
+  userId?: string;
+  name?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+}
+
 @Injectable()
 export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
@@ -41,7 +51,7 @@ export class ReportsService {
   constructor(
     private readonly reportsRepository: ReportsRepository,
     private readonly reportsAuthorizationService: ReportsAuthorizationService,
-  ) { }
+  ) {}
 
   async create(requester: UserPayload, dto: CreateReportDto): Promise<IReport> {
     await this.reportsAuthorizationService.getVisibleUser(requester.id);
@@ -60,13 +70,13 @@ export class ReportsService {
       userId: requester.id,
       requestedAmount: 0,
       approvedAmount: 0,
-      status: ReportStatus.CREATED as any,
-      name: dto.name,
+      status: ReportStatus.CREATED,
+      name: dto.name as string,
       startDate: new Date(dto.start_date!),
       endDate: new Date(dto.end_date!),
-      currency: dto.currency,
+      currency: dto.currency as string,
       type: dto.type ?? '',
-    } as any);
+    });
 
     this.logger.log(`Report created: ${report.id} by user ${requester.id}`);
     return mapReportToIReport(report);
@@ -101,17 +111,11 @@ export class ReportsService {
 
   async findAllReportsPaginated(
     requester: UserPayload,
-    filters: any,
+    filters: PaginatedFilters,
   ): Promise<PaginatedList<IReport>> {
-    const {
-      page = 1,
-      limit = 10,
-      userId,
-      name,
-      startDate,
-      endDate,
-      status,
-    } = filters;
+    const page = Number(filters.page) || 1;
+    const limit = Number(filters.limit) || 10;
+    const { userId, name, startDate, endDate, status } = filters;
     const offset = (page - 1) * limit;
 
     const authorityFilter = this.buildAuthorityFilter(requester);
@@ -119,7 +123,7 @@ export class ReportsService {
 
     if (userId) queryFilters.push(eq(schema.reports.userId, userId));
     if (name) queryFilters.push(ilike(schema.reports.name, `%${name}%`));
-    if (status) queryFilters.push(eq(schema.reports.status, status as string));
+    if (status) queryFilters.push(eq(schema.reports.status, status));
     if (startDate)
       queryFilters.push(gte(schema.reports.startDate, new Date(startDate)));
     if (endDate)
@@ -281,7 +285,7 @@ export class ReportsService {
   private prepareUpdateData(
     dto: UpdateReportFieldsDto,
   ): Partial<schema.InsertReport> {
-    const updateData: any = { updatedAt: new Date() };
+    const updateData: Partial<schema.InsertReport> = { updatedAt: new Date() };
     if (dto.name !== undefined) updateData.name = dto.name;
     if (dto.start_date !== undefined)
       updateData.startDate = new Date(dto.start_date);

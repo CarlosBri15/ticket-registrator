@@ -120,7 +120,12 @@ export class ReportsRepository {
     return !!updated;
   }
 
-  async transaction<T>(callback: (tx: any) => Promise<T>): Promise<T> {
-    return this.db.transaction(callback);
+  async transaction<T>(
+    callback: (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
+  ): Promise<T> {
+    // A cast to any is often needed here for Drizzle's internal transaction context matching NestJS wrappers,
+    // but at least the callback itself is strictly typed for the caller.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return this.db.transaction(callback as any);
   }
 }

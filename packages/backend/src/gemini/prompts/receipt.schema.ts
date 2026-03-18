@@ -39,6 +39,12 @@ export const receiptSchema = {
     },
 
     total: { type: SchemaType.NUMBER },
+
+    flag: { type: SchemaType.BOOLEAN },
+    llm_comment: {
+      type: SchemaType.STRING,
+      nullable: true,
+    },
   },
 
   required: [
@@ -49,5 +55,6 @@ export const receiptSchema = {
     'payment_method',
     'items',
     'total',
+    'flag',
   ],
 } satisfies ObjectSchema;

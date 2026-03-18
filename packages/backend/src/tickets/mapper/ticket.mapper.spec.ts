@@ -32,6 +32,7 @@ describe('mapTicketToITicket', () => {
     llmSuggestedCurrency: null,
     approvedAmount: 0,
     flag: false,
+    llmComment: null,
     deletedAt: null,
     createdAt: now,
     updatedAt: now,
@@ -65,6 +66,24 @@ describe('mapTicketToITicket', () => {
   it('should return null for date when it is null', () => {
     const result = mapTicketToITicket({ ...baseTicket, date: null, items: [] });
     expect(result.date).toBeNull();
+  });
+
+  it('should map llm_comment correctly', () => {
+    const result = mapTicketToITicket({
+      ...baseTicket,
+      llmComment: 'No se pudo detectar el importe total',
+      items: [],
+    });
+    expect(result.llm_comment).toBe('No se pudo detectar el importe total');
+  });
+
+  it('should return null for llm_comment when llmComment is null', () => {
+    const result = mapTicketToITicket({
+      ...baseTicket,
+      llmComment: null,
+      items: [],
+    });
+    expect(result.llm_comment).toBeNull();
   });
 
   it('should convert createdAt to ISO string', () => {

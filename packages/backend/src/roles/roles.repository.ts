@@ -157,6 +157,7 @@ export class RolesRepository {
   async transaction<T>(
     callback: (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
   ): Promise<T> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return this.db.transaction(callback as any);
   }
 }

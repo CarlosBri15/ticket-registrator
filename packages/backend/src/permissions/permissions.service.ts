@@ -24,7 +24,7 @@ export class PermissionsService {
   constructor(
     private readonly permissionsRepository: PermissionsRepository,
     private readonly permissionsAuthService: PermissionsAuthorizationService,
-  ) { }
+  ) {}
 
   async findAll(): Promise<IPermission[]> {
     return this.permissionsRepository.findAll();

@@ -36,3 +36,11 @@ export class TicketStorageException extends TicketException {
     super(message, HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }
+
+export class DuplicateTicketException extends TicketException {
+  constructor(
+    message: string = 'This image has already been used in another ticket',
+  ) {
+    super(message, HttpStatus.CONFLICT);
+  }
+}

@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
@@ -25,7 +26,7 @@ import type { UserPayload } from '../auth/decorators/current-user.decorator';
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @Controller('reports')
 export class ReportsController {
-  constructor(private readonly reportsService: ReportsService) { }
+  constructor(private readonly reportsService: ReportsService) {}
 
   @RequireAnyPermission(permissions.CREATE_REPORTS)
   @Post()
@@ -69,14 +70,17 @@ export class ReportsController {
   @Get('user/:userId')
   findUserReports(
     @CurrentUser() user: UserPayload,
-    @Param('userId') userId?: string,
+    @Param('userId', ParseUUIDPipe) userId?: string,
   ) {
     return this.reportsService.findUserReports(user, userId ?? user.id);
   }
 
   @RequireAnyPermission(permissions.VIEW_REPORTS)
   @Get(':id')
-  findOne(@CurrentUser() user: UserPayload, @Param('id') id: string) {
+  findOne(
+    @CurrentUser() user: UserPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.reportsService.findOne(user, id);
   }
 
@@ -84,7 +88,7 @@ export class ReportsController {
   @Patch(':id')
   update(
     @CurrentUser() user: UserPayload,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateReportFieldsDto,
   ) {
     return this.reportsService.update(user, id, dto);
@@ -94,7 +98,7 @@ export class ReportsController {
   @Patch(':id/status')
   updateStatus(
     @CurrentUser() user: UserPayload,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateReportStatusDto,
   ) {
     return this.reportsService.updateStatus(user, id, dto);
@@ -102,13 +106,19 @@ export class ReportsController {
 
   @RequireAnyPermission(permissions.SUBMIT_REPORTS)
   @Patch(':id/submit')
-  submitReport(@CurrentUser() user: UserPayload, @Param('id') id: string) {
+  submitReport(
+    @CurrentUser() user: UserPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.reportsService.submitReport(user, id);
   }
 
   @RequireAnyPermission(permissions.DELETE_REPORTS)
   @Delete(':id')
-  remove(@CurrentUser() user: UserPayload, @Param('id') id: string) {
+  remove(
+    @CurrentUser() user: UserPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.reportsService.remove(user, id);
   }
 }

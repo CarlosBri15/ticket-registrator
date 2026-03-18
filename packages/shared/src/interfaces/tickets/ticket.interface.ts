@@ -20,7 +20,9 @@ export interface ITicket {
   converted_currency: string | null;
   cgs_bucket_link_justification: string | null;
   last_four_digits: string | null;
+  image_id: string | null;
   flag: boolean;
+  llm_comment: string | null;
   items?: IItem[];
   createdAt: string;
   updatedAt: string;

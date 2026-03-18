@@ -1,6 +1,6 @@
 {
-  "id": "ae64a84d-6174-4abb-b6cb-cda383e1d8f9",
-  "prevId": "5e656647-82dc-4e9f-ab84-34ff6b477db6",
+  "id": "81340d2a-ac15-4cca-98ad-8e854435c979",
+  "prevId": "ae64a84d-6174-4abb-b6cb-cda383e1d8f9",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -734,6 +734,12 @@
         "last_four_digits": {
           "name": "last_four_digits",
           "type": "varchar(4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "image_id": {
+          "name": "image_id",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
         },

@@ -26,7 +26,9 @@ export const mapTicketToITicket = (
   converted_currency: ticketDoc.convertedCurrency,
   cgs_bucket_link_justification: ticketDoc.cgsBucketLinkJustification,
   last_four_digits: ticketDoc.lastFourDigits,
+  image_id: ticketDoc.imageId,
   flag: ticketDoc.flag,
+  llm_comment: ticketDoc.llmComment ?? null,
   items:
     ticketDoc.items?.map((item) => ({
       id: item.id,

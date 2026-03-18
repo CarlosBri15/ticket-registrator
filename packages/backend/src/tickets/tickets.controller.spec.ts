@@ -52,6 +52,7 @@ describe('TicketsController', () => {
         requester,
         'report-1',
         file,
+        undefined,
       );
       expect(result.id).toBe('ticket-1');
     });

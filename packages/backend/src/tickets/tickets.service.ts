@@ -17,7 +17,9 @@ import {
   TicketNotFoundException,
   TicketUnauthorizedException,
   TicketStatusConflictException,
+  DuplicateTicketException,
 } from './exceptions/tickets.exceptions';
+import { CryptoService } from '../crypto/crypto.service';
 import { ReportNotFoundException } from '../reports/exceptions/reports.exceptions';
 import {
   UpdateTicketFieldsDto,
@@ -38,21 +40,23 @@ export class TicketsService {
     private readonly ticketsAuthService: TicketsAuthorizationService,
     private readonly geminiService: GeminiService,
     private readonly storageService: StorageService,
-  ) { }
+    private readonly cryptoService: CryptoService,
+  ) {}
 
   async create(
     requester: UserPayload,
     reportId: string,
     file: Express.Multer.File,
+    language?: string,
   ): Promise<ITicket> {
     const report = await this.reportsRepository.findById(reportId);
     if (!report || report.deletedAt)
       throw new ReportNotFoundException(reportId);
 
     if (
-      !(this.ticketsAuthService.validateCanModifyReport(
+      !(await this.ticketsAuthService.validateCanModifyReport(
         requester,
-        report
+        report,
       ))
     ) {
       throw new TicketUnauthorizedException(
@@ -67,9 +71,54 @@ export class TicketsService {
     }
 
     const imageBase64 = file.buffer.toString('base64');
+    const imageHash = await this.cryptoService.generatePerceptualHash(
+      file.buffer,
+    );
+
+    // Fraud prevention: Check for similar images in the entire DB
+    const existingFingerprints =
+      await this.ticketsRepository.findAllFingerprints();
+
+    for (const entry of existingFingerprints) {
+      if (!entry.imageId) continue;
+
+      const [oldHash, oldRatioStr] = entry.imageId.split('|');
+      const [newHash, newRatioStr] = imageHash.split('|');
+
+      if (oldRatioStr && newRatioStr) {
+        // New format: Check aspect ratio first (tolerance 5%)
+        if (Math.abs(parseFloat(oldRatioStr) - parseFloat(newRatioStr)) > 0.05)
+          continue;
+
+        const distance = this.cryptoService.calculateHammingDistance(
+          newHash,
+          oldHash,
+        );
+
+        // Hamming distance threshold for 24x24 (576 bits):
+        // 15 matches (approx 2.6% difference) is extremely safe.
+        if (distance <= 15) {
+          throw new DuplicateTicketException(
+            `This receipt has already been processed (Similarity match: ${distance})`,
+          );
+        }
+      } else {
+        // Legacy fallback: only block if exactly identical for different versions
+        const distance = this.cryptoService.calculateHammingDistance(
+          newHash,
+          oldHash,
+        );
+        if (distance <= 2) {
+          throw new DuplicateTicketException(
+            `This receipt has already been processed (Similarity match: ${distance})`,
+          );
+        }
+      }
+    }
+
     const [imageIdentifier, geminiData] = await Promise.all([
       this.storageService.uploadFile(file),
-      this.geminiService.extractReceipt(imageBase64),
+      this.geminiService.extractReceipt(imageBase64, language),
     ]);
 
     const items: InsertItem[] =
@@ -104,6 +153,9 @@ export class TicketsService {
       cgsBucketLinkJustification:
         geminiData.cgs_bucket_link_justification ?? null,
       lastFourDigits: geminiData.card_last_4 ?? null,
+      flag: geminiData.flag ?? false,
+      llmComment: geminiData.llm_comment ?? null,
+      imageId: imageHash,
       version: 1,
     };
 
@@ -132,7 +184,7 @@ export class TicketsService {
     }
 
     const tickets = await this.ticketsRepository.findByReportId(reportId);
-    return tickets.map((t) => mapTicketToITicket(t as any));
+    return tickets.map((t) => mapTicketToITicket(t));
   }
 
   async findOne(
@@ -215,10 +267,8 @@ export class TicketsService {
       );
     }
 
-    const currentTicket = (await this.ticketsRepository.findById(ticketId)) as
-      | Ticket
-      | undefined;
-    if (currentTicket?.reportId !== reportId)
+    const currentTicket = await this.ticketsRepository.findById(ticketId);
+    if (!currentTicket || currentTicket.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     const oldSnapshot = {
@@ -260,7 +310,7 @@ export class TicketsService {
       throw new ReportNotFoundException(reportId);
 
     if (
-      !(this.ticketsAuthService.validateCanModifyReport(
+      !(await this.ticketsAuthService.validateCanModifyReport(
         requester,
         report,
       ))
@@ -274,10 +324,8 @@ export class TicketsService {
       );
     }
 
-    const ticket = (await this.ticketsRepository.findById(ticketId)) as
-      | Ticket
-      | undefined;
-    if (ticket?.reportId !== reportId)
+    const ticket = await this.ticketsRepository.findById(ticketId);
+    if (!ticket || ticket.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     const historyData: typeof schema.ticketHistories.$inferInsert = {
@@ -317,10 +365,10 @@ export class TicketsService {
       throw new ReportNotFoundException(reportId);
 
     if (
-      !this.ticketsAuthService.validateCanModifyReport(
-        requester, // Fixed missing await-non-promise
+      !(await this.ticketsAuthService.validateCanModifyReport(
+        requester,
         report,
-      )
+      ))
     ) {
       throw new TicketUnauthorizedException();
     }
@@ -331,10 +379,8 @@ export class TicketsService {
       );
     }
 
-    const currentTicket = (await this.ticketsRepository.findById(ticketId)) as
-      | Ticket
-      | undefined;
-    if (currentTicket?.reportId !== reportId)
+    const currentTicket = await this.ticketsRepository.findById(ticketId);
+    if (!currentTicket || currentTicket.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     return { report, currentTicket };
@@ -373,7 +419,8 @@ export class TicketsService {
 
     for (const mapping of fieldsMapping) {
       if (dto[mapping.dtoKey] !== undefined) {
-        (update as any)[mapping.updateKey] = dto[mapping.dtoKey];
+        const up = update as Record<string, unknown>;
+        up[mapping.updateKey] = dto[mapping.dtoKey];
         if (mapping.meaningful) meaningfulChange = true;
       }
     }
@@ -406,9 +453,14 @@ export class TicketsService {
     const oldSnapshot: Partial<InsertTicket> = {};
     const newSnapshot: Partial<InsertTicket> = {};
 
+    const oldSnap = oldSnapshot as Record<string, unknown>;
+    const newSnap = newSnapshot as Record<string, unknown>;
+    const curr = currentTicket as Record<string, unknown>;
+    const upd = update as Record<string, unknown>;
+
     for (const key of Object.keys(update)) {
-      (oldSnapshot as any)[key] = (currentTicket as any)[key];
-      (newSnapshot as any)[key] = (update as any)[key];
+      oldSnap[key] = curr[key];
+      newSnap[key] = upd[key];
     }
 
     if (meaningfulChange) {

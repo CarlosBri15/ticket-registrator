@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { eq, and, or, isNull, sql, inArray } from 'drizzle-orm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -37,7 +34,7 @@ export class UsersService {
     private readonly usersAuthService: UsersAuthorizationService,
     private readonly cryptoService: CryptoService,
     private readonly rolesService: RolesService,
-  ) { }
+  ) {}
 
   async create(
     createUserDto: CreateUserDto,
@@ -52,22 +49,41 @@ export class UsersService {
     );
 
     const targetCompanyId = this.getTargetCompanyId(createUserDto, creator);
-    const targetRole = await this.getTargetRole(createUserDto.roleId as string, targetCompanyId);
+    const targetRole = await this.getTargetRole(
+      createUserDto.roleId as string,
+      targetCompanyId,
+    );
 
     if (!targetRole) {
-      throw new UserBadRequestException('Role not found for the target company');
+      throw new UserBadRequestException(
+        'Role not found for the target company',
+      );
     }
 
     this.validateRoleHierarchy(creator, targetRole);
 
     const isTargetSuperAdmin = targetRole.hierarchy >= AUTHORITY_LEVELS.GLOBAL;
-    const resolvedCompanyId = await this.resolveCompanyId(targetCompanyId, isTargetSuperAdmin);
+    const resolvedCompanyId = await this.resolveCompanyId(
+      targetCompanyId,
+      isTargetSuperAdmin,
+    );
 
-    if (!this.usersAuthService.validateDepartmentAssignment(creator.roleHierarchy, creator.departmentIds, createUserDto.departmentIds || [])) {
-      throw new UserUnauthorizedException('Managers can only assign departments they belong to');
+    if (
+      !this.usersAuthService.validateDepartmentAssignment(
+        creator.roleHierarchy,
+        creator.departmentIds,
+        createUserDto.departmentIds || [],
+      )
+    ) {
+      throw new UserUnauthorizedException(
+        'Managers can only assign departments they belong to',
+      );
     }
 
-    await this.validateDepartmentsInCompany(resolvedCompanyId, createUserDto.departmentIds);
+    await this.validateDepartmentsInCompany(
+      resolvedCompanyId,
+      createUserDto.departmentIds,
+    );
 
     const userToCreate = {
       name: createUserDto.name,
@@ -80,7 +96,10 @@ export class UsersService {
     };
 
     try {
-      const user = await this.usersRepository.create(userToCreate, createUserDto.departmentIds);
+      const user = await this.usersRepository.create(
+        userToCreate,
+        createUserDto.departmentIds,
+      );
       const fullUser = await this.usersRepository.findById(user.id);
       return mapUserToIUser(fullUser as UserWithDepts);
     } catch (error: any) {
@@ -112,7 +131,9 @@ export class UsersService {
     const userFilters = [isNull(this.usersRepository.schema.users.deletedAt)];
 
     if (maxHierarchy < AUTHORITY_LEVELS.GLOBAL) {
-      userFilters.push(eq(this.usersRepository.schema.users.companyId, requester.companyId));
+      userFilters.push(
+        eq(this.usersRepository.schema.users.companyId, requester.companyId),
+      );
 
       if (
         maxHierarchy >= AUTHORITY_LEVELS.DEPARTMENT &&
@@ -124,7 +145,9 @@ export class UsersService {
           AND ud.department_id = ANY(${requester.departmentIds}::uuid[])
         )`);
       } else if (maxHierarchy < AUTHORITY_LEVELS.DEPARTMENT) {
-        userFilters.push(eq(this.usersRepository.schema.users.id, requester.id));
+        userFilters.push(
+          eq(this.usersRepository.schema.users.id, requester.id),
+        );
       }
     }
 
@@ -141,7 +164,12 @@ export class UsersService {
     const userWithRels = await this.usersRepository.findById(id);
     if (!userWithRels) throw new UserNotFoundException(id);
 
-    if (!this.usersAuthService.validateCanUpdateUser(requester, userWithRels as any)) {
+    if (
+      !this.usersAuthService.validateCanUpdateUser(
+        requester,
+        userWithRels as UserWithRole & { role: { hierarchy: number } | null },
+      )
+    ) {
       throw new UserUnauthorizedException();
     }
 
@@ -158,7 +186,11 @@ export class UsersService {
 
     try {
       if (roleId) {
-        updateFields.roleId = await this.validateAndGetUpdateRole(roleId, userWithRels.companyId as string, requester.roleHierarchy);
+        updateFields.roleId = await this.validateAndGetUpdateRole(
+          roleId,
+          userWithRels.companyId as string,
+          requester.roleHierarchy,
+        );
       }
 
       await this.usersRepository.update(id, updateFields, departmentIds);
@@ -173,8 +205,15 @@ export class UsersService {
 
     if (!userWithRels) throw new UserNotFoundException(userId);
 
-    if (!this.usersAuthService.validateCanDeleteUser(requester.roleHierarchy, userWithRels.role?.hierarchy || 0)) {
-      throw new UserUnauthorizedException('Cannot delete users with equal or higher role');
+    if (
+      !this.usersAuthService.validateCanDeleteUser(
+        requester.roleHierarchy,
+        userWithRels.role?.hierarchy || 0,
+      )
+    ) {
+      throw new UserUnauthorizedException(
+        'Cannot delete users with equal or higher role',
+      );
     }
 
     await this.usersRepository.softDelete(userId);
@@ -198,10 +237,14 @@ export class UsersService {
     };
   }
 
-  private getTargetCompanyId(createUserDto: CreateUserDto, creator: UserPayload): string | null {
+  private getTargetCompanyId(
+    createUserDto: CreateUserDto,
+    creator: UserPayload,
+  ): string | null {
     const isSuperAdmin = creator.roleHierarchy >= AUTHORITY_LEVELS.GLOBAL;
-    return isSuperAdmin && (createUserDto as any).companyId
-      ? (createUserDto as any).companyId
+    const dto = createUserDto as CreateUserDto & { companyId?: string };
+    return isSuperAdmin && dto.companyId
+      ? dto.companyId
       : (creator.companyId ?? null);
   }
 
@@ -221,9 +264,19 @@ export class UsersService {
     });
   }
 
-  private validateRoleHierarchy(creator: UserPayload, targetRole: any) {
-    if (!this.usersAuthService.validateHierarchyAssignment(creator.roleHierarchy, targetRole.hierarchy)) {
-      throw new UserConflictException('Cannot assign a role higher or equal than your own highest role');
+  private validateRoleHierarchy(
+    creator: UserPayload,
+    targetRole: { hierarchy: number },
+  ) {
+    if (
+      !this.usersAuthService.validateHierarchyAssignment(
+        creator.roleHierarchy,
+        targetRole.hierarchy,
+      )
+    ) {
+      throw new UserConflictException(
+        'Cannot assign a role higher or equal than your own highest role',
+      );
     }
 
     const isCreatingAdmin =
@@ -233,15 +286,22 @@ export class UsersService {
       isCreatingAdmin &&
       !this.usersAuthService.validateCanCreateAdmin(creator.permissions)
     ) {
-      throw new UserUnauthorizedException('You do not have permission to create Admin users');
+      throw new UserUnauthorizedException(
+        'You do not have permission to create Admin users',
+      );
     }
   }
 
-  private async resolveCompanyId(targetCompanyId: string | null, isTargetSuperAdmin: boolean): Promise<string | null> {
+  private async resolveCompanyId(
+    targetCompanyId: string | null,
+    isTargetSuperAdmin: boolean,
+  ): Promise<string | null> {
     if (isTargetSuperAdmin) return null;
 
     if (!targetCompanyId) {
-      throw new UserBadRequestException('Company is required for non-SuperAdmin roles');
+      throw new UserBadRequestException(
+        'Company is required for non-SuperAdmin roles',
+      );
     }
     const company = await this.usersRepository.transaction(async (tx) => {
       return tx.query.companies.findFirst({
@@ -254,7 +314,10 @@ export class UsersService {
     return company.id;
   }
 
-  private async validateDepartmentsInCompany(companyId: string | null, departmentIds?: string[]) {
+  private async validateDepartmentsInCompany(
+    companyId: string | null,
+    departmentIds?: string[],
+  ) {
     if (companyId && (departmentIds?.length ?? 0) > 0) {
       const departments = await this.usersRepository.transaction(async (tx) => {
         return tx.query.departments.findMany({
@@ -266,59 +329,86 @@ export class UsersService {
       });
 
       if (departments.length !== departmentIds!.length) {
-        throw new UserConflictException('One or more departments do not exist in this company');
+        throw new UserConflictException(
+          'One or more departments do not exist in this company',
+        );
       }
     }
   }
 
-  private validateOwnUpdate(id: string, requesterId: string, updateUserDto: UpdateUserDto) {
+  private validateOwnUpdate(
+    id: string,
+    requesterId: string,
+    updateUserDto: UpdateUserDto,
+  ) {
     if (requesterId === id) {
       const forbiddenFields = ['roles', 'departmentIds', 'companyId', 'roleId'];
       for (const field of forbiddenFields) {
         if (field in updateUserDto) {
-          throw new UserUnauthorizedException(`You cannot update your own ${field}`);
+          throw new UserUnauthorizedException(
+            `You cannot update your own ${field}`,
+          );
         }
       }
     }
   }
 
   private extractUpdateFields(updateUserDto: UpdateUserDto) {
-    const updateFields: any = {};
-    const fields = ['name', 'surname', 'email', 'username', 'password'] as const;
+    const updateFields: Record<string, unknown> = {};
+    const fields = [
+      'name',
+      'surname',
+      'email',
+      'username',
+      'password',
+    ] as const;
     fields.forEach((field) => {
-      if (updateUserDto[field] !== undefined) updateFields[field] = updateUserDto[field];
+      if (updateUserDto[field] !== undefined)
+        updateFields[field] = updateUserDto[field];
     });
     return updateFields;
   }
 
-  private async validateAndGetUpdateRole(roleId: string, companyId: string, requesterHierarchy: number) {
-    const targetRoleFromDb = await this.usersRepository.transaction(async (tx) => {
-      return tx.query.roles.findFirst({
-        where: and(
-          eq(this.usersRepository.schema.roles.id, roleId),
-          or(
-            isNull(this.usersRepository.schema.roles.companyId),
-            eq(this.usersRepository.schema.roles.companyId, companyId),
+  private async validateAndGetUpdateRole(
+    roleId: string,
+    companyId: string,
+    requesterHierarchy: number,
+  ) {
+    const targetRoleFromDb = await this.usersRepository.transaction(
+      async (tx) => {
+        return tx.query.roles.findFirst({
+          where: and(
+            eq(this.usersRepository.schema.roles.id, roleId),
+            or(
+              isNull(this.usersRepository.schema.roles.companyId),
+              eq(this.usersRepository.schema.roles.companyId, companyId),
+            ),
           ),
-        ),
-      });
-    });
+        });
+      },
+    );
 
-    if (!targetRoleFromDb) throw new UserBadRequestException('Invalid role provided');
+    if (!targetRoleFromDb)
+      throw new UserBadRequestException('Invalid role provided');
 
     if (targetRoleFromDb.hierarchy >= requesterHierarchy) {
-      throw new UserUnauthorizedException('Cannot assign a role equal or higher than your own');
+      throw new UserUnauthorizedException(
+        'Cannot assign a role equal or higher than your own',
+      );
     }
     return targetRoleFromDb.id;
   }
 
-  private handlePersistenceError(error: any, isCreate: boolean): never {
-    if (error.code === '23505') {
-      if (error.detail?.includes('email')) throw new UserConflictException('Email already exists');
-      if (error.detail?.includes('username')) throw new UserConflictException('Username already exists');
+  private handlePersistenceError(error: unknown, isCreate: boolean): never {
+    const err = error as { code?: string; detail?: string; message?: string };
+    if (err.code === '23505') {
+      if (err.detail?.includes('email'))
+        throw new UserConflictException('Email already exists');
+      if (err.detail?.includes('username'))
+        throw new UserConflictException('Username already exists');
     }
     if (isCreate) {
-      throw new UserBadRequestException(error.message ?? 'Validation failed');
+      throw new UserBadRequestException(err.message ?? 'Validation failed');
     }
     throw error;
   }

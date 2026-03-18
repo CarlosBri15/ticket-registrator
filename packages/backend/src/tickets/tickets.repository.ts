@@ -9,7 +9,7 @@ export class TicketsRepository {
   constructor(
     @Inject(DB_CONNECTION)
     private readonly db: PostgresJsDatabase<typeof schema>,
-  ) { }
+  ) {}
 
   async findById(id: string) {
     return this.db.query.tickets.findFirst({
@@ -26,6 +26,25 @@ export class TicketsRepository {
       ),
       with: { items: true },
       orderBy: [desc(schema.tickets.createdAt)],
+    });
+  }
+
+  async findByImageId(imageId: string) {
+    return this.db.query.tickets.findFirst({
+      where: and(
+        eq(schema.tickets.imageId, imageId),
+        isNull(schema.tickets.deletedAt),
+      ),
+    });
+  }
+
+  async findAllFingerprints() {
+    return this.db.query.tickets.findMany({
+      where: isNull(schema.tickets.deletedAt),
+      columns: {
+        id: true,
+        imageId: true,
+      },
     });
   }
 
@@ -93,6 +112,7 @@ export class TicketsRepository {
   async transaction<T>(
     callback: (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
   ): Promise<T> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return this.db.transaction(callback as any);
   }
 }
