@@ -20,32 +20,20 @@ import { CryptoModule } from './crypto/crypto.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-
     DbModule,
-
     CryptoModule,
-
     UsersModule,
-
     TicketsModule,
-
     ReportsModule,
-
     GeminiModule,
-
     AuthModule,
-
     StorageModule,
-
     OrganizationModule,
-
     ItemsModule,
-
     DepartmentModule,
-
     RolesModule,
     PermissionsModule,
     SeedModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

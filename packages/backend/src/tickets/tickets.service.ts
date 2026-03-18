@@ -1,11 +1,10 @@
-import { Injectable, Logger, ConflictException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   ITicket,
   TicketStatus,
   TicketLifecycle,
   ReportStatus,
   ItemStatus,
-  IReceiptExtraction,
 } from '@ticket-registrator/shared';
 import { TicketsRepository } from './tickets.repository';
 import { TicketsAuthorizationService } from './tickets-authorization.service';
@@ -27,7 +26,7 @@ import {
 import * as schema from '../db/schema';
 import { Ticket, InsertTicket } from './schemas/ticket.schema';
 import { InsertItem, Item } from '../items/schemas/item.schema';
-import { Report } from '../reports/schemas/report.schema';
+import { Report as ReportEntity } from '../reports/schemas/report.schema';
 
 @Injectable()
 export class TicketsService {
@@ -39,7 +38,7 @@ export class TicketsService {
     private readonly ticketsAuthService: TicketsAuthorizationService,
     private readonly geminiService: GeminiService,
     private readonly storageService: StorageService,
-  ) {}
+  ) { }
 
   async create(
     requester: UserPayload,
@@ -51,9 +50,9 @@ export class TicketsService {
       throw new ReportNotFoundException(reportId);
 
     if (
-      !(await this.ticketsAuthService.validateCanModifyReport(
+      !(this.ticketsAuthService.validateCanModifyReport(
         requester,
-        report,
+        report
       ))
     ) {
       throw new TicketUnauthorizedException(
@@ -75,7 +74,7 @@ export class TicketsService {
 
     const items: InsertItem[] =
       geminiData.items?.map((item) => ({
-        ticketId: '', // Will be set by repository
+        ticketId: '',
         name: item.description ?? null,
         amount: item.price ?? null,
         currency: report.currency ?? null,
@@ -85,7 +84,7 @@ export class TicketsService {
     let parsedDate: Date | null = null;
     if (geminiData.date && geminiData.date !== '0000-00-00') {
       const d = new Date(geminiData.date);
-      if (!isNaN(d.getTime())) parsedDate = d;
+      if (!Number.isNaN(d.getTime())) parsedDate = d;
     }
 
     const ticketData: InsertTicket = {
@@ -114,7 +113,6 @@ export class TicketsService {
       `Ticket created: ${ticket.id} in report ${reportId} by user ${requester.id}`,
     );
 
-    // We need to fetch it again or map it manually with items since create returns the ticket
     const fullTicket = (await this.ticketsRepository.findById(ticket.id)) as
       | (Ticket & { items: Item[] })
       | undefined;
@@ -134,7 +132,7 @@ export class TicketsService {
     }
 
     const tickets = await this.ticketsRepository.findByReportId(reportId);
-    return tickets.map((t) => mapTicketToITicket(t as any)); // findByReportId uses 'with', mapping is fine
+    return tickets.map((t) => mapTicketToITicket(t as any));
   }
 
   async findOne(
@@ -167,121 +165,30 @@ export class TicketsService {
     ticketId: string,
     dto: UpdateTicketFieldsDto,
   ): Promise<ITicket> {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
+    const { currentTicket } = await this.getValidatedReportAndTicket(
+      requester,
+      reportId,
+      ticketId,
+    );
 
-    if (
-      !(await this.ticketsAuthService.validateCanModifyReport(
-        requester,
-        report,
-      ))
-    ) {
-      throw new TicketUnauthorizedException();
-    }
-
-    if (report.status !== ReportStatus.CREATED) {
-      throw new TicketStatusConflictException(
-        'Cannot edit tickets after report submission',
-      );
-    }
-
-    const currentTicket = (await this.ticketsRepository.findById(ticketId)) as
-      | Ticket
-      | undefined;
-    if (!currentTicket || currentTicket.reportId !== reportId)
-      throw new TicketNotFoundException(ticketId);
-
-    const update: Partial<InsertTicket> = {};
-    let meaningfulChange = false;
-
-    // Mapping fields with type safety
-    if (dto.payment_type !== undefined) {
-      update.paymentType = dto.payment_type;
-      meaningfulChange = true;
-    }
-    if (dto.expense_type !== undefined) {
-      update.expenseType = dto.expense_type;
-      meaningfulChange = true;
-    }
-    if (dto.location_name !== undefined) {
-      update.locationName = dto.location_name;
-      meaningfulChange = true;
-    }
-    if (dto.location_address !== undefined) {
-      update.locationAddress = dto.location_address;
-      meaningfulChange = true;
-    }
-    if (dto.amount !== undefined) {
-      update.amount = dto.amount;
-      meaningfulChange = true;
-    }
-    if (dto.currency !== undefined) {
-      update.currency = dto.currency;
-      meaningfulChange = true;
-    }
-    if (dto.cgs_bucket_link_justification !== undefined) {
-      update.cgsBucketLinkJustification = dto.cgs_bucket_link_justification;
-    }
-    if (dto.last_four_digits !== undefined) {
-      update.lastFourDigits = dto.last_four_digits;
-    }
-
-    if (dto.date !== undefined) {
-      update.date = dto.date ? new Date(dto.date) : null;
-      meaningfulChange = true;
-    }
-
-    let updatedItemsData: InsertItem[] | undefined = undefined;
-    if (dto.items !== undefined) {
-      updatedItemsData = dto.items.map((item) => ({
-        ticketId,
-        name: item.name ?? null,
-        amount: item.amount ?? null,
-        currency: item.currency ?? null,
-        status: ItemStatus.PENDING,
-      }));
-      meaningfulChange = true;
-    }
+    const { update, updatedItemsData, meaningfulChange } = this.mapDtoToUpdate(
+      dto,
+      ticketId,
+    );
 
     if (Object.keys(update).length === 0 && updatedItemsData === undefined) {
       return this.findOne(requester, reportId, ticketId);
     }
 
-    const oldSnapshot: Partial<InsertTicket> = {};
-    const newSnapshot: Partial<InsertTicket> = {};
-
-    for (const key of Object.keys(update)) {
-      (oldSnapshot as any)[key] = (currentTicket as any)[key];
-      (newSnapshot as any)[key] = (update as any)[key];
-    }
-
-    if (meaningfulChange) {
-      oldSnapshot.lifecycle = currentTicket.lifecycle;
-      oldSnapshot.status = currentTicket.status;
-      oldSnapshot.approvedAmount = currentTicket.approvedAmount;
-
-      newSnapshot.lifecycle = TicketLifecycle.SUBMITTED;
-      newSnapshot.status = TicketStatus.PENDING;
-      newSnapshot.approvedAmount = 0;
-
-      update.lifecycle = TicketLifecycle.SUBMITTED;
-      update.status = TicketStatus.PENDING;
-      update.approvedAmount = 0;
-      update.version = currentTicket.version + 1;
-    }
-
-    const historyData: typeof schema.ticketHistories.$inferInsert = {
-      ticketId,
-      reportId,
-      version: currentTicket.version,
-      oldSnapshot: JSON.parse(JSON.stringify(oldSnapshot)),
-      newSnapshot: JSON.parse(JSON.stringify(newSnapshot)),
-    };
+    const { update: finalUpdate, historyData } = this.prepareUpdateData(
+      currentTicket,
+      update,
+      meaningfulChange,
+    );
 
     await this.ticketsRepository.updateWithHistory(
       ticketId,
-      update,
+      finalUpdate,
       historyData,
       updatedItemsData,
     );
@@ -311,7 +218,7 @@ export class TicketsService {
     const currentTicket = (await this.ticketsRepository.findById(ticketId)) as
       | Ticket
       | undefined;
-    if (!currentTicket || currentTicket.reportId !== reportId)
+    if (currentTicket?.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     const oldSnapshot = {
@@ -327,8 +234,8 @@ export class TicketsService {
       ticketId,
       reportId,
       version: currentTicket.version,
-      oldSnapshot: JSON.parse(JSON.stringify(oldSnapshot)),
-      newSnapshot: JSON.parse(JSON.stringify(newSnapshot)),
+      oldSnapshot: structuredClone(oldSnapshot),
+      newSnapshot: structuredClone(newSnapshot),
     };
 
     await this.ticketsRepository.updateWithHistory(
@@ -353,7 +260,7 @@ export class TicketsService {
       throw new ReportNotFoundException(reportId);
 
     if (
-      !(await this.ticketsAuthService.validateCanModifyReport(
+      !(this.ticketsAuthService.validateCanModifyReport(
         requester,
         report,
       ))
@@ -370,7 +277,7 @@ export class TicketsService {
     const ticket = (await this.ticketsRepository.findById(ticketId)) as
       | Ticket
       | undefined;
-    if (!ticket || ticket.reportId !== reportId)
+    if (ticket?.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     const historyData: typeof schema.ticketHistories.$inferInsert = {
@@ -398,5 +305,135 @@ export class TicketsService {
 
     const url = await this.storageService.findFile(ticket.cgs_bucket_link);
     return { url };
+  }
+
+  private async getValidatedReportAndTicket(
+    requester: UserPayload,
+    reportId: string,
+    ticketId: string,
+  ): Promise<{ report: ReportEntity; currentTicket: Ticket }> {
+    const report = await this.reportsRepository.findById(reportId);
+    if (!report || report.deletedAt)
+      throw new ReportNotFoundException(reportId);
+
+    if (
+      !this.ticketsAuthService.validateCanModifyReport(
+        requester, // Fixed missing await-non-promise
+        report,
+      )
+    ) {
+      throw new TicketUnauthorizedException();
+    }
+
+    if (report.status !== ReportStatus.CREATED) {
+      throw new TicketStatusConflictException(
+        'Cannot edit tickets after report submission',
+      );
+    }
+
+    const currentTicket = (await this.ticketsRepository.findById(ticketId)) as
+      | Ticket
+      | undefined;
+    if (currentTicket?.reportId !== reportId)
+      throw new TicketNotFoundException(ticketId);
+
+    return { report, currentTicket };
+  }
+
+  private mapDtoToUpdate(dto: UpdateTicketFieldsDto, ticketId: string) {
+    const update: Partial<InsertTicket> = {};
+    let meaningfulChange = false;
+
+    const fieldsMapping: Array<{
+      dtoKey: keyof UpdateTicketFieldsDto;
+      updateKey: keyof InsertTicket;
+      meaningful: boolean;
+    }> = [
+      { dtoKey: 'payment_type', updateKey: 'paymentType', meaningful: true },
+      { dtoKey: 'expense_type', updateKey: 'expenseType', meaningful: true },
+      { dtoKey: 'location_name', updateKey: 'locationName', meaningful: true },
+      {
+        dtoKey: 'location_address',
+        updateKey: 'locationAddress',
+        meaningful: true,
+      },
+      { dtoKey: 'amount', updateKey: 'amount', meaningful: true },
+      { dtoKey: 'currency', updateKey: 'currency', meaningful: true },
+      {
+        dtoKey: 'cgs_bucket_link_justification',
+        updateKey: 'cgsBucketLinkJustification',
+        meaningful: false,
+      },
+      {
+        dtoKey: 'last_four_digits',
+        updateKey: 'lastFourDigits',
+        meaningful: false,
+      },
+    ];
+
+    for (const mapping of fieldsMapping) {
+      if (dto[mapping.dtoKey] !== undefined) {
+        (update as any)[mapping.updateKey] = dto[mapping.dtoKey];
+        if (mapping.meaningful) meaningfulChange = true;
+      }
+    }
+
+    if (dto.date !== undefined) {
+      update.date = dto.date ? new Date(dto.date) : null;
+      meaningfulChange = true;
+    }
+
+    let updatedItemsData: InsertItem[] | undefined = undefined;
+    if (dto.items !== undefined) {
+      updatedItemsData = dto.items.map((item) => ({
+        ticketId,
+        name: item.name ?? null,
+        amount: item.amount ?? null,
+        currency: item.currency ?? null,
+        status: ItemStatus.PENDING,
+      }));
+      meaningfulChange = true;
+    }
+
+    return { update, updatedItemsData, meaningfulChange };
+  }
+
+  private prepareUpdateData(
+    currentTicket: Ticket,
+    update: Partial<InsertTicket>,
+    meaningfulChange: boolean,
+  ) {
+    const oldSnapshot: Partial<InsertTicket> = {};
+    const newSnapshot: Partial<InsertTicket> = {};
+
+    for (const key of Object.keys(update)) {
+      (oldSnapshot as any)[key] = (currentTicket as any)[key];
+      (newSnapshot as any)[key] = (update as any)[key];
+    }
+
+    if (meaningfulChange) {
+      oldSnapshot.lifecycle = currentTicket.lifecycle;
+      oldSnapshot.status = currentTicket.status;
+      oldSnapshot.approvedAmount = currentTicket.approvedAmount;
+
+      newSnapshot.lifecycle = TicketLifecycle.SUBMITTED;
+      newSnapshot.status = TicketStatus.PENDING;
+      newSnapshot.approvedAmount = 0;
+
+      update.lifecycle = TicketLifecycle.SUBMITTED;
+      update.status = TicketStatus.PENDING;
+      update.approvedAmount = 0;
+      update.version = currentTicket.version + 1;
+    }
+
+    const historyData: typeof schema.ticketHistories.$inferInsert = {
+      ticketId: currentTicket.id,
+      reportId: currentTicket.reportId,
+      version: currentTicket.version,
+      oldSnapshot: structuredClone(oldSnapshot),
+      newSnapshot: structuredClone(newSnapshot),
+    };
+
+    return { update, historyData };
   }
 }

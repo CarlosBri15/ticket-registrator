@@ -21,7 +21,7 @@ export const useTicketQuery = (reportId: string, ticketId: string) => {
 export const useUploadTicketMutation = (options?: any) => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ reportId, formData }: { reportId: string, formData: FormData }) => 
+        mutationFn: ({ reportId, formData }: { reportId: string, formData: FormData }) =>
             api.tickets().upload(reportId, formData),
         onSuccess: (data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['tickets', variables.reportId] });
@@ -35,7 +35,7 @@ export const useUploadTicketMutation = (options?: any) => {
 export const useUpdateTicketMutation = (options?: any) => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ reportId, ticketId, data }: { reportId: string, ticketId: string, data: Partial<ITicket> }) => 
+        mutationFn: ({ reportId, ticketId, data }: { reportId: string, ticketId: string, data: Partial<ITicket> }) =>
             api.tickets().update(reportId, ticketId, data),
         onSuccess: (data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['tickets', variables.reportId] });
@@ -49,7 +49,7 @@ export const useUpdateTicketMutation = (options?: any) => {
 export const useDeleteTicketMutation = (options?: any) => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ reportId, ticketId }: { reportId: string, ticketId: string }) => 
+        mutationFn: ({ reportId, ticketId }: { reportId: string, ticketId: string }) =>
             api.tickets().delete(reportId, ticketId),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['tickets', variables.reportId] });
@@ -65,6 +65,6 @@ export const useTicketImageQuery = (reportId: string, ticketId: string) => {
         queryKey: ['tickets', reportId, ticketId, 'image'],
         queryFn: () => api.tickets().getImageUrl(reportId, ticketId),
         enabled: !!reportId && !!ticketId,
-        staleTime: 10 * 60 * 1000, // 10 minutes (signed URLs expire in 15)
+        staleTime: 10 * 60 * 1000,
     });
 };

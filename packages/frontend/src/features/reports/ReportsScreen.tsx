@@ -138,11 +138,10 @@ const FilterBar = ({
             key={s}
             type="button"
             onClick={() => onStatusChange(s)}
-            className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${
-              statusFilter === s
+            className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${statusFilter === s
                 ? "bg-brand text-white shadow-sm shadow-brand/20"
                 : "bg-gray-50 text-gray-400 border border-gray-100 hover:border-brand/30 hover:text-brand"
-            }`}
+              }`}
           >
             {s === "ALL" ? t("trips.filterAll") : t(`status.${s}`)}
           </button>
@@ -267,9 +266,8 @@ export const ReportsScreen = () => {
               key={report.id}
               type="button"
               onClick={() => navigate(`/trips/${report.id}`)}
-              className={`w-full text-left group relative bg-white rounded-[2.5rem] border p-8 shadow-sm hover:shadow-xl hover:shadow-brand/8 transition-all duration-500 cursor-pointer overflow-hidden ${
-                idx === 0 ? "border-brand/20" : "border-gray-100"
-              }`}
+              className={`w-full text-left group relative bg-white rounded-[2.5rem] border p-8 shadow-sm hover:shadow-xl hover:shadow-brand/8 transition-all duration-500 cursor-pointer overflow-hidden ${idx === 0 ? "border-brand/20" : "border-gray-100"
+                }`}
             >
               {idx === 0 && (
                 <div className="absolute top-0 right-0 w-56 h-56 bg-brand/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-brand/8 transition-colors duration-700 pointer-events-none" />
@@ -283,9 +281,8 @@ export const ReportsScreen = () => {
                   </span>
                 </div>
 
-                <h3 className={`font-black text-dark mb-4 leading-tight group-hover:text-brand transition-colors duration-300 ${
-                  idx === 0 ? "text-2xl md:text-3xl" : "text-xl"
-                }`}>
+                <h3 className={`font-black text-dark mb-4 leading-tight group-hover:text-brand transition-colors duration-300 ${idx === 0 ? "text-2xl md:text-3xl" : "text-xl"
+                  }`}>
                   {report.name}
                 </h3>
 
@@ -526,9 +523,8 @@ export const ReportsScreen = () => {
                           key={report.id}
                           type="button"
                           onClick={() => navigate(`/trips/${report.id}`)}
-                          className={`w-full text-left px-5 py-4 hover:bg-gray-50/80 cursor-pointer flex items-center gap-3 group ${
-                            idx < Math.min(filteredCompleted.length, 4) - 1 ? "border-b border-gray-50" : ""
-                          }`}
+                          className={`w-full text-left px-5 py-4 hover:bg-gray-50/80 cursor-pointer flex items-center gap-3 group ${idx < Math.min(filteredCompleted.length, 4) - 1 ? "border-b border-gray-50" : ""
+                            }`}
                         >
                           <div className="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-brand/10 transition-colors">
                             <Plane className="w-3.5 h-3.5 text-gray-400 group-hover:text-brand transition-colors" />

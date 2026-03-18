@@ -28,9 +28,7 @@ import type { UserPayload } from '../auth/decorators/current-user.decorator';
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @Controller('permissions')
 export class PermissionsController {
-  constructor(private readonly permissionsService: PermissionsService) {}
-
-  // --- Catalog ---
+  constructor(private readonly permissionsService: PermissionsService) { }
 
   @RequireAnyPermission(permissions.VIEW_ROLES, permissions.MANAGE_PERMISSIONS)
   @Get()
@@ -63,15 +61,11 @@ export class PermissionsController {
     return this.permissionsService.softDelete(id, requester);
   }
 
-  // --- Seeding ---
-
   @RequireAnyPermission(permissions.MANAGE_PERMISSIONS)
   @Post('seed')
   seed() {
     return this.permissionsService.seedDefaultPermissions();
   }
-
-  // --- Assignments & Overrides ---
 
   @RequireAnyPermission(permissions.MANAGE_PERMISSIONS)
   @Post('assign-role')

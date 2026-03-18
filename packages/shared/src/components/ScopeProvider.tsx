@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useMemo, type ReactNode } from 'react';
+
 import { useScope } from '../hooks/useScope';
 import type { IScopeContext } from '../interfaces/scope/scope.interface';
 
@@ -15,8 +16,14 @@ export const ScopeProvider = ({ children }: { children: ReactNode }) => {
     const scopeValues = useScope();
     const [activeCompanyId, setActiveCompanyId] = useState<string | null>(null);
 
+    const providerValue = useMemo(() => ({
+        ...scopeValues,
+        activeCompanyId,
+        setActiveCompanyId,
+    }), [scopeValues, activeCompanyId]);
+
     return (
-        <ScopeContext.Provider value={{ ...scopeValues, activeCompanyId, setActiveCompanyId }}>
+        <ScopeContext.Provider value={providerValue}>
             {children}
         </ScopeContext.Provider>
     );

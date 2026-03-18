@@ -12,7 +12,7 @@ export const useSystemRolesQuery = () => {
 export const useRolesQuery = (companyId?: string) => {
     return useQuery({
         queryKey: ['roles', companyId],
-        queryFn: () => api.roles().getByCompany(companyId!),
+        queryFn: () => api.roles().getByCompany(companyId),
         enabled: !!companyId,
     });
 };

@@ -314,3 +314,52 @@ describe("filterByDateRange", () => {
     expect(result.map((r) => r.id)).toEqual(["r1"]);
   });
 });
+
+// ---- Additional branch coverage ----
+
+describe("getMonthlyExpenses — existing bucket with falsy amount", () => {
+  it("adds 0 when requested_amount is falsy on a second report in the same month", () => {
+    const reports = [
+      makeReport({ id: "r1", end_date: "2025-01-01", requested_amount: 100 }),
+      makeReport({ id: "r2", end_date: "2025-01-15", requested_amount: undefined as any }),
+    ];
+    const result = getMonthlyExpenses(reports);
+    expect(result).toHaveLength(1);
+    expect(result[0].amount).toBe(100);
+    expect(result[0].count).toBe(2);
+  });
+});
+
+describe("getExpensesByType — branch coverage", () => {
+  it("adds 0 when requested_amount is falsy on a second report of the same type", () => {
+    const reports = [
+      makeReport({ id: "r1", type: "Training", requested_amount: 200 }),
+      makeReport({ id: "r2", type: "Training", requested_amount: undefined as any }),
+    ];
+    const result = getExpensesByType(reports);
+    expect(result).toHaveLength(1);
+    expect(result[0].amount).toBe(200);
+    expect(result[0].count).toBe(2);
+  });
+
+  it("sets amount to 0 when first report of a type has falsy requested_amount", () => {
+    const reports = [
+      makeReport({ id: "r1", type: "Conference", requested_amount: 0 }),
+    ];
+    const result = getExpensesByType(reports);
+    expect(result).toHaveLength(1);
+    expect(result[0].amount).toBe(0);
+  });
+});
+
+describe("getStatusCounts — null status", () => {
+  it("groups reports with null status under 'Unknown'", () => {
+    const reports = [
+      makeReport({ id: "r1", status: null as any }),
+    ];
+    const result = getStatusCounts(reports);
+    expect(result).toHaveLength(1);
+    expect(result[0].status).toBe("Unknown");
+    expect(result[0].count).toBe(1);
+  });
+});

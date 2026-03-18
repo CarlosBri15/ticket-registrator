@@ -23,7 +23,6 @@ export class RolesAuthorizationService {
   }
 
   canManageSystemRoles(requesterPermissions: string[]): boolean {
-    // This could also check specifically for MANAGE_PERMISSIONS
     return requesterPermissions.includes('MANAGE_PERMISSIONS');
   }
 }

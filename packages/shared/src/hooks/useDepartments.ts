@@ -6,7 +6,7 @@ import { UpdateDepartmentSchema } from '../schemas/department/updateDepartment.s
 export const useDepartmentsQuery = (companyId?: string) => {
     return useQuery({
         queryKey: ['departments', companyId],
-        queryFn: () => api.departments().getAll(companyId!),
+        queryFn: () => api.departments().getAll(companyId),
         enabled: !!companyId,
     });
 };

@@ -68,9 +68,21 @@ describe('StatCard', () => {
       expect(screen.getByText('99')).toBeInTheDocument();
     });
 
-    it('renders trend', () => {
+    it('renders trend with trendUp styling', () => {
       render(<StatCard title="Users" value="99" icon={icon} variant="ghost" trend="+10%" trendUp />);
       expect(screen.getByText('+10%')).toBeInTheDocument();
+    });
+
+    it('renders trend with trendDown styling when trendUp is false', () => {
+      render(<StatCard title="Users" value="99" icon={icon} variant="ghost" trend="-5%" trendUp={false} />);
+      expect(screen.getByText('-5%')).toBeInTheDocument();
+    });
+  });
+
+  describe('default variant — trendDown', () => {
+    it('renders trend with trendDown styling when trendUp is false', () => {
+      render(<StatCard title="Reports" value="5" icon={icon} trend="-8%" trendUp={false} />);
+      expect(screen.getByText('-8%')).toBeInTheDocument();
     });
   });
 });

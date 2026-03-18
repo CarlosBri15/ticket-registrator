@@ -8,7 +8,6 @@ export const Roles = {
 
 export type RoleType = typeof Roles[keyof typeof Roles];
 
-// AUTHORITY THRESHOLDS for Scope Determination
 export const AUTHORITY_LEVELS = {
   GLOBAL: 100,
   COMPANY: 99,

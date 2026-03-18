@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, and, isNull, or, inArray, desc } from 'drizzle-orm';
+import { eq, and, isNull, desc } from 'drizzle-orm';
 import { Permission, InsertPermission } from './schemas/permission.schema';
 import {
   RolePermission,
@@ -14,7 +14,7 @@ export class PermissionsRepository {
   constructor(
     @Inject(DB_CONNECTION)
     private readonly db: PostgresJsDatabase<typeof schema>,
-  ) {}
+  ) { }
 
   async findAll(): Promise<Permission[]> {
     return this.db.query.permissions.findMany({

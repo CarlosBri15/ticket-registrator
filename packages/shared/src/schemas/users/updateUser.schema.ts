@@ -1,7 +1,4 @@
 import { z } from 'zod';
-import { Roles } from '../../user-roles/roles';
-
-const objectIdRegex = /^[0-9a-fA-F]{24}$/;
 
 export const updateUserSchema = z.object({
   name: z.string().min(2, "Name is too short").max(50, "Name is too long").optional(),

@@ -16,7 +16,7 @@ export class RolesService {
   constructor(
     private readonly rolesRepository: RolesRepository,
     private readonly rolesAuthService: RolesAuthorizationService,
-  ) {}
+  ) { }
 
   async create(companyId: string, dto: CreateRoleDto, requester: UserPayload) {
     this.rolesAuthService.validateHierarchy(
@@ -66,7 +66,7 @@ export class RolesService {
 
   async softDelete(roleId: string, companyId: string, requester: UserPayload) {
     const role = await this.rolesRepository.findById(roleId);
-    if (!role || role.companyId !== companyId) {
+    if (role?.companyId !== companyId) {
       throw new RoleNotFoundException(roleId);
     }
 

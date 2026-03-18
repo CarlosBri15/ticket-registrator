@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ReportForm } from './ReportForm';
 
 vi.mock('@ticket-registrator/shared', async () => {
@@ -59,5 +59,50 @@ describe('ReportForm', () => {
   it('renders submit button', () => {
     render(<ReportForm onSuccess={vi.fn()} onCancel={vi.fn()} />);
     expect(screen.getByText('trips.saveButton')).toBeInTheDocument();
+  });
+
+  it('calls onCancel when cancel button is clicked', () => {
+    const onCancel = vi.fn();
+    render(<ReportForm onSuccess={vi.fn()} onCancel={onCancel} />);
+    fireEvent.click(screen.getByText('common.cancel'));
+    expect(onCancel).toHaveBeenCalled();
+  });
+
+  it('shows api error message when onError is triggered with response message', () => {
+    let capturedOnError: ((error: any) => void) | undefined;
+    (useCreateReportMutation as ReturnType<typeof vi.fn>).mockImplementation((opts: any) => {
+      capturedOnError = opts?.onError;
+      return { mutate: vi.fn(), isPending: false };
+    });
+    render(<ReportForm onSuccess={vi.fn()} onCancel={vi.fn()} />);
+    act(() => {
+      capturedOnError?.({ response: { data: { message: 'Error al crear reporte' } } });
+    });
+    expect(screen.getByText('Error al crear reporte')).toBeInTheDocument();
+  });
+
+  it('shows generic error when onError has no response message', () => {
+    let capturedOnError: ((error: any) => void) | undefined;
+    (useCreateReportMutation as ReturnType<typeof vi.fn>).mockImplementation((opts: any) => {
+      capturedOnError = opts?.onError;
+      return { mutate: vi.fn(), isPending: false };
+    });
+    render(<ReportForm onSuccess={vi.fn()} onCancel={vi.fn()} />);
+    act(() => {
+      capturedOnError?.({});
+    });
+    expect(screen.getByText('trips.createError')).toBeInTheDocument();
+  });
+
+  it('calls onSuccess prop when mutation onSuccess fires', () => {
+    let capturedOnSuccess: (() => void) | undefined;
+    (useCreateReportMutation as ReturnType<typeof vi.fn>).mockImplementation((opts: any) => {
+      capturedOnSuccess = opts?.onSuccess;
+      return { mutate: vi.fn(), isPending: false };
+    });
+    const onSuccess = vi.fn();
+    render(<ReportForm onSuccess={onSuccess} onCancel={vi.fn()} />);
+    act(() => { capturedOnSuccess?.(); });
+    expect(onSuccess).toHaveBeenCalled();
   });
 });

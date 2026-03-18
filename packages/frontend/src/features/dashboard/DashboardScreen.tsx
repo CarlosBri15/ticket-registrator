@@ -521,16 +521,16 @@ const KpisGrid = ({
     />
 
     {showTeamStats ? (
-      <TeamKpis 
-        teamMemberCount={teamMemberCount} 
-        pendingCount={reportsByStatus.pending.length} 
-        t={t} 
+      <TeamKpis
+        teamMemberCount={teamMemberCount}
+        pendingCount={reportsByStatus.pending.length}
+        t={t}
       />
     ) : (
-      <UserKpis 
-        activeCount={reportsByStatus.active.length} 
-        rejectedCount={amounts.rejectedCount} 
-        t={t} 
+      <UserKpis
+        activeCount={reportsByStatus.active.length}
+        rejectedCount={amounts.rejectedCount}
+        t={t}
       />
     )}
   </div>
@@ -664,7 +664,7 @@ export const DashboardPage = () => {
   const { can } = usePermissions();
 
   const data = useMemo(() => {
-    if (!reports) return null;
+    if (!Array.isArray(reports)) return null;
     return {
       reportsByStatus: getReportsSummary(reports),
       amounts: getAmountsSummary(reports),

@@ -3,8 +3,6 @@ import { useUserQuery } from './useAuth';
 import { AUTHORITY_LEVELS } from '../user-roles/roles';
 import type { Scope } from '../interfaces/scope/scope.interface';
 
-export type { Scope };
-
 export const useScope = () => {
     const { data: user } = useUserQuery();
 
@@ -32,7 +30,7 @@ export const useScope = () => {
         return { type: 'self', userId: user.id, companyId: user.companyId };
     }, [user]);
 
-    return {
+    return useMemo(() => ({
         scope,
         /** True only for SuperAdmin */
         isGlobal: scope.type === 'global',
@@ -42,5 +40,5 @@ export const useScope = () => {
         isDepartment: scope.type === 'department',
         /** True for Employee */
         isSelf: scope.type === 'self',
-    };
+    }), [scope]);
 };

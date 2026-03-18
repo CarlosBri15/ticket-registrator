@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ReportsScreen } from './ReportsScreen';
 
@@ -103,5 +103,80 @@ describe('ReportsScreen', () => {
     });
     renderScreen();
     expect(screen.getByText('Viaje Madrid')).toBeInTheDocument();
+  });
+
+  it('opens create report modal when new trip button is clicked', () => {
+    renderScreen();
+    fireEvent.click(screen.getAllByText('trips.newTripTitle')[0]);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('renders filter bar when reports exist', () => {
+    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05', approved_amount: null }],
+      isLoading: false,
+    });
+    renderScreen();
+    // Search input appears with the t() key as placeholder
+    expect(screen.getByPlaceholderText('trips.filterSearch')).toBeInTheDocument();
+  });
+
+  it('shows no results message when search filter produces empty results', () => {
+    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05', approved_amount: null, currency: 'EUR', requested_amount: 100 }],
+      isLoading: false,
+    });
+    renderScreen();
+    const searchInput = screen.getByPlaceholderText('trips.filterSearch');
+    fireEvent.change(searchInput, { target: { value: 'xyz-no-match' } });
+    expect(screen.getAllByText('trips.noResultsFilter').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders completed trip in history section', () => {
+    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [
+        { id: 'r1', name: 'Viaje Aprobado', status: 'APPROVED', start_date: '2024-01-01', end_date: '2024-01-10', approved_amount: 500, currency: 'EUR', requested_amount: 500 },
+      ],
+      isLoading: false,
+    });
+    renderScreen();
+    expect(screen.getByText('Viaje Aprobado')).toBeInTheDocument();
+  });
+
+  it('renders "view all" button when more than 4 completed trips', () => {
+    const completedReports = Array.from({ length: 5 }, (_, i) => ({
+      id: `r${i}`, name: `Viaje ${i}`, status: 'APPROVED',
+      start_date: '2024-01-01', end_date: '2024-01-10',
+      approved_amount: 100, currency: 'EUR', requested_amount: 100,
+    }));
+    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: completedReports,
+      isLoading: false,
+    });
+    renderScreen();
+    expect(screen.getByText('common.viewAll')).toBeInTheDocument();
+  });
+
+  it('shows clearFilters button and calls clearFilters when clicked', () => {
+    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05', approved_amount: null, currency: 'EUR', requested_amount: 100 }],
+      isLoading: false,
+    });
+    renderScreen();
+    const searchInput = screen.getByPlaceholderText('trips.filterSearch');
+    fireEvent.change(searchInput, { target: { value: 'xyz-no-match' } });
+    expect(screen.getAllByText('trips.noResultsFilter').length).toBeGreaterThanOrEqual(1);
+    const clearBtn = screen.getAllByText('trips.filterClearAll')[0];
+    fireEvent.click(clearBtn);
+    expect(screen.queryByText('trips.filterClearAll')).not.toBeInTheDocument();
+  });
+
+  it('renders type badge on active trip card when report has type', () => {
+    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05', approved_amount: null, currency: 'EUR', requested_amount: 100, type: 'Business Trip' }],
+      isLoading: false,
+    });
+    renderScreen();
+    expect(screen.getByText('Business Trip')).toBeInTheDocument();
   });
 });
