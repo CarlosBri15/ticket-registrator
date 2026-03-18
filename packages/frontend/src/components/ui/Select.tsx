@@ -113,6 +113,7 @@ export const Select = ({
           ref={triggerRef}
           id={selectId}
           type="button"
+          role="combobox"
           aria-haspopup="listbox"
           aria-expanded={open}
           aria-controls={`${selectId}-listbox`}

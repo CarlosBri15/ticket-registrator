@@ -102,11 +102,13 @@ describe('AssignPermissionsModal', () => {
 
     (useAssignPermissionMutation as ReturnType<typeof vi.fn>).mockReturnValue({
       mutate: mockAssignMutate,
+      mutateAsync: mockAssignMutate,
       isPending: false,
     });
 
     (useUnassignPermissionMutation as ReturnType<typeof vi.fn>).mockReturnValue({
       mutate: mockUnassignMutate,
+      mutateAsync: mockUnassignMutate,
       isPending: false,
     });
   });
@@ -196,15 +198,13 @@ describe('AssignPermissionsModal', () => {
   it('clicking "Guardar cambios" calls assignPermission for newly checked permissions', () => {
     // Setup mutate to call onSuccess immediately
     (useAssignPermissionMutation as ReturnType<typeof vi.fn>).mockReturnValue({
-      mutate: vi.fn((_data: unknown, callbacks?: { onSuccess?: () => void }) => {
-        callbacks?.onSuccess?.();
-      }),
+      mutate: vi.fn(),
+      mutateAsync: vi.fn().mockResolvedValue({}),
       isPending: false,
     });
     (useUnassignPermissionMutation as ReturnType<typeof vi.fn>).mockReturnValue({
-      mutate: vi.fn((_data: unknown, callbacks?: { onSuccess?: () => void }) => {
-        callbacks?.onSuccess?.();
-      }),
+      mutate: vi.fn(),
+      mutateAsync: vi.fn().mockResolvedValue({}),
       isPending: false,
     });
 
@@ -216,25 +216,22 @@ describe('AssignPermissionsModal', () => {
     // Click save
     fireEvent.click(screen.getByText('Guardar cambios'));
 
-    const assignMutateMock = (useAssignPermissionMutation as ReturnType<typeof vi.fn>).mock.results[0].value.mutate;
-    expect(assignMutateMock).toHaveBeenCalledWith(
-      expect.objectContaining({ roleId: 'r1', permissionId: 'p2', companyId: 'c1' }),
-      expect.any(Object)
+    const assignMutateAsyncMock = (useAssignPermissionMutation as ReturnType<typeof vi.fn>).mock.results[0].value.mutateAsync;
+    expect(assignMutateAsyncMock).toHaveBeenCalledWith(
+      expect.objectContaining({ roleId: 'r1', permissionId: 'p2', companyId: 'c1' })
     );
   });
 
   it('clicking "Guardar cambios" calls unassignPermission for unchecked permissions that were previously assigned', () => {
     // Setup mutate to call onSuccess immediately
     (useAssignPermissionMutation as ReturnType<typeof vi.fn>).mockReturnValue({
-      mutate: vi.fn((_data: unknown, callbacks?: { onSuccess?: () => void }) => {
-        callbacks?.onSuccess?.();
-      }),
+      mutate: vi.fn(),
+      mutateAsync: vi.fn().mockResolvedValue({}),
       isPending: false,
     });
     (useUnassignPermissionMutation as ReturnType<typeof vi.fn>).mockReturnValue({
-      mutate: vi.fn((_data: unknown, callbacks?: { onSuccess?: () => void }) => {
-        callbacks?.onSuccess?.();
-      }),
+      mutate: vi.fn(),
+      mutateAsync: vi.fn().mockResolvedValue({}),
       isPending: false,
     });
 
@@ -246,16 +243,16 @@ describe('AssignPermissionsModal', () => {
     // Click save
     fireEvent.click(screen.getByText('Guardar cambios'));
 
-    const unassignMutateMock = (useUnassignPermissionMutation as ReturnType<typeof vi.fn>).mock.results[0].value.mutate;
-    expect(unassignMutateMock).toHaveBeenCalledWith(
-      expect.objectContaining({ roleId: 'r1', permissionId: 'p1', companyId: 'c1' }),
-      expect.any(Object)
+    const unassignMutateAsyncMock = (useUnassignPermissionMutation as ReturnType<typeof vi.fn>).mock.results[0].value.mutateAsync;
+    expect(unassignMutateAsyncMock).toHaveBeenCalledWith(
+      expect.objectContaining({ roleId: 'r1', permissionId: 'p1', companyId: 'c1' })
     );
   });
 
   it('"Guardar cambios" button is disabled while mutations are pending', () => {
     (useAssignPermissionMutation as ReturnType<typeof vi.fn>).mockReturnValue({
       mutate: mockAssignMutate,
+      mutateAsync: mockAssignMutate,
       isPending: true,
     });
 
