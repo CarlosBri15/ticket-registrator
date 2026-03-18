@@ -8,7 +8,7 @@ describe('clientContainer', () => {
         jest.isolateModules(() => {
             ({ getApiClient } = require('./clientContainer'));
         });
-        expect(() => getApiClient!()).toThrow('ApiClient not initialized');
+        expect(() => getApiClient()).toThrow('ApiClient not initialized');
     });
 
     it('should return the client after setApiClient', () => {
@@ -18,8 +18,8 @@ describe('clientContainer', () => {
             ({ setApiClient, getApiClient } = require('./clientContainer'));
         });
         const mockClient = { get: jest.fn() };
-        setApiClient!(mockClient);
-        expect(getApiClient!()).toBe(mockClient);
+        setApiClient(mockClient);
+        expect(getApiClient()).toBe(mockClient);
     });
 
     it('should expose all api namespaces as functions', () => {
@@ -127,5 +127,35 @@ describe('clientContainer', () => {
         expect(typeof methods.getAll).toBe('function');
         expect(typeof methods.assignToRole).toBe('function');
         expect(typeof methods.unassignFromRole).toBe('function');
+    });
+
+    it('api.reports() should return reportsApi methods', () => {
+        let setApiClient: (c: any) => void;
+        let api: any;
+        jest.isolateModules(() => {
+            ({ setApiClient, api } = require('./clientContainer'));
+        });
+        const mockClient = { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() };
+        setApiClient(mockClient);
+        const methods = api.reports();
+        expect(typeof methods.getAll).toBe('function');
+        expect(typeof methods.getOne).toBe('function');
+        expect(typeof methods.create).toBe('function');
+        expect(typeof methods.submit).toBe('function');
+    });
+
+    it('api.tickets() should return ticketsApi methods', () => {
+        let setApiClient: (c: any) => void;
+        let api: any;
+        jest.isolateModules(() => {
+            ({ setApiClient, api } = require('./clientContainer'));
+        });
+        const mockClient = { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() };
+        setApiClient(mockClient);
+        const methods = api.tickets();
+        expect(typeof methods.getByReport).toBe('function');
+        expect(typeof methods.get).toBe('function');
+        expect(typeof methods.update).toBe('function');
+        expect(typeof methods.upload).toBe('function');
     });
 });

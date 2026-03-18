@@ -110,6 +110,15 @@ describe('useUsers hooks', () => {
             await call.onSuccess();
             expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['users'] });
         });
+
+        it('onError should call options.onError callback', async () => {
+            const onError = jest.fn();
+            useUpdateUserMutation({ onError });
+            const call = (useMutation as jest.Mock).mock.calls[0][0];
+            const err = new Error('fail');
+            await call.onError(err);
+            expect(onError).toHaveBeenCalledWith(err);
+        });
     });
 
     describe('useDeleteUserMutation', () => {

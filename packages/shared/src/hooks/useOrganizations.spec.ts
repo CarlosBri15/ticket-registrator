@@ -16,12 +16,12 @@ jest.mock('../api/clientContainer', () => ({
         }),
     },
 }));
-
 import {
     useOrganizationsQuery,
     useOnboardOrganizationMutation,
     useUpdateOrganizationMutation,
     useDeleteOrganizationMutation,
+    useOrganizationQuery,
 } from './useOrganizations';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '../api/clientContainer';
@@ -111,6 +111,15 @@ describe('useOrganizations hooks', () => {
             await call.onSuccess();
             expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['organizations'] });
         });
+
+        it('onError should call options.onError callback', async () => {
+            const onError = jest.fn();
+            useUpdateOrganizationMutation({ onError });
+            const call = (useMutation as jest.Mock).mock.calls[0][0];
+            const err = new Error('fail');
+            await call.onError(err);
+            expect(onError).toHaveBeenCalledWith(err);
+        });
     });
 
     describe('useDeleteOrganizationMutation', () => {
@@ -133,6 +142,31 @@ describe('useOrganizations hooks', () => {
             const call = (useMutation as jest.Mock).mock.calls[0][0];
             await call.onSuccess();
             expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['organizations'] });
+        });
+    });
+
+    describe('useOrganizationQuery', () => {
+        it('should call useQuery with correct options', () => {
+            useOrganizationQuery('org-1');
+            expect(useQuery).toHaveBeenCalledWith(expect.objectContaining({
+                queryKey: ['organizations'],
+                enabled: true,
+            }));
+        });
+
+        it('queryFn should call api.organizations().getAll', async () => {
+            useOrganizationQuery('org-1');
+            const call = (useQuery as jest.Mock).mock.calls[0][0];
+            await call.queryFn();
+            expect(api.organizations().getAll).toHaveBeenCalled();
+        });
+
+        it('select should filter organizations by id', () => {
+            useOrganizationQuery('org-2');
+            const call = (useQuery as jest.Mock).mock.calls[0][0];
+            const orgs = [{ id: 'org-1' }, { id: 'org-2' }] as any[];
+            const selected = call.select(orgs);
+            expect(selected).toEqual({ id: 'org-2' });
         });
     });
 });
