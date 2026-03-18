@@ -16,6 +16,8 @@ export const createTicketSchema = z.object({
   converted_currency: z.string().optional(),
   cgs_bucket_link_justification: z.string().optional(),
   last_four_digits: z.string().optional(),
+  image_id: z.string().optional(),
+  language: z.string().optional(),
   items: z.array(createItemSchema).optional(),
   isVisible: z.boolean().optional()
 });

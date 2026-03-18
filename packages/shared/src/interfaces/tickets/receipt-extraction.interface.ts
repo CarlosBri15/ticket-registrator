@@ -20,4 +20,6 @@ export interface IReceiptExtraction {
   converted_currency?: string;
   expense_type?: string;
   cgs_bucket_link_justification?: string;
+  flag?: boolean;
+  llm_comment?: string | null;
 }

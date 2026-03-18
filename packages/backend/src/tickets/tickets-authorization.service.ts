@@ -19,8 +19,8 @@ export class TicketsAuthorizationService {
   validateCanModifyReport(
     requester: UserPayload,
     report: { userId: string },
-  ): boolean {
+  ): Promise<boolean> {
     // Only the owner can modify a report/ticket
-    return requester.id === report.userId;
+    return Promise.resolve(requester.id === report.userId);
   }
 }

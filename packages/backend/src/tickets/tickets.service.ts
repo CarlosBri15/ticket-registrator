@@ -1,5 +1,11 @@
-import { Injectable, Logger, ConflictException } from '@nestjs/common';
-import { ITicket, TicketStatus, TicketLifecycle, ReportStatus, ItemStatus, IReceiptExtraction } from '@ticket-registrator/shared';
+import { Injectable, Logger } from '@nestjs/common';
+import {
+  ITicket,
+  TicketStatus,
+  TicketLifecycle,
+  ReportStatus,
+  ItemStatus,
+} from '@ticket-registrator/shared';
 import { TicketsRepository } from './tickets.repository';
 import { TicketsAuthorizationService } from './tickets-authorization.service';
 import { ReportsRepository } from '../reports/reports.repository';
@@ -10,16 +16,18 @@ import { mapTicketToITicket } from './mapper/ticket.mapper';
 import {
   TicketNotFoundException,
   TicketUnauthorizedException,
-  TicketStatusConflictException
+  TicketStatusConflictException,
+  DuplicateTicketException,
 } from './exceptions/tickets.exceptions';
+import { CryptoService } from '../crypto/crypto.service';
 import { ReportNotFoundException } from '../reports/exceptions/reports.exceptions';
-import { UpdateTicketFieldsDto, UpdateTicketStatusDto } from './dto/update-ticket-user.dto';
+import {
+  UpdateTicketFieldsDto,
+  UpdateTicketStatusDto,
+} from './dto/update-ticket-user.dto';
 import * as schema from '../db/schema';
 import { Ticket, InsertTicket } from './schemas/ticket.schema';
 import { InsertItem, Item } from '../items/schemas/item.schema';
-import { Report } from '../reports/schemas/report.schema';
-
-
 
 @Injectable()
 export class TicketsService {
@@ -31,33 +39,95 @@ export class TicketsService {
     private readonly ticketsAuthService: TicketsAuthorizationService,
     private readonly geminiService: GeminiService,
     private readonly storageService: StorageService,
-  ) { }
+    private readonly cryptoService: CryptoService,
+  ) {}
 
-  async create(requester: UserPayload, reportId: string, file: Express.Multer.File): Promise<ITicket> {
-    const report = await this.reportsRepository.findById(reportId) as Report | undefined;
-    if (!report || report.deletedAt) throw new ReportNotFoundException(reportId);
+  async create(
+    requester: UserPayload,
+    reportId: string,
+    file: Express.Multer.File,
+    language?: string,
+  ): Promise<ITicket> {
+    const report = await this.reportsRepository.findById(reportId);
+    if (!report || report.deletedAt)
+      throw new ReportNotFoundException(reportId);
 
-    if (!(await this.ticketsAuthService.validateCanModifyReport(requester, report))) {
-      throw new TicketUnauthorizedException('You can only add tickets to your own reports');
+    if (
+      !(await this.ticketsAuthService.validateCanModifyReport(
+        requester,
+        report,
+      ))
+    ) {
+      throw new TicketUnauthorizedException(
+        'You can only add tickets to your own reports',
+      );
     }
 
     if (report.status !== ReportStatus.CREATED) {
-      throw new TicketStatusConflictException('Cannot add tickets to a report that is not in CREATED status');
+      throw new TicketStatusConflictException(
+        'Cannot add tickets to a report that is not in CREATED status',
+      );
     }
 
     const imageBase64 = file.buffer.toString('base64');
+    const imageHash = await this.cryptoService.generatePerceptualHash(
+      file.buffer,
+    );
+
+    // Fraud prevention: Check for similar images in the entire DB
+    const existingFingerprints =
+      await this.ticketsRepository.findAllFingerprints();
+
+    for (const entry of existingFingerprints) {
+      if (!entry.imageId) continue;
+
+      const [oldHash, oldRatioStr] = entry.imageId.split('|');
+      const [newHash, newRatioStr] = imageHash.split('|');
+
+      if (oldRatioStr && newRatioStr) {
+        // New format: Check aspect ratio first (tolerance 5%)
+        if (Math.abs(parseFloat(oldRatioStr) - parseFloat(newRatioStr)) > 0.05)
+          continue;
+
+        const distance = this.cryptoService.calculateHammingDistance(
+          newHash,
+          oldHash,
+        );
+
+        // Hamming distance threshold for 24x24 (576 bits):
+        // 15 matches (approx 2.6% difference) is extremely safe.
+        if (distance <= 15) {
+          throw new DuplicateTicketException(
+            `This receipt has already been processed (Similarity match: ${distance})`,
+          );
+        }
+      } else {
+        // Legacy fallback: only block if exactly identical for different versions
+        const distance = this.cryptoService.calculateHammingDistance(
+          newHash,
+          oldHash,
+        );
+        if (distance <= 2) {
+          throw new DuplicateTicketException(
+            `This receipt has already been processed (Similarity match: ${distance})`,
+          );
+        }
+      }
+    }
+
     const [imageIdentifier, geminiData] = await Promise.all([
       this.storageService.uploadFile(file),
-      this.geminiService.extractReceipt(imageBase64),
+      this.geminiService.extractReceipt(imageBase64, language),
     ]);
 
-    const items: InsertItem[] = geminiData.items?.map(item => ({
-      ticketId: '', // Will be set by repository
-      name: item.description ?? null,
-      amount: item.price ?? null,
-      currency: report.currency ?? null,
-      status: ItemStatus.PENDING,
-    })) ?? [];
+    const items: InsertItem[] =
+      geminiData.items?.map((item) => ({
+        ticketId: '', // Will be set by repository
+        name: item.description ?? null,
+        amount: item.price ?? null,
+        currency: report.currency ?? null,
+        status: ItemStatus.PENDING,
+      })) ?? [];
 
     let parsedDate: Date | null = null;
     if (geminiData.date && geminiData.date !== '0000-00-00') {
@@ -79,74 +149,133 @@ export class TicketsService {
       currency: report.currency ?? null,
       convertedAmount: geminiData.converted_amount ?? null,
       convertedCurrency: geminiData.converted_currency ?? null,
-      cgsBucketLinkJustification: geminiData.cgs_bucket_link_justification ?? null,
+      cgsBucketLinkJustification:
+        geminiData.cgs_bucket_link_justification ?? null,
       lastFourDigits: geminiData.card_last_4 ?? null,
+      flag: geminiData.flag ?? false,
+      llmComment: geminiData.llm_comment ?? null,
+      imageId: imageHash,
       version: 1,
     };
 
     const ticket = await this.ticketsRepository.create(ticketData, items);
 
-    this.logger.log(`Ticket created: ${ticket.id} in report ${reportId} by user ${requester.id}`);
+    this.logger.log(
+      `Ticket created: ${ticket.id} in report ${reportId} by user ${requester.id}`,
+    );
 
     // We need to fetch it again or map it manually with items since create returns the ticket
-    const fullTicket = await this.ticketsRepository.findById(ticket.id) as (Ticket & { items: Item[] }) | undefined;
+    const fullTicket = (await this.ticketsRepository.findById(ticket.id)) as
+      | (Ticket & { items: Item[] })
+      | undefined;
     if (!fullTicket) throw new TicketNotFoundException(ticket.id);
     return mapTicketToITicket(fullTicket);
   }
 
   async findAll(requester: UserPayload, reportId: string): Promise<ITicket[]> {
-    const report = await this.reportsRepository.findById(reportId) as Report | undefined;
-    if (!report || report.deletedAt) throw new ReportNotFoundException(reportId);
+    const report = await this.reportsRepository.findById(reportId);
+    if (!report || report.deletedAt)
+      throw new ReportNotFoundException(reportId);
 
-    if (!(await this.ticketsAuthService.validateCanViewReport(requester, report))) {
+    if (
+      !(await this.ticketsAuthService.validateCanViewReport(requester, report))
+    ) {
       throw new TicketUnauthorizedException();
     }
 
     const tickets = await this.ticketsRepository.findByReportId(reportId);
-    return tickets.map(t => mapTicketToITicket(t as any)); // findByReportId uses 'with', mapping is fine
+    return tickets.map((t) => mapTicketToITicket(t));
   }
 
-  async findOne(requester: UserPayload, reportId: string, ticketId: string): Promise<ITicket> {
-    const report = await this.reportsRepository.findById(reportId) as Report | undefined;
-    if (!report || report.deletedAt) throw new ReportNotFoundException(reportId);
+  async findOne(
+    requester: UserPayload,
+    reportId: string,
+    ticketId: string,
+  ): Promise<ITicket> {
+    const report = await this.reportsRepository.findById(reportId);
+    if (!report || report.deletedAt)
+      throw new ReportNotFoundException(reportId);
 
-    if (!(await this.ticketsAuthService.validateCanViewReport(requester, report))) {
+    if (
+      !(await this.ticketsAuthService.validateCanViewReport(requester, report))
+    ) {
       throw new TicketUnauthorizedException();
     }
 
-    const ticket = await this.ticketsRepository.findById(ticketId) as (Ticket & { items: Item[] }) | undefined;
-    if (!ticket || ticket.reportId !== reportId) throw new TicketNotFoundException(ticketId);
+    const ticket = (await this.ticketsRepository.findById(ticketId)) as
+      | (Ticket & { items: Item[] })
+      | undefined;
+    if (!ticket || ticket.reportId !== reportId)
+      throw new TicketNotFoundException(ticketId);
 
     return mapTicketToITicket(ticket);
   }
 
-  async update(requester: UserPayload, reportId: string, ticketId: string, dto: UpdateTicketFieldsDto): Promise<ITicket> {
-    const report = await this.reportsRepository.findById(reportId) as Report | undefined;
-    if (!report || report.deletedAt) throw new ReportNotFoundException(reportId);
+  async update(
+    requester: UserPayload,
+    reportId: string,
+    ticketId: string,
+    dto: UpdateTicketFieldsDto,
+  ): Promise<ITicket> {
+    const report = await this.reportsRepository.findById(reportId);
+    if (!report || report.deletedAt)
+      throw new ReportNotFoundException(reportId);
 
-    if (!(await this.ticketsAuthService.validateCanModifyReport(requester, report))) {
+    if (
+      !(await this.ticketsAuthService.validateCanModifyReport(
+        requester,
+        report,
+      ))
+    ) {
       throw new TicketUnauthorizedException();
     }
 
     if (report.status !== ReportStatus.CREATED) {
-      throw new TicketStatusConflictException('Cannot edit tickets after report submission');
+      throw new TicketStatusConflictException(
+        'Cannot edit tickets after report submission',
+      );
     }
 
-    const currentTicket = await this.ticketsRepository.findById(ticketId) as Ticket | undefined;
-    if (!currentTicket || currentTicket.reportId !== reportId) throw new TicketNotFoundException(ticketId);
+    const currentTicket = (await this.ticketsRepository.findById(ticketId)) as
+      | Ticket
+      | undefined;
+    if (!currentTicket || currentTicket.reportId !== reportId)
+      throw new TicketNotFoundException(ticketId);
 
     const update: Partial<InsertTicket> = {};
     let meaningfulChange = false;
 
     // Mapping fields with type safety
-    if (dto.payment_type !== undefined) { update.paymentType = dto.payment_type; meaningfulChange = true; }
-    if (dto.expense_type !== undefined) { update.expenseType = dto.expense_type; meaningfulChange = true; }
-    if (dto.location_name !== undefined) { update.locationName = dto.location_name; meaningfulChange = true; }
-    if (dto.location_address !== undefined) { update.locationAddress = dto.location_address; meaningfulChange = true; }
-    if (dto.amount !== undefined) { update.amount = dto.amount; meaningfulChange = true; }
-    if (dto.currency !== undefined) { update.currency = dto.currency; meaningfulChange = true; }
-    if (dto.cgs_bucket_link_justification !== undefined) { update.cgsBucketLinkJustification = dto.cgs_bucket_link_justification; }
-    if (dto.last_four_digits !== undefined) { update.lastFourDigits = dto.last_four_digits; }
+    if (dto.payment_type !== undefined) {
+      update.paymentType = dto.payment_type;
+      meaningfulChange = true;
+    }
+    if (dto.expense_type !== undefined) {
+      update.expenseType = dto.expense_type;
+      meaningfulChange = true;
+    }
+    if (dto.location_name !== undefined) {
+      update.locationName = dto.location_name;
+      meaningfulChange = true;
+    }
+    if (dto.location_address !== undefined) {
+      update.locationAddress = dto.location_address;
+      meaningfulChange = true;
+    }
+    if (dto.amount !== undefined) {
+      update.amount = dto.amount;
+      meaningfulChange = true;
+    }
+    if (dto.currency !== undefined) {
+      update.currency = dto.currency;
+      meaningfulChange = true;
+    }
+    if (dto.cgs_bucket_link_justification !== undefined) {
+      update.cgsBucketLinkJustification = dto.cgs_bucket_link_justification;
+    }
+    if (dto.last_four_digits !== undefined) {
+      update.lastFourDigits = dto.last_four_digits;
+    }
 
     if (dto.date !== undefined) {
       update.date = dto.date ? new Date(dto.date) : null;
@@ -155,7 +284,7 @@ export class TicketsService {
 
     let updatedItemsData: InsertItem[] | undefined = undefined;
     if (dto.items !== undefined) {
-      updatedItemsData = dto.items.map(item => ({
+      updatedItemsData = dto.items.map((item) => ({
         ticketId,
         name: item.name ?? null,
         amount: item.amount ?? null,
@@ -172,9 +301,14 @@ export class TicketsService {
     const oldSnapshot: Partial<InsertTicket> = {};
     const newSnapshot: Partial<InsertTicket> = {};
 
+    const oldSnap = oldSnapshot as Record<string, unknown>;
+    const newSnap = newSnapshot as Record<string, unknown>;
+    const curr = currentTicket as Record<string, unknown>;
+    const upd = update as Record<string, unknown>;
+
     for (const key of Object.keys(update)) {
-      (oldSnapshot as any)[key] = (currentTicket as any)[key];
-      (newSnapshot as any)[key] = (update as any)[key];
+      oldSnap[key] = curr[key];
+      newSnap[key] = upd[key];
     }
 
     if (meaningfulChange) {
@@ -204,7 +338,7 @@ export class TicketsService {
       ticketId,
       update,
       historyData,
-      updatedItemsData
+      updatedItemsData,
     );
 
     this.logger.log(`Ticket updated: ${ticketId} by user ${requester.id}`);
@@ -213,19 +347,36 @@ export class TicketsService {
     return this.findOne(requester, reportId, ticketId);
   }
 
-  async updateStatus(requester: UserPayload, reportId: string, ticketId: string, dto: UpdateTicketStatusDto): Promise<ITicket> {
-    const report = await this.reportsRepository.findById(reportId) as Report | undefined;
-    if (!report || report.deletedAt) throw new ReportNotFoundException(reportId);
+  async updateStatus(
+    requester: UserPayload,
+    reportId: string,
+    ticketId: string,
+    dto: UpdateTicketStatusDto,
+  ): Promise<ITicket> {
+    const report = await this.reportsRepository.findById(reportId);
+    if (!report || report.deletedAt)
+      throw new ReportNotFoundException(reportId);
 
     if (report.status !== ReportStatus.SUBMITTED) {
-      throw new TicketStatusConflictException('Tickets can only be reviewed after report submission');
+      throw new TicketStatusConflictException(
+        'Tickets can only be reviewed after report submission',
+      );
     }
 
-    const currentTicket = await this.ticketsRepository.findById(ticketId) as Ticket | undefined;
-    if (!currentTicket || currentTicket.reportId !== reportId) throw new TicketNotFoundException(ticketId);
+    const currentTicket = (await this.ticketsRepository.findById(ticketId)) as
+      | Ticket
+      | undefined;
+    if (!currentTicket || currentTicket.reportId !== reportId)
+      throw new TicketNotFoundException(ticketId);
 
-    const oldSnapshot = { status: currentTicket.status, approvedAmount: currentTicket.approvedAmount };
-    const newSnapshot = { status: dto.status, approvedAmount: dto.approved_amount };
+    const oldSnapshot = {
+      status: currentTicket.status,
+      approvedAmount: currentTicket.approvedAmount,
+    };
+    const newSnapshot = {
+      status: dto.status,
+      approvedAmount: dto.approved_amount,
+    };
 
     const historyData: typeof schema.ticketHistories.$inferInsert = {
       ticketId,
@@ -237,28 +388,45 @@ export class TicketsService {
 
     await this.ticketsRepository.updateWithHistory(
       ticketId,
-      { status: dto.status, approvedAmount: dto.approved_amount, version: currentTicket.version + 1 },
-      historyData
+      {
+        status: dto.status,
+        approvedAmount: dto.approved_amount,
+        version: currentTicket.version + 1,
+      },
+      historyData,
     );
 
-    this.logger.log(`Ticket status updated: ${ticketId} to ${dto.status} by user ${requester.id}`);
+    this.logger.log(
+      `Ticket status updated: ${ticketId} to ${dto.status} by user ${requester.id}`,
+    );
     return this.findOne(requester, reportId, ticketId);
   }
 
   async remove(requester: UserPayload, reportId: string, ticketId: string) {
-    const report = await this.reportsRepository.findById(reportId) as Report | undefined;
-    if (!report || report.deletedAt) throw new ReportNotFoundException(reportId);
+    const report = await this.reportsRepository.findById(reportId);
+    if (!report || report.deletedAt)
+      throw new ReportNotFoundException(reportId);
 
-    if (!(await this.ticketsAuthService.validateCanModifyReport(requester, report))) {
+    if (
+      !(await this.ticketsAuthService.validateCanModifyReport(
+        requester,
+        report,
+      ))
+    ) {
       throw new TicketUnauthorizedException();
     }
 
     if (report.status !== ReportStatus.CREATED) {
-      throw new TicketStatusConflictException('Cannot hide tickets after submission');
+      throw new TicketStatusConflictException(
+        'Cannot hide tickets after submission',
+      );
     }
 
-    const ticket = await this.ticketsRepository.findById(ticketId) as Ticket | undefined;
-    if (!ticket || ticket.reportId !== reportId) throw new TicketNotFoundException(ticketId);
+    const ticket = (await this.ticketsRepository.findById(ticketId)) as
+      | Ticket
+      | undefined;
+    if (!ticket || ticket.reportId !== reportId)
+      throw new TicketNotFoundException(ticketId);
 
     const historyData: typeof schema.ticketHistories.$inferInsert = {
       ticketId,
@@ -274,9 +442,14 @@ export class TicketsService {
     return { deleted: true };
   }
 
-  async getTicketImageUrl(requester: UserPayload, reportId: string, ticketId: string): Promise<{ url: string }> {
+  async getTicketImageUrl(
+    requester: UserPayload,
+    reportId: string,
+    ticketId: string,
+  ): Promise<{ url: string }> {
     const ticket = await this.findOne(requester, reportId, ticketId);
-    if (!ticket.cgs_bucket_link) throw new TicketNotFoundException('No image link found');
+    if (!ticket.cgs_bucket_link)
+      throw new TicketNotFoundException('No image link found');
 
     const url = await this.storageService.findFile(ticket.cgs_bucket_link);
     return { url };

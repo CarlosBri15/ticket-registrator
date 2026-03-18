@@ -9,6 +9,7 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 import { permissions } from '@ticket-registrator/shared';
@@ -34,10 +35,11 @@ export class TicketsController {
   @UseInterceptors(FileInterceptor('image'))
   create(
     @CurrentUser() requester: UserPayload,
-    @Param('reportId') reportId: string,
+    @Param('reportId', ParseUUIDPipe) reportId: string,
     @UploadedFile() file: Express.Multer.File,
+    @Body('language') language?: string,
   ) {
-    return this.ticketsService.create(requester, reportId, file);
+    return this.ticketsService.create(requester, reportId, file, language);
   }
 
   @UseGuards(PermissionsGuard)
@@ -45,7 +47,7 @@ export class TicketsController {
   @Get()
   findAll(
     @CurrentUser() requester: UserPayload,
-    @Param('reportId') reportId: string,
+    @Param('reportId', ParseUUIDPipe) reportId: string,
   ) {
     return this.ticketsService.findAll(requester, reportId);
   }
@@ -55,8 +57,8 @@ export class TicketsController {
   @Get(':ticketId')
   findOne(
     @CurrentUser() requester: UserPayload,
-    @Param('reportId') reportId: string,
-    @Param('ticketId') id: string,
+    @Param('reportId', ParseUUIDPipe) reportId: string,
+    @Param('ticketId', ParseUUIDPipe) id: string,
   ) {
     return this.ticketsService.findOne(requester, reportId, id);
   }
@@ -66,8 +68,8 @@ export class TicketsController {
   @Patch(':ticketId')
   update(
     @CurrentUser() requester: UserPayload,
-    @Param('reportId') reportId: string,
-    @Param('ticketId') ticketId: string,
+    @Param('reportId', ParseUUIDPipe) reportId: string,
+    @Param('ticketId', ParseUUIDPipe) ticketId: string,
     @Body() dto: UpdateTicketFieldsDto,
   ) {
     return this.ticketsService.update(requester, reportId, ticketId, dto);
@@ -78,8 +80,8 @@ export class TicketsController {
   @Patch(':ticketId/status')
   updateStatus(
     @CurrentUser() requester: UserPayload,
-    @Param('reportId') reportId: string,
-    @Param('ticketId') ticketId: string,
+    @Param('reportId', ParseUUIDPipe) reportId: string,
+    @Param('ticketId', ParseUUIDPipe) ticketId: string,
     @Body() dto: UpdateTicketStatusDto,
   ) {
     return this.ticketsService.updateStatus(requester, reportId, ticketId, dto);
@@ -90,8 +92,8 @@ export class TicketsController {
   @Delete(':ticketId')
   remove(
     @CurrentUser() requester: UserPayload,
-    @Param('reportId') reportId: string,
-    @Param('ticketId') ticketId: string,
+    @Param('reportId', ParseUUIDPipe) reportId: string,
+    @Param('ticketId', ParseUUIDPipe) ticketId: string,
   ) {
     return this.ticketsService.remove(requester, reportId, ticketId);
   }
@@ -101,8 +103,8 @@ export class TicketsController {
   @Get(':ticketId/image')
   getImage(
     @CurrentUser() requester: UserPayload,
-    @Param('reportId') reportId: string,
-    @Param('ticketId') ticketId: string,
+    @Param('reportId', ParseUUIDPipe) reportId: string,
+    @Param('ticketId', ParseUUIDPipe) ticketId: string,
   ) {
     return this.ticketsService.getTicketImageUrl(requester, reportId, ticketId);
   }
