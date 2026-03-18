@@ -10,7 +10,6 @@ export interface IScopeContext {
     isCompany: boolean;
     isDepartment: boolean;
     isSelf: boolean;
-    /** SuperAdmin only: the org currently being viewed (overrides default scope) */
     activeCompanyId: string | null;
     setActiveCompanyId: (companyId: string | null) => void;
 }

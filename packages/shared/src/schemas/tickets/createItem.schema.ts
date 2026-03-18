@@ -1,4 +1,3 @@
-// shared/schemas/create-item.schema.ts
 import { z } from 'zod';
 
 export const createItemSchema = z.object({

@@ -1,15 +1,24 @@
 import { type ReactNode, useEffect } from "react";
 import { X } from "lucide-react";
 
+type ModalSize = 'md' | 'lg' | 'xl';
+
+const SIZE_CLASSES: Record<ModalSize, string> = {
+  md: 'sm:max-w-xl',
+  lg: 'sm:max-w-2xl',
+  xl: 'sm:max-w-3xl',
+};
+
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   subtitle?: string;
+  size?: ModalSize;
 }
 
-export const Modal = ({ isOpen, onClose, title, subtitle, children }: ModalProps) => {
+export const Modal = ({ isOpen, onClose, title, subtitle, children, size = 'md' }: ModalProps) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -39,7 +48,7 @@ export const Modal = ({ isOpen, onClose, title, subtitle, children }: ModalProps
       />
 
       {/* Modal */}
-      <div className="relative bg-white w-full sm:max-w-xl rounded-t-[2rem] sm:rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(42,49,50,0.35)] animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-400 overflow-hidden">
+      <div className={`relative bg-white w-full ${SIZE_CLASSES[size]} rounded-t-[2rem] sm:rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(42,49,50,0.35)] animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-400 overflow-hidden`}>
 
         {/* Gradient header */}
         <div className="relative bg-brand px-8 pt-8 pb-6 overflow-hidden">
@@ -65,7 +74,7 @@ export const Modal = ({ isOpen, onClose, title, subtitle, children }: ModalProps
         </div>
 
         {/* Body */}
-        <div className="p-8 max-h-[calc(100vh-16rem)] overflow-y-auto custom-scrollbar">
+        <div className="p-8 max-h-[calc(100vh-10rem)] overflow-y-auto custom-scrollbar">
           {children}
         </div>
       </div>

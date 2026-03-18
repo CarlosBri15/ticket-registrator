@@ -6,7 +6,6 @@ export const resources = {
   en: { translation: en },
 };
 
-// Exportar el tipo de traducción por defecto (español) para inferencia de tipos
 export type TranslationResource = typeof es;
 
 export { es, en };

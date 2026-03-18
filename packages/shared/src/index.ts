@@ -59,6 +59,8 @@ export * from './user-roles/role-default-permissions'
 
 // Organization
 export * from './interfaces/organization/organization.interface';
+export * from './interfaces/organization/onboardAdminResult.interface';
+export * from './interfaces/organization/onboardResponse.interface';
 export * from './schemas/organization/onboardOrganization.schema';
 export * from './schemas/organization/updateOrganization.schema';
 

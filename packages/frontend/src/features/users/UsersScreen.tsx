@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Users, Search, Plus, Trash2, UserCircle, Mail, AtSign } from "lucide-react";
 import {
   useUsersQuery,
@@ -7,12 +7,19 @@ import {
   useRolesQuery,
   usePermissions,
   useScope,
+  AUTHORITY_LEVELS,
   type IUser,
+  type IRole,
 } from "@ticket-registrator/shared";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import { AlertError, getApiErrorMessage } from "../../components/ui/Alert";
+import { RoleSelect, OrgSelect } from "../../components/ui/selects";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
 import { useScopeContext } from "@ticket-registrator/shared";
+
+const PAGE_SIZE = 10;
 
 const CreateUserModal = ({
   isOpen,
@@ -23,7 +30,6 @@ const CreateUserModal = ({
   onClose: () => void;
   companyId: string | null;
 }) => {
-  const { data: roles } = useRolesQuery(companyId ?? undefined);
   const mutation = useCreateUserMutation({ onSuccess: onClose });
 
   const [form, setForm] = useState({
@@ -34,20 +40,62 @@ const CreateUserModal = ({
     password: "",
     confirmPassword: "",
     roleId: "",
+    orgId: "",          // only used when creator is SuperAdmin
+    selectedRole: null as IRole | null,
   });
 
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  // Creator is SuperAdmin when companyId is null — they must pick an org
+  const isCreatorSuperAdmin = companyId === null;
+
+  // Is the role being assigned a SuperAdmin role? → no org needed
+  const isTargetSuperAdmin =
+    form.selectedRole !== null &&
+    form.selectedRole.hierarchy >= AUTHORITY_LEVELS.GLOBAL;
+
+  // Which companyId to use for the RoleSelect
+  const effectiveCompanyId = isCreatorSuperAdmin ? (form.orgId || null) : companyId;
+
+  const reset = () => mutation.reset();
+
+  const set = useCallback((k: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    reset();
     setForm((p) => ({ ...p, [k]: e.target.value }));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const passwordMismatch = Boolean(
+    form.password && form.confirmPassword && form.password !== form.confirmPassword,
+  );
+
+  const orgMissing = isCreatorSuperAdmin && !!form.roleId && !isTargetSuperAdmin && !form.orgId;
 
   const handleSubmit = (e: React.BaseSyntheticEvent) => {
     e.preventDefault();
-    if (form.password !== form.confirmPassword) return;
-    mutation.mutate({ ...form, departmentIds: [] });
+    if (passwordMismatch || orgMissing) return;
+
+    const payload: any = {
+      name: form.name,
+      surname: form.surname,
+      email: form.email,
+      username: form.username,
+      password: form.password,
+      confirmPassword: form.confirmPassword,
+      roleId: form.roleId,
+      departmentIds: [],
+    };
+    if (isCreatorSuperAdmin && form.orgId) payload.companyId = form.orgId;
+
+    mutation.mutate(payload);
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Nuevo Usuario">
       <form onSubmit={handleSubmit} className="space-y-4">
+        {mutation.error && (
+          <AlertError
+            message={getApiErrorMessage(mutation.error)}
+            onDismiss={() => mutation.reset()}
+          />
+        )}
         <div className="grid grid-cols-2 gap-4">
           <Input label="Nombre *" value={form.name} onChange={set("name")} placeholder="Carlos" required />
           <Input label="Apellido *" value={form.surname} onChange={set("surname")} placeholder="García" required />
@@ -58,30 +106,36 @@ const CreateUserModal = ({
           <Input label="Contraseña *" type="password" value={form.password} onChange={set("password")} placeholder="••••••••" required />
           <Input label="Confirmar *" type="password" value={form.confirmPassword} onChange={set("confirmPassword")} placeholder="••••••••" required />
         </div>
-        <div>
-          <label
-            htmlFor="user-role"
-            className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
-          >
-            Rol *
-          </label>
-          <select
-            id="user-role"
-            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-dark focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30"
-            value={form.roleId}
-            onChange={set("roleId")}
+
+        <RoleSelect
+          id="user-role"
+          companyId={effectiveCompanyId}
+          value={form.roleId}
+          onChange={(v, role) => {
+            reset();
+            setForm((p) => ({
+              ...p,
+              roleId: v,
+              selectedRole: role ?? null,
+              // Clear org when switching to SuperAdmin role (no org needed)
+              orgId: role && role.hierarchy >= AUTHORITY_LEVELS.GLOBAL ? "" : p.orgId,
+            }));
+          }}
+          required
+        />
+
+        {/* Org selector — appears after role is chosen, only when role is not SuperAdmin */}
+        {isCreatorSuperAdmin && form.roleId && !isTargetSuperAdmin && (
+          <OrgSelect
+            id="user-org"
+            value={form.orgId}
+            onChange={(v) => { reset(); setForm((p) => ({ ...p, orgId: v })); }}
             required
-          >
-            <option value="">Selecciona un rol</option>
-            {roles?.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        {form.password && form.confirmPassword && form.password !== form.confirmPassword && (
-          <p className="text-xs text-red-500 font-medium">Las contraseñas no coinciden</p>
+          />
+        )}
+
+        {passwordMismatch && (
+          <AlertError message="Las contraseñas no coinciden" />
         )}
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
@@ -90,7 +144,7 @@ const CreateUserModal = ({
           <Button
             type="submit"
             isLoading={mutation.isPending}
-            disabled={!form.name || !form.email || !form.roleId || form.password !== form.confirmPassword}
+            disabled={!form.name || !form.email || !form.roleId || passwordMismatch || orgMissing}
             className="flex-1"
           >
             Crear Usuario
@@ -173,6 +227,9 @@ export const UsersScreen = () => {
 
   const [search, setSearch] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => { setPage(1); }, [search]);
 
   const filtered = users?.filter((u) => {
     if (!search) return true;
@@ -184,6 +241,9 @@ export const UsersScreen = () => {
       u.username.toLowerCase().includes(q)
     );
   });
+
+  const paginated = filtered?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.ceil((filtered?.length ?? 0) / PAGE_SIZE);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
@@ -245,7 +305,7 @@ export const UsersScreen = () => {
 
         return (
           <div className="space-y-3">
-            {filtered.map((user) => (
+            {paginated!.map((user) => (
               <UserRow
                 key={user.id}
                 user={user}
@@ -254,6 +314,13 @@ export const UsersScreen = () => {
                 onDelete={(id) => deleteMutation.mutate(id)}
               />
             ))}
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              totalItems={filtered.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+            />
           </div>
         );
       })()}

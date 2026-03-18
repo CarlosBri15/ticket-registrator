@@ -14,6 +14,7 @@ import { UsersScreen } from "./features/users/UsersScreen";
 import { DepartmentsScreen } from "./features/departments/DepartmentsScreen";
 import { RolesScreen } from "./features/roles/RolesScreen";
 import { OrganizationsScreen } from "./features/organizations/OrganizationsScreen";
+import { OrganizationDetailScreen } from "./features/organizations/OrganizationDetailScreen";
 import { PermissionsScreen } from "./features/permissions/PermissionsScreen";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,14 @@ function App() {
                 element={
                   <PrivateRoute permission="view_company">
                     <OrganizationsScreen />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/organizations/:id"
+                element={
+                  <PrivateRoute permission="view_company">
+                    <OrganizationDetailScreen />
                   </PrivateRoute>
                 }
               />

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { RolesScreen } from './RolesScreen';
 
@@ -27,6 +27,19 @@ vi.mock('../../components/ui/Button', () => ({
 }));
 vi.mock('../../components/ui/Input', () => ({
   Input: ({ label, ...props }: any) => <input aria-label={label} {...props} />,
+}));
+vi.mock('../../components/ui/Select', () => ({
+  Select: ({ label, options, value, onChange, required, id }: any) => (
+    <select
+      aria-label={label}
+      id={id}
+      value={value}
+      onChange={(e) => onChange?.(e.target.value)}
+      required={required}
+    >
+      {options?.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  ),
 }));
 vi.mock('../../components/ui/Modal', () => ({
   Modal: ({ isOpen, children, title }: any) =>
@@ -99,5 +112,38 @@ describe('RolesScreen', () => {
     });
     renderScreen();
     expect(screen.getByText('Supervisor')).toBeInTheDocument();
+  });
+
+  it('shows "Selecciona una organización" when companyId is null and not global', () => {
+    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: false, scope: {} });
+    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
+    renderScreen();
+    expect(screen.getByText('Selecciona una organización')).toBeInTheDocument();
+  });
+
+  it('shows loading state when isLoading is true', () => {
+    (useRolesQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: undefined, isLoading: true });
+    renderScreen();
+    expect(screen.getByText(/cargando roles/i)).toBeInTheDocument();
+  });
+
+  it('opens create modal when Nuevo Rol button is clicked', () => {
+    renderScreen();
+    fireEvent.click(screen.getAllByText(/nuevo rol/i)[0]);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('calls delete mutate when delete button is clicked', () => {
+    const mockDelete = vi.fn();
+    (useDeleteRoleMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: mockDelete });
+    (useRolesQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'r1', name: 'Supervisor', hierarchy: 3 }],
+      isLoading: false,
+    });
+    renderScreen();
+    const buttons = screen.getAllByRole('button');
+    // last button should be delete for the role
+    fireEvent.click(buttons[buttons.length - 1]);
+    expect(mockDelete).toHaveBeenCalledWith('r1');
   });
 });

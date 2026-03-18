@@ -139,4 +139,66 @@ describe('PermissionsScreen', () => {
     expect(screen.getByText('Usuarios')).toBeInTheDocument();
     expect(screen.getByText('Ver usuarios')).toBeInTheDocument();
   });
+
+  it('shows role perms loading spinner when rolePerms is loading', () => {
+    (useRolesQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'r1', name: 'Manager', companyId: 'c1', hierarchy: 50 }],
+      isLoading: false,
+    });
+    (useRolePermissionsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: undefined, isLoading: true });
+    const { container } = renderScreen();
+    fireEvent.click(screen.getByText('Manager'));
+    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+  });
+
+  it('calls assign mutation when unassigned permission is toggled on', () => {
+    const mockAssignMutate = vi.fn();
+    (useAssignPermissionMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: mockAssignMutate });
+    (useRolesQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'r1', name: 'Manager', companyId: 'c1', hierarchy: 50 }],
+      isLoading: false,
+    });
+    (useAllPermissionsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'p1', name: 'view_users', description: 'Ver usuarios' }],
+      isLoading: false,
+    });
+    (useRolePermissionsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false });
+    renderScreen();
+    fireEvent.click(screen.getByText('Manager'));
+    fireEvent.click(screen.getByText('Ver usuarios'));
+    expect(mockAssignMutate).toHaveBeenCalled();
+  });
+
+  it('calls unassign mutation when assigned permission is toggled off', () => {
+    const mockUnassignMutate = vi.fn();
+    (useUnassignPermissionMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: mockUnassignMutate });
+    (useRolesQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'r1', name: 'Manager', companyId: 'c1', hierarchy: 50 }],
+      isLoading: false,
+    });
+    (useAllPermissionsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'p1', name: 'view_users', description: 'Ver usuarios' }],
+      isLoading: false,
+    });
+    (useRolePermissionsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'p1', name: 'view_users' }],
+      isLoading: false,
+    });
+    renderScreen();
+    fireEvent.click(screen.getByText('Manager'));
+    fireEvent.click(screen.getByText('Ver usuarios'));
+    expect(mockUnassignMutate).toHaveBeenCalled();
+  });
+
+  it('shows system role label when role has no companyId', () => {
+    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
+    (useSystemRolesQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 's1', name: 'SuperAdmin', companyId: null, hierarchy: 100 }],
+      isLoading: false,
+    });
+    (useRolePermissionsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false });
+    renderScreen();
+    fireEvent.click(screen.getByText('SuperAdmin'));
+    expect(screen.getAllByText(/rol del sistema/i).length).toBeGreaterThanOrEqual(1);
+  });
 });

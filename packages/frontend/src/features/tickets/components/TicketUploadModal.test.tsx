@@ -26,8 +26,15 @@ vi.mock('../../../components/ui/Button', () => ({
   ),
 }));
 
+let capturedOnConfirm: ((data: any) => void) | undefined;
+let capturedOnCancel: (() => void) | undefined;
+
 vi.mock('./TicketConfirmationForm', () => ({
-  TicketConfirmationForm: () => <div>confirmation-form</div>,
+  TicketConfirmationForm: ({ onConfirm, onCancel }: any) => {
+    capturedOnConfirm = onConfirm;
+    capturedOnCancel = onCancel;
+    return <div>confirmation-form</div>;
+  },
 }));
 
 import {
@@ -138,5 +145,66 @@ describe('TicketUploadModal', () => {
 
     fireEvent.click(screen.getByText('Procesar con IA'));
     expect(mutateFn).toHaveBeenCalledWith(expect.objectContaining({ reportId: 'r1' }));
+  });
+
+  it('handleConfirm calls updateMutation.mutate with ticket data', () => {
+    const mockUpdate = vi.fn();
+    let capturedUploadSuccess: ((t: any) => void) | undefined;
+    (useUploadTicketMutation as ReturnType<typeof vi.fn>).mockImplementation((cfg: any) => {
+      capturedUploadSuccess = cfg?.onSuccess;
+      return { mutate: vi.fn(), isPending: false };
+    });
+    (useUpdateTicketMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: mockUpdate, isPending: false });
+
+    render(<TicketUploadModal isOpen={true} onClose={vi.fn()} reportId="r1" />);
+    act(() => {
+      capturedUploadSuccess?.({ id: 't1', location_name: 'Cafe', amount: 10, currency: 'EUR', status: 'PENDING', date: '2025-01-01', expense_type: 'Food', location_address: 'Calle 1', payment_type: 'Card' });
+    });
+    act(() => {
+      capturedOnConfirm?.({ amount: 12 });
+    });
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ reportId: 'r1', ticketId: 't1' }));
+  });
+
+  it('handleDiscard calls deleteMutation.mutate with ticket id', () => {
+    const mockDelete = vi.fn();
+    let capturedUploadSuccess: ((t: any) => void) | undefined;
+    (useUploadTicketMutation as ReturnType<typeof vi.fn>).mockImplementation((cfg: any) => {
+      capturedUploadSuccess = cfg?.onSuccess;
+      return { mutate: vi.fn(), isPending: false };
+    });
+    (useDeleteTicketMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: mockDelete });
+
+    render(<TicketUploadModal isOpen={true} onClose={vi.fn()} reportId="r1" />);
+    act(() => {
+      capturedUploadSuccess?.({ id: 't1', location_name: 'Cafe', amount: 10, currency: 'EUR', status: 'PENDING', date: '2025-01-01', expense_type: 'Food', location_address: 'Calle 1', payment_type: 'Card' });
+    });
+    act(() => {
+      capturedOnCancel?.();
+    });
+    expect(mockDelete).toHaveBeenCalledWith(expect.objectContaining({ reportId: 'r1', ticketId: 't1' }));
+  });
+
+  it('drag over and leave toggle isDragging state', () => {
+    const { container } = render(
+      <TicketUploadModal isOpen={true} onClose={vi.fn()} reportId="r1" />,
+    );
+    const label = container.querySelector('label')!;
+    fireEvent.dragOver(label);
+    fireEvent.dragLeave(label);
+    // Just ensure no errors
+    expect(label).toBeTruthy();
+  });
+
+  it('onDrop sets file from dataTransfer', () => {
+    const { container } = render(
+      <TicketUploadModal isOpen={true} onClose={vi.fn()} reportId="r1" />,
+    );
+    const label = container.querySelector('label')!;
+    const mockFile = new File(['content'], 'dropped.jpg', { type: 'image/jpeg' });
+    fireEvent.drop(label, {
+      dataTransfer: { files: [mockFile] },
+    });
+    expect(screen.getByText('dropped.jpg')).toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Shield, Plus, Trash2, Building2 } from "lucide-react";
 import {
   useRolesQuery,
@@ -12,7 +12,11 @@ import {
 import { useScopeContext } from "@ticket-registrator/shared";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import { Select } from "../../components/ui/Select";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
+
+const PAGE_SIZE = 10;
 
 const HIERARCHY_LABELS: Record<number, string> = {
   1: "Empleado",
@@ -40,8 +44,8 @@ const CreateRoleModal = ({
   const mutation = useCreateRoleMutation(companyId, { onSuccess: onClose });
   const [form, setForm] = useState({ name: "", hierarchy: 1, description: "" });
 
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-    setForm((p) => ({ ...p, [k]: k === "hierarchy" ? Number(e.target.value) : e.target.value }));
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm((p) => ({ ...p, [k]: e.target.value }));
 
   const handleSubmit = (e: React.BaseSyntheticEvent) => {
     e.preventDefault();
@@ -58,26 +62,17 @@ const CreateRoleModal = ({
           placeholder="Ej: Supervisor de Ventas"
           required
         />
-        <div>
-          <label
-            htmlFor="role-hierarchy"
-            className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
-          >
-            Nivel de jerarquía *
-          </label>
-          <select
-            id="role-hierarchy"
-            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-dark focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30"
-            value={form.hierarchy}
-            onChange={set("hierarchy")}
-          >
-            {Object.entries(HIERARCHY_LABELS).map(([val, label]) => (
-              <option key={val} value={val}>
-                {label} (nivel {val})
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          label="Nivel de jerarquía"
+          id="role-hierarchy"
+          options={Object.entries(HIERARCHY_LABELS).map(([val, lbl]) => ({
+            value: val,
+            label: `${lbl} (nivel ${val})`,
+          }))}
+          value={String(form.hierarchy)}
+          onChange={(v) => setForm((p) => ({ ...p, hierarchy: Number(v) }))}
+          required
+        />
         <div>
           <label
             htmlFor="role-description"
@@ -166,9 +161,15 @@ export const RolesScreen = () => {
   const deleteMutation = useDeleteRoleMutation(companyId ?? "");
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
   const isLoading = loadingCompany || loadingSystem;
   const roles = companyId ? companyRoles : systemRoles;
+
+  useEffect(() => { setPage(1); }, [companyId]);
+
+  const paginated = roles?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.ceil((roles?.length ?? 0) / PAGE_SIZE);
 
   if (!companyId && !isGlobal) {
     return (
@@ -205,15 +206,24 @@ export const RolesScreen = () => {
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {roles.map((role) => (
-          <RoleCard
-            key={role.id}
-            role={role}
-            canDelete={can("delete_roles")}
-            onDelete={(id) => deleteMutation.mutate(id)}
-          />
-        ))}
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {paginated!.map((role) => (
+            <RoleCard
+              key={role.id}
+              role={role}
+              canDelete={can("delete_roles")}
+              onDelete={(id) => deleteMutation.mutate(id)}
+            />
+          ))}
+        </div>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={roles.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
       </div>
     );
   };

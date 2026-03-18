@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { LoginForm } from './LoginScreen';
 
@@ -37,7 +37,9 @@ vi.mock('../../api/client', () => ({
 }));
 
 import { useLoginMutation } from '@ticket-registrator/shared';
+import { tokenProvider } from '../../api/client';
 const mockUseLoginMutation = useLoginMutation as ReturnType<typeof vi.fn>;
+const mockSetToken = (tokenProvider as any).setToken as ReturnType<typeof vi.fn>;
 
 const renderLogin = () =>
   render(
@@ -96,5 +98,28 @@ describe('LoginForm', () => {
     mockUseLoginMutation.mockReturnValue({ mutate: mockMutate, isPending: false, isError: true, error: axiosError });
     renderLogin();
     expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
+  });
+
+  it('calls mutate with form data on valid submit', async () => {
+    renderLogin();
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'user@example.com' } });
+    const pwdInput = document.querySelector('input[type="password"]') as HTMLInputElement;
+    fireEvent.change(pwdInput, { target: { value: 'secret123' } });
+    await act(async () => {
+      fireEvent.submit(screen.getByRole('button', { name: 'auth.loginButton' }).closest('form')!);
+    });
+    expect(mockMutate).toHaveBeenCalledWith({ email: 'user@example.com', password: 'secret123' });
+  });
+
+  it('onSuccess sets token and navigates to /home', () => {
+    let capturedOnSuccess: ((data: any) => void) | undefined;
+    mockUseLoginMutation.mockImplementation((opts: any) => {
+      capturedOnSuccess = opts?.onSuccess;
+      return { mutate: mockMutate, isPending: false, isError: false, error: null };
+    });
+    renderLogin();
+    capturedOnSuccess?.({ access_token: 'my-token' });
+    expect(mockSetToken).toHaveBeenCalledWith('my-token');
+    expect(mockNavigate).toHaveBeenCalledWith('/home');
   });
 });

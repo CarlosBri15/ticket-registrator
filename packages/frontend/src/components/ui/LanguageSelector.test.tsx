@@ -3,11 +3,12 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { LanguageSelector } from './LanguageSelector';
 
 const mockChangeLanguage = vi.fn();
+let mockLanguage = 'es';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     i18n: {
-      language: 'es',
+      get language() { return mockLanguage; },
       changeLanguage: mockChangeLanguage,
     },
   }),
@@ -23,6 +24,7 @@ vi.mock('lucide-react', () => ({
 describe('LanguageSelector', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockLanguage = 'es';
   });
 
   it('renders the toggle button', () => {
@@ -82,5 +84,21 @@ describe('LanguageSelector', () => {
     expect(screen.getByText('Español')).toBeInTheDocument();
     fireEvent.mouseDown(document.body);
     expect(screen.queryByText('Español')).not.toBeInTheDocument();
+  });
+
+  describe('when language is English', () => {
+    it('shows "en" abbreviation', () => {
+      mockLanguage = 'en';
+      render(<LanguageSelector />);
+      expect(screen.getByText('en')).toBeInTheDocument();
+    });
+
+    it('renders English active styling in dropdown', () => {
+      mockLanguage = 'en';
+      render(<LanguageSelector />);
+      fireEvent.click(screen.getByRole('button'));
+      expect(screen.getByText('English')).toBeInTheDocument();
+      expect(screen.getByText('Español')).toBeInTheDocument();
+    });
   });
 });

@@ -9,7 +9,7 @@ export class TicketsRepository {
   constructor(
     @Inject(DB_CONNECTION)
     private readonly db: PostgresJsDatabase<typeof schema>,
-  ) {}
+  ) { }
 
   async findById(id: string) {
     return this.db.query.tickets.findFirst({
@@ -72,17 +72,14 @@ export class TicketsRepository {
     itemsToUpdate?: (typeof schema.items.$inferInsert)[],
   ) {
     return this.db.transaction(async (tx) => {
-      // 1. Add history
       await tx.insert(schema.ticketHistories).values(historyData);
 
-      // 2. Update ticket
       const [updated] = await tx
         .update(schema.tickets)
         .set({ ...updateData, updatedAt: new Date() })
         .where(eq(schema.tickets.id, ticketId))
         .returning();
 
-      // 3. Optional items update (delete old, insert new)
       if (itemsToUpdate !== undefined) {
         await tx
           .delete(schema.items)
@@ -115,7 +112,6 @@ export class TicketsRepository {
   async transaction<T>(
     callback: (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
   ): Promise<T> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    return this.db.transaction(callback as any); // Drizzle transaction context is slightly different but compatible in this context
+    return this.db.transaction(callback as any);
   }
 }

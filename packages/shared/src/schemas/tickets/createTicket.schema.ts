@@ -1,8 +1,6 @@
-// shared/schemas/create-ticket.schema.ts
 import { z } from 'zod';
 import { createItemSchema } from './createItem.schema';
 
-// Loose schema for initial creation
 export const createTicketSchema = z.object({
   cgs_bucket_link: z.string().optional(),
   payment_type: z.string().optional(),

@@ -8,6 +8,7 @@ export const createUserSchema = z.object({
   password: z.string().min(6),
   confirmPassword: z.string().min(6),
   roleId: z.string().uuid(),
+  companyId: z.string().uuid().optional(),
   departmentIds: z.array(z.string().uuid()).optional(),
 }).refine((d) => d.password === d.confirmPassword, {
   message: 'Passwords do not match',

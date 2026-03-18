@@ -131,7 +131,7 @@ describe('ReportsController', () => {
     it('should use requester id when no userId is given', async () => {
       mockReportsService.findUserReports.mockResolvedValue([]);
 
-      await controller.findUserReports(mockUserPayload as any, undefined);
+      await controller.findUserReports(mockUserPayload as any);
       expect(service.findUserReports).toHaveBeenCalledWith(
         mockUserPayload,
         mockUserPayload.id,

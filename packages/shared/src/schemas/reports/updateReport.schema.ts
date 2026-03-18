@@ -9,7 +9,6 @@ export const updateReportFieldsSchema = z.object({
   isVisible: z.boolean().optional()
 }).strict();
 
-// Update report status schema
 export const updateReportStatusSchema = z.object({
   status: z.enum([
     ReportStatus.APPROVED,
@@ -18,6 +17,5 @@ export const updateReportStatusSchema = z.object({
   ]),
 }).strict();
 
-// Inferred types
 export type UpdateReportStatus = z.infer<typeof updateReportStatusSchema>;
 export type UpdateReportFields = z.infer<typeof updateReportFieldsSchema>;

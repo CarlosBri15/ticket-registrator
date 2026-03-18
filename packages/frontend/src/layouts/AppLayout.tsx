@@ -42,29 +42,24 @@ const MENU_SECTIONS: MenuSection[] = [
   {
     title: "Principal",
     items: [
-      { path: "/home",    label: "Dashboard",  description: "Resumen general",    icon: LayoutDashboard, permission: null },
-      { path: "/trips",   label: "Viajes",      description: "Gestión de gastos",  icon: Plane,           permission: "view_reports" },
-      { path: "/tickets", label: "Tickets",     description: "Histórico completo", icon: Receipt,         permission: "view_tickets" },
+      { path: "/home", label: "Dashboard", description: "Resumen general", icon: LayoutDashboard, permission: null },
+      { path: "/trips", label: "Viajes", description: "Gestión de gastos", icon: Plane, permission: "view_reports" },
+      { path: "/tickets", label: "Tickets", description: "Histórico completo", icon: Receipt, permission: "view_tickets" },
     ],
   },
   {
     title: "Gestión",
     items: [
-      { path: "/users",       label: "Usuarios",      description: "Gestión de equipo",   icon: Users,     permission: "view_users" },
-      { path: "/departments", label: "Departamentos", description: "Áreas de la empresa",  icon: Building2, permission: "view_departments" },
+      { path: "/users", label: "Usuarios", description: "Gestión de equipo", icon: Users, permission: "view_users" },
+      { path: "/departments", label: "Departamentos", description: "Áreas de la empresa", icon: Building2, permission: "view_departments" },
+      { path: "/organizations", label: "Organizaciones", description: "Gestión global", icon: Globe, permission: "view_company" },
     ],
   },
   {
     title: "Administración",
     items: [
-      { path: "/roles",       label: "Roles",     description: "Gestión de roles",    icon: Shield, permission: "view_roles" },
-      { path: "/permissions", label: "Permisos",  description: "Control de acceso",   icon: Lock,   permission: "view_permissions" },
-    ],
-  },
-  {
-    title: "Sistema",
-    items: [
-      { path: "/organizations", label: "Organizaciones", description: "Gestión global", icon: Globe, permission: "view_company" },
+      { path: "/roles", label: "Roles", description: "Gestión de roles", icon: Shield, permission: "view_roles" },
+      { path: "/permissions", label: "Permisos", description: "Control de acceso", icon: Lock, permission: "view_permissions" },
     ],
   },
 ];

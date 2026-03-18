@@ -14,7 +14,7 @@ export class PermissionsRepository {
   constructor(
     @Inject(DB_CONNECTION)
     private readonly db: PostgresJsDatabase<typeof schema>,
-  ) {}
+  ) { }
 
   async findAll(): Promise<Permission[]> {
     return this.db.query.permissions.findMany({

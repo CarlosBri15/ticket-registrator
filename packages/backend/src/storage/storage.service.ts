@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Storage, GetSignedUrlConfig } from '@google-cloud/storage';
 import { ConfigService } from '@nestjs/config';
-import { join } from 'path';
+import { join } from 'node:path';
 import {
   StorageFileNotFoundException,
   StorageUploadException,

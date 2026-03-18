@@ -49,3 +49,12 @@ export const useDeleteOrganizationMutation = (options?: any) => {
         },
     });
 };
+
+export const useOrganizationQuery = (id?: string) => {
+    return useQuery({
+        queryKey: ['organizations'],
+        queryFn: () => api.organizations().getAll(),
+        select: (orgs) => orgs.find((o) => o.id === id),
+        enabled: !!id,
+    });
+};

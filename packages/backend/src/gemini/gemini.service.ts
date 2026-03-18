@@ -8,7 +8,7 @@ import { GeminiExtractionException } from './exceptions/gemini.exceptions';
 @Injectable()
 export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
-  private genAI: GoogleGenerativeAI;
+  private readonly genAI: GoogleGenerativeAI;
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
