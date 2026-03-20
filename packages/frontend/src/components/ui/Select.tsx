@@ -89,10 +89,11 @@ export const Select = ({
     'w-full flex items-center justify-between px-4 py-3.5 rounded-xl border bg-white',
     'text-sm font-medium transition-all duration-300 shadow-sm text-left',
     'hover:border-secondary hover:shadow-md',
-    'focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/5 focus:shadow-xl focus:shadow-brand/5',
+    'focus:outline-none', // Focus is handled by the native select and peer-focus
+    'peer-focus:border-brand peer-focus:ring-4 peer-focus:ring-brand/5 peer-focus:shadow-xl peer-focus:shadow-brand/5',
     'disabled:opacity-60 disabled:bg-gray-50 disabled:cursor-not-allowed',
     error
-      ? 'border-accent/50 focus:border-accent focus:ring-accent/5 bg-accent/[0.02]'
+      ? 'border-accent/50 peer-focus:border-accent peer-focus:ring-accent/5 bg-accent/[0.02]'
       : 'border-gray-200',
   ].join(' ');
 
@@ -109,15 +110,32 @@ export const Select = ({
 
       {/* Trigger button */}
       <div className="relative">
+        {/* Native select for accessibility - hidden but functional */}
+        <select
+          id={selectId}
+          data-testid="select-native"
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          disabled={disabled || isLoading}
+          required={required}
+          className="sr-only peer"
+          aria-required={required}
+        >
+          {placeholder && <option value="" disabled>{placeholder}</option>}
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        {/* Custom trigger - visual representation */}
         <button
           ref={triggerRef}
-          id={selectId}
+          data-testid="select-trigger"
           type="button"
-          role="combobox"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          aria-controls={`${selectId}-listbox`}
-          aria-required={required}
+          aria-hidden="true"
+          tabIndex={-1}
           disabled={disabled || isLoading}
           onClick={() => setOpen((v) => !v)}
           onKeyDown={handleKeyDown}
@@ -138,8 +156,8 @@ export const Select = ({
         {open && createPortal(
           <div
             id={`${selectId}-listbox`}
-            role="listbox"
-            aria-label={label}
+            data-testid="select-dropdown"
+            aria-hidden="true"
             data-listbox={selectId}
             style={dropdownStyle}
             className="bg-white border border-gray-200 rounded-xl shadow-xl py-1.5 max-h-60 overflow-y-auto"
@@ -154,9 +172,10 @@ export const Select = ({
                 return (
                   <button
                     key={opt.value}
+                    data-testid={`select-option-${opt.value}`}
                     type="button"
-                    role="option"
-                    aria-selected={isSelected}
+                    aria-hidden="true"
+                    tabIndex={-1}
                     onClick={() => handleSelect(opt.value)}
                     onMouseDown={(e) => e.preventDefault()}
                     className={[
