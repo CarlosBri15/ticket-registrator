@@ -57,7 +57,6 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      {/* API Error banner */}
       {apiError && (
         <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 rounded-2xl px-4 py-3 text-sm font-medium">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
