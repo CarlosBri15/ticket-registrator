@@ -1,17 +1,15 @@
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Check, Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2, CheckSquare, Square } from 'lucide-react';
+export type { SelectOption } from './Select';
+import type { SelectOption } from './Select';
 import { useDropdown } from '../../hooks/useDropdown';
 
-export interface SelectOption {
-  value: string;
-  label: string;
-}
-
-export interface SelectProps {
+export interface MultiSelectProps {
   label?: string;
   options: SelectOption[];
-  value?: string;
-  onChange?: (value: string) => void;
+  value?: string[];
+  onChange?: (values: string[]) => void;
   placeholder?: string;
   error?: string;
   disabled?: boolean;
@@ -20,10 +18,10 @@ export interface SelectProps {
   id?: string;
 }
 
-export const Select = ({
+export const MultiSelect = ({
   label = '',
   options,
-  value = '',
+  value = [],
   onChange,
   placeholder,
   error,
@@ -31,8 +29,8 @@ export const Select = ({
   required = false,
   isLoading = false,
   id,
-}: SelectProps) => {
-  const selectId = id ?? `select-${label.toLowerCase().replaceAll(/\s+/g, '-')}`;
+}: MultiSelectProps) => {
+  const selectId = id ?? `multiselect-${label.toLowerCase().replaceAll(/\s+/g, '-')}`;
   const {
     open,
     setOpen,
@@ -42,13 +40,44 @@ export const Select = ({
     handleKeyDown,
   } = useDropdown({ id: selectId });
 
-  const selectedLabel = options.find((o) => o.value === value)?.label;
-  const displayValue = selectedLabel ?? placeholder;
-  const isPlaceholder = !selectedLabel;
+  const nativeSelectRef = useRef<HTMLSelectElement>(null);
 
-  const handleSelect = (optValue: string) => {
-    onChange?.(optValue);
-    setOpen(false);
+  // Sync native select value via ref
+  useEffect(() => {
+    if (!nativeSelectRef.current) return;
+    const opts = Array.from(nativeSelectRef.current.options);
+    for (const opt of opts) {
+      opt.selected = value.includes(opt.value);
+    }
+  }, [value]);
+
+  const getDisplayValue = () => {
+    if (value.length === 0) return null;
+    if (value.length <= 2) {
+      return value
+        .map((v) => options.find((o) => o.value === v)?.label ?? v)
+        .join(', ');
+    }
+    return `${value.length} seleccionados`;
+  };
+
+  const displayValue = getDisplayValue();
+  const isPlaceholder = displayValue === null;
+
+  const handleToggle = (optValue: string) => {
+    if (value.includes(optValue)) {
+      onChange?.(value.filter((v) => v !== optValue));
+    } else {
+      onChange?.([...value, optValue]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    onChange?.(options.map((o) => o.value));
+  };
+
+  const handleClear = () => {
+    onChange?.([]);
   };
 
   const triggerClasses = [
@@ -79,15 +108,15 @@ export const Select = ({
         {/* Native select for accessibility */}
         <select
           id={selectId}
-          data-testid="select-native"
-          value={value}
-          onChange={(e) => onChange?.(e.target.value)}
+          ref={nativeSelectRef}
+          data-testid="multiselect-native"
+          multiple
           disabled={disabled || isLoading}
           required={required}
           className="sr-only peer"
           aria-required={required}
+          onChange={() => {/* controlled via ref */}}
         >
-          {placeholder && <option value="" disabled>{placeholder}</option>}
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
@@ -95,10 +124,10 @@ export const Select = ({
           ))}
         </select>
 
-        {/* Custom trigger */}
+        {/* Custom trigger - visual representation */}
         <button
           ref={triggerRef}
-          data-testid="select-trigger"
+          data-testid="multiselect-trigger"
           type="button"
           aria-hidden="true"
           tabIndex={-1}
@@ -108,7 +137,7 @@ export const Select = ({
           className={triggerClasses}
         >
           <span className={isPlaceholder ? 'text-gray-400 font-normal' : 'text-dark'}>
-            {isLoading ? 'Cargando...' : (displayValue ?? placeholder ?? 'Selecciona una opción')}
+            {isLoading ? 'Cargando...' : (displayValue ?? placeholder ?? 'Selecciona opciones')}
           </span>
           <span className="shrink-0 ml-2 text-gray-400">
             {isLoading
@@ -118,31 +147,54 @@ export const Select = ({
           </span>
         </button>
 
-        {/* Dropdown panel */}
+        {/* Dropdown panel — rendered via portal */}
         {open && createPortal(
           <div
             id={`${selectId}-listbox`}
-            data-testid="select-dropdown"
+            data-testid="multiselect-dropdown"
             aria-hidden="true"
             data-listbox={selectId}
             style={dropdownStyle}
             className="bg-white border border-gray-200 rounded-xl shadow-xl py-1.5 max-h-60 overflow-y-auto"
           >
+            {/* Select all / Clear controls */}
+            <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-100">
+              <button
+                type="button"
+                data-testid="multiselect-select-all"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleSelectAll}
+                className="text-xs font-bold text-brand hover:text-brand/80 transition-colors"
+              >
+                Seleccionar todo
+              </button>
+              <span className="text-gray-200">|</span>
+              <button
+                type="button"
+                data-testid="multiselect-clear"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleClear}
+                className="text-xs font-bold text-gray-400 hover:text-dark transition-colors"
+              >
+                Limpiar
+              </button>
+            </div>
+
             {options.length === 0 ? (
               <div className="px-4 py-3 text-sm text-gray-400 font-medium text-center">
                 Sin opciones disponibles
               </div>
             ) : (
               options.map((opt) => {
-                const isSelected = opt.value === value;
+                const isSelected = value.includes(opt.value);
                 return (
                   <button
                     key={opt.value}
-                    data-testid={`select-option-${opt.value}`}
+                    data-testid={`multiselect-option-${opt.value}`}
                     type="button"
                     aria-hidden="true"
                     tabIndex={-1}
-                    onClick={() => handleSelect(opt.value)}
+                    onClick={() => handleToggle(opt.value)}
                     onMouseDown={(e) => e.preventDefault()}
                     className={[
                       'w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium transition-colors text-left',
@@ -152,7 +204,10 @@ export const Select = ({
                     ].join(' ')}
                   >
                     <span>{opt.label}</span>
-                    {isSelected && <Check className="w-4 h-4 shrink-0" aria-hidden={true} />}
+                    {isSelected
+                      ? <CheckSquare className="w-4 h-4 shrink-0" aria-hidden={true} />
+                      : <Square className="w-4 h-4 shrink-0 text-gray-300" aria-hidden={true} />
+                    }
                   </button>
                 );
               })

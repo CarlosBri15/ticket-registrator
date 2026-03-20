@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { Users, Search, Plus, Trash2, UserCircle, Mail, AtSign } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Users, Search, Plus, Trash2, UserCircle, Mail, AtSign, Pencil } from "lucide-react";
 import {
   useUsersQuery,
   useCreateUserMutation,
@@ -14,10 +15,11 @@ import {
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { AlertError, getApiErrorMessage } from "../../components/ui/Alert";
-import { RoleSelect, OrgSelect } from "../../components/ui/selects";
+import { RoleSelect, OrgSelect, DepartmentMultiSelect } from "../../components/ui/selects";
 import { Modal } from "../../components/ui/Modal";
 import { Pagination } from "../../components/ui/Pagination";
 import { useScopeContext } from "@ticket-registrator/shared";
+import { EditUserModal } from "./EditUserModal";
 
 const PAGE_SIZE = 10;
 
@@ -42,6 +44,7 @@ const CreateUserModal = ({
     roleId: "",
     orgId: "",          // only used when creator is SuperAdmin
     selectedRole: null as IRole | null,
+    departmentIds: [] as string[],
   });
 
   // Creator is SuperAdmin when companyId is null — they must pick an org
@@ -80,7 +83,7 @@ const CreateUserModal = ({
       password: form.password,
       confirmPassword: form.confirmPassword,
       roleId: form.roleId,
-      departmentIds: [],
+      departmentIds: form.departmentIds,
     };
     if (isCreatorSuperAdmin && form.orgId) payload.companyId = form.orgId;
 
@@ -134,6 +137,16 @@ const CreateUserModal = ({
           />
         )}
 
+        {/* Department multiselect — shown when role is not SuperAdmin and companyId is available */}
+        {!isTargetSuperAdmin && (isCreatorSuperAdmin ? form.orgId : companyId) && (
+          <DepartmentMultiSelect
+            id="user-departments"
+            companyId={isCreatorSuperAdmin ? form.orgId : companyId}
+            value={form.departmentIds}
+            onChange={(ids) => setForm((p) => ({ ...p, departmentIds: ids }))}
+          />
+        )}
+
         {passwordMismatch && (
           <AlertError message="Las contraseñas no coinciden" />
         )}
@@ -160,17 +173,24 @@ const UserRow = ({
   roles,
   canDelete,
   onDelete,
+  onEdit,
 }: {
   user: IUser;
   roles?: { id: string; name: string }[];
   canDelete: boolean;
   onDelete: (id: string) => void;
+  onEdit: (user: IUser) => void;
 }) => {
+  const navigate = useNavigate();
   const roleName = roles?.find((r) => r.id === user.roleId)?.name ?? "—";
 
   return (
     <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between gap-4">
-      <div className="flex items-center gap-3 min-w-0">
+      <button
+        type="button"
+        className="flex items-center gap-3 min-w-0 text-left flex-1"
+        onClick={() => navigate(`/users/${user.id}`)}
+      >
         <div className="w-10 h-10 bg-brand/10 rounded-2xl flex items-center justify-center shrink-0">
           <UserCircle className="w-5 h-5 text-brand" />
         </div>
@@ -189,11 +209,20 @@ const UserRow = ({
             </span>
           </div>
         </div>
-      </div>
+      </button>
       <div className="flex items-center gap-3 shrink-0">
         <span className="text-xs bg-brand/10 text-brand px-2.5 py-1 rounded-full font-bold">
           {roleName}
         </span>
+        <button
+          type="button"
+          onClick={() => onEdit(user)}
+          className="p-2 text-gray-300 hover:text-brand hover:bg-brand/10 rounded-xl transition-all"
+          title="Editar usuario"
+          aria-label="Editar usuario"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
         {canDelete && (
           <button
             type="button"
@@ -227,6 +256,8 @@ export const UsersScreen = () => {
 
   const [search, setSearch] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<IUser | null>(null);
   const [page, setPage] = useState(1);
 
   useEffect(() => { setPage(1); }, [search]);
@@ -312,6 +343,7 @@ export const UsersScreen = () => {
                 roles={roles}
                 canDelete={can("delete_users")}
                 onDelete={(id) => deleteMutation.mutate(id)}
+                onEdit={(u) => { setEditingUser(u); setIsEditOpen(true); }}
               />
             ))}
             <Pagination
@@ -330,6 +362,15 @@ export const UsersScreen = () => {
         onClose={() => setIsCreateOpen(false)}
         companyId={companyId}
       />
+
+      {isEditOpen && editingUser && (
+        <EditUserModal
+          isOpen={isEditOpen}
+          onClose={() => { setIsEditOpen(false); setEditingUser(null); }}
+          user={editingUser}
+          companyId={companyId}
+        />
+      )}
     </div>
   );
 };

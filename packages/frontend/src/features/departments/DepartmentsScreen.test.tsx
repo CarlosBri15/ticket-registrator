@@ -3,10 +3,27 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { DepartmentsScreen } from './DepartmentsScreen';
 
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return { ...(actual as object), useNavigate: () => mockNavigate };
+});
+
+vi.mock('./DepartmentModal', () => ({
+  DepartmentModal: ({ isOpen, onClose, department }: any) =>
+    isOpen
+      ? (
+        <dialog open>
+          <h2>{department ? 'Editar Departamento' : 'Nuevo Departamento'}</h2>
+          <button onClick={onClose}>Cerrar</button>
+        </dialog>
+      )
+      : null,
+}));
+
 vi.mock('@ticket-registrator/shared', () => ({
   useDepartmentsQuery: vi.fn(),
-  useCreateDepartmentMutation: vi.fn(),
-  useUpdateDepartmentMutation: vi.fn(),
   useDeleteDepartmentMutation: vi.fn(),
   usePermissions: vi.fn(),
   useScope: vi.fn(),
@@ -27,18 +44,12 @@ vi.mock('../../components/ui/Button', () => ({
     <button onClick={onClick} disabled={disabled}>{children}</button>
   ),
 }));
-vi.mock('../../components/ui/Input', () => ({
-  Input: ({ label, ...props }: any) => <input aria-label={label} {...props} />,
-}));
-vi.mock('../../components/ui/Modal', () => ({
-  Modal: ({ isOpen, children, title }: any) =>
-    isOpen ? <div role="dialog"><h2>{title}</h2>{children}</div> : null,
+vi.mock('../../components/ui/Pagination', () => ({
+  Pagination: () => null,
 }));
 
 import {
   useDepartmentsQuery,
-  useCreateDepartmentMutation,
-  useUpdateDepartmentMutation,
   useDeleteDepartmentMutation,
   usePermissions,
   useScope,
@@ -47,8 +58,6 @@ import {
 
 const setupMocks = () => {
   (useDepartmentsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false });
-  (useCreateDepartmentMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: vi.fn(), isPending: false });
-  (useUpdateDepartmentMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: vi.fn(), isPending: false });
   (useDeleteDepartmentMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: vi.fn() });
   (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => true });
   (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: true, scope: {} });
@@ -65,6 +74,7 @@ const renderScreen = () =>
 describe('DepartmentsScreen', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockNavigate.mockReset();
     setupMocks();
   });
 
@@ -142,9 +152,11 @@ describe('DepartmentsScreen', () => {
       isLoading: false,
     });
     renderScreen();
-    // buttons: [0]=Nuevo Departamento, [1]=edit for d1, [2]=delete for d1
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[1]);
+    // buttons: [0]=dept name/navigate, [1]=Nuevo Departamento, [2]=edit for d1, [3]=delete for d1
+    const allButtons = screen.getAllByRole('button');
+    // Click the edit button (second-to-last before delete)
+    const editBtn = allButtons[allButtons.length - 2];
+    fireEvent.click(editBtn);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText('Editar Departamento')).toBeInTheDocument();
   });
@@ -169,5 +181,34 @@ describe('DepartmentsScreen', () => {
     renderScreen();
     // Should render without "Selecciona una organización"
     expect(screen.queryByText(/selecciona una organización/i)).not.toBeInTheDocument();
+  });
+
+  it('navigates to /departments/:id when department card is clicked', () => {
+    (useDepartmentsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'd1', name: 'Recursos Humanos', companyId: 'c1' }],
+      isLoading: false,
+    });
+    renderScreen();
+    // Click the department name button (first button in card)
+    const deptButton = screen.getByText('Recursos Humanos').closest('button');
+    expect(deptButton).toBeTruthy();
+    fireEvent.click(deptButton!);
+    expect(mockNavigate).toHaveBeenCalledWith('/departments/d1');
+  });
+
+  it('edit button click does NOT navigate (stopPropagation)', () => {
+    (useDepartmentsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'd1', name: 'Recursos Humanos', companyId: 'c1' }],
+      isLoading: false,
+    });
+    renderScreen();
+    const allButtons = screen.getAllByRole('button');
+    // The edit button is second-to-last (before delete)
+    const editBtn = allButtons[allButtons.length - 2];
+    fireEvent.click(editBtn);
+    // Should NOT navigate to /departments/d1
+    expect(mockNavigate).not.toHaveBeenCalledWith('/departments/d1');
+    // Should open modal instead
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });

@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Layers, Search, Plus, Trash2, Pencil, Building2 } from "lucide-react";
 import {
   useDepartmentsQuery,
-  useCreateDepartmentMutation,
-  useUpdateDepartmentMutation,
   useDeleteDepartmentMutation,
   usePermissions,
   useScope,
@@ -11,74 +10,16 @@ import {
 } from "@ticket-registrator/shared";
 import { useScopeContext } from "@ticket-registrator/shared";
 import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import { Modal } from "../../components/ui/Modal";
 import { Pagination } from "../../components/ui/Pagination";
+import { DepartmentModal } from "./DepartmentModal";
 
 const PAGE_SIZE = 10;
-
-const DepartmentModal = ({
-  isOpen,
-  onClose,
-  companyId,
-  department,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  companyId: string;
-  department?: IDepartment;
-}) => {
-  const [name, setName] = useState(department?.name ?? "");
-
-  const createMutation = useCreateDepartmentMutation(companyId, { onSuccess: onClose });
-  const updateMutation = useUpdateDepartmentMutation(companyId, { onSuccess: onClose });
-
-  const isEditing = !!department;
-
-  const handleSubmit = (e: React.BaseSyntheticEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    if (isEditing) {
-      updateMutation.mutate({ id: department.id, data: { name } });
-    } else {
-      createMutation.mutate({ name });
-    }
-  };
-
-  const isPending = createMutation.isPending || updateMutation.isPending;
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={isEditing ? "Editar Departamento" : "Nuevo Departamento"}
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Nombre del departamento *"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Ej: Recursos Humanos"
-          autoFocus
-          required
-        />
-        <div className="flex gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
-            Cancelar
-          </Button>
-          <Button type="submit" isLoading={isPending} disabled={!name.trim()} className="flex-1">
-            {isEditing ? "Guardar cambios" : "Crear Departamento"}
-          </Button>
-        </div>
-      </form>
-    </Modal>
-  );
-};
 
 export const DepartmentsScreen = () => {
   const { can } = usePermissions();
   const { scope, isGlobal } = useScope();
   const { activeCompanyId } = useScopeContext();
+  const navigate = useNavigate();
 
   const getCompanyId = () => {
     if (isGlobal) return activeCompanyId;
@@ -187,17 +128,21 @@ export const DepartmentsScreen = () => {
                 className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 min-w-0 text-left flex-1"
+                    onClick={() => navigate(`/departments/${dept.id}`)}
+                  >
                     <div className="w-10 h-10 bg-brand/10 rounded-2xl flex items-center justify-center shrink-0">
                       <Layers className="w-5 h-5 text-brand" />
                     </div>
                     <p className="font-bold text-dark truncate">{dept.name}</p>
-                  </div>
+                  </button>
                   <div className="flex items-center gap-1 shrink-0">
                     {can("edit_departments") && (
                       <button
                         type="button"
-                        onClick={() => openEdit(dept)}
+                        onClick={(e) => { e.stopPropagation(); openEdit(dept); }}
                         className="p-2 text-gray-300 hover:text-brand hover:bg-brand/10 rounded-xl transition-all"
                       >
                         <Pencil className="w-4 h-4" />
@@ -206,7 +151,7 @@ export const DepartmentsScreen = () => {
                     {can("delete_departments") && (
                       <button
                         type="button"
-                        onClick={() => deleteMutation.mutate(dept.id)}
+                        onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(dept.id); }}
                         className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                       >
                         <Trash2 className="w-4 h-4" />

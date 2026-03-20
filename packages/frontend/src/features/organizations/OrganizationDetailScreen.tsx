@@ -15,6 +15,7 @@ import {
 import {
   useOrganizationQuery,
   useDeleteOrganizationMutation,
+  useUpdateOrganizationMutation,
   useDepartmentsQuery,
   useCreateDepartmentMutation,
   useUpdateDepartmentMutation,
@@ -52,32 +53,84 @@ const getHierarchyColor = (h: number) => {
 
 // ─── Sub-components for Tabs ──────────────────────────────────────────────────
 
-const OverviewTab = ({ org }: { org: any }) => (
-  <div className="space-y-4">
-    <div className="grid grid-cols-2 gap-4 text-sm">
-      <div>
-        <p className="text-xs text-gray-400 font-medium mb-1">Nombre</p>
-        <p className="font-bold text-dark">{org.name}</p>
-      </div>
-      <div>
-        <p className="text-xs text-gray-400 font-medium mb-1">ID</p>
-        <p className="font-mono text-xs text-gray-500 break-all">{org.id}</p>
-      </div>
-      <div>
-        <p className="text-xs text-gray-400 font-medium mb-1">Creada</p>
-        <p className="font-bold text-dark">
-          {format(new Date(org.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
-        </p>
-      </div>
-      <div>
-        <p className="text-xs text-gray-400 font-medium mb-1">Actualizada</p>
-        <p className="font-bold text-dark">
-          {format(new Date(org.updatedAt), "dd/MM/yyyy HH:mm", { locale: es })}
-        </p>
+const OverviewTab = ({ org }: { org: any }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(org.name);
+  const updateMutation = useUpdateOrganizationMutation({ onSuccess: () => setIsEditing(false) });
+
+  const handleSubmit = (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    if (name.trim().length >= 2) {
+      updateMutation.mutate({ id: org.id, data: { name } });
+    }
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setName(org.name);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <p className="text-xs text-gray-400 font-medium mb-1">Nombre</p>
+          {isEditing ? (
+            <form onSubmit={handleSubmit} className="flex items-center gap-2 mt-1">
+              <Input
+                label="Nombre de la organización"
+                value={name}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+                placeholder="Nombre de la organización"
+                required
+                autoFocus
+              />
+              <Button
+                type="submit"
+                isLoading={updateMutation.isPending}
+                disabled={name.trim().length < 2}
+                className="shrink-0"
+              >
+                Guardar
+              </Button>
+              <Button type="button" variant="ghost" onClick={cancelEdit} className="shrink-0">
+                Cancelar
+              </Button>
+            </form>
+          ) : (
+            <div className="flex items-center gap-2">
+              <p className="font-bold text-dark">{org.name}</p>
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="p-1 text-gray-300 hover:text-brand hover:bg-brand/10 rounded-lg transition-all"
+                title="Editar nombre"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 font-medium mb-1">ID</p>
+          <p className="font-mono text-xs text-gray-500 break-all">{org.id}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 font-medium mb-1">Creada</p>
+          <p className="font-bold text-dark">
+            {format(new Date(org.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 font-medium mb-1">Actualizada</p>
+          <p className="font-bold text-dark">
+            {format(new Date(org.updatedAt), "dd/MM/yyyy HH:mm", { locale: es })}
+          </p>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const DepartmentsTab = ({
   loading,
@@ -269,6 +322,8 @@ const RolesTab = ({
   setSearch,
   onCreate,
   canCreate,
+  onAssignPermissions,
+  canManagePermissions,
 }: {
   loading: boolean;
   roles: any[] | undefined;
@@ -276,6 +331,8 @@ const RolesTab = ({
   setSearch: (v: string) => void;
   onCreate: () => void;
   canCreate: boolean;
+  onAssignPermissions: (roleId: string) => void;
+  canManagePermissions: boolean;
 }) => {
   if (loading) {
     return (
@@ -333,13 +390,25 @@ const RolesTab = ({
                   <p className="text-xs text-gray-400 truncate mt-0.5">{role.description}</p>
                 )}
               </div>
-              <span
-                className={`text-xs px-2.5 py-1 rounded-full font-bold shrink-0 ${getHierarchyColor(
-                  role.hierarchy
-                )}`}
-              >
-                {getHierarchyLabel(role.hierarchy)} · {role.hierarchy}
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                {canManagePermissions && (
+                  <button
+                    type="button"
+                    onClick={() => onAssignPermissions(role.id)}
+                    className="text-xs font-bold px-2.5 py-1 text-brand bg-brand/10 hover:bg-brand/20 rounded-lg transition-all"
+                    title="Gestionar permisos"
+                  >
+                    Permisos
+                  </button>
+                )}
+                <span
+                  className={`text-xs px-2.5 py-1 rounded-full font-bold ${getHierarchyColor(
+                    role.hierarchy
+                  )}`}
+                >
+                  {getHierarchyLabel(role.hierarchy)} · {role.hierarchy}
+                </span>
+              </div>
             </div>
           ))}
         </div>
@@ -407,6 +476,42 @@ const DepartmentModal = ({
   );
 };
 
+// ─── Delete Confirm Modal ─────────────────────────────────────────────────────
+
+const DeleteConfirmModal = ({
+  isOpen,
+  orgName,
+  onClose,
+  onConfirm,
+}: {
+  isOpen: boolean;
+  orgName: string;
+  onClose: () => void;
+  onConfirm: () => void;
+}) => (
+  <Modal isOpen={isOpen} onClose={onClose} title="¿Eliminar organización?">
+    <div className="space-y-4">
+      <p className="text-sm text-gray-600">
+        Esta acción eliminará permanentemente{" "}
+        <span className="font-bold">{orgName}</span> y todos sus datos. No se
+        puede deshacer.
+      </p>
+      <div className="flex gap-3 pt-2">
+        <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
+          Cancelar
+        </Button>
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="flex-1 bg-red-500 text-white font-bold text-sm py-2.5 px-4 rounded-xl hover:bg-red-600 transition-all"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </Modal>
+);
+
 // ─── Tab Bar ──────────────────────────────────────────────────────────────────
 
 type TabId = "overview" | "departments" | "users" | "roles";
@@ -448,6 +553,7 @@ export const OrganizationDetailScreen = () => {
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false);
   const [assignPermissionsRoleId, setAssignPermissionsRoleId] = useState<string | undefined>();
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const openCreateDept = () => { setEditingDept(undefined); setIsDeptModalOpen(true); };
   const openEditDept = (dept: IDepartment) => { setEditingDept(dept); setIsDeptModalOpen(true); };
@@ -561,7 +667,7 @@ export const OrganizationDetailScreen = () => {
             {can("delete_company") && (
               <button
                 type="button"
-                onClick={() => deleteMutation.mutate(org.id)}
+                onClick={() => setIsDeleteConfirmOpen(true)}
                 className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                 title="Eliminar organización"
               >
@@ -617,7 +723,7 @@ export const OrganizationDetailScreen = () => {
               setSearch={setDeptSearch}
               onCreate={openCreateDept}
               onEdit={openEditDept}
-              onDelete={(id) => deleteDeptMutation.mutate(id)}
+              onDelete={(deptId) => deleteDeptMutation.mutate(deptId)}
               canCreate={can("create_departments")}
               canEdit={can("edit_departments")}
               canDelete={can("delete_departments")}
@@ -644,6 +750,8 @@ export const OrganizationDetailScreen = () => {
               setSearch={setRoleSearch}
               onCreate={() => setIsCreateRoleOpen(true)}
               canCreate={can("create_roles")}
+              onAssignPermissions={(roleId) => setAssignPermissionsRoleId(roleId)}
+              canManagePermissions={can("manage_permissions")}
             />
           )}
         </div>
@@ -688,6 +796,17 @@ export const OrganizationDetailScreen = () => {
           roleName={roles?.find((r) => r.id === assignPermissionsRoleId)?.name}
         />
       )}
+
+      {/* Delete confirmation modal */}
+      <DeleteConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        orgName={org.name}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={() => {
+          deleteMutation.mutate(org.id);
+          setIsDeleteConfirmOpen(false);
+        }}
+      />
     </div>
   );
 };
