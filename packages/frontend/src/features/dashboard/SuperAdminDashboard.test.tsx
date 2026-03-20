@@ -32,10 +32,11 @@ vi.mock('../../components/ui/Button', () => ({
   Button: ({ children, onClick }: any) => <button onClick={onClick}>{children}</button>,
 }));
 vi.mock('../../components/ui/StatCard', () => ({
-  StatCard: ({ title, value }: any) => (
+  StatCard: ({ title, value, subtitle }: any) => (
     <div data-testid="stat-card">
       <span>{title}</span>
       {value !== undefined && <span data-testid="stat-value">{value}</span>}
+      {subtitle && <span>{subtitle}</span>}
     </div>
   ),
 }));

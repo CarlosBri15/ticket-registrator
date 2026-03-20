@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Loader2, CheckSquare, Square } from 'lucide-react';
+export type { SelectOption } from './Select';
 import type { SelectOption } from './Select';
-
-export type { SelectOption };
+import { useDropdown } from '../../hooks/useDropdown';
 
 export interface MultiSelectProps {
   label?: string;
@@ -30,19 +30,24 @@ export const MultiSelect = ({
   isLoading = false,
   id,
 }: MultiSelectProps) => {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const nativeSelectRef = useRef<HTMLSelectElement>(null);
-  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const selectId = id ?? `multiselect-${label.toLowerCase().replaceAll(/\s+/g, '-')}`;
+  const {
+    open,
+    setOpen,
+    containerRef,
+    triggerRef,
+    dropdownStyle,
+    handleKeyDown,
+  } = useDropdown({ id: selectId });
+
+  const nativeSelectRef = useRef<HTMLSelectElement>(null);
 
   // Sync native select value via ref
   useEffect(() => {
     if (!nativeSelectRef.current) return;
-    const opts = nativeSelectRef.current.options;
-    for (let i = 0; i < opts.length; i++) {
-      opts[i].selected = value.includes(opts[i].value);
+    const opts = Array.from(nativeSelectRef.current.options);
+    for (const opt of opts) {
+      opt.selected = value.includes(opt.value);
     }
   }, [value]);
 
@@ -59,39 +64,6 @@ export const MultiSelect = ({
   const displayValue = getDisplayValue();
   const isPlaceholder = displayValue === null;
 
-  const updateDropdownPosition = useCallback(() => {
-    if (!triggerRef.current) return;
-    const rect = triggerRef.current.getBoundingClientRect();
-    setDropdownStyle({
-      position: 'fixed',
-      top: rect.bottom + 6,
-      left: rect.left,
-      width: rect.width,
-      zIndex: 9999,
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    updateDropdownPosition();
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (
-        containerRef.current && !containerRef.current.contains(e.target as Node) &&
-        !(e.target as Element)?.closest(`[data-listbox="${selectId}"]`)
-      ) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    window.addEventListener('scroll', updateDropdownPosition, true);
-    window.addEventListener('resize', updateDropdownPosition);
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-      window.removeEventListener('scroll', updateDropdownPosition, true);
-      window.removeEventListener('resize', updateDropdownPosition);
-    };
-  }, [open, updateDropdownPosition, selectId]);
-
   const handleToggle = (optValue: string) => {
     if (value.includes(optValue)) {
       onChange?.(value.filter((v) => v !== optValue));
@@ -106,11 +78,6 @@ export const MultiSelect = ({
 
   const handleClear = () => {
     onChange?.([]);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') setOpen(false);
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen((v) => !v); }
   };
 
   const triggerClasses = [

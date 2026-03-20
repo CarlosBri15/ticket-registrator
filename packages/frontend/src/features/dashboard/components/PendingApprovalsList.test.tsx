@@ -8,6 +8,7 @@ vi.mock('lucide-react', () => ({
   CheckCircle: () => <svg data-testid="icon-check-circle" />,
   Calendar: () => <svg data-testid="icon-calendar" />,
   ChevronRight: () => <svg data-testid="icon-chevron-right" />,
+  Clock: () => <svg data-testid="icon-clock" />,
 }));
 
 vi.mock('../../../components/ui/StatusBadge', () => ({

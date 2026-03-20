@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Loader2 } from 'lucide-react';
+import { useDropdown } from '../../hooks/useDropdown';
 
 export interface SelectOption {
   value: string;
@@ -32,64 +32,30 @@ export const Select = ({
   isLoading = false,
   id,
 }: SelectProps) => {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const selectId = id ?? `select-${label.toLowerCase().replaceAll(/\s+/g, '-')}`;
+  const {
+    open,
+    setOpen,
+    containerRef,
+    triggerRef,
+    dropdownStyle,
+    handleKeyDown,
+  } = useDropdown({ id: selectId });
 
   const selectedLabel = options.find((o) => o.value === value)?.label;
   const displayValue = selectedLabel ?? placeholder;
   const isPlaceholder = !selectedLabel;
-
-  const updateDropdownPosition = useCallback(() => {
-    if (!triggerRef.current) return;
-    const rect = triggerRef.current.getBoundingClientRect();
-    setDropdownStyle({
-      position: 'fixed',
-      top: rect.bottom + 6,
-      left: rect.left,
-      width: rect.width,
-      zIndex: 9999,
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    updateDropdownPosition();
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (
-        containerRef.current && !containerRef.current.contains(e.target as Node) &&
-        !(e.target as Element)?.closest(`[data-listbox="${selectId}"]`)
-      ) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    window.addEventListener('scroll', updateDropdownPosition, true);
-    window.addEventListener('resize', updateDropdownPosition);
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-      window.removeEventListener('scroll', updateDropdownPosition, true);
-      window.removeEventListener('resize', updateDropdownPosition);
-    };
-  }, [open, updateDropdownPosition, selectId]);
 
   const handleSelect = (optValue: string) => {
     onChange?.(optValue);
     setOpen(false);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') setOpen(false);
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen((v) => !v); }
-  };
-
   const triggerClasses = [
     'w-full flex items-center justify-between px-4 py-3.5 rounded-xl border bg-white',
     'text-sm font-medium transition-all duration-300 shadow-sm text-left',
     'hover:border-secondary hover:shadow-md',
-    'focus:outline-none', // Focus is handled by the native select and peer-focus
+    'focus:outline-none',
     'peer-focus:border-brand peer-focus:ring-4 peer-focus:ring-brand/5 peer-focus:shadow-xl peer-focus:shadow-brand/5',
     'disabled:opacity-60 disabled:bg-gray-50 disabled:cursor-not-allowed',
     error
@@ -110,7 +76,7 @@ export const Select = ({
 
       {/* Trigger button */}
       <div className="relative">
-        {/* Native select for accessibility - hidden but functional */}
+        {/* Native select for accessibility */}
         <select
           id={selectId}
           data-testid="select-native"
@@ -129,7 +95,7 @@ export const Select = ({
           ))}
         </select>
 
-        {/* Custom trigger - visual representation */}
+        {/* Custom trigger */}
         <button
           ref={triggerRef}
           data-testid="select-trigger"
@@ -152,7 +118,7 @@ export const Select = ({
           </span>
         </button>
 
-        {/* Dropdown panel — rendered via portal to escape overflow:hidden containers */}
+        {/* Dropdown panel */}
         {open && createPortal(
           <div
             id={`${selectId}-listbox`}

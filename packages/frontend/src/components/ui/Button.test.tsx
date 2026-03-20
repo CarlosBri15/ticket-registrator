@@ -56,6 +56,26 @@ describe('Button', () => {
     expect(container.querySelector('button')?.className).toContain('bg-transparent');
   });
 
+  it('renders with accent variant', () => {
+    const { container } = render(<Button variant="accent">Accent</Button>);
+    expect(container.querySelector('button')?.className).toContain('bg-accent');
+  });
+
+  it('renders with fintech variant', () => {
+    const { container } = render(<Button variant="fintech">Fintech</Button>);
+    expect(container.querySelector('button')?.className).toContain('bg-gradient-to-r');
+  });
+
+  it('renders with white variant', () => {
+    const { container } = render(<Button variant="white">White</Button>);
+    expect(container.querySelector('button')?.className).toContain('bg-white');
+  });
+
+  it('renders with ghost-white variant', () => {
+    const { container } = render(<Button variant="ghost-white">Ghost White</Button>);
+    expect(container.querySelector('button')?.className).toContain('bg-white/10');
+  });
+
   it('applies custom className', () => {
     const { container } = render(<Button className="custom-class">Custom</Button>);
     expect(container.querySelector('button')?.className).toContain('custom-class');

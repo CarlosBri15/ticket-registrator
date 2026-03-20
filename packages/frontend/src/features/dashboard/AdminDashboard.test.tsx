@@ -51,10 +51,11 @@ vi.mock('../../components/ui/Button', () => ({
   Button: ({ children, onClick }: any) => <button onClick={onClick}>{children}</button>,
 }));
 vi.mock('../../components/ui/StatCard', () => ({
-  StatCard: ({ title, value }: any) => (
+  StatCard: ({ title, value, subtitle }: any) => (
     <div data-testid="stat-card">
       <span>{title}</span>
       {value !== undefined && <span data-testid="stat-value">{value}</span>}
+      {subtitle && <span>{subtitle}</span>}
     </div>
   ),
 }));
@@ -153,18 +154,18 @@ describe('Admin dashboard', () => {
     expect(screen.getByTestId('pending-approvals-card')).toBeInTheDocument();
   });
 
-  it('shows "Todo al día" when no pending approvals', () => {
+  it('shows "home.allCaughtUp" when no pending approvals', () => {
     setupAdmin([]);
     renderScreen();
-    expect(screen.getByText('Todo al día')).toBeInTheDocument();
+    expect(screen.getByText('home.allCaughtUp')).toBeInTheDocument();
   });
 
-  it('shows "Requieren revisión" when there are pending approvals', () => {
+  it('shows "home.requiresReview" when there are pending approvals', () => {
     setupAdmin([
       { id: 'r1', name: 'Viaje NY', status: 'SUBMITTED', start_date: '2024-01-01', end_date: '2024-01-10', requested_amount: 500, currency: 'EUR' },
     ]);
     renderScreen();
-    expect(screen.getByText('Requieren revisión')).toBeInTheDocument();
+    expect(screen.getByText('home.requiresReview')).toBeInTheDocument();
   });
 
   it('renders pending report in approval queue', () => {
@@ -178,7 +179,7 @@ describe('Admin dashboard', () => {
   it('shows empty state when no pending approvals', () => {
     setupAdmin([]);
     renderScreen();
-    expect(screen.getByText('home.noPendingApprovals')).toBeInTheDocument();
+    expect(screen.getAllByText('home.noPendingApprovals').length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows "no completed trips" in recent activity when no completed reports', () => {

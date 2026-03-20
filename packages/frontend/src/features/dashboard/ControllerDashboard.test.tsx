@@ -18,16 +18,61 @@ vi.mock('@ticket-registrator/shared', () => ({
 }));
 
 vi.mock('lucide-react', () => ({
-  FileText: () => null,
-  AlertCircle: () => null,
-  CheckCircle: () => null,
-  XCircle: () => null,
-  Wallet: () => null,
-  Clock: () => null,
-  ChevronRight: () => null,
-  Calendar: () => null,
-  Sparkles: () => null,
+  FileText: () => null, AlertCircle: () => null, CheckCircle: () => null,
+  XCircle: () => null, Wallet: () => null, Clock: () => null,
+  ChevronRight: () => null, Calendar: () => null, Sparkles: () => null,
   Shield: () => null,
+}));
+
+vi.mock('./components/DashboardHero', () => ({
+  DashboardHero: ({ firstName, user, actions }: any) => (
+    <div>
+      <span>{firstName}</span>
+      <span>{user?.roleName}</span>
+      {actions}
+    </div>
+  ),
+}));
+
+vi.mock('./components/PendingStatsCard', () => ({
+  PendingStatsCard: ({ count, dataTestId }: any) => (
+    <div data-testid="pending-approvals-card">
+      <span data-testid={dataTestId}>{count}</span>
+    </div>
+  ),
+}));
+
+vi.mock('./components/ControllerStatsCards', () => ({
+  WeeklyStatsCard: ({ count }: any) => (
+    <div data-testid="stat-card">
+      <span data-testid="stat-value">{count}</span>
+    </div>
+  ),
+  PendingAmountCard: ({ amount }: any) => (
+    <div data-testid="stat-card">
+      <span data-testid="stat-value">{amount.toFixed(2)}</span>
+      <span>€</span>
+    </div>
+  ),
+}));
+
+vi.mock('./components/PendingApprovalsList', () => ({
+  PendingApprovalsList: ({ reports, navigate, viewAllPath, maxItems }: any) => (
+    <div data-testid="approval-queue">
+      {reports.length === 0 && <div data-testid="empty-queue" />}
+      {reports.map((r: any) => (
+        <div key={r.id} onClick={() => navigate(`/trips/${r.id}`)} style={{ cursor: 'pointer' }}>
+          <span>{r.name}</span>
+          <button>Revisar</button>
+        </div>
+      ))}
+      {reports.length > (maxItems || 8) && (
+        <button onClick={() => navigate(viewAllPath || '/trips')}>
+          Ver todos ({reports.length})
+        </button>
+      )}
+    </div>
+  ),
 }));
 
 vi.mock('../../components/ui/Button', () => ({

@@ -7,7 +7,6 @@ import {
   Globe,
   Search,
   X,
-  Sparkles,
   AlertCircle,
 } from "lucide-react";
 import {
@@ -21,65 +20,11 @@ import {
   useOrganizationsQuery,
   useScopeContext,
 } from "@ticket-registrator/shared";
-import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { es, enUS } from "date-fns/locale";
 import { countCreatedThisMonth, buildMonthlyGrowth } from "./utils";
-
-
-
-const SuperAdminHero = ({ user, t, greetingKey, firstName, navigate }: any) => (
-  <div className="relative bg-dark rounded-[2.5rem] p-8 overflow-hidden shadow-2xl">
-    <div className="absolute top-0 right-0 w-80 h-80 bg-brand/10 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-    <div className="absolute bottom-0 left-1/4 w-48 h-48 bg-purple-500/5 rounded-full translate-y-1/2 pointer-events-none" />
-
-    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-      <div className="flex items-center gap-5">
-        <div className="relative shrink-0">
-          <div className="w-14 h-14 bg-brand rounded-2xl flex items-center justify-center shadow-xl shadow-brand/25 text-white font-black text-xl">
-            {user?.name?.charAt(0).toUpperCase() ?? <Sparkles className="w-6 h-6" />}
-          </div>
-          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-purple-400 border-2 border-dark rounded-full" />
-        </div>
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Globe className="w-3.5 h-3.5 text-purple-400" />
-            <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest">
-              Vista Global · SuperAdmin
-            </p>
-          </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">
-            {t(greetingKey, { name: firstName })} 👋
-          </h1>
-          {user?.roleName && (
-            <span className="inline-block mt-1 text-[10px] font-black uppercase tracking-widest text-brand/70 bg-brand/10 px-2.5 py-0.5 rounded-full">
-              {user.roleName}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="flex gap-3 shrink-0">
-        <Button
-          variant="secondary"
-          className="w-auto px-5 bg-white/5 border-white/10 text-white hover:bg-white/10"
-          onClick={() => navigate("/organizations")}
-        >
-          <Globe className="w-4 h-4 mr-2" />
-          Organizaciones
-        </Button>
-        <Button
-          className="w-auto px-5 shadow-xl shadow-brand/30"
-          onClick={() => navigate("/organizations")}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nueva org
-        </Button>
-      </div>
-    </div>
-  </div>
-);
+import { DashboardHero } from "./components/DashboardHero";
+import { useDashboardHelpers } from "./hooks/useDashboardHelpers";
 
 const EmptyOrgsCard = ({ count }: { count: number }) => (
   <div
@@ -289,7 +234,7 @@ const OrganizationsSection = ({
 };
 
 export const SuperAdminGlobalDashboard = () => {
-  const { t, i18n } = useTranslation();
+  const { t, getGreetingKey, dateLocale } = useDashboardHelpers();
   const navigate = useNavigate();
   const { data: user } = useUserQuery();
   const { data: orgs, isLoading: loadingOrgs } = useOrganizationsQuery();
@@ -297,8 +242,6 @@ export const SuperAdminGlobalDashboard = () => {
   const { setActiveCompanyId } = useScopeContext();
 
   const [search, setSearch] = useState("");
-
-  const dateLocale = i18n.language.startsWith("es") ? es : enUS;
 
   const usersPerOrg = useMemo(
     () =>
@@ -349,13 +292,6 @@ export const SuperAdminGlobalDashboard = () => {
     [orgs, search],
   );
 
-  const getGreetingKey = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "home.greetingMorning";
-    if (hour < 19) return "home.greetingAfternoon";
-    return "home.greetingEvening";
-  };
-
   const firstName = user?.name?.split(" ")[0] || "Usuario";
   const loading = loadingOrgs || loadingUsers;
 
@@ -370,12 +306,32 @@ export const SuperAdminGlobalDashboard = () => {
 
   return (
     <div className={`space-y-10 animate-in fade-in duration-500 pb-10 ${loading ? "animate-pulse" : ""}`}>
-      <SuperAdminHero 
+      <DashboardHero 
         user={user} 
         t={t} 
         greetingKey={getGreetingKey()} 
         firstName={firstName} 
-        navigate={navigate} 
+        subtitle="Vista Global · SuperAdmin"
+        subtitleIcon={<Globe className="w-3.5 h-3.5" />}
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              className="w-auto px-5 bg-white/5 border-white/10 text-white hover:bg-white/10"
+              onClick={() => navigate("/organizations")}
+            >
+              <Globe className="w-4 h-4 mr-2" />
+              Organizaciones
+            </Button>
+            <Button
+              className="w-auto px-5 shadow-xl shadow-brand/30"
+              onClick={() => navigate("/organizations")}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva org
+            </Button>
+          </>
+        }
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5" data-testid="global-stats">

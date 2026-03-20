@@ -18,8 +18,9 @@ vi.mock('./components/ActiveTripCard', () => ({
   ActiveTripCard: ({ currentTrip }: any) => <div>{currentTrip.name}</div>,
 }));
 vi.mock('./components/PendingApprovalsList', () => ({
-  PendingApprovalsList: ({ reports, navigate }: any) => (
+  PendingApprovalsList: ({ reports, navigate, title }: any) => (
     <div>
+      {title && <h2>{title}</h2>}
       {reports.map((r: any) => (
         <button key={r.id} onClick={() => navigate(`/trips/${r.id}`)}>{r.name}</button>
       ))}
@@ -70,10 +71,11 @@ vi.mock('../../components/ui/Button', () => ({
   Button: ({ children, onClick }: any) => <button onClick={onClick}>{children}</button>,
 }));
 vi.mock('../../components/ui/StatCard', () => ({
-  StatCard: ({ title, value }: any) => (
+  StatCard: ({ title, value, subtitle }: any) => (
     <div data-testid="stat-card">
       <span>{title}</span>
       {value !== undefined && <span data-testid="stat-value">{value}</span>}
+      {subtitle && <span>{subtitle}</span>}
     </div>
   ),
 }));

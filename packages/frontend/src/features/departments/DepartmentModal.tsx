@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import {
   useCreateDepartmentMutation,
   useUpdateDepartmentMutation,
   type IDepartment,
 } from "@ticket-registrator/shared";
-import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { Modal } from "../../components/ui/Modal";
+import { FormModal } from "../../components/ui/FormModal";
 
 export const DepartmentModal = ({
   isOpen,
@@ -20,13 +19,12 @@ export const DepartmentModal = ({
   department?: IDepartment;
 }) => {
   const [name, setName] = useState(department?.name ?? "");
+  const isEditing = !!department;
 
   const createMutation = useCreateDepartmentMutation(companyId, { onSuccess: onClose });
   const updateMutation = useUpdateDepartmentMutation(companyId, { onSuccess: onClose });
 
-  const isEditing = !!department;
-
-  const handleSubmit = (e: React.BaseSyntheticEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     if (isEditing) {
@@ -36,32 +34,24 @@ export const DepartmentModal = ({
     }
   };
 
-  const isPending = createMutation.isPending || updateMutation.isPending;
-
   return (
-    <Modal
+    <FormModal
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? "Editar Departamento" : "Nuevo Departamento"}
+      onSubmit={handleSubmit}
+      submitLabel={isEditing ? "Guardar cambios" : "Crear Departamento"}
+      isPending={createMutation.isPending || updateMutation.isPending}
+      isValid={!!name.trim()}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Nombre del departamento *"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Ej: Recursos Humanos"
-          autoFocus
-          required
-        />
-        <div className="flex gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
-            Cancelar
-          </Button>
-          <Button type="submit" isLoading={isPending} disabled={!name.trim()} className="flex-1">
-            {isEditing ? "Guardar cambios" : "Crear Departamento"}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+      <Input
+        label="Nombre del departamento *"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Ej: Recursos Humanos"
+        autoFocus
+        required
+      />
+    </FormModal>
   );
 };
