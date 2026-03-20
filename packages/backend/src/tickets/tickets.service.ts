@@ -41,7 +41,7 @@ export class TicketsService {
     private readonly geminiService: GeminiService,
     private readonly storageService: StorageService,
     private readonly cryptoService: CryptoService,
-  ) {}
+  ) { }
 
   async create(
     requester: UserPayload,
@@ -49,115 +49,27 @@ export class TicketsService {
     file: Express.Multer.File,
     language?: string,
   ): Promise<ITicket> {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
-
-    if (
-      !(await this.ticketsAuthService.validateCanModifyReport(
-        requester,
-        report,
-      ))
-    ) {
-      throw new TicketUnauthorizedException(
-        'You can only add tickets to your own reports',
-      );
-    }
-
-    if (report.status !== ReportStatus.CREATED) {
-      throw new TicketStatusConflictException(
-        'Cannot add tickets to a report that is not in CREATED status',
-      );
-    }
+    const report = await this.validateReportForTicketCreation(requester, reportId);
 
     const imageBase64 = file.buffer.toString('base64');
     const imageHash = await this.cryptoService.generatePerceptualHash(
       file.buffer,
     );
 
-    // Fraud prevention: Check for similar images in the entire DB
-    const existingFingerprints =
-      await this.ticketsRepository.findAllFingerprints();
-
-    for (const entry of existingFingerprints) {
-      if (!entry.imageId) continue;
-
-      const [oldHash, oldRatioStr] = entry.imageId.split('|');
-      const [newHash, newRatioStr] = imageHash.split('|');
-
-      if (oldRatioStr && newRatioStr) {
-        // New format: Check aspect ratio first (tolerance 5%)
-        if (Math.abs(parseFloat(oldRatioStr) - parseFloat(newRatioStr)) > 0.05)
-          continue;
-
-        const distance = this.cryptoService.calculateHammingDistance(
-          newHash,
-          oldHash,
-        );
-
-        // Hamming distance threshold for 24x24 (576 bits):
-        // 15 matches (approx 2.6% difference) is extremely safe.
-        if (distance <= 15) {
-          throw new DuplicateTicketException(
-            `This receipt has already been processed (Similarity match: ${distance})`,
-          );
-        }
-      } else {
-        // Legacy fallback: only block if exactly identical for different versions
-        const distance = this.cryptoService.calculateHammingDistance(
-          newHash,
-          oldHash,
-        );
-        if (distance <= 2) {
-          throw new DuplicateTicketException(
-            `This receipt has already been processed (Similarity match: ${distance})`,
-          );
-        }
-      }
-    }
+    await this.verifyNotDuplicate(imageHash);
 
     const [imageIdentifier, geminiData] = await Promise.all([
       this.storageService.uploadFile(file),
       this.geminiService.extractReceipt(imageBase64, language),
     ]);
 
-    const items: InsertItem[] =
-      geminiData.items?.map((item) => ({
-        ticketId: '',
-        name: item.description ?? null,
-        amount: item.price ?? null,
-        currency: report.currency ?? null,
-        status: ItemStatus.PENDING,
-      })) ?? [];
-
-    let parsedDate: Date | null = null;
-    if (geminiData.date && geminiData.date !== '0000-00-00') {
-      const d = new Date(geminiData.date);
-      if (!Number.isNaN(d.getTime())) parsedDate = d;
-    }
-
-    const ticketData: InsertTicket = {
+    const { items, ticketData } = this.prepareTicketData(
+      report,
       reportId,
-      status: TicketStatus.PENDING,
-      lifecycle: TicketLifecycle.DRAFT,
-      cgsBucketLink: imageIdentifier,
-      paymentType: geminiData.payment_method ?? null,
-      expenseType: geminiData.expense_type ?? null,
-      date: parsedDate,
-      locationName: geminiData.establishment ?? null,
-      locationAddress: geminiData.address?.formatted_address ?? null,
-      amount: geminiData.total ?? null,
-      currency: report.currency ?? null,
-      convertedAmount: geminiData.converted_amount ?? null,
-      convertedCurrency: geminiData.converted_currency ?? null,
-      cgsBucketLinkJustification:
-        geminiData.cgs_bucket_link_justification ?? null,
-      lastFourDigits: geminiData.card_last_4 ?? null,
-      flag: geminiData.flag ?? false,
-      llmComment: geminiData.llm_comment ?? null,
-      imageId: imageHash,
-      version: 1,
-    };
+      imageIdentifier,
+      imageHash,
+      geminiData,
+    );
 
     const ticket = await this.ticketsRepository.create(ticketData, items);
 
@@ -268,7 +180,7 @@ export class TicketsService {
     }
 
     const currentTicket = await this.ticketsRepository.findById(ticketId);
-    if (!currentTicket || currentTicket.reportId !== reportId)
+    if (currentTicket?.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     const oldSnapshot = {
@@ -325,7 +237,7 @@ export class TicketsService {
     }
 
     const ticket = await this.ticketsRepository.findById(ticketId);
-    if (!ticket || ticket.reportId !== reportId)
+    if (ticket?.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     const historyData: typeof schema.ticketHistories.$inferInsert = {
@@ -380,7 +292,7 @@ export class TicketsService {
     }
 
     const currentTicket = await this.ticketsRepository.findById(ticketId);
-    if (!currentTicket || currentTicket.reportId !== reportId)
+    if (currentTicket?.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     return { report, currentTicket };
@@ -395,27 +307,27 @@ export class TicketsService {
       updateKey: keyof InsertTicket;
       meaningful: boolean;
     }> = [
-      { dtoKey: 'payment_type', updateKey: 'paymentType', meaningful: true },
-      { dtoKey: 'expense_type', updateKey: 'expenseType', meaningful: true },
-      { dtoKey: 'location_name', updateKey: 'locationName', meaningful: true },
-      {
-        dtoKey: 'location_address',
-        updateKey: 'locationAddress',
-        meaningful: true,
-      },
-      { dtoKey: 'amount', updateKey: 'amount', meaningful: true },
-      { dtoKey: 'currency', updateKey: 'currency', meaningful: true },
-      {
-        dtoKey: 'cgs_bucket_link_justification',
-        updateKey: 'cgsBucketLinkJustification',
-        meaningful: false,
-      },
-      {
-        dtoKey: 'last_four_digits',
-        updateKey: 'lastFourDigits',
-        meaningful: false,
-      },
-    ];
+        { dtoKey: 'payment_type', updateKey: 'paymentType', meaningful: true },
+        { dtoKey: 'expense_type', updateKey: 'expenseType', meaningful: true },
+        { dtoKey: 'location_name', updateKey: 'locationName', meaningful: true },
+        {
+          dtoKey: 'location_address',
+          updateKey: 'locationAddress',
+          meaningful: true,
+        },
+        { dtoKey: 'amount', updateKey: 'amount', meaningful: true },
+        { dtoKey: 'currency', updateKey: 'currency', meaningful: true },
+        {
+          dtoKey: 'cgs_bucket_link_justification',
+          updateKey: 'cgsBucketLinkJustification',
+          meaningful: false,
+        },
+        {
+          dtoKey: 'last_four_digits',
+          updateKey: 'lastFourDigits',
+          meaningful: false,
+        },
+      ];
 
     for (const mapping of fieldsMapping) {
       if (dto[mapping.dtoKey] !== undefined) {
@@ -487,5 +399,115 @@ export class TicketsService {
     };
 
     return { update, historyData };
+  }
+
+  private async validateReportForTicketCreation(
+    requester: UserPayload,
+    reportId: string,
+  ): Promise<ReportEntity> {
+    const report = await this.reportsRepository.findById(reportId);
+    if (!report || report.deletedAt)
+      throw new ReportNotFoundException(reportId);
+
+    if (
+      !(await this.ticketsAuthService.validateCanModifyReport(
+        requester,
+        report,
+      ))
+    ) {
+      throw new TicketUnauthorizedException(
+        'You can only add tickets to your own reports',
+      );
+    }
+
+    if (report.status !== ReportStatus.CREATED) {
+      throw new TicketStatusConflictException(
+        'Cannot add tickets to a report that is not in CREATED status',
+      );
+    }
+
+    return report;
+  }
+
+  private async verifyNotDuplicate(newImageHash: string): Promise<void> {
+    const existingFingerprints =
+      await this.ticketsRepository.findAllFingerprints();
+
+    for (const entry of existingFingerprints) {
+      if (!entry.imageId) continue;
+
+      const [oldHash, oldRatioStr] = entry.imageId.split('|');
+      const [newHash, newRatioStr] = newImageHash.split('|');
+
+      if (oldRatioStr && newRatioStr) {
+        if (this.isSimilarWithRatio(oldHash, oldRatioStr, newHash, newRatioStr)) {
+          throw new DuplicateTicketException('This receipt has already been processed (Similarity match)');
+        }
+      } else if (this.cryptoService.calculateHammingDistance(newHash, oldHash) <= 2) {
+        throw new DuplicateTicketException('This receipt has already been processed (Exact match)');
+      }
+    }
+  }
+
+  private isSimilarWithRatio(
+    oldHash: string,
+    oldRatioStr: string,
+    newHash: string,
+    newRatioStr: string,
+  ): boolean {
+    const oldRatio = Number.parseFloat(oldRatioStr);
+    const newRatio = Number.parseFloat(newRatioStr);
+
+    if (Math.abs(oldRatio - newRatio) > 0.05) return false;
+
+    const distance = this.cryptoService.calculateHammingDistance(newHash, oldHash);
+    return distance <= 15;
+  }
+
+  private prepareTicketData(
+    report: ReportEntity,
+    reportId: string,
+    imageIdentifier: string,
+    imageHash: string,
+    geminiData: any,
+  ): { items: InsertItem[]; ticketData: InsertTicket } {
+    const items: InsertItem[] =
+      geminiData.items?.map((item) => ({
+        ticketId: '',
+        name: item.description ?? null,
+        amount: item.price ?? null,
+        currency: report.currency ?? null,
+        status: ItemStatus.PENDING,
+      })) ?? [];
+
+    const ticketData: InsertTicket = {
+      reportId,
+      status: TicketStatus.PENDING,
+      lifecycle: TicketLifecycle.DRAFT,
+      cgsBucketLink: imageIdentifier,
+      paymentType: geminiData.payment_method ?? null,
+      expenseType: geminiData.expense_type ?? null,
+      date: this.parseGeminiDate(geminiData.date),
+      locationName: geminiData.establishment ?? null,
+      locationAddress: geminiData.address?.formatted_address ?? null,
+      amount: geminiData.total ?? null,
+      currency: report.currency ?? null,
+      convertedAmount: geminiData.converted_amount ?? null,
+      convertedCurrency: geminiData.converted_currency ?? null,
+      cgsBucketLinkJustification: geminiData.cgs_bucket_link_justification ?? null,
+      lastFourDigits: geminiData.card_last_4 ?? null,
+      flag: geminiData.flag ?? false,
+      llmComment: geminiData.llm_comment ?? null,
+      imageId: imageHash,
+      version: 1,
+    };
+
+    return { items, ticketData };
+  }
+
+  private parseGeminiDate(dateStr?: string): Date | null {
+    if (!dateStr || dateStr === '0000-00-00') return null;
+    const d = new Date(dateStr);
+    return Number.isNaN(d.getTime()) ? null : d;
   }
 }
