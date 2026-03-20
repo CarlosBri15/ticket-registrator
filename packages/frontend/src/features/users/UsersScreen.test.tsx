@@ -74,7 +74,7 @@ vi.mock('../../components/ui/selects', () => ({
       <option value="o1">Acme Corp</option>
     </select>
   ),
-  DepartmentMultiSelect: ({ value, onChange }: any) => (
+  DepartmentMultiSelect: ({ onChange }: any) => (
     <div data-testid="dept-multiselect">
       <button onClick={() => onChange(['d1'])}>select-dept</button>
     </div>

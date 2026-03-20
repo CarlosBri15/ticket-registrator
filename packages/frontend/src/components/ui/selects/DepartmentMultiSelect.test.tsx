@@ -8,7 +8,7 @@ vi.mock('@ticket-registrator/shared', () => ({
 }));
 
 vi.mock('../MultiSelect', () => ({
-  MultiSelect: ({ label, options, value, onChange, isLoading, placeholder }: any) => (
+  MultiSelect: ({ label, options, onChange, isLoading }: any) => (
     <div data-testid="multi-select">
       <span>{label}</span>
       {isLoading && <span>loading</span>}

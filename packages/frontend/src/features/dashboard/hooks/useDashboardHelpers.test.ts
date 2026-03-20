@@ -19,7 +19,7 @@ describe('useDashboardHelpers', () => {
     vi.useFakeTimers();
     
     // We need to re-render or re-call the hook inside the test to pick up timer changes
-    const { rerender, result } = renderHook(() => useDashboardHelpers());
+    const { result } = renderHook(() => useDashboardHelpers());
     
     vi.setSystemTime(new Date(2024, 0, 1, 9, 0)); // 9 AM
     expect(result.current.getGreetingKey()).toBe('home.greetingMorning');

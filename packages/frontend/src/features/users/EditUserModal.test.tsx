@@ -10,7 +10,7 @@ vi.mock('@ticket-registrator/shared', () => ({
 }));
 
 vi.mock('../../components/ui/selects', () => ({
-  RoleSelect: ({ value, onChange, companyId, id, required }: any) => (
+  RoleSelect: ({ value, onChange, id, required }: any) => (
     <div data-testid="role-select">
       <select
         id={id}
@@ -25,7 +25,7 @@ vi.mock('../../components/ui/selects', () => ({
       </select>
     </div>
   ),
-  DepartmentMultiSelect: ({ value, onChange, companyId, id }: any) => (
+  DepartmentMultiSelect: ({ onChange }: any) => (
     <div data-testid="department-multi-select">
       <button onClick={() => onChange?.(['dept-1'])}>Select Department</button>
     </div>
@@ -66,7 +66,7 @@ vi.mock('../../components/ui/Input', () => ({
 }));
 
 vi.mock('../../components/ui/Alert', () => ({
-  AlertError: ({ message, onDismiss }: any) => (
+  AlertError: ({ message }: any) => (
     <div role="alert" data-testid="alert-error">
       {message}
     </div>
