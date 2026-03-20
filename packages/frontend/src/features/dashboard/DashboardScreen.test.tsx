@@ -1,91 +1,49 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { DashboardPage } from './DashboardScreen';
+
+// ─── Sub-component stubs ──────────────────────────────────────────────────────
+
+vi.mock('./SuperAdminDashboard', () => ({ SuperAdminGlobalDashboard: () => <div data-testid="global-stats" /> }));
+vi.mock('./AdminDashboard', () => ({ AdminDashboard: () => <div data-testid="admin-stats" /> }));
+vi.mock('./ControllerDashboard', () => ({ ControllerDashboard: () => <div data-testid="controller-dashboard" /> }));
+vi.mock('./RegularDashboard', () => ({ RegularDashboard: () => <div data-testid="regular-dashboard" /> }));
+
+// ─── Shared mock ──────────────────────────────────────────────────────────────
 
 vi.mock('@ticket-registrator/shared', () => ({
   useReportsQuery: vi.fn(),
   useUserQuery: vi.fn(),
   useTicketsQuery: vi.fn(),
   useUsersQuery: vi.fn(),
+  useOrganizationsQuery: vi.fn(),
+  useDepartmentsQuery: vi.fn(),
   useScope: vi.fn(),
+  useScopeContext: vi.fn(),
   usePermissions: vi.fn(),
   ReportStatus: {
     SUBMITTED: 'SUBMITTED',
     APPROVED: 'APPROVED',
     CREATED: 'CREATED',
+    DECLINED: 'DECLINED',
   },
 }));
 
-vi.mock('lucide-react', () => ({
-  Wallet: () => null,
-  Plane: () => null,
-  AlertCircle: () => null,
-  Plus: () => null,
-  FileText: () => null,
-  ArrowUpRight: () => null,
-  ChevronRight: () => null,
-  TrendingUp: () => null,
-  Clock: () => null,
-  Calendar: () => null,
-  Receipt: () => null,
-  Sparkles: () => null,
-  Users: () => null,
-  CheckCircle: () => null,
-  Building2: () => null,
-  Shield: () => null,
-  Layers: () => null,
-  Lock: () => null,
-  BarChart2: () => null,
-}));
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  return { ...actual, useNavigate: () => vi.fn() };
+});
 
-vi.mock('recharts', () => ({
-  BarChart: ({ children }: any) => <div data-testid="bar-chart">{children}</div>,
-  Bar: () => null,
-  XAxis: () => null,
-  YAxis: () => null,
-  Tooltip: () => null,
-  ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
-  PieChart: ({ children }: any) => <div>{children}</div>,
-  Pie: () => null,
-  Cell: () => null,
-  Legend: () => null,
-}));
-
-vi.mock('../../components/ui/Button', () => ({
-  Button: ({ children, onClick }: any) => <button onClick={onClick}>{children}</button>,
-}));
-vi.mock('../../components/ui/StatCard', () => ({
-  StatCard: ({ title }: any) => <div data-testid="stat-card">{title}</div>,
-}));
-vi.mock('../../components/ui/StatusBadge', () => ({
-  StatusBadge: ({ status }: any) => <span>{status}</span>,
-}));
-
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string, opts?: any) => (opts?.name ? `${key} ${opts.name}` : key),
-    i18n: { language: 'es' },
-  }),
-}));
+// ─── Imports after mocks ──────────────────────────────────────────────────────
 
 import {
-  useReportsQuery,
-  useUserQuery,
-  useTicketsQuery,
-  useUsersQuery,
   useScope,
+  useScopeContext,
   usePermissions,
 } from '@ticket-registrator/shared';
 
-const setupMocks = () => {
-  (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false });
-  (useUserQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: null });
-  (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [] });
-  (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [] });
-  (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: false });
-  (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => true });
-};
+// ─── Setup helpers ────────────────────────────────────────────────────────────
 
 const renderScreen = () =>
   render(
@@ -94,159 +52,44 @@ const renderScreen = () =>
     </MemoryRouter>,
   );
 
-describe('DashboardPage', () => {
+// ─── Router tests ─────────────────────────────────────────────────────────────
+
+describe('DashboardPage router', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    setupMocks();
   });
 
-  it('renders without crashing', () => {
-    const { container } = renderScreen();
-    expect(container).toBeTruthy();
-  });
-
-  it('renders greeting', () => {
-    renderScreen();
-    // greeting key rendered via t()
-    const hasGreeting =
-      screen.queryByText(/home\.greeting/i) !== null ||
-      screen.queryByText(/Usuario/i) !== null;
-    expect(hasGreeting).toBe(true);
-  });
-
-  it('renders StatCards for pending and approved amounts', () => {
-    renderScreen();
-    const statCards = screen.getAllByTestId('stat-card');
-    expect(statCards.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('renders loading skeleton when loading', () => {
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: undefined, isLoading: true });
-    const { container } = renderScreen();
-    expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
-  });
-
-  it('shows user name in greeting when user data exists', () => {
-    (useUserQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: { name: 'Carlos López' } });
-    renderScreen();
-    expect(screen.getByText(/carlos/i)).toBeInTheDocument();
-  });
-
-  it('renders active trip section when active reports exist (self scope)', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: true });
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{
-        id: 'r1', name: 'Viaje París', status: 'CREATED',
-        start_date: '2024-01-01', end_date: '2024-01-10',
-        requested_amount: 500, approved_amount: null, currency: 'EUR',
-      }],
-      isLoading: false,
-    });
-    renderScreen();
-    expect(screen.getByText('Viaje París')).toBeInTheDocument();
-  });
-
-  it('renders team stats when not self scope', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: false });
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [
-        { id: 'r1', name: 'Viaje Madrid', status: 'SUBMITTED', start_date: '2024-01-01', end_date: '2024-01-10', requested_amount: 300, approved_amount: null, currency: 'EUR' },
-      ],
-      isLoading: false,
-    });
-    renderScreen();
-    expect(screen.getAllByTestId('stat-card').length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('renders analytics section when reports have data', () => {
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [
-        { id: 'r1', name: 'Report 1', status: 'APPROVED', start_date: '2024-01-01', end_date: '2024-01-10', requested_amount: 500, approved_amount: 500, currency: 'EUR', type: 'Business Trip' },
-        { id: 'r2', name: 'Report 2', status: 'APPROVED', start_date: '2024-02-01', end_date: '2024-02-10', requested_amount: 200, approved_amount: 200, currency: 'EUR', type: 'Training' },
-      ],
-      isLoading: false,
-    });
-    renderScreen();
-    expect(screen.getByTestId('bar-chart')).toBeInTheDocument();
-  });
-
-  it('renders approved amount banner when team stats with approved reports', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: false });
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [
-        { id: 'r1', name: 'Report 1', status: 'APPROVED', start_date: '2024-01-01', end_date: '2024-01-10', requested_amount: 500, approved_amount: 500, currency: 'EUR', type: 'Business' },
-      ],
-      isLoading: false,
-    });
-    renderScreen();
-    expect(screen.getByText(/home\.totalApproved/i)).toBeInTheDocument();
-  });
-
-  it('renders pending approvals list when canApprove and team stats', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: false });
-    (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => true });
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [
-        { id: 'r1', name: 'Report Pending', status: 'SUBMITTED', start_date: '2024-01-01', end_date: '2024-01-10', requested_amount: 300, approved_amount: null, currency: 'EUR' },
-      ],
-      isLoading: false,
-    });
-    renderScreen();
-    expect(screen.getByText('Report Pending')).toBeInTheDocument();
-  });
-
-  it('shows no active trips empty state for self scope with no active reports', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: true });
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false });
-    renderScreen();
-    expect(screen.getByText('trips.noActiveTrips')).toBeInTheDocument();
-  });
-
-  it('renders UserKpis with rejected count > 0 for self scope with declined report', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: true });
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [
-        { id: 'r1', name: 'Viaje Rechazado', status: 'DECLINED', start_date: '2024-01-01', end_date: '2024-01-10', requested_amount: 200, approved_amount: null, currency: 'EUR' },
-      ],
-      isLoading: false,
-    });
-    renderScreen();
-    expect(screen.getByText('home.requiresAttention')).toBeInTheDocument();
-  });
-
-  it('shows team reports label when not canApprove but showTeamStats', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: false });
+  it('renders SuperAdminGlobalDashboard when isGlobal and no activeCompanyId', () => {
+    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: true });
+    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
     (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => false });
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false });
     renderScreen();
-    expect(screen.getByText('home.teamReports')).toBeInTheDocument();
+    expect(screen.getByTestId('global-stats')).toBeInTheDocument();
   });
 
-  it('renders user roleName badge when user has roleName', () => {
-    (useUserQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: { name: 'Ana', roleName: 'Manager' } });
+  it('renders AdminDashboard when isGlobal is false and can() returns true', () => {
+    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: false });
+    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
+    (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => true });
     renderScreen();
-    expect(screen.getByText('Manager')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-stats')).toBeInTheDocument();
   });
 
-  it('shows analytics noData in bar chart when reports have type but no end_date', () => {
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [
-        { id: 'r1', name: 'Report 1', status: 'APPROVED', start_date: '2024-01-01', end_date: null, requested_amount: 500, approved_amount: 500, currency: 'EUR', type: 'Business Trip' },
-      ],
-      isLoading: false,
-    });
+  it('renders RegularDashboard when isGlobal is false and can() returns false', () => {
+    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: false });
+    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
+    (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => false });
     renderScreen();
-    expect(screen.getByText('analytics.noData')).toBeInTheDocument();
+    expect(screen.getByTestId('regular-dashboard')).toBeInTheDocument();
+    expect(screen.queryByTestId('global-stats')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('admin-stats')).not.toBeInTheDocument();
   });
 
-  it('shows active trip card and clicking it does not crash', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: true });
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 'r1', name: 'Viaje París', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-10', requested_amount: 500, approved_amount: null, currency: 'EUR' }],
-      isLoading: false,
-    });
+  it('renders ControllerDashboard when can approve_reports but not view_users', () => {
+    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: false });
+    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
+    (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: (p: string) => p === 'approve_reports' });
     renderScreen();
-    fireEvent.click(screen.getByText('Viaje París'));
-    expect(screen.getByText('Viaje París')).toBeInTheDocument();
+    expect(screen.getByTestId('controller-dashboard')).toBeInTheDocument();
   });
 });

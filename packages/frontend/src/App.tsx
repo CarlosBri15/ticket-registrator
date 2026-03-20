@@ -11,7 +11,9 @@ import { ReportDetailScreen } from "./features/reports/ReportDetailScreen";
 import { AllTicketsScreen } from "./features/tickets/TicketsScreen";
 import { SettingsScreen } from "./features/settings/SettingsScreen";
 import { UsersScreen } from "./features/users/UsersScreen";
+import { UserDetailScreen } from "./features/users/UserDetailScreen";
 import { DepartmentsScreen } from "./features/departments/DepartmentsScreen";
+import { DepartmentDetailScreen } from "./features/departments/DepartmentDetailScreen";
 import { RolesScreen } from "./features/roles/RolesScreen";
 import { OrganizationsScreen } from "./features/organizations/OrganizationsScreen";
 import { OrganizationDetailScreen } from "./features/organizations/OrganizationDetailScreen";
@@ -56,10 +58,26 @@ function App() {
                 }
               />
               <Route
+                path="/users/:id"
+                element={
+                  <PrivateRoute permission="view_users">
+                    <UserDetailScreen />
+                  </PrivateRoute>
+                }
+              />
+              <Route
                 path="/departments"
                 element={
                   <PrivateRoute permission="view_departments">
                     <DepartmentsScreen />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/departments/:id"
+                element={
+                  <PrivateRoute permission="view_departments">
+                    <DepartmentDetailScreen />
                   </PrivateRoute>
                 }
               />
