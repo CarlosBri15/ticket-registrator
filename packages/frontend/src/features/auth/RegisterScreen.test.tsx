@@ -13,9 +13,18 @@ vi.mock('react-router-dom', async () => {
 
 vi.mock('@ticket-registrator/shared', async () => {
   const actual = await vi.importActual<typeof import('@ticket-registrator/shared')>('@ticket-registrator/shared');
+  const { z } = await import('zod');
   return {
     ...actual,
     useRegisterMutation: vi.fn(),
+    registerSchema: z.object({
+      name: z.string().min(1),
+      surname: z.string().min(1),
+      email: z.string().email(),
+      username: z.string().min(1),
+      password: z.string().min(1),
+      confirmPassword: z.string().min(1),
+    }).refine(d => d.password === d.confirmPassword, { path: ['confirmPassword'] }),
   };
 });
 
@@ -100,5 +109,24 @@ describe('RegisterForm', () => {
     renderRegister();
     capturedOnSuccess?.();
     expect(mockNavigate).toHaveBeenCalledWith('/login');
+  });
+
+  it('calls mutate when form is submitted with valid data', async () => {
+    const user = (await import('@testing-library/user-event')).default.setup();
+    const { container } = renderRegister();
+    
+    await user.type(screen.getByPlaceholderText('Ej: Ana'), 'Ana');
+    await user.type(screen.getByPlaceholderText('Ej: García'), 'García');
+    await user.type(screen.getByPlaceholderText('ana@empresa.com'), 'ana@example.com');
+    await user.type(screen.getByPlaceholderText('ana.garcia'), 'ana.garcia');
+    
+    const passwordInputs = container.querySelectorAll('input[type="password"]');
+    await user.type(passwordInputs[0] as HTMLElement, 'Password123!');
+    await user.type(passwordInputs[1] as HTMLElement, 'Password123!');
+    
+    await user.click(screen.getByRole('button', { name: 'register.submitButton' }));
+    
+    // Mutation should be called (wait for it if async)
+    expect(mockMutate).toHaveBeenCalled();
   });
 });

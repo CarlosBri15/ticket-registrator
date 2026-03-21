@@ -104,6 +104,6 @@ describe('ActiveTripCard', () => {
     renderCard(navigate);
     const button = screen.getByRole('button');
     fireEvent.click(button);
-    expect(navigate).toHaveBeenCalledWith('/trips/trip-abc12345');
+    expect(navigate).toHaveBeenCalledWith('/reports/trip-abc12345');
   });
 });

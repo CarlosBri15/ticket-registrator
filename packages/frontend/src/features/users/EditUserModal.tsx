@@ -7,7 +7,8 @@ import { Modal } from "../../components/ui/Modal";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { AlertError, getApiErrorMessage } from "../../components/ui/Alert";
-import { RoleSelect, DepartmentMultiSelect } from "../../components/ui/selects";
+import { RoleSelect } from "../../components/ui/selects";
+import { DepartmentMultiSelect } from "../../components/ui/multiSelects";
 
 export const EditUserModal = ({
   isOpen,

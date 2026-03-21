@@ -1,3 +1,4 @@
+import React from "react";
 import { Modal } from "./Modal";
 import { Button } from "./Button";
 import { AlertError, getApiErrorMessage } from "./Alert";
@@ -8,7 +9,7 @@ interface FormModalProps {
   title: string;
   subtitle?: string;
   size?: "md" | "lg" | "xl";
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: React.SubmitEventHandler<HTMLFormElement>;
   submitLabel: string;
   isPending?: boolean;
   isValid?: boolean;
@@ -33,7 +34,7 @@ export const FormModal = ({
     <Modal isOpen={isOpen} onClose={onClose} title={title} subtitle={subtitle} size={size}>
       <form onSubmit={onSubmit} className="space-y-4">
         {error && <AlertError message={getApiErrorMessage(error)} />}
-        
+
         {children}
 
         <div className="flex gap-3 pt-2">

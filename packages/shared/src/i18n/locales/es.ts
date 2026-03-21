@@ -75,7 +75,7 @@ export default {
     totalApproved: "Total aprobado",
     managementTitle: "Gestion",
     teamReports: "Informes del equipo",
-    activeTripsSubtitle: "viajes activos",
+    activeTripsSubtitle: "reportes activos",
   },
   reportDetail: {
     backToTrips: "Volver a Mis Reportes",

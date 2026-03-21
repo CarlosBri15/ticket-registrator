@@ -25,6 +25,9 @@ vi.mock('../../components/ui/selects', () => ({
       </select>
     </div>
   ),
+}));
+
+vi.mock('../../components/ui/multiSelects', () => ({
   DepartmentMultiSelect: ({ onChange }: any) => (
     <div data-testid="department-multi-select">
       <button onClick={() => onChange?.(['dept-1'])}>Select Department</button>
@@ -209,5 +212,25 @@ describe('EditUserModal', () => {
   it('does not show DepartmentMultiSelect when companyId is null', () => {
     render(<EditUserModal {...defaultProps} companyId={null} />);
     expect(screen.queryByTestId('department-multi-select')).not.toBeInTheDocument();
+  });
+
+  it('calls mutation.reset and updates roleId when RoleSelect onChange is fired', () => {
+    render(<EditUserModal {...defaultProps} />);
+    const select = screen.getByLabelText('RoleSelect');
+    fireEvent.change(select, { target: { value: 'role-2' } });
+    expect(resetMock).toHaveBeenCalled();
+  });
+
+  it('calls mutation.reset and updates departmentIds when DepartmentMultiSelect onChange is fired', () => {
+    render(<EditUserModal {...defaultProps} companyId="company-1" />);
+    fireEvent.click(screen.getByText('Select Department'));
+    expect(resetMock).toHaveBeenCalled();
+  });
+
+  it('calls mutation.reset when a text input changes', () => {
+    render(<EditUserModal {...defaultProps} />);
+    const nameInput = screen.getByDisplayValue('Carlos');
+    fireEvent.change(nameInput, { target: { value: 'Carl' } });
+    expect(resetMock).toHaveBeenCalled();
   });
 });

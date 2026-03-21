@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import { tokens, radius } from "../../styles/design-tokens";
 
 const LANGUAGES = [
   { code: "es", label: "Español", flag: "🇪🇸" },
@@ -69,21 +70,21 @@ export const SettingsScreen = () => {
     <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-black text-dark tracking-tight">{t("settings.title")}</h1>
-        <p className="text-gray-500 font-medium mt-1">{t("settings.languageDesc")}</p>
+        <h1 className="text-2xl font-bold text-dark tracking-tight">{t("settings.title")}</h1>
+        <p className="text-slate-500 text-sm mt-1">{t("settings.languageDesc")}</p>
       </div>
 
       {/* Profile Card */}
-      <section className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-8 py-5 border-b border-gray-50 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <User className="w-5 h-5 text-gray-400" />
-            <h2 className="font-bold text-dark">{t("settings.profile")}</h2>
+      <section className={`${tokens.listSection}`}>
+        <div className={`${tokens.listSectionHeader} px-6 py-4`}>
+          <div className="flex items-center gap-3 flex-1">
+            <User className="w-4 h-4 text-slate-400" />
+            <h2 className="font-semibold text-dark">{t("settings.profile")}</h2>
           </div>
           {!isEditing && (
             <button
               onClick={startEdit}
-              className="flex items-center gap-1.5 text-xs font-black text-brand hover:text-brand/70 transition-colors"
+              className="flex items-center gap-1.5 text-xs font-semibold text-brand hover:text-brand/70 transition-colors"
             >
               <Pencil className="w-3.5 h-3.5" />
               {t("settings.editProfile")}
@@ -92,12 +93,12 @@ export const SettingsScreen = () => {
         </div>
 
         {isEditing ? (
-          <form onSubmit={handleSave} className="p-8 space-y-5">
+          <form onSubmit={handleSave} className="p-6 space-y-4">
             <div className="flex items-center gap-5 mb-2">
-              <div className="w-14 h-14 bg-brand text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-lg shadow-brand/20 shrink-0">
+              <div className={`w-12 h-12 bg-brand text-white ${radius.base} flex items-center justify-center font-bold text-lg shadow-sm shrink-0`}>
                 {userInitials}
               </div>
-              <p className="text-sm text-gray-400 font-medium">{t("settings.profileInfo")}</p>
+              <p className="text-sm text-slate-400 font-medium">{t("settings.profileInfo")}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <Input
@@ -143,23 +144,23 @@ export const SettingsScreen = () => {
             </div>
           </form>
         ) : (
-          <div className="p-8">
-            <div className="flex items-center gap-6 mb-6">
-              <div className="w-16 h-16 bg-brand text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-lg shadow-brand/20 shrink-0">
+          <div className="p-6">
+            <div className="flex items-center gap-5 mb-5">
+              <div className={`w-12 h-12 bg-brand text-white ${radius.base} flex items-center justify-center font-bold text-lg shadow-sm shrink-0`}>
                 {userInitials}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-dark text-lg truncate">
+                <p className="font-semibold text-dark truncate">
                   {user?.name ?? "—"} {(user as any)?.surname ?? ""}
                 </p>
-                <p className="text-sm text-gray-400 flex items-center gap-2 mt-1 truncate">
+                <p className="text-sm text-slate-400 flex items-center gap-2 mt-1 truncate">
                   <Mail className="w-3.5 h-3.5 shrink-0" />
                   {user?.email ?? "—"}
                 </p>
               </div>
               {saveOk && (
-                <div className="flex items-center gap-1.5 text-xs font-black text-green-600 bg-green-50 px-3 py-1.5 rounded-xl border border-green-100 shrink-0">
-                  <Check className="w-3.5 h-3.5" />
+                <div className={`${tokens.badgeSm} ${tokens.badgeSuccess} shrink-0`}>
+                  <Check className="w-3 h-3" />
                   {t("settings.updateSuccess")}
                 </div>
               )}
@@ -167,19 +168,19 @@ export const SettingsScreen = () => {
 
             {/* Role + Permissions info */}
             {((user as any)?.roleName || permissionsCount > 0) && (
-              <div className="space-y-3 pt-5 border-t border-gray-50">
+              <div className="space-y-3 pt-4 border-t border-slate-100">
                 {(user as any)?.roleName && (
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest">
+                    <div className={`flex items-center gap-2 ${tokens.listSectionTitle}`}>
                       <Shield className="w-3.5 h-3.5" />
                       {t("settings.myRole")}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-black text-brand bg-brand/10 px-2.5 py-1 rounded-full">
+                      <span className={`${tokens.badgeSm} ${tokens.badgeBrand}`}>
                         {(user as any).roleName}
                       </span>
                       {(user as any)?.hierarchy !== undefined && (
-                        <span className="text-[10px] font-bold text-gray-400">
+                        <span className="text-[10px] font-semibold text-slate-400">
                           {t("settings.hierarchyLevel", { level: (user as any).hierarchy })}
                         </span>
                       )}
@@ -188,11 +189,11 @@ export const SettingsScreen = () => {
                 )}
                 {permissionsCount > 0 && (
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest">
+                    <div className={`flex items-center gap-2 ${tokens.listSectionTitle}`}>
                       <Key className="w-3.5 h-3.5" />
                       {t("settings.myPermissions")}
                     </div>
-                    <span className="text-xs font-bold text-gray-500">
+                    <span className="text-xs font-semibold text-slate-500">
                       {t("settings.permissionsCount", { count: permissionsCount })}
                     </span>
                   </div>
@@ -204,32 +205,32 @@ export const SettingsScreen = () => {
       </section>
 
       {/* Language Section */}
-      <section className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-8 py-5 border-b border-gray-50 flex items-center gap-3">
-          <Globe className="w-5 h-5 text-gray-400" />
+      <section className={tokens.listSection}>
+        <div className={`${tokens.listSectionHeader} px-6 py-4`}>
+          <Globe className="w-4 h-4 text-slate-400" />
           <div>
-            <h2 className="font-bold text-dark">{t("settings.language")}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{t("settings.languageDesc")}</p>
+            <h2 className="font-semibold text-dark">{t("settings.language")}</h2>
+            <p className="text-xs text-slate-400 mt-0.5">{t("settings.languageDesc")}</p>
           </div>
         </div>
-        <div className="p-6 space-y-3">
+        <div className="p-5 space-y-2">
           {LANGUAGES.map((lang) => {
             const isActive = i18n.language.startsWith(lang.code);
             return (
               <button
                 key={lang.code}
                 onClick={() => i18n.changeLanguage(lang.code)}
-                className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-200 ${
+                className={`w-full flex items-center justify-between p-4 ${radius.base} border-2 transition-all duration-200 ${
                   isActive
                     ? "border-brand bg-brand/5 text-brand"
-                    : "border-gray-100 hover:border-brand/30 hover:bg-gray-50 text-gray-600"
+                    : "border-slate-100 hover:border-brand/30 hover:bg-slate-50 text-slate-600"
                 }`}
               >
                 <div className="flex items-center gap-4">
                   <span className="text-2xl">{lang.flag}</span>
                   <div className="text-left">
-                    <p className={`font-bold text-sm ${isActive ? "text-brand" : "text-dark"}`}>{lang.label}</p>
-                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-widest">{lang.code.toUpperCase()}</p>
+                    <p className={`font-semibold text-sm ${isActive ? "text-brand" : "text-dark"}`}>{lang.label}</p>
+                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">{lang.code.toUpperCase()}</p>
                   </div>
                 </div>
                 {isActive && (
@@ -244,17 +245,17 @@ export const SettingsScreen = () => {
       </section>
 
       {/* Logout */}
-      <section className="bg-white rounded-[2.5rem] border border-red-100 shadow-sm overflow-hidden">
+      <section className={`bg-white ${radius.card} border border-danger/15 shadow-sm overflow-hidden`}>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-4 px-8 py-6 text-red-500 hover:bg-red-50 transition-colors group"
+          className="w-full flex items-center gap-4 px-6 py-5 text-danger hover:bg-danger/5 transition-colors group"
         >
-          <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center group-hover:bg-red-100 transition-colors">
-            <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          <div className={`w-9 h-9 bg-danger/10 ${radius.base} flex items-center justify-center group-hover:bg-danger/15 transition-colors`}>
+            <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           </div>
           <div className="text-left">
-            <p className="font-bold">{t("settings.logout")}</p>
-            <p className="text-xs text-red-400">{t("settings.closeSessionDesc")}</p>
+            <p className="font-semibold text-sm">{t("settings.logout")}</p>
+            <p className="text-xs text-danger/60">{t("settings.closeSessionDesc")}</p>
           </div>
         </button>
       </section>

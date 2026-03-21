@@ -37,8 +37,8 @@ function App() {
               <Route path="/home" element={<DashboardPage />} />
 
               {/* Tickets & Reports — all authenticated users */}
-              <Route path="/trips" element={<ReportsScreen />} />
-              <Route path="/trips/:id" element={<ReportDetailScreen />} />
+              <Route path="/reports" element={<ReportsScreen />} />
+              <Route path="/reports/:id" element={<ReportDetailScreen />} />
               <Route
                 path="/tickets"
                 element={

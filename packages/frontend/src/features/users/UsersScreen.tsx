@@ -15,7 +15,9 @@ import {
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { AlertError, getApiErrorMessage } from "../../components/ui/Alert";
-import { RoleSelect, OrgSelect, DepartmentMultiSelect } from "../../components/ui/selects";
+import { tokens, radius } from "../../styles/design-tokens";
+import { RoleSelect, OrgSelect } from "../../components/ui/selects";
+import { DepartmentMultiSelect } from "../../components/ui/multiSelects";
 import { Modal } from "../../components/ui/Modal";
 import { Pagination } from "../../components/ui/Pagination";
 import { useScopeContext } from "@ticket-registrator/shared";
@@ -185,25 +187,25 @@ const UserRow = ({
   const roleName = roles?.find((r) => r.id === user.roleId)?.name ?? "—";
 
   return (
-    <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between gap-4">
+    <div className={`bg-white p-4 ${radius.card} border border-slate-200 shadow-sm flex items-center justify-between gap-4`}>
       <button
         type="button"
         className="flex items-center gap-3 min-w-0 text-left flex-1"
         onClick={() => navigate(`/users/${user.id}`)}
       >
-        <div className="w-10 h-10 bg-brand/10 rounded-2xl flex items-center justify-center shrink-0">
+        <div className={`w-10 h-10 bg-brand/10 ${radius.base} flex items-center justify-center shrink-0`}>
           <UserCircle className="w-5 h-5 text-brand" />
         </div>
         <div className="min-w-0">
-          <p className="font-bold text-dark truncate">
+          <p className="font-semibold text-dark truncate">
             {user.name} {user.surname}
           </p>
           <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-            <span className="flex items-center gap-1 text-xs text-gray-400 font-medium">
+            <span className="flex items-center gap-1 text-xs text-slate-400 font-medium">
               <Mail className="w-3 h-3" />
               {user.email}
             </span>
-            <span className="flex items-center gap-1 text-xs text-gray-400 font-medium">
+            <span className="flex items-center gap-1 text-xs text-slate-400 font-medium">
               <AtSign className="w-3 h-3" />
               {user.username}
             </span>
@@ -211,13 +213,13 @@ const UserRow = ({
         </div>
       </button>
       <div className="flex items-center gap-3 shrink-0">
-        <span className="text-xs bg-brand/10 text-brand px-2.5 py-1 rounded-full font-bold">
+        <span className={`${tokens.badgeSm} ${tokens.badgeBrand}`}>
           {roleName}
         </span>
         <button
           type="button"
           onClick={() => onEdit(user)}
-          className="p-2 text-gray-300 hover:text-brand hover:bg-brand/10 rounded-xl transition-all"
+          className={`p-2 text-slate-300 hover:text-brand hover:bg-brand/10 ${radius.base} transition-all`}
           title="Editar usuario"
           aria-label="Editar usuario"
         >
@@ -227,7 +229,7 @@ const UserRow = ({
           <button
             type="button"
             onClick={() => onDelete(user.id)}
-            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+            className={`p-2 text-slate-300 hover:text-danger hover:bg-danger/5 ${radius.base} transition-all`}
             title="Eliminar usuario"
           >
             <Trash2 className="w-4 h-4" />
@@ -281,14 +283,14 @@ export const UsersScreen = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
-          <h1 className="text-4xl font-extrabold text-dark tracking-tight mb-2 flex items-center gap-3">
-            <Users className="w-8 h-8 text-brand" />
+          <h1 className="text-2xl font-bold text-dark tracking-tight mb-1 flex items-center gap-3">
+            <Users className="w-6 h-6 text-brand" />
             Usuarios
           </h1>
-          <p className="text-gray-500 font-medium">Gestión de usuarios de tu organización.</p>
+          <p className="text-slate-500 text-sm">Gestión de usuarios de tu organización.</p>
         </div>
         {can("create_users") && (
-          <Button onClick={() => setIsCreateOpen(true)} className="shadow-xl shadow-brand/20">
+          <Button onClick={() => setIsCreateOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Nuevo Usuario
           </Button>
@@ -297,13 +299,13 @@ export const UsersScreen = () => {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
           type="text"
           placeholder="Buscar por nombre, email o usuario..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-medium text-dark placeholder-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30 transition-all"
+          className={tokens.searchInput}
         />
       </div>
 
@@ -312,22 +314,22 @@ export const UsersScreen = () => {
         if (isLoading) {
           return (
             <div className="flex flex-col items-center justify-center py-32">
-              <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-gray-500 font-medium">Cargando usuarios...</p>
+              <div className="w-10 h-10 border-2 border-brand border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-slate-500 font-medium text-sm">Cargando usuarios...</p>
             </div>
           );
         }
 
         if (!filtered || filtered.length === 0) {
           return (
-            <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
-              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users className="w-10 h-10 text-gray-300" />
+            <div className={tokens.emptyState}>
+              <div className={tokens.emptyStateIcon}>
+                <Users className="w-7 h-7 text-slate-300" />
               </div>
-              <h3 className="text-2xl font-black text-dark mb-3">
+              <h3 className="text-base font-semibold text-dark mb-1">
                 {search ? "Sin resultados" : "No hay usuarios"}
               </h3>
-              <p className="text-gray-400 max-w-sm mx-auto">
+              <p className={tokens.emptyStateText}>
                 {search ? "Prueba con otra búsqueda." : "Crea el primer usuario de tu organización."}
               </p>
             </div>

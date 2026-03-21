@@ -113,7 +113,7 @@ const renderScreen = (userId = 'u1') =>
       <Routes>
         <Route path="/users/:id" element={<UserDetailScreen />} />
         <Route path="/users" element={<div>Users List</div>} />
-        <Route path="/trips/:id" element={<div>Trip Detail</div>} />
+        <Route path="/reports/:id" element={<div>Trip Detail</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -164,7 +164,7 @@ describe('UserDetailScreen', () => {
     expect(screen.getByText('Viaje Barcelona')).toBeInTheDocument();
   });
 
-  it('navigates to /trips/:id when report is clicked', () => {
+  it('navigates to /reports/:id when report is clicked', () => {
     renderScreen();
     fireEvent.click(screen.getByText('Viaje Madrid'));
     expect(screen.getByText('Trip Detail')).toBeInTheDocument();

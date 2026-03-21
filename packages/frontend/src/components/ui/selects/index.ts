@@ -1,3 +1,4 @@
 export { RoleSelect } from './RoleSelect';
 export { OrgSelect } from './OrgSelect';
-export { DepartmentMultiSelect } from './DepartmentMultiSelect';
+export { CurrencySelect } from './CurrencySelect';
+export { ReportTypeSelect } from './ReportTypeSelect';

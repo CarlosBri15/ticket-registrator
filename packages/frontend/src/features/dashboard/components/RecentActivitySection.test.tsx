@@ -51,7 +51,7 @@ describe('RecentActivitySection', () => {
     expect(screen.getByText('trips.noCompletedTrips')).toBeInTheDocument();
   });
 
-  it('navigates to /trips when "common.viewAll" is clicked', () => {
+  it('navigates to /reports when "common.viewAll" is clicked', () => {
     render(
       <RecentActivitySection
         t={mockT}
@@ -61,7 +61,7 @@ describe('RecentActivitySection', () => {
       />
     );
     fireEvent.click(screen.getByText('common.viewAll'));
-    expect(mockNavigate).toHaveBeenCalledWith('/trips');
+    expect(mockNavigate).toHaveBeenCalledWith('/reports');
   });
 
   it('navigates to report detail when a report is clicked', () => {
@@ -74,6 +74,6 @@ describe('RecentActivitySection', () => {
       />
     );
     fireEvent.click(screen.getByText('Viaje Madrid'));
-    expect(mockNavigate).toHaveBeenCalledWith('/trips/1');
+    expect(mockNavigate).toHaveBeenCalledWith('/reports/1');
   });
 });

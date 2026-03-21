@@ -31,21 +31,22 @@ import { DashboardHero } from "./components/DashboardHero";
 import { PendingStatsCard } from "./components/PendingStatsCard";
 import { RecentActivitySection } from "./components/RecentActivitySection";
 import { useDashboardHelpers } from "./hooks/useDashboardHelpers";
+import { tokens, radius, text } from "../../styles/design-tokens";
 
 const TeamKpis = ({ teamMemberCount, pendingCount, t }: { teamMemberCount: number; pendingCount: number; t: any }) => (
   <>
-    <StatCard title={t("home.teamMembers")} value={teamMemberCount.toString()} icon={<Users className="w-5 h-5" />} subtitle={t("home.activeMembers")} />
+    <StatCard title={t("home.teamMembers")} value={teamMemberCount.toString()} icon={<Users className="w-4 h-4" />} subtitle={t("home.activeMembers")} />
     <PendingStatsCard count={pendingCount} label={t("home.pendingApprovals")} />
   </>
 );
 
 const UserKpis = ({ activeCount, rejectedCount, t }: { activeCount: number; rejectedCount: number; t: any }) => (
   <>
-    <StatCard title={t("home.activeTrips")} value={activeCount.toString()} icon={<Plane className="w-5 h-5" />} subtitle={t("home.activeTripsSubtitle")} />
-    <StatCard 
-      title={t("home.rejectedItems")} 
-      value={rejectedCount.toString()} 
-      icon={<TrendingUp className="w-5 h-5" />} 
+    <StatCard title={t("home.activeTrips")} value={activeCount.toString()} icon={<Plane className="w-4 h-4" />} subtitle={t("home.activeTripsSubtitle")} />
+    <StatCard
+      title={t("home.rejectedItems")}
+      value={rejectedCount.toString()}
+      icon={<TrendingUp className="w-4 h-4" />}
       subtitle={rejectedCount > 0 ? t("home.requiresAttention") : t("home.noIncidents")}
       variant={rejectedCount > 0 ? "primary" : "default"}
     />
@@ -57,12 +58,12 @@ const KpisGrid = ({
 }: {
   amounts: any; reportsByStatus: any; showTeamStats: boolean; teamMemberCount: number; t: any;
 }) => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
     <StatCard
       variant="primary"
       title={t("home.pendingReimbursement")}
       value={`${amounts.pending.toFixed(2)} €`}
-      icon={<Wallet className="w-5 h-5" />}
+      icon={<Wallet className="w-4 h-4" />}
       trend={amounts.pending > 0 ? t("home.inProcess") : t("home.upToDate")}
       trendUp={false}
     />
@@ -119,13 +120,13 @@ export const RegularDashboard = () => {
         />
       );
     }
-    
+
     if (currentTrip) {
       return (
-        <div className="space-y-5">
-          <h2 className="text-lg font-black text-dark flex items-center gap-3 tracking-tight">
-            <div className="w-7 h-7 bg-brand/10 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-brand" />
+        <div className="space-y-4">
+          <h2 className={`${text.subheading} flex items-center gap-2.5`}>
+            <div className={`w-6 h-6 bg-brand/10 ${radius.base} flex items-center justify-center`}>
+              <TrendingUp className="w-3.5 h-3.5 text-brand" />
             </div>
             {t("home.activeTrip")}
           </h2>
@@ -135,20 +136,20 @@ export const RegularDashboard = () => {
     }
 
     return (
-      <div className="space-y-5">
-        <h2 className="text-lg font-black text-dark flex items-center gap-3 tracking-tight">
-          <div className="w-7 h-7 bg-brand/10 rounded-xl flex items-center justify-center">
-            <TrendingUp className="w-4 h-4 text-brand" />
+      <div className="space-y-4">
+        <h2 className="text-base font-semibold text-dark flex items-center gap-2.5">
+          <div className={`w-6 h-6 bg-brand/10 ${radius.base} flex items-center justify-center`}>
+            <TrendingUp className="w-3.5 h-3.5 text-brand" />
           </div>
           {t("home.activeTrip")}
         </h2>
-        <div className="bg-white rounded-[2.5rem] border border-dashed border-gray-200 p-14 text-center flex flex-col items-center min-h-[280px] justify-center hover:border-brand/30 hover:bg-gray-50/30 transition-all duration-300 group">
-          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-5 group-hover:bg-brand/5 transition-colors">
-            <Plane className="w-8 h-8 text-gray-300 group-hover:text-brand/40 transition-colors" />
+        <div className={`${tokens.emptyState} min-h-[240px]`}>
+          <div className={tokens.emptyStateIcon}>
+            <Plane className="w-7 h-7 text-slate-300" />
           </div>
-          <p className="text-gray-400 font-semibold mb-6 max-w-xs leading-relaxed">{t("trips.noActiveTrips")}</p>
-          <Button variant="secondary" className="w-auto bg-white border-gray-200" onClick={() => navigate("/trips")}>
-            <Plus className="w-4 h-4 mr-2" /> {t("home.createFirst")}
+          <p className={tokens.emptyStateText}>{t("trips.noActiveTrips")}</p>
+          <Button variant="secondary" className="w-auto mt-4" onClick={() => navigate("/reports")}>
+            <Plus className="w-4 h-4 mr-1.5" /> {t("home.createFirst")}
           </Button>
         </div>
       </div>
@@ -168,7 +169,7 @@ export const RegularDashboard = () => {
   const activeOrg = orgs?.find((o) => o.id === activeCompanyId);
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500 pb-10">
+    <div className="space-y-8 animate-in fade-in duration-300 pb-10">
       {isCompanyMode && (
         <CompanyModeBanner
           orgName={activeOrg?.name ?? "Empresa"}
@@ -190,12 +191,12 @@ export const RegularDashboard = () => {
         subtitleIcon={<TrendingUp className="w-3.5 h-3.5" />}
         actions={
           <>
-            <Button variant="secondary" className="w-auto px-6" onClick={() => navigate("/trips")}>
-              <FileText className="w-4 h-4 mr-2" />
+            <Button variant="secondary" className="w-auto" onClick={() => navigate("/reports")}>
+              <FileText className="w-4 h-4 mr-1.5" />
               {t("trips.title")}
             </Button>
-            <Button className="w-auto px-6 shadow-xl shadow-brand/20" onClick={() => navigate("/trips")}>
-              <Plus className="w-4 h-4 mr-2" />
+            <Button className="w-auto" onClick={() => navigate("/reports")}>
+              <Plus className="w-4 h-4 mr-1.5" />
               {t("home.newTrip")}
             </Button>
           </>
@@ -207,17 +208,17 @@ export const RegularDashboard = () => {
         showTeamStats={showTeamStats} teamMemberCount={teamMemberCount} t={t}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <div className="lg:col-span-2 space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
           {showTeamStats && amounts.approved > 0 && (
-            <div className="bg-green-50/50 border border-green-100 rounded-[2.5rem] p-6 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-600">
-                  <CheckCircle className="w-6 h-6" />
+            <div className={`bg-success/5 border border-success/20 ${radius.card} p-5 flex items-center justify-between`}>
+              <div className="flex items-center gap-3.5">
+                <div className={`w-10 h-10 bg-success/10 ${radius.base} flex items-center justify-center text-success`}>
+                  <CheckCircle className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-green-700 uppercase tracking-wider">{t("home.totalApproved")}</p>
-                  <p className="text-2xl font-black text-green-800">{amounts.approved.toFixed(2)} €</p>
+                  <p className={tokens.statCardLabel + " !text-success"}>{t("home.totalApproved")}</p>
+                  <p className="text-xl font-bold text-success">{amounts.approved.toFixed(2)} €</p>
                 </div>
               </div>
             </div>

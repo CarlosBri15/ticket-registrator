@@ -182,7 +182,7 @@ describe('Select', () => {
     render(<Select label="Rol" options={defaultOptions} error="Campo requerido" />);
     expect(screen.getByText('Campo requerido')).toBeInTheDocument();
     // The visual trigger should show the error state class
-    expect(screen.getByTestId('select-trigger').className).toContain('border-accent');
+    expect(screen.getByTestId('select-trigger').className).toContain('border-danger');
   });
 
   it('does not render error when error prop is absent', () => {
@@ -192,7 +192,7 @@ describe('Select', () => {
 
   it('applies normal border class when no error', () => {
     render(<Select label="Rol" options={defaultOptions} />);
-    expect(screen.getByTestId('select-trigger').className).toContain('border-gray-200');
+    expect(screen.getByTestId('select-trigger').className).toContain('border-slate-200');
   });
 
   // ── Required ───────────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { tokens, radius } from "../../styles/design-tokens";
 
 const ReportTicketGroup = ({
   report,
@@ -47,8 +48,8 @@ const ReportTicketGroup = ({
     <div className="space-y-2">
       {/* Report label */}
       <button
-        onClick={() => navigate(`/trips/${report.id}`)}
-        className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-brand transition-colors group ml-1"
+        onClick={() => navigate(`/reports/${report.id}`)}
+        className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wide hover:text-brand transition-colors group ml-1"
       >
         <span>{report.name}</span>
         <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
@@ -59,37 +60,37 @@ const ReportTicketGroup = ({
           key={ticket.id}
           type="button"
           onClick={() => onTicketClick(ticket, report.id)}
-          className="w-full bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md hover:border-brand/20 transition-all cursor-pointer group flex items-center justify-between text-left"
+          className={tokens.listItem}
         >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center group-hover:bg-brand/5 transition-colors shrink-0">
-              <FileText className="w-6 h-6 text-gray-300 group-hover:text-brand transition-colors" />
+          <div className="flex items-center gap-3.5">
+            <div className={`w-10 h-10 bg-slate-50 ${radius.base} flex items-center justify-center group-hover:bg-brand/5 transition-colors shrink-0`}>
+              <FileText className="w-5 h-5 text-slate-300" />
             </div>
             <div className="min-w-0">
-              <h4 className="font-bold text-dark group-hover:text-brand transition-colors truncate">
+              <h4 className="font-semibold text-dark text-sm truncate">
                 {ticket.location_name || "Ticket"}
               </h4>
-              <div className="flex items-center gap-3 mt-0.5">
-                <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
+              <div className="flex items-center gap-2.5 mt-0.5">
+                <p className="text-xs text-slate-400 font-medium flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
                   {ticket.date ? format(new Date(ticket.date), "dd MMM yyyy", { locale: dateLocale }) : "---"}
                 </p>
                 {ticket.expense_type && (
-                  <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  <span className={`text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 ${radius.full} font-medium uppercase tracking-wide`}>
                     {ticket.expense_type}
                   </span>
                 )}
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
             <div className="text-right">
-              <p className="font-bold text-dark text-lg leading-tight">
-                {ticket.amount ?? "—"} <span className="text-[10px] text-gray-400">{ticket.currency}</span>
+              <p className="font-semibold text-dark text-base leading-tight">
+                {ticket.amount ?? "—"} <span className="text-[10px] text-slate-400">{ticket.currency}</span>
               </p>
               <StatusBadge status={ticket.status} />
             </div>
-            <ArrowRight className="w-4 h-4 text-gray-200 group-hover:text-brand group-hover:translate-x-1 transition-all" />
+            <ArrowRight className="w-4 h-4 text-slate-200 group-hover:text-brand transition-colors" />
           </div>
         </button>
       ))}
@@ -114,27 +115,27 @@ export const AllTicketsScreen = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+    <div className="space-y-6 animate-in fade-in duration-300 pb-16">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold text-dark tracking-tight mb-2 flex items-center gap-3">
-            <Receipt className="w-8 h-8 text-brand" />
+          <h1 className="text-xl font-semibold text-dark tracking-tight mb-1 flex items-center gap-2.5">
+            <Receipt className="w-5 h-5 text-brand" />
             Todos los Tickets
           </h1>
-          <p className="text-gray-500 font-medium">Listado completo de todos tus tickets de gasto.</p>
+          <p className="text-sm text-slate-500 font-medium">Listado completo de todos tus tickets de gasto.</p>
         </div>
       </div>
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
         <input
           type="text"
           placeholder="Buscar por establecimiento, categoria o importe..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-medium text-dark placeholder-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30 transition-all"
+          className={tokens.searchInput}
         />
       </div>
 
@@ -142,21 +143,21 @@ export const AllTicketsScreen = () => {
       {(() => {
         if (isLoading) {
           return (
-            <div className="flex flex-col items-center justify-center py-32">
-              <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-gray-500 font-medium">Cargando tickets...</p>
+            <div className="flex flex-col items-center justify-center py-24">
+              <div className="w-10 h-10 border-3 border-brand border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-slate-500 font-medium text-sm">Cargando tickets...</p>
             </div>
           );
         }
 
         if (!reports || reports.length === 0) {
           return (
-            <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
-              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Receipt className="w-10 h-10 text-gray-300" />
+            <div className={`text-center py-24 bg-white ${radius.card} border border-dashed border-slate-200`}>
+              <div className={`w-16 h-16 bg-slate-50 ${radius.full} flex items-center justify-center mx-auto mb-5`}>
+                <Receipt className="w-8 h-8 text-slate-300" />
               </div>
-              <h3 className="text-2xl font-black text-dark mb-3">No hay tickets registrados</h3>
-              <p className="text-gray-400 max-w-sm mx-auto">
+              <h3 className="text-xl font-semibold text-dark mb-2">No hay tickets registrados</h3>
+              <p className="text-slate-400 max-w-sm mx-auto text-sm">
                 Sube tickets de gasto desde tus viajes para verlos listados aqui.
               </p>
             </div>
@@ -164,7 +165,7 @@ export const AllTicketsScreen = () => {
         }
 
         return (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {reports.map((report) => (
               <ReportTicketGroup
                 key={report.id}
