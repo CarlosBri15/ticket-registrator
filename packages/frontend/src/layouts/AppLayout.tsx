@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
-  Plane,
+  FileText,
   Receipt,
   LogOut,
   Menu,
@@ -31,6 +31,7 @@ import type { PermissionType } from "@ticket-registrator/shared";
 import { tokenProvider } from "../api/client";
 import { useTranslation } from "react-i18next";
 import { LanguageSelector } from "../components/ui/LanguageSelector";
+import { radius, transition } from "../styles/design-tokens";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,10 +41,9 @@ interface MenuItem {
   description: string;
   icon: React.ElementType;
   permission: PermissionType | null;
-  /** Hide this item when SuperAdmin is in global mode (no active company). */
   hideWhenGlobal?: boolean;
-  /** Hide this item when SuperAdmin is in company mode (active company set). */
   hideWhenCompanyMode?: boolean;
+  hideWhenSelf?: boolean;
 }
 
 interface MenuSection {
@@ -65,12 +65,12 @@ const MENU_SECTIONS: MenuSection[] = [
         permission: null,
       },
       {
-        path: "/trips",
-        label: "Viajes",
+        path: "/reports",
+        label: "Reportes",
         description: "Gestión de gastos",
-        icon: Plane,
+        icon: FileText,
         permission: "view_reports",
-        hideWhenGlobal: true,   // SuperAdmin global no necesita viajes propios
+        hideWhenGlobal: true,
       },
       {
         path: "/tickets",
@@ -78,7 +78,7 @@ const MENU_SECTIONS: MenuSection[] = [
         description: "Histórico completo",
         icon: Receipt,
         permission: "view_tickets",
-        hideWhenGlobal: true,   // ídem
+        hideWhenGlobal: true,
       },
     ],
   },
@@ -91,7 +91,8 @@ const MENU_SECTIONS: MenuSection[] = [
         description: "Gestión de equipo",
         icon: Users,
         permission: "view_users",
-        hideWhenGlobal: true,   // En global los usuarios se gestionan dentro de cada empresa
+        hideWhenGlobal: true,
+        hideWhenSelf: true,
       },
       {
         path: "/departments",
@@ -119,7 +120,7 @@ const MENU_SECTIONS: MenuSection[] = [
         description: "Gestión de roles",
         icon: Shield,
         permission: "view_roles",
-        hideWhenGlobal: true,   // Los roles son por empresa, no tienen sentido en vista global
+        hideWhenGlobal: true,
       },
       {
         path: "/permissions",
@@ -127,7 +128,7 @@ const MENU_SECTIONS: MenuSection[] = [
         description: "Control de acceso",
         icon: Lock,
         permission: "view_permissions",
-        hideWhenGlobal: true,   // Ídem
+        hideWhenGlobal: true,
       },
     ],
   },
@@ -145,23 +146,23 @@ const SidebarCompanyBanner = ({
   onExit: () => void;
 }) => (
   <div className="px-3 pb-2" data-testid="sidebar-company-banner">
-    <div className="bg-brand/15 border border-brand/30 rounded-2xl p-3 flex items-center gap-2.5">
-      <div className="w-8 h-8 bg-brand/20 rounded-xl flex items-center justify-center shrink-0">
+    <div className={`bg-brand/15 border border-brand/30 ${radius.card} p-3 flex items-center gap-2.5`}>
+      <div className={`w-8 h-8 bg-brand/20 ${radius.base} flex items-center justify-center shrink-0`}>
         <Building2 className="w-4 h-4 text-brand-light" />
       </div>
       {!isCollapsed && (
         <>
           <div className="flex-1 min-w-0">
-            <p className="text-[9px] font-black text-brand-light/60 uppercase tracking-widest leading-none mb-0.5">
+            <p className="text-[9px] font-semibold text-brand-light/60 uppercase tracking-widest leading-none mb-0.5">
               Empresa activa
             </p>
-            <p className="text-xs font-bold text-white truncate leading-tight">{orgName}</p>
+            <p className="text-xs font-semibold text-white truncate leading-tight">{orgName}</p>
           </div>
           <button
             type="button"
             onClick={onExit}
             title="Salir de modo empresa"
-            className="w-6 h-6 flex items-center justify-center text-brand-light/60 hover:text-white hover:bg-white/10 rounded-lg transition-all shrink-0"
+            className={`w-6 h-6 flex items-center justify-center text-brand-light/60 hover:text-white hover:bg-white/10 ${radius.base} ${transition.base} shrink-0`}
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -181,8 +182,7 @@ export const AppLayout = () => {
   const { can } = usePermissions();
   const navigate = useNavigate();
 
-  // Scope info for menu adaptation
-  const { isGlobal } = useScope();
+  const { isGlobal, isSelf } = useScope();
   const { activeCompanyId, setActiveCompanyId } = useScopeContext();
   const { data: orgs } = useOrganizationsQuery();
 
@@ -206,14 +206,12 @@ export const AppLayout = () => {
         .substring(0, 2)
     : <User className="w-5 h-5" />;
 
-  // Filter menu items:
-  // - by permission
-  // - by mode (global/company) for SuperAdmin
   const visibleSections = MENU_SECTIONS.map((section) => ({
     ...section,
     items: section.items.filter((item) => {
       if (item.permission && !can(item.permission)) return false;
       if (item.hideWhenGlobal && isGlobalMode) return false;
+      if (item.hideWhenSelf && isSelf) return false;
       return true;
     }),
   })).filter((section) => section.items.length > 0);
@@ -227,34 +225,34 @@ export const AppLayout = () => {
         onClick={closeMobile}
         title={isCollapsed ? item.label : ""}
         className={({ isActive }) => `
-          flex items-center rounded-2xl transition-all duration-200 group relative
-          ${isCollapsed ? "justify-center p-3.5 mx-auto w-12" : "px-4 py-3.5 gap-4"}
+          flex items-center ${radius.base} ${transition.base} group relative
+          ${isCollapsed ? "justify-center p-3 mx-auto w-11" : "px-3.5 py-3 gap-3.5"}
           ${
             isActive
-              ? "bg-brand text-white shadow-xl shadow-brand/20"
+              ? "bg-brand text-white shadow-md"
               : "text-gray-400 hover:bg-white/5 hover:text-white"
           }
         `}
       >
         <Icon
           className={`shrink-0 transition-transform group-hover:scale-110 ${
-            isCollapsed ? "w-6 h-6" : "w-5 h-5"
+            isCollapsed ? "w-5 h-5" : "w-[18px] h-[18px]"
           }`}
         />
 
         {!isCollapsed && (
-          <div className="flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 overflow-hidden">
+          <div className="flex flex-col min-w-0 overflow-hidden">
             <span className="font-semibold text-sm truncate">{item.label}</span>
             <span className="text-[10px] opacity-50 font-medium truncate">{item.description}</span>
           </div>
         )}
 
         {!isCollapsed && (
-          <ChevronRight className="ml-auto w-4 h-4 transition-transform duration-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1" />
+          <ChevronRight className="ml-auto w-4 h-4 transition-transform duration-200 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5" />
         )}
 
         {isCollapsed && (
-          <div className="absolute left-full ml-4 px-3 py-2 bg-brand text-white text-[10px] font-bold uppercase tracking-wider rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none translate-x-2 group-hover:translate-x-0 transition-all z-[100] shadow-xl whitespace-nowrap">
+          <div className={`absolute left-full ml-3 px-2.5 py-1.5 bg-brand text-white text-[10px] font-semibold uppercase tracking-wider ${radius.base} opacity-0 group-hover:opacity-100 pointer-events-none translate-x-1 group-hover:translate-x-0 ${transition.base} z-[100] shadow-lg whitespace-nowrap`}>
             {item.label}
           </div>
         )}
@@ -268,7 +266,7 @@ export const AppLayout = () => {
       {/* ─── SIDEBAR ──────────────────────────────────────────────────────── */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50 bg-dark text-white transition-all duration-300 ease-in-out shadow-2xl
+          fixed inset-y-0 left-0 z-50 bg-dark text-white transition-all duration-300 ease-in-out shadow-xl
           ${isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
           ${isCollapsed ? "lg:w-20" : "lg:w-72"}
         `}
@@ -278,20 +276,20 @@ export const AppLayout = () => {
           {/* Logo */}
           <div
             className={`
-              h-24 flex items-center border-b border-white/5 shrink-0 transition-all duration-300
-              ${isCollapsed ? "px-4 justify-center" : "px-6"}
+              h-20 flex items-center border-b border-white/5 shrink-0 ${transition.base}
+              ${isCollapsed ? "px-4 justify-center" : "px-5"}
             `}
           >
             <div className="flex items-center gap-3 shrink-0">
-              <div className="w-11 h-11 bg-brand rounded-2xl flex items-center justify-center shadow-lg shadow-brand/20 border border-white/10 shrink-0">
-                <Sparkles className="w-6 h-6 text-white" />
+              <div className={`w-10 h-10 bg-brand ${radius.base} flex items-center justify-center shadow-md border border-white/10 shrink-0`}>
+                <Sparkles className="w-5 h-5 text-white" />
               </div>
               {!isCollapsed && (
-                <div className="flex flex-col animate-in fade-in slide-in-from-left-2 duration-300">
-                  <span className="font-extrabold text-lg tracking-tight leading-none whitespace-nowrap">
+                <div className="flex flex-col">
+                  <span className="font-bold text-base tracking-tight leading-none whitespace-nowrap">
                     TicketReg
                   </span>
-                  <span className="text-[10px] text-brand-light font-bold uppercase tracking-widest mt-1 whitespace-nowrap">
+                  <span className="text-[10px] text-brand-light font-semibold uppercase tracking-widest mt-0.5 whitespace-nowrap">
                     Intelligence
                   </span>
                 </div>
@@ -301,7 +299,7 @@ export const AppLayout = () => {
             {!isCollapsed && (
               <button
                 onClick={() => setIsCollapsed(true)}
-                className="hidden lg:flex items-center justify-center h-8 w-8 bg-white/5 hover:bg-white/10 rounded-lg ml-auto transition-colors shrink-0"
+                className={`hidden lg:flex items-center justify-center h-8 w-8 bg-white/5 hover:bg-white/10 ${radius.base} ml-auto ${transition.base} shrink-0`}
                 title="Colapsar menú"
               >
                 <PanelLeftClose className="w-4 h-4 text-gray-400" />
@@ -316,19 +314,19 @@ export const AppLayout = () => {
           {isCollapsed && (
             <button
               onClick={() => setIsCollapsed(false)}
-              className="hidden lg:flex items-center justify-center h-12 w-12 bg-brand/10 hover:bg-brand/20 text-brand rounded-xl mx-auto mt-4 transition-all shadow-lg border border-brand/20"
+              className={`hidden lg:flex items-center justify-center h-10 w-10 bg-brand/10 hover:bg-brand/20 text-brand ${radius.base} mx-auto mt-4 ${transition.base} border border-brand/20`}
               title="Expandir menú"
             >
-              <PanelLeftOpen className="w-6 h-6" />
+              <PanelLeftOpen className="w-5 h-5" />
             </button>
           )}
 
           {/* SuperAdmin global mode indicator */}
           {isGlobalMode && !isCollapsed && (
             <div className="px-3 pt-4 pb-1">
-              <div className="bg-purple-500/10 border border-purple-500/20 rounded-2xl px-3 py-2 flex items-center gap-2">
+              <div className={`bg-purple-500/10 border border-purple-500/20 ${radius.card} px-3 py-2 flex items-center gap-2`}>
                 <Globe className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest">
+                <p className="text-[9px] font-semibold text-purple-400 uppercase tracking-widest">
                   Vista Global · SuperAdmin
                 </p>
               </div>
@@ -347,11 +345,11 @@ export const AppLayout = () => {
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 py-6 space-y-6 overflow-y-auto overflow-x-hidden custom-scrollbar">
+          <nav className="flex-1 px-3 py-5 space-y-5 overflow-y-auto overflow-x-hidden custom-scrollbar">
             {visibleSections.map((section) => (
               <div key={section.title}>
                 {!isCollapsed && (
-                  <p className="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3 animate-in fade-in duration-300">
+                  <p className="px-3.5 text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-2.5">
                     {section.title}
                   </p>
                 )}
@@ -366,7 +364,7 @@ export const AppLayout = () => {
               type="button"
               onClick={() => setActiveCompanyId(null)}
               title="Salir del modo empresa"
-              className="flex items-center justify-center h-12 w-12 bg-brand/10 hover:bg-brand/20 text-brand rounded-xl mx-auto mb-3 transition-all border border-brand/20"
+              className={`flex items-center justify-center h-10 w-10 bg-brand/10 hover:bg-brand/20 text-brand ${radius.base} mx-auto mb-3 ${transition.base} border border-brand/20`}
             >
               <Layers className="w-5 h-5" />
             </button>
@@ -376,7 +374,7 @@ export const AppLayout = () => {
           <div className="p-4 bg-white/[0.02] border-t border-white/5 shrink-0 overflow-hidden">
             <div
               className={`
-                p-2 rounded-2xl transition-all duration-300 mb-4
+                p-2 ${radius.base} ${transition.base} mb-3
                 ${
                   isCollapsed
                     ? "bg-transparent flex justify-center"
@@ -386,18 +384,18 @@ export const AppLayout = () => {
             >
               <div
                 className={`
-                  shrink-0 rounded-xl bg-brand text-white font-bold flex items-center justify-center shadow-lg shadow-brand/10 border border-white/10
-                  ${isCollapsed ? "w-12 h-12" : "w-10 h-10"}
+                  shrink-0 ${radius.base} bg-brand text-white font-semibold flex items-center justify-center shadow-md border border-white/10
+                  ${isCollapsed ? "w-10 h-10" : "w-9 h-9 text-sm"}
                 `}
               >
                 {userInitials}
               </div>
               {!isCollapsed && (
-                <div className="flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 overflow-hidden">
-                  <span className="text-sm font-bold text-gray-100 truncate">
+                <div className="flex flex-col min-w-0 overflow-hidden">
+                  <span className="text-sm font-semibold text-gray-100 truncate">
                     {user?.name || "Usuario"}
                   </span>
-                  <span className="text-[10px] text-brand-light truncate font-bold uppercase tracking-tighter opacity-70">
+                  <span className="text-[10px] text-brand-light truncate font-medium uppercase tracking-wider opacity-70">
                     {user?.roleName || user?.email?.split("@")[0] || ""}
                   </span>
                 </div>
@@ -408,21 +406,21 @@ export const AppLayout = () => {
               <NavLink
                 to="/settings"
                 title={t("settings.title")}
-                className="flex flex-col items-center justify-center p-3 rounded-xl border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white transition-all group"
+                className={`flex flex-col items-center justify-center p-2.5 ${radius.base} border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white ${transition.base} group`}
               >
-                <Settings className="w-5 h-5 group-hover:rotate-45 transition-transform" />
+                <Settings className="w-4 h-4 group-hover:rotate-45 transition-transform" />
                 {!isCollapsed && (
-                  <span className="text-[9px] font-bold uppercase mt-1">{t("settings.title")}</span>
+                  <span className="text-[9px] font-semibold uppercase mt-1">{t("settings.title")}</span>
                 )}
               </NavLink>
               <button
                 onClick={handleLogout}
                 title={t("settings.logout")}
-                className="flex flex-col items-center justify-center p-3 rounded-xl border border-white/5 text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all group"
+                className={`flex flex-col items-center justify-center p-2.5 ${radius.base} border border-white/5 text-red-400 hover:bg-red-500/10 hover:text-red-300 ${transition.base} group`}
               >
-                <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
                 {!isCollapsed && (
-                  <span className="text-[9px] font-bold uppercase mt-1">{t("settings.logout")}</span>
+                  <span className="text-[9px] font-semibold uppercase mt-1">{t("settings.logout")}</span>
                 )}
               </button>
             </div>
@@ -442,22 +440,22 @@ export const AppLayout = () => {
 
       {/* Main content */}
       <main
-        className={`flex-1 flex flex-col relative min-w-0 h-screen overflow-hidden transition-all duration-300 ${
+        className={`flex-1 flex flex-col relative min-w-0 h-screen overflow-hidden ${transition.base} ${
           isCollapsed ? "lg:ml-20" : "lg:ml-72"
         }`}
       >
-        <header className="lg:hidden h-20 bg-white border-b border-gray-100 flex items-center justify-between px-6 z-40 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-brand rounded-xl flex items-center justify-center shadow-lg shadow-brand/20">
-              <Sparkles className="text-white w-5 h-5" />
+        <header className={`lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-5 z-40 shrink-0`}>
+          <div className="flex items-center gap-2.5">
+            <div className={`w-8 h-8 bg-brand ${radius.base} flex items-center justify-center shadow-sm`}>
+              <Sparkles className="text-white w-4 h-4" />
             </div>
-            <span className="font-extrabold text-dark tracking-tight">TicketReg</span>
+            <span className="font-bold text-dark tracking-tight">TicketReg</span>
           </div>
           <button
             onClick={() => setIsMobileOpen(true)}
-            className="p-2.5 text-gray-500 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+            className={`p-2 text-slate-500 bg-slate-50 ${radius.base} hover:bg-slate-100 ${transition.base}`}
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-5 h-5" />
           </button>
         </header>
 
@@ -465,9 +463,9 @@ export const AppLayout = () => {
           <LanguageSelector />
         </div>
 
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand/5 rounded-full blur-[120px] -z-10 pointer-events-none translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand/3 rounded-full blur-[120px] -z-10 pointer-events-none translate-x-1/2 -translate-y-1/2" />
 
-        <div className="flex-1 overflow-y-auto px-4 py-8 md:px-10 lg:py-12 scroll-smooth">
+        <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8 lg:py-10 scroll-smooth">
           <div className="max-w-6xl mx-auto">
             <Outlet />
           </div>

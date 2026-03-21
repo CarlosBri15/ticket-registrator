@@ -1,7 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { ReportDetailScreen } from './ReportDetailScreen';
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: vi.fn(),
+  };
+});
 
 vi.mock('@ticket-registrator/shared', () => ({
   useReportQuery: vi.fn(),
@@ -79,9 +87,9 @@ const setupMocks = () => {
 
 const renderScreen = () =>
   render(
-    <MemoryRouter initialEntries={['/trips/r1']}>
+    <MemoryRouter initialEntries={['/reports/r1']}>
       <Routes>
-        <Route path="/trips/:id" element={<ReportDetailScreen />} />
+        <Route path="/reports/:id" element={<ReportDetailScreen />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -345,7 +353,7 @@ describe('ReportDetailScreen', () => {
       isLoading: false,
     });
     const { container } = renderScreen();
-    const deleteBtn = container.querySelector('button.w-8.h-8');
+    const deleteBtn = container.querySelector('button.w-7.h-7');
     if (deleteBtn) fireEvent.click(deleteBtn);
     expect(mockDeleteTicket).toHaveBeenCalledWith({ reportId: 'r1', ticketId: 't1' });
   });
@@ -370,5 +378,100 @@ describe('ReportDetailScreen', () => {
     expect(screen.getByText('reportDetail.confirmApprove')).toBeInTheDocument();
     act(() => { capturedOnSuccess?.(); });
     expect(screen.queryByText('reportDetail.confirmApprove')).not.toBeInTheDocument();
+  });
+
+  it('navigates to reports list when back button is clicked', () => {
+    const mockNavigate = vi.fn();
+    vi.mocked(useNavigate as any).mockReturnValue(mockNavigate);
+
+    (useReportQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: {
+        id: 'r1', name: 'Viaje Madrid', status: 'CREATED',
+        start_date: '2024-01-01', end_date: '2024-01-05',
+        requested_amount: 300, approved_amount: null, currency: 'EUR',
+      },
+      isLoading: false,
+      isError: false,
+    });
+    renderScreen();
+    fireEvent.click(screen.getByText('reportDetail.backToTrips'));
+    expect(mockNavigate).toHaveBeenCalledWith('/reports');
+  });
+
+  it('calls deleteReportMutation and navigates on success', () => {
+    const mockDeleteReport = vi.fn();
+    const mockNavigate = vi.fn();
+    vi.mocked(useNavigate as any).mockReturnValue(mockNavigate);
+
+    let capturedOnSuccess: (() => void) | undefined;
+    (useDeleteReportMutation as ReturnType<typeof vi.fn>).mockImplementation((opts: any) => {
+      capturedOnSuccess = opts?.onSuccess;
+      return { mutate: mockDeleteReport, isPending: false };
+    });
+
+    (useReportQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: {
+        id: 'r1', name: 'Viaje Madrid', status: 'CREATED',
+        start_date: '2024-01-01', end_date: '2024-01-05',
+        requested_amount: 300, approved_amount: null, currency: 'EUR',
+      },
+      isLoading: false,
+      isError: false,
+    });
+    renderScreen();
+    
+    // Open delete dialog
+    fireEvent.click(screen.getByText('common.delete'));
+    
+    // Confirm delete
+    fireEvent.click(screen.getAllByText('common.delete')[1]); // The one in the dialog
+    expect(mockDeleteReport).toHaveBeenCalledWith('r1');
+
+    // Simulate success
+    act(() => { capturedOnSuccess?.(); });
+    expect(mockNavigate).toHaveBeenCalledWith('/reports');
+  });
+
+  it('calculates financial summary correctly with pending tickets', () => {
+    (useReportQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: {
+        id: 'r1', name: 'Viaje Madrid', status: 'CREATED',
+        start_date: '2024-01-01', end_date: '2024-01-05',
+        requested_amount: 300, approved_amount: 50, currency: 'EUR',
+      },
+      isLoading: false,
+      isError: false,
+    });
+    (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [
+        { id: 't1', amount: 100, status: 'PENDING', currency: 'EUR' },
+        { id: 't2', amount: 50, status: 'APPROVED', currency: 'EUR' },
+        { id: 't3', amount: 75, status: 'PENDING', currency: 'EUR' },
+      ],
+      isLoading: false,
+    });
+    renderScreen();
+    
+    // Pending amount should be 100 + 75 = 175
+    expect(screen.getByText('175')).toBeInTheDocument();
+  });
+
+  it('closes submit dialog when cancel is clicked', () => {
+    (useReportQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: {
+        id: 'r1', name: 'Viaje Madrid', status: 'CREATED',
+        start_date: '2024-01-01', end_date: '2024-01-05',
+        requested_amount: 300, approved_amount: null, currency: 'EUR',
+      },
+      isLoading: false,
+      isError: false,
+    });
+    renderScreen();
+    
+    fireEvent.click(screen.getAllByText('reportDetail.submitReport')[0]);
+    expect(screen.getByText('reportDetail.confirmSubmit')).toBeInTheDocument();
+    
+    fireEvent.click(screen.getByText('common.cancel'));
+    expect(screen.queryByText('reportDetail.confirmSubmit')).not.toBeInTheDocument();
   });
 });

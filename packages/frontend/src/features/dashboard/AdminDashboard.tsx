@@ -71,7 +71,7 @@ export const AdminDashboard = () => {
   }
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500 pb-10">
+    <div className="space-y-8 animate-in fade-in duration-300 pb-10">
       {isCompanyMode && (
         <CompanyModeBanner
           orgName={activeOrg?.name ?? "Empresa"}
@@ -91,49 +91,50 @@ export const AdminDashboard = () => {
           <React.Fragment>
             {can("view_users") && (
               <Button
-                variant="secondary"
-                className="w-auto px-5 bg-white/5 border-white/10 text-white hover:bg-white/10"
+                variant="ghost-white"
+                className="w-auto"
                 onClick={() => navigate("/users")}
               >
-                <Users className="w-4 h-4 mr-2" />
+                <Users className="w-4 h-4 mr-1.5" />
                 Equipo
               </Button>
             )}
             <Button
-              className="w-auto px-5 shadow-xl shadow-brand/30"
-              onClick={() => navigate("/trips")}
+              variant="ghost-white"
+              className="w-auto"
+              onClick={() => navigate("/reports")}
             >
-              <FileText className="w-4 h-4 mr-2" />
+              <FileText className="w-4 h-4 mr-1.5" />
               Ver viajes
             </Button>
           </React.Fragment>
         }
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5" data-testid="admin-stats">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="admin-stats">
         <StatCard
           variant="primary"
           title="Usuarios"
           value={String(users?.length ?? 0)}
-          icon={<Users className="w-5 h-5" />}
+          icon={<Users className="w-4 h-4" />}
           subtitle="Miembros del equipo"
         />
         <StatCard
           title="Departamentos"
           value={String(departments?.length ?? 0)}
-          icon={<Building2 className="w-5 h-5" />}
+          icon={<Building2 className="w-4 h-4" />}
           subtitle="Áreas de la empresa"
         />
         <PendingStatsCard count={pendingReports.length} />
         <StatCard
           title="Viajes activos"
           value={String(activeTripsCount)}
-          icon={<TrendingUp className="w-5 h-5" />}
+          icon={<TrendingUp className="w-4 h-4" />}
           subtitle="En curso en el equipo"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <PendingApprovalsList
             reports={pendingReports}

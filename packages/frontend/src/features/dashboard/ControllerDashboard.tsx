@@ -21,49 +21,48 @@ import { PendingStatsCard } from "./components/PendingStatsCard";
 import { WeeklyStatsCard, PendingAmountCard } from "./components/ControllerStatsCards";
 import { PendingApprovalsList } from "./components/PendingApprovalsList";
 import { useDashboardHelpers } from "./hooks/useDashboardHelpers";
+import { tokens, radius } from "../../styles/design-tokens";
 
 const RecentlyProcessed = ({ recentProcessed, navigate, dateLocale }: any) => (
-  <section className="space-y-5" data-testid="recently-processed">
-    <div className="flex items-center justify-between">
-      <h2 className="text-lg font-black text-dark flex items-center gap-3 tracking-tight">
-        <div className="w-7 h-7 bg-gray-100 rounded-xl flex items-center justify-center">
-          <Clock className="w-4 h-4 text-gray-400" />
-        </div>
-        Procesados recientemente
-      </h2>
-    </div>
+  <section className="space-y-4" data-testid="recently-processed">
+    <h2 className="text-base font-semibold text-dark flex items-center gap-2.5">
+      <div className={`w-6 h-6 bg-slate-100 ${radius.base} flex items-center justify-center`}>
+        <Clock className="w-3.5 h-3.5 text-slate-400" />
+      </div>
+      Procesados recientemente
+    </h2>
 
-    <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+    <div className={tokens.listSection}>
       {recentProcessed.length === 0 ? (
-        <div className="p-10 text-center">
-          <p className="text-sm text-gray-400 font-medium">Sin reportes procesados aún</p>
+        <div className="p-8 text-center">
+          <p className="text-sm text-slate-400 font-medium">Sin reportes procesados aún</p>
         </div>
       ) : (
-        <div className="divide-y divide-gray-50">
+        <div className="divide-y divide-slate-50">
           {recentProcessed.map((report: any) => (
             <button
               key={report.id}
               type="button"
-              onClick={() => navigate(`/trips/${report.id}`)}
-              className="w-full text-left p-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors group"
+              onClick={() => navigate(`/reports/${report.id}`)}
+              className="w-full text-left p-4 flex items-center justify-between hover:bg-slate-50 cursor-pointer transition-colors group"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <StatusBadge status={report.status} size="sm" />
                 <div className="min-w-0">
-                  <p className="font-bold text-dark text-sm truncate group-hover:text-brand transition-colors">
+                  <p className="font-semibold text-dark text-sm truncate group-hover:text-brand transition-colors">
                     {report.name}
                   </p>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
+                  <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide mt-0.5">
                     {format(new Date(report.end_date), "dd MMM yyyy", { locale: dateLocale })}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-2">
-                <span className="font-black text-dark text-sm">
+                <span className="font-semibold text-dark text-sm">
                   {report.requested_amount.toFixed(2)}
-                  <span className="text-[9px] font-bold text-gray-400 ml-0.5">{report.currency}</span>
+                  <span className="text-[9px] font-medium text-slate-400 ml-0.5">{report.currency}</span>
                 </span>
-                <ChevronRight className="w-4 h-4 text-gray-200 group-hover:text-brand group-hover:translate-x-1 transition-all shrink-0" />
+                <ChevronRight className="w-4 h-4 text-slate-200 group-hover:text-brand group-hover:translate-x-0.5 transition-all shrink-0" />
               </div>
             </button>
           ))}
@@ -128,7 +127,7 @@ export const ControllerDashboard = () => {
   }
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500 pb-10">
+    <div className="space-y-8 animate-in fade-in duration-300 pb-10">
       <DashboardHero
         user={user}
         t={t}
@@ -136,54 +135,55 @@ export const ControllerDashboard = () => {
         firstName={firstName}
         subtitle="Panel de Control · Aprobaciones"
         subtitleIcon={<Shield className="w-3.5 h-3.5" />}
-        avatarBgColor="bg-amber-500"
-        badgeColorClass="text-amber-400/70 bg-amber-400/10"
+        avatarBgColor="bg-warning"
+        badgeColorClass="text-warning/70 bg-warning/10"
         actions={
           <Button
-            className="w-auto px-5 shadow-xl shadow-amber-500/30"
-            onClick={() => navigate("/trips")}
+            variant="ghost-white"
+            className="w-auto"
+            onClick={() => navigate("/reports")}
           >
-            <FileText className="w-4 h-4 mr-2" />
+            <FileText className="w-4 h-4 mr-1.5" />
             Ver todos los viajes
           </Button>
         }
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5" data-testid="controller-stats">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="controller-stats">
         <PendingStatsCard count={pending.length} label="Pendientes" dataTestId="pending-count" />
-        <WeeklyStatsCard 
-          title="Aprobados esta semana" 
-          count={approvedThisWeek.length} 
-          icon={<CheckCircle className="w-5 h-5" />}
+        <WeeklyStatsCard
+          title="Aprobados esta semana"
+          count={approvedThisWeek.length}
+          icon={<CheckCircle className="w-4 h-4" />}
           colorClass="green"
           subtitle="Aprobados en 7 días"
         />
-        <WeeklyStatsCard 
-          title="Rechazados esta semana" 
-          count={declinedThisWeek.length} 
-          icon={<XCircle className="w-5 h-5" />}
+        <WeeklyStatsCard
+          title="Rechazados esta semana"
+          count={declinedThisWeek.length}
+          icon={<XCircle className="w-4 h-4" />}
           colorClass="red"
           subtitle={declinedThisWeek.length > 0 ? "Requieren atención" : "Sin rechazos"}
         />
         <PendingAmountCard amount={pendingAmount} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <PendingApprovalsList 
-            reports={pending} 
-            navigate={navigate} 
-            dateLocale={dateLocale} 
-            t={t} 
+          <PendingApprovalsList
+            reports={pending}
+            navigate={navigate}
+            dateLocale={dateLocale}
+            t={t}
             title="Cola de aprobación"
-            viewAllPath="/trips?status=SUBMITTED"
+            viewAllPath="/reports?status=SUBMITTED"
             maxItems={8}
           />
         </div>
-        <RecentlyProcessed 
-          recentProcessed={recentProcessed} 
-          navigate={navigate} 
-          dateLocale={dateLocale} 
+        <RecentlyProcessed
+          recentProcessed={recentProcessed}
+          navigate={navigate}
+          dateLocale={dateLocale}
         />
       </div>
     </div>

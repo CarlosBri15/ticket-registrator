@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Loader2 } from 'lucide-react';
 import { useDropdown } from '../../hooks/useDropdown';
+import { tokens } from '../../styles/design-tokens';
 
 export interface SelectOption {
   value: string;
@@ -52,27 +53,20 @@ export const Select = ({
   };
 
   const triggerClasses = [
-    'w-full flex items-center justify-between px-4 py-3.5 rounded-xl border bg-white',
-    'text-sm font-medium transition-all duration-300 shadow-sm text-left',
-    'hover:border-secondary hover:shadow-md',
-    'focus:outline-none',
-    'peer-focus:border-brand peer-focus:ring-4 peer-focus:ring-brand/5 peer-focus:shadow-xl peer-focus:shadow-brand/5',
-    'disabled:opacity-60 disabled:bg-gray-50 disabled:cursor-not-allowed',
-    error
-      ? 'border-accent/50 peer-focus:border-accent peer-focus:ring-accent/5 bg-accent/[0.02]'
-      : 'border-gray-200',
+    tokens.selectTrigger,
+    open ? tokens.selectTriggerFocus : '',
+    error ? tokens.inputError : '',
   ].join(' ');
 
   return (
-    <div className="w-full group" ref={containerRef}>
+    <div className="w-full" ref={containerRef}>
       {/* Label */}
-      <label
-        htmlFor={selectId}
-        className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 group-focus-within:text-brand transition-colors"
-      >
-        {label}
-        {required && <span className="text-accent ml-0.5">*</span>}
-      </label>
+      {label && (
+        <label htmlFor={selectId} className={tokens.inputLabel}>
+          {label}
+          {required && <span className="text-danger ml-0.5">*</span>}
+        </label>
+      )}
 
       {/* Trigger button */}
       <div className="relative">
@@ -107,10 +101,10 @@ export const Select = ({
           onKeyDown={handleKeyDown}
           className={triggerClasses}
         >
-          <span className={isPlaceholder ? 'text-gray-400 font-normal' : 'text-dark'}>
+          <span className={isPlaceholder ? 'text-slate-400 font-normal' : 'text-dark'}>
             {isLoading ? 'Cargando...' : (displayValue ?? placeholder ?? 'Selecciona una opción')}
           </span>
-          <span className="shrink-0 ml-2 text-gray-400">
+          <span className="shrink-0 ml-2 text-slate-400">
             {isLoading
               ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden={true} />
               : <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} aria-hidden={true} />
@@ -126,10 +120,10 @@ export const Select = ({
             aria-hidden="true"
             data-listbox={selectId}
             style={dropdownStyle}
-            className="bg-white border border-gray-200 rounded-xl shadow-xl py-1.5 max-h-60 overflow-y-auto"
+            className={tokens.selectDropdown}
           >
             {options.length === 0 ? (
-              <div className="px-4 py-3 text-sm text-gray-400 font-medium text-center">
+              <div className="px-3.5 py-3 text-sm text-slate-400 font-medium text-center">
                 Sin opciones disponibles
               </div>
             ) : (
@@ -144,12 +138,7 @@ export const Select = ({
                     tabIndex={-1}
                     onClick={() => handleSelect(opt.value)}
                     onMouseDown={(e) => e.preventDefault()}
-                    className={[
-                      'w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium transition-colors text-left',
-                      isSelected
-                        ? 'bg-brand/10 text-brand'
-                        : 'text-dark hover:bg-brand/5 hover:text-brand',
-                    ].join(' ')}
+                    className={`${tokens.selectOption} ${isSelected ? tokens.selectOptionActive : tokens.selectOptionIdle}`}
                   >
                     <span>{opt.label}</span>
                     {isSelected && <Check className="w-4 h-4 shrink-0" aria-hidden={true} />}
@@ -164,10 +153,7 @@ export const Select = ({
 
       {/* Error message */}
       {error && (
-        <div className="flex items-center gap-1.5 mt-2 ml-1 animate-in slide-in-from-top-1 fade-in duration-200">
-          <div className="w-1 h-1 rounded-full bg-accent" />
-          <p className="text-xs text-accent font-semibold">{error}</p>
-        </div>
+        <p className={tokens.inputErrorMsg}>{error}</p>
       )}
     </div>
   );

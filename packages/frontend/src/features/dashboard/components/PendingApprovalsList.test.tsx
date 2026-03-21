@@ -80,7 +80,7 @@ describe('PendingApprovalsList', () => {
       />,
     );
     fireEvent.click(screen.getByText('Report 1'));
-    expect(navigate).toHaveBeenCalledWith('/trips/report-1');
+    expect(navigate).toHaveBeenCalledWith('/reports/report-1');
   });
 
   it('shows "ver todos" button when more than 6 reports', () => {

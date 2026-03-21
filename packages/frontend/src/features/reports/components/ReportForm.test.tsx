@@ -11,8 +11,6 @@ vi.mock('@ticket-registrator/shared', async () => {
 });
 
 vi.mock('lucide-react', () => ({
-  Banknote: () => null,
-  Tag: () => null,
   AlertCircle: () => null,
 }));
 
@@ -24,6 +22,21 @@ vi.mock('../../../components/ui/Button', () => ({
 
 vi.mock('../../../components/ui/Input', () => ({
   Input: ({ label, ...props }: any) => <input aria-label={label} {...props} />,
+}));
+
+vi.mock('../../../components/ui/selects', () => ({
+  CurrencySelect: ({ label, onChange, value }: any) => (
+    <select aria-label={label} value={value ?? ''} onChange={(e) => onChange?.(e.target.value)}>
+      <option value="EUR">EUR</option>
+      <option value="USD">USD</option>
+    </select>
+  ),
+  ReportTypeSelect: ({ label, onChange, value }: any) => (
+    <select aria-label={label} value={value ?? ''} onChange={(e) => onChange?.(e.target.value)}>
+      <option value="">--</option>
+      <option value="trips.typeBusinessTrip">trips.typeBusinessTrip</option>
+    </select>
+  ),
 }));
 
 vi.mock('react-i18next', () => ({

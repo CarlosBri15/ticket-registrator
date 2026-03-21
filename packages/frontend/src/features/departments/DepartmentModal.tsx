@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import React, { useState } from "react";
 import {
   useCreateDepartmentMutation,
   useUpdateDepartmentMutation,
@@ -24,7 +24,7 @@ export const DepartmentModal = ({
   const createMutation = useCreateDepartmentMutation(companyId, { onSuccess: onClose });
   const updateMutation = useUpdateDepartmentMutation(companyId, { onSuccess: onClose });
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) return;
     if (isEditing) {

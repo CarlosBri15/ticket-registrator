@@ -202,7 +202,7 @@ describe('Admin dashboard', () => {
     ]);
     renderScreen();
     fireEvent.click(screen.getByText('Viaje NY'));
-    expect(mockNavigate).toHaveBeenCalledWith('/trips/r1');
+    expect(mockNavigate).toHaveBeenCalledWith('/reports/r1');
   });
 
   it('navigates to /users when Equipo button is clicked', () => {
@@ -211,10 +211,10 @@ describe('Admin dashboard', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/users');
   });
 
-  it('navigates to /trips when "Ver viajes" is clicked', () => {
+  it('navigates to /reports when "Ver viajes" is clicked', () => {
     renderScreen();
     fireEvent.click(screen.getByText('Ver viajes'));
-    expect(mockNavigate).toHaveBeenCalledWith('/trips');
+    expect(mockNavigate).toHaveBeenCalledWith('/reports');
   });
 
   it('shows loading skeleton while data loads', () => {

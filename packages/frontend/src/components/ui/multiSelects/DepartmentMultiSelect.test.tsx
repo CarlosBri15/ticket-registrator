@@ -7,7 +7,7 @@ vi.mock('@ticket-registrator/shared', () => ({
   useDepartmentsQuery: vi.fn(),
 }));
 
-vi.mock('../MultiSelect', () => ({
+vi.mock('./MultiSelect', () => ({
   MultiSelect: ({ label, options, onChange, isLoading }: any) => (
     <div data-testid="multi-select">
       <span>{label}</span>

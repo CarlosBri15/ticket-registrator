@@ -15,6 +15,7 @@ import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { Modal } from "../../components/ui/Modal";
 import { Pagination } from "../../components/ui/Pagination";
+import { tokens, radius } from "../../styles/design-tokens";
 
 const PAGE_SIZE = 10;
 
@@ -26,10 +27,10 @@ const HIERARCHY_LABELS: Record<number, string> = {
 };
 
 const HIERARCHY_COLORS: Record<number, string> = {
-  1: "bg-gray-100 text-gray-600",
-  2: "bg-blue-100 text-blue-700",
-  3: "bg-amber-100 text-amber-700",
-  4: "bg-brand/10 text-brand",
+  1: "bg-slate-100 text-slate-600 border-slate-200",
+  2: "bg-info/10 text-info border-info/20",
+  3: "bg-warning/10 text-warning border-warning/20",
+  4: "bg-brand/10 text-brand border-brand/20",
 };
 
 const CreateRoleModal = ({
@@ -82,7 +83,7 @@ const CreateRoleModal = ({
           </label>
           <textarea
             id="role-description"
-            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-dark placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30 resize-none"
+            className={`${tokens.input} resize-none`}
             value={form.description}
             onChange={set("description")}
             placeholder="Descripción opcional del rol..."
@@ -116,27 +117,27 @@ const RoleCard = ({
   const label = HIERARCHY_LABELS[level] ?? `Nivel ${role.hierarchy}`;
 
   return (
-    <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all">
+    <div className={`${tokens.card} ${tokens.cardHover}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 bg-brand/10 rounded-2xl flex items-center justify-center shrink-0">
-            <Shield className="w-5 h-5 text-brand" />
+          <div className={`w-9 h-9 bg-brand/10 ${radius.base} flex items-center justify-center shrink-0`}>
+            <Shield className="w-4 h-4 text-brand" />
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-dark truncate">{role.name}</p>
+            <p className="font-semibold text-dark truncate">{role.name}</p>
             {role.description && (
-              <p className="text-xs text-gray-400 mt-0.5 truncate">{role.description}</p>
+              <p className="text-xs text-slate-400 mt-0.5 truncate">{role.description}</p>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${colorClass}`}>
+          <span className={`${tokens.badgeSm} ${colorClass}`}>
             {label}
           </span>
           {canDelete && (
             <button
               onClick={() => onDelete(role.id)}
-              className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+              className={`p-2 text-slate-300 hover:text-danger hover:bg-danger/5 ${radius.base} transition-all`}
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -174,9 +175,9 @@ export const RolesScreen = () => {
   if (!companyId && !isGlobal) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-center">
-        <Building2 className="w-16 h-16 text-gray-200 mb-4" />
-        <h3 className="text-2xl font-black text-dark mb-2">Selecciona una organización</h3>
-        <p className="text-gray-400 max-w-sm">
+        <Building2 className="w-12 h-12 text-slate-200 mb-4" />
+        <h3 className="text-xl font-semibold text-dark mb-2">Selecciona una organización</h3>
+        <p className="text-slate-400 max-w-sm text-sm">
           Para ver los roles, selecciona primero una organización.
         </p>
       </div>
@@ -187,20 +188,20 @@ export const RolesScreen = () => {
     if (isLoading) {
       return (
         <div className="flex flex-col items-center justify-center py-32">
-          <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-gray-500 font-medium">Cargando roles...</p>
+          <div className="w-10 h-10 border-2 border-brand border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-slate-500 font-medium text-sm">Cargando roles...</p>
         </div>
       );
     }
 
     if (!roles || roles.length === 0) {
       return (
-        <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
-          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Shield className="w-10 h-10 text-gray-300" />
+        <div className={tokens.emptyState}>
+          <div className={tokens.emptyStateIcon}>
+            <Shield className="w-7 h-7 text-slate-300" />
           </div>
-          <h3 className="text-2xl font-black text-dark mb-3">No hay roles</h3>
-          <p className="text-gray-400 max-w-sm mx-auto">Crea el primer rol personalizado.</p>
+          <h3 className="text-base font-semibold text-dark mb-1">No hay roles</h3>
+          <p className={tokens.emptyStateText}>Crea el primer rol personalizado.</p>
         </div>
       );
     }
@@ -233,16 +234,16 @@ export const RolesScreen = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
-          <h1 className="text-4xl font-extrabold text-dark tracking-tight mb-2 flex items-center gap-3">
-            <Shield className="w-8 h-8 text-brand" />
+          <h1 className="text-2xl font-bold text-dark tracking-tight mb-1 flex items-center gap-3">
+            <Shield className="w-6 h-6 text-brand" />
             Roles
           </h1>
-          <p className="text-gray-500 font-medium">
+          <p className="text-slate-500 text-sm">
             {companyId ? "Roles personalizados de tu organización." : "Roles de sistema."}
           </p>
         </div>
         {companyId && can("create_roles") && (
-          <Button onClick={() => setIsCreateOpen(true)} className="shadow-xl shadow-brand/20">
+          <Button onClick={() => setIsCreateOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Nuevo Rol
           </Button>

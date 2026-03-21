@@ -32,7 +32,7 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('lucide-react', () => ({
   LayoutDashboard: () => null,
-  Plane: () => null,
+  FileText: () => null,
   Receipt: () => null,
   LogOut: () => null,
   Menu: () => <span>Menu</span>,
@@ -108,18 +108,30 @@ describe('AppLayout', () => {
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
   });
 
-  it('renders Viajes and Tickets for regular users', () => {
+  it('renders Reportes and Tickets for regular users', () => {
     mockUseScope.mockReturnValue({ isGlobal: false, isSelf: false });
     renderLayout();
-    expect(screen.getByText('Viajes')).toBeInTheDocument();
+    expect(screen.getByText('Reportes')).toBeInTheDocument();
     expect(screen.getByText('Tickets')).toBeInTheDocument();
   });
 
   it('hides nav items when user lacks permission', () => {
     mockCan.mockReturnValue(false);
     renderLayout();
-    expect(screen.queryByText('Viajes')).not.toBeInTheDocument();
+    expect(screen.queryByText('Reportes')).not.toBeInTheDocument();
     expect(screen.queryByText('Usuarios')).not.toBeInTheDocument();
+  });
+
+  it('hides Usuarios for self-scope (regular employee) users', () => {
+    mockUseScope.mockReturnValue({ isGlobal: false, isSelf: true });
+    renderLayout();
+    expect(screen.queryByText('Usuarios')).not.toBeInTheDocument();
+  });
+
+  it('shows Usuarios for non-self-scope users (managers, admins)', () => {
+    mockUseScope.mockReturnValue({ isGlobal: false, isSelf: false });
+    renderLayout();
+    expect(screen.getByText('Usuarios')).toBeInTheDocument();
   });
 
   it('shows user initials when user has name', () => {
@@ -170,9 +182,9 @@ describe('AppLayout', () => {
       mockUseScopeContext.mockReturnValue({ activeCompanyId: null, setActiveCompanyId: vi.fn() });
     });
 
-    it('hides Viajes in global mode', () => {
+    it('hides Reportes in global mode', () => {
       renderLayout();
-      expect(screen.queryByText('Viajes')).not.toBeInTheDocument();
+      expect(screen.queryByText('Reportes')).not.toBeInTheDocument();
     });
 
     it('hides Tickets in global mode', () => {
@@ -252,9 +264,9 @@ describe('AppLayout', () => {
       expect(mockSet).toHaveBeenCalledWith(null);
     });
 
-    it('shows Viajes in company mode (restored)', () => {
+    it('shows Reportes in company mode (restored)', () => {
       renderLayout();
-      expect(screen.getByText('Viajes')).toBeInTheDocument();
+      expect(screen.getByText('Reportes')).toBeInTheDocument();
     });
   });
 });

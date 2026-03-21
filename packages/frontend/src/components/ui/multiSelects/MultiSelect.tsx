@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Loader2, CheckSquare, Square } from 'lucide-react';
-export type { SelectOption } from './Select';
-import type { SelectOption } from './Select';
-import { useDropdown } from '../../hooks/useDropdown';
+export type { SelectOption } from '../Select';
+import type { SelectOption } from '../Select';
+import { useDropdown } from '../../../hooks/useDropdown';
 
 export interface MultiSelectProps {
   label?: string;

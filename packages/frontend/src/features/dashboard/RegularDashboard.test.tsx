@@ -22,7 +22,7 @@ vi.mock('./components/PendingApprovalsList', () => ({
     <div>
       {title && <h2>{title}</h2>}
       {reports.map((r: any) => (
-        <button key={r.id} onClick={() => navigate(`/trips/${r.id}`)}>{r.name}</button>
+        <button key={r.id} onClick={() => navigate(`/reports/${r.id}`)}>{r.name}</button>
       ))}
     </div>
   ),

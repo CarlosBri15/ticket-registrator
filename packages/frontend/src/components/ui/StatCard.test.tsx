@@ -61,20 +61,20 @@ describe('StatCard', () => {
     });
   });
 
-  describe('ghost variant', () => {
-    it('renders title and value', () => {
-      render(<StatCard title="Users" value="99" icon={icon} variant="ghost" />);
+  describe('default variant — extra cases', () => {
+    it('renders title and value with no explicit variant', () => {
+      render(<StatCard title="Users" value="99" icon={icon} />);
       expect(screen.getByText('Users')).toBeInTheDocument();
       expect(screen.getByText('99')).toBeInTheDocument();
     });
 
     it('renders trend with trendUp styling', () => {
-      render(<StatCard title="Users" value="99" icon={icon} variant="ghost" trend="+10%" trendUp />);
+      render(<StatCard title="Users" value="99" icon={icon} trend="+10%" trendUp />);
       expect(screen.getByText('+10%')).toBeInTheDocument();
     });
 
     it('renders trend with trendDown styling when trendUp is false', () => {
-      render(<StatCard title="Users" value="99" icon={icon} variant="ghost" trend="-5%" trendUp={false} />);
+      render(<StatCard title="Users" value="99" icon={icon} trend="-5%" trendUp={false} />);
       expect(screen.getByText('-5%')).toBeInTheDocument();
     });
   });

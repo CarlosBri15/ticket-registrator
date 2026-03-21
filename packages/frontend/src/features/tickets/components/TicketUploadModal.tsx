@@ -5,6 +5,7 @@ import { Button } from "../../../components/ui/Button";
 import { useUploadTicketMutation, useUpdateTicketMutation, useDeleteTicketMutation } from "@ticket-registrator/shared";
 import type { ITicket } from "@ticket-registrator/shared";
 import { TicketConfirmationForm } from "./TicketConfirmationForm";
+import { tokens, radius } from "../../../styles/design-tokens";
 
 interface TicketUploadModalProps {
   isOpen: boolean;
@@ -116,9 +117,9 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
               onDragLeave={onDragLeave}
               onDrop={onDrop}
               className={`
-                relative border-2 border-dashed rounded-[2rem] p-10 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer
-                ${isDragging ? 'border-brand bg-brand/5' : 'border-gray-200 bg-gray-50/50 hover:bg-white hover:border-brand/30'}
-                ${file ? 'border-green-500/50 bg-green-50/10' : ''}
+                relative border-2 border-dashed ${radius.card} p-8 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer
+                ${isDragging ? 'border-brand bg-brand/5' : 'border-slate-200 bg-slate-50/50 hover:bg-white hover:border-brand/30'}
+                ${file ? 'border-success/50 bg-success/5' : ''}
               `}
             >
               <input
@@ -131,15 +132,15 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
 
               {file ? (
                 <div className="flex flex-col items-center animate-in zoom-in-95 duration-300">
-                   <div className="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-4">
-                      <File className="w-8 h-8" />
+                   <div className={`w-14 h-14 bg-success/10 text-success ${radius.base} flex items-center justify-center mb-4`}>
+                      <File className="w-7 h-7" />
                    </div>
-                   <p className="text-dark font-bold text-lg mb-1">{file.name}</p>
-                   <p className="text-gray-400 text-sm">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                   <p className="text-dark font-semibold mb-1">{file.name}</p>
+                   <p className="text-slate-400 text-sm">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                    {!uploadMutation.isPending && (
                      <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setFile(null); }}
-                      className="mt-4 text-xs font-bold text-red-500 hover:text-red-600 uppercase tracking-widest"
+                      className="mt-4 text-xs font-semibold text-danger hover:text-red-700 uppercase tracking-wide"
                      >
                        Quitar archivo
                      </button>
@@ -147,21 +148,21 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
                 </div>
               ) : (
                 <div className="flex flex-col items-center text-center">
-                  <div className="w-16 h-16 bg-brand/10 text-brand rounded-2xl flex items-center justify-center mb-4">
-                      <Upload className="w-8 h-8" />
+                  <div className={`w-14 h-14 bg-brand/10 text-brand ${radius.base} flex items-center justify-center mb-4`}>
+                      <Upload className="w-7 h-7" />
                   </div>
-                  <h4 className="text-lg font-bold text-dark mb-1">Arrastra tu ticket aquí</h4>
-                  <p className="text-gray-500 text-sm max-w-[200px]">Soporta imágenes (JPG, PNG) y documentos PDF</p>
-                  <div className="mt-6 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-500 shadow-sm">
+                  <h4 className="text-base font-semibold text-dark mb-1">Arrastra tu ticket aquí</h4>
+                  <p className="text-slate-500 text-sm max-w-[200px]">Soporta imágenes (JPG, PNG) y documentos PDF</p>
+                  <div className={`mt-5 px-4 py-2 bg-white border border-slate-200 ${radius.base} text-xs font-semibold text-slate-500 shadow-sm`}>
                     O haz clic para explorar
                   </div>
                 </div>
               )}
             </label>
 
-            <div className="bg-amber-50 p-4 rounded-2xl flex gap-3 border border-amber-100">
-                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-800 leading-relaxed font-medium">
+            <div className={`${tokens.alert} ${tokens.alertWarning}`}>
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <p className="text-xs leading-relaxed font-medium">
                   Asegúrate de que el ticket sea legible y contenga claramente la fecha, el importe total y el comercio. Nuestra IA se encargará del resto.
                 </p>
             </div>
@@ -174,7 +175,7 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
                     onClick={handleUpload}
                     isLoading={uploadMutation.isPending}
                     disabled={!file}
-                    className="flex-1 shadow-xl shadow-brand/20"
+                    className="flex-1"
                 >
                     <Sparkles className="w-4 h-4 mr-2" />
                     Procesar con IA
@@ -191,16 +192,16 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
               ].filter(v => v === null || v === undefined || v === "").length;
               const hasMissing = missing > 0 || (extractedTicket.amount === null || extractedTicket.amount === undefined);
               return hasMissing ? (
-                <div className="bg-amber-50 p-4 rounded-2xl flex gap-3 border border-amber-100">
-                  <Sparkles className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                <div className={`${tokens.alert} ${tokens.alertWarning}`}>
+                  <Sparkles className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p className="text-xs leading-relaxed font-medium">
                     La IA no pudo leer algunos campos del ticket. Completa los que aparecen destacados antes de confirmar.
                   </p>
                 </div>
               ) : (
-                <div className="bg-brand/5 p-4 rounded-2xl flex gap-3 border border-brand/10">
-                  <Sparkles className="w-5 h-5 text-brand shrink-0 mt-0.5" />
-                  <p className="text-xs text-brand-hover leading-relaxed font-medium">
+                <div className={`${tokens.alert} ${tokens.alertInfo}`}>
+                  <Sparkles className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p className="text-xs leading-relaxed font-medium">
                     La IA extrajo todos los datos de tu ticket correctamente. Revisa la información y confirma.
                   </p>
                 </div>

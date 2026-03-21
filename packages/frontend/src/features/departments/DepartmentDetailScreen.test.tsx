@@ -170,10 +170,10 @@ describe('DepartmentDetailScreen', () => {
     expect(screen.getByText('Report 1')).toBeInTheDocument();
   });
 
-  it('navigates to /trips/:id when report clicked', () => {
+  it('navigates to /reports/:id when report clicked', () => {
     renderScreen();
     fireEvent.click(screen.getByText('Report 1').closest('button')!);
-    expect(mockNavigate).toHaveBeenCalledWith('/trips/rep1');
+    expect(mockNavigate).toHaveBeenCalledWith('/reports/rep1');
   });
 
   it('shows edit button when has permission', () => {

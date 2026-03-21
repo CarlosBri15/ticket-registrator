@@ -61,13 +61,13 @@ vi.mock('./components/PendingApprovalsList', () => ({
     <div data-testid="approval-queue">
       {reports.length === 0 && <div data-testid="empty-queue" />}
       {reports.map((r: any) => (
-        <div key={r.id} onClick={() => navigate(`/trips/${r.id}`)} style={{ cursor: 'pointer' }}>
+        <div key={r.id} onClick={() => navigate(`/reports/${r.id}`)} style={{ cursor: 'pointer' }}>
           <span>{r.name}</span>
           <button>Revisar</button>
         </div>
       ))}
       {reports.length > (maxItems || 8) && (
-        <button onClick={() => navigate(viewAllPath || '/trips')}>
+        <button onClick={() => navigate(viewAllPath || '/reports')}>
           Ver todos ({reports.length})
         </button>
       )}
@@ -221,11 +221,11 @@ describe('ControllerDashboard', () => {
     expect(screen.getByText('Viaje Madrid')).toBeInTheDocument();
   });
 
-  it('clicking a pending report navigates to /trips/:id', () => {
+  it('clicking a pending report navigates to /reports/:id', () => {
     setupMocks([makeReport({ id: 'r42', name: 'Viaje Roma', status: 'SUBMITTED' })]);
     renderScreen();
     fireEvent.click(screen.getByText('Viaje Roma'));
-    expect(mockNavigate).toHaveBeenCalledWith('/trips/r42');
+    expect(mockNavigate).toHaveBeenCalledWith('/reports/r42');
   });
 
   it('shows "Revisar" button for each pending report', () => {
@@ -238,7 +238,7 @@ describe('ControllerDashboard', () => {
     expect(revisarButtons.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('"Ver todos" button appears when pending > 8 and navigates to /trips', () => {
+  it('"Ver todos" button appears when pending > 8 and navigates to /reports', () => {
     const manyPending = Array.from({ length: 9 }, (_, i) =>
       makeReport({ id: `r${i}`, status: 'SUBMITTED', name: `Viaje ${i}` }),
     );
@@ -250,7 +250,7 @@ describe('ControllerDashboard', () => {
     );
     expect(verTodosBtn).toBeDefined();
     fireEvent.click(verTodosBtn!);
-    expect(mockNavigate).toHaveBeenCalledWith('/trips?status=SUBMITTED');
+    expect(mockNavigate).toHaveBeenCalledWith('/reports?status=SUBMITTED');
   });
 
   it('shows pendingAmount formatted with € in stats', () => {
@@ -304,9 +304,9 @@ describe('ControllerDashboard', () => {
     expect(screen.getByTestId('approval-queue')).toBeInTheDocument();
   });
 
-  it('navigates to /trips when "Ver todos los viajes" button is clicked', () => {
+  it('navigates to /reports when "Ver todos los viajes" button is clicked', () => {
     renderScreen();
     fireEvent.click(screen.getByText(/Ver todos los viajes/));
-    expect(mockNavigate).toHaveBeenCalledWith('/trips');
+    expect(mockNavigate).toHaveBeenCalledWith('/reports');
   });
 });

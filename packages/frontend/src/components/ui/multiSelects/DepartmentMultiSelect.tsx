@@ -1,5 +1,5 @@
 import { useDepartmentsQuery } from '@ticket-registrator/shared';
-import { MultiSelect } from '../MultiSelect';
+import { MultiSelect } from './MultiSelect';
 
 type Props = {
   companyId?: string | null;

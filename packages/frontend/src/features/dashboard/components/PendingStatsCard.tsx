@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { AlertCircle, CheckCircle } from "lucide-react";
+import { radius } from "../../../styles/design-tokens";
 
 interface PendingStatsCardProps {
   count: number;
@@ -10,71 +11,24 @@ interface PendingStatsCardProps {
 export const PendingStatsCard = ({ count, label, dataTestId }: PendingStatsCardProps) => {
   const { t } = useTranslation();
   const hasPending = count > 0;
-  
-  const containerClasses = [
-    "relative",
-    "overflow-hidden",
-    "rounded-[2rem]",
-    "p-6",
-    "flex",
-    "flex-col",
-    "gap-4",
-    "border",
-    "shadow-sm",
-    "transition-all",
-    "duration-300",
-    hasPending ? "bg-amber-50 border-amber-200" : "bg-white border-gray-100"
-  ].join(" ");
-
-  const labelClasses = [
-    "text-[10px]",
-    "font-black",
-    "uppercase",
-    "tracking-[0.2em]",
-    hasPending ? "text-amber-600" : "text-gray-400"
-  ].join(" ");
-
-  const iconContainerClasses = [
-    "w-9",
-    "h-9",
-    "rounded-xl",
-    "flex",
-    "items-center",
-    "justify-center",
-    hasPending ? "bg-amber-100 text-amber-600" : "bg-green-50 text-green-500"
-  ].join(" ");
-
-  const titleClasses = [
-    "relative",
-    "z-10",
-    "text-3xl",
-    "font-black",
-    "tracking-tighter",
-    hasPending ? "text-amber-700" : "text-dark"
-  ].join(" ");
-
-  const subtitleClasses = [
-    "relative",
-    "z-10",
-    "text-xs",
-    "font-bold",
-    hasPending ? "text-amber-600/70" : "text-gray-400"
-  ].join(" ");
 
   return (
-    <div className={containerClasses} data-testid="pending-approvals-card">
-      <div className="relative z-10 flex items-start justify-between">
-        <p className={labelClasses}>
+    <div
+      className={`relative overflow-hidden ${radius.card} p-5 flex flex-col gap-3 border shadow-sm transition-all duration-200 ${hasPending ? "bg-warning/5 border-warning/20" : "bg-white border-slate-200"}`}
+      data-testid="pending-approvals-card"
+    >
+      <div className="flex items-start justify-between">
+        <p className={`text-xs font-medium uppercase tracking-wide ${hasPending ? "text-warning" : "text-slate-400"}`}>
           {label || (hasPending ? t("home.requiresReview") : t("home.allCaughtUp"))}
         </p>
-        <div className={iconContainerClasses}>
-          {hasPending ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+        <div className={`w-8 h-8 ${radius.base} flex items-center justify-center ${hasPending ? "bg-warning/10 text-warning" : "bg-success/10 text-success"}`}>
+          {hasPending ? <AlertCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
         </div>
       </div>
-      <h3 className={titleClasses} data-testid={dataTestId}>
+      <h3 className={`text-2xl font-bold tracking-tight leading-none ${hasPending ? "text-warning" : "text-dark"}`} data-testid={dataTestId}>
         {count}
       </h3>
-      <p className={subtitleClasses}>
+      <p className={`text-xs font-medium ${hasPending ? "text-warning/70" : "text-slate-400"}`}>
         {hasPending ? t("home.pendingApprovals") : t("home.noPendingApprovals")}
       </p>
     </div>
