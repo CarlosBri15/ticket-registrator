@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Users, Building2, Layers, Lock, Shield } from "lucide-react";
-import { radius, text } from "../../../styles/design-tokens";
+import { radius, text } from "../../../styles/theme";
 
 export const QuickActionsGrid = ({
   navigate,

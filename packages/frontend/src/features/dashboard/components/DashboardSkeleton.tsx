@@ -1,4 +1,4 @@
-import { radius } from "../../../styles/design-tokens";
+import { radius } from "../../../styles/theme";
 
 export const DashboardSkeleton = () => {
   return (

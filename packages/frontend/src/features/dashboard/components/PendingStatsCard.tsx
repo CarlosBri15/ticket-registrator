@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { AlertCircle, CheckCircle } from "lucide-react";
-import { radius } from "../../../styles/design-tokens";
+import { radius } from "../../../styles/theme";
 
 interface PendingStatsCardProps {
   count: number;

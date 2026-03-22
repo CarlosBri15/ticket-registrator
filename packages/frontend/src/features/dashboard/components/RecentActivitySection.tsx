@@ -1,7 +1,7 @@
 import { Clock, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
-import { tokens, radius } from "../../../styles/design-tokens";
+import { tokens, radius } from "../../../styles/theme";
 
 interface RecentActivitySectionProps {
   t: any;

@@ -1,5 +1,5 @@
 import type { ReactNode, ComponentProps } from 'react';
-import { tokens } from '../../styles/design-tokens';
+import { tokens } from '../../styles/theme';
 
 interface CardProps extends ComponentProps<'div'> {
   children: ReactNode;

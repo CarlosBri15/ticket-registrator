@@ -4,24 +4,28 @@ import { MemoryRouter } from 'react-router-dom';
 
 // ─── Shared mock ──────────────────────────────────────────────────────────────
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useReportsQuery: vi.fn(),
-  useUserQuery: vi.fn(),
-  useScope: vi.fn(),
-  usePermissions: vi.fn(),
-  ReportStatus: {
-    SUBMITTED: 'SUBMITTED',
-    APPROVED: 'APPROVED',
-    CREATED: 'CREATED',
-    DECLINED: 'DECLINED',
-  },
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useReportsQuery: vi.fn(),
+    useUserQuery: vi.fn(),
+    useScope: vi.fn(),
+    usePermissions: vi.fn(),
+    ReportStatus: {
+      SUBMITTED: 'SUBMITTED',
+      APPROVED: 'APPROVED',
+      CREATED: 'CREATED',
+      DECLINED: 'DECLINED',
+    },
+  };
+});
 
 vi.mock('lucide-react', () => ({
   FileText: () => null, AlertCircle: () => null, CheckCircle: () => null,
   XCircle: () => null, Wallet: () => null, Clock: () => null,
   ChevronRight: () => null, Calendar: () => null, Sparkles: () => null,
-  Shield: () => null,
+  Shield: () => null, TrendingDown: () => null,
 }));
 
 vi.mock('./components/DashboardHero', () => ({

@@ -21,7 +21,7 @@ import { PendingStatsCard } from "./components/PendingStatsCard";
 import { WeeklyStatsCard, PendingAmountCard } from "./components/ControllerStatsCards";
 import { PendingApprovalsList } from "./components/PendingApprovalsList";
 import { useDashboardHelpers } from "./hooks/useDashboardHelpers";
-import { tokens, radius } from "../../styles/design-tokens";
+import { tokens, radius } from "../../styles/theme";
 
 const RecentlyProcessed = ({ recentProcessed, navigate, dateLocale }: any) => (
   <section className="space-y-4" data-testid="recently-processed">

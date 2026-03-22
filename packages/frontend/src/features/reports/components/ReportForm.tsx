@@ -1,14 +1,19 @@
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createReportSchema, type CreateReportSchema, useCreateReportMutation } from "@ticket-registrator/shared";
+import {
+  createReportSchema,
+  type CreateReportSchema,
+  useCreateReportMutation,
+} from "@ticket-registrator/shared";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
-import { CurrencySelect, ReportTypeSelect } from "../../../components/ui/selects";
+import { ReportTypeSelect } from "./ReportTypeSelect";
+import { CurrencySelect } from "../../settings/components/CurrencySelect";
 import { AlertCircle } from "lucide-react";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { tokens } from "../../../styles/design-tokens";
+import { tokens } from "../../../styles/theme";
 
 interface ReportFormProps {
   onSuccess: () => void;
@@ -25,20 +30,25 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
       onSuccess();
     },
     onError: (error: AxiosError<{ message: string }>) => {
-      const message = error?.response?.data?.message || t('trips.createError');
+      const message = error?.response?.data?.message || t("trips.createError");
       setApiError(message);
-    }
+    },
   });
 
-  const { register, handleSubmit, control, formState: { errors } } = useForm<CreateReportSchema>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<CreateReportSchema>({
     resolver: zodResolver(createReportSchema),
     defaultValues: {
       name: "",
       start_date: new Date(),
       end_date: new Date(),
       currency: "EUR",
-      type: ""
-    }
+      type: "",
+    },
   });
 
   const onSubmit = (data: CreateReportSchema) => {
@@ -57,8 +67,8 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
 
       <div className="space-y-6">
         <Input
-          label={t('trips.nameLabel')}
-          placeholder={t('trips.namePlaceholder')}
+          label={t("trips.nameLabel")}
+          placeholder={t("trips.namePlaceholder")}
           {...register("name")}
           error={errors.name?.message}
         />
@@ -66,13 +76,13 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
             type="date"
-            label={t('trips.startLabel')}
+            label={t("trips.startLabel")}
             {...register("start_date", { valueAsDate: true })}
             error={errors.start_date?.message}
           />
           <Input
             type="date"
-            label={t('trips.endLabel')}
+            label={t("trips.endLabel")}
             {...register("end_date", { valueAsDate: true })}
             error={errors.end_date?.message}
           />
@@ -84,7 +94,7 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
             control={control}
             render={({ field }) => (
               <CurrencySelect
-                label={t('trips.currencyLabel')}
+                label={t("trips.currencyLabel")}
                 value={field.value}
                 onChange={field.onChange}
                 error={errors.currency?.message}
@@ -97,10 +107,10 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
             control={control}
             render={({ field }) => (
               <ReportTypeSelect
-                label={t('trips.categoryLabel')}
+                label={t("trips.categoryLabel")}
                 value={field.value}
                 onChange={field.onChange}
-                placeholder={t('trips.categoryPlaceholder')}
+                placeholder={t("trips.categoryPlaceholder")}
                 error={errors.type?.message}
               />
             )}
@@ -115,14 +125,14 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
           onClick={onCancel}
           className="w-full sm:w-auto"
         >
-          {t('common.cancel')}
+          {t("common.cancel")}
         </Button>
         <Button
           type="submit"
           isLoading={isPending}
           className="w-full sm:w-auto px-10"
         >
-          {t('trips.saveButton')}
+          {t("trips.saveButton")}
         </Button>
       </div>
     </form>

@@ -3,7 +3,7 @@ import { CheckCircle, Calendar, ChevronRight, Clock } from "lucide-react";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { format } from "date-fns";
 import type { Locale } from "date-fns";
-import { tokens, radius } from "../../../styles/design-tokens";
+import { tokens, radius } from "../../../styles/theme";
 
 export interface PendingApprovalsListProps {
   reports: IReport[];

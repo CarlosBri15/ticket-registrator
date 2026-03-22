@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ReportForm } from './ReportForm';
 
-vi.mock('@ticket-registrator/shared', async () => {
-  const actual = await vi.importActual<typeof import('@ticket-registrator/shared')>('@ticket-registrator/shared');
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
   return {
     ...actual,
     useCreateReportMutation: vi.fn(),
@@ -24,17 +24,20 @@ vi.mock('../../../components/ui/Input', () => ({
   Input: ({ label, ...props }: any) => <input aria-label={label} {...props} />,
 }));
 
-vi.mock('../../../components/ui/selects', () => ({
-  CurrencySelect: ({ label, onChange, value }: any) => (
-    <select aria-label={label} value={value ?? ''} onChange={(e) => onChange?.(e.target.value)}>
-      <option value="EUR">EUR</option>
-      <option value="USD">USD</option>
-    </select>
-  ),
+vi.mock('./ReportTypeSelect', () => ({
   ReportTypeSelect: ({ label, onChange, value }: any) => (
     <select aria-label={label} value={value ?? ''} onChange={(e) => onChange?.(e.target.value)}>
       <option value="">--</option>
       <option value="trips.typeBusinessTrip">trips.typeBusinessTrip</option>
+    </select>
+  ),
+}));
+
+vi.mock('../../settings/components/CurrencySelect', () => ({
+  CurrencySelect: ({ label, onChange, value }: any) => (
+    <select aria-label={label} value={value ?? ''} onChange={(e) => onChange?.(e.target.value)}>
+      <option value="EUR">EUR</option>
+      <option value="USD">USD</option>
     </select>
   ),
 }));

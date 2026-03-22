@@ -31,7 +31,7 @@ import { DashboardHero } from "./components/DashboardHero";
 import { PendingStatsCard } from "./components/PendingStatsCard";
 import { RecentActivitySection } from "./components/RecentActivitySection";
 import { useDashboardHelpers } from "./hooks/useDashboardHelpers";
-import { tokens, radius, text } from "../../styles/design-tokens";
+import { tokens, radius, text } from "../../styles/theme";
 
 const TeamKpis = ({ teamMemberCount, pendingCount, t }: { teamMemberCount: number; pendingCount: number; t: any }) => (
   <>

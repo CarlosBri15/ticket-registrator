@@ -12,23 +12,27 @@ vi.mock('./RegularDashboard', () => ({ RegularDashboard: () => <div data-testid=
 
 // ─── Shared mock ──────────────────────────────────────────────────────────────
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useReportsQuery: vi.fn(),
-  useUserQuery: vi.fn(),
-  useTicketsQuery: vi.fn(),
-  useUsersQuery: vi.fn(),
-  useOrganizationsQuery: vi.fn(),
-  useDepartmentsQuery: vi.fn(),
-  useScope: vi.fn(),
-  useScopeContext: vi.fn(),
-  usePermissions: vi.fn(),
-  ReportStatus: {
-    SUBMITTED: 'SUBMITTED',
-    APPROVED: 'APPROVED',
-    CREATED: 'CREATED',
-    DECLINED: 'DECLINED',
-  },
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useReportsQuery: vi.fn(),
+    useUserQuery: vi.fn(),
+    useTicketsQuery: vi.fn(),
+    useUsersQuery: vi.fn(),
+    useOrganizationsQuery: vi.fn(),
+    useDepartmentsQuery: vi.fn(),
+    useScope: vi.fn(),
+    useScopeContext: vi.fn(),
+    usePermissions: vi.fn(),
+    ReportStatus: {
+      SUBMITTED: 'SUBMITTED',
+      APPROVED: 'APPROVED',
+      CREATED: 'CREATED',
+      DECLINED: 'DECLINED',
+    },
+  };
+});
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');

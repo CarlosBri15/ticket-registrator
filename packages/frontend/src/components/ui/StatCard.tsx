@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { tokens, radius, shadow } from "../../styles/design-tokens";
+import { tokens, radius, shadow } from "../../styles/theme";
 
 interface StatCardProps {
   title: string;

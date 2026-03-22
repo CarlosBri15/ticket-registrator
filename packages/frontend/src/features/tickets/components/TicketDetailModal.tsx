@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { MapPin, CreditCard, Tag, ExternalLink, Image as ImageIcon, Loader2, Pencil, X } from "lucide-react";
-import { tokens, radius } from "../../../styles/design-tokens";
+import { tokens, radius } from "../../../styles/theme";
 
 interface TicketDetailModalProps {
   isOpen: boolean;

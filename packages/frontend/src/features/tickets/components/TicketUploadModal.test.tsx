@@ -2,11 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { TicketUploadModal } from './TicketUploadModal';
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useUploadTicketMutation: vi.fn(),
-  useUpdateTicketMutation: vi.fn(),
-  useDeleteTicketMutation: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useUploadTicketMutation: vi.fn(),
+    useUpdateTicketMutation: vi.fn(),
+    useDeleteTicketMutation: vi.fn(),
+  };
+});
 
 vi.mock('lucide-react', () => ({
   Upload: () => null,

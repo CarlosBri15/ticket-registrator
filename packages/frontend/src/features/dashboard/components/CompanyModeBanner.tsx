@@ -1,5 +1,5 @@
 import { Building2, ArrowUpRight, Globe } from "lucide-react";
-import { radius } from "../../../styles/design-tokens";
+import { radius } from "../../../styles/theme";
 
 export const CompanyModeBanner = ({
   orgName,

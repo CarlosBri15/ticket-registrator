@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import { tokens } from '../../styles/design-tokens';
+import { tokens } from '../../styles/theme';
 
 interface InputProps extends ComponentProps<'input'> {
   label: string;

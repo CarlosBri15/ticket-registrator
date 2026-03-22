@@ -3,7 +3,7 @@ import { Check, AlertCircle, Cpu, Home, MapPin, Calendar, DollarSign, CreditCard
 import type { ITicket } from "@ticket-registrator/shared";
 import { Input } from "../../../components/ui/Input";
 import { Button } from "../../../components/ui/Button";
-import { tokens, radius } from "../../../styles/design-tokens";
+import { tokens, radius } from "../../../styles/theme";
 
 interface TicketConfirmationFormProps {
   ticket: ITicket;

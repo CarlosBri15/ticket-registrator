@@ -5,9 +5,13 @@ import { es } from 'date-fns/locale';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useTicketsQuery: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useTicketsQuery: vi.fn(),
+  };
+});
 
 vi.mock('lucide-react', () => ({
   ArrowUpRight: () => <svg data-testid="icon-arrow-up-right" />,
