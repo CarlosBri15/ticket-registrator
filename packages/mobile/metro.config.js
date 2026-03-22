@@ -1,8 +1,8 @@
 const { getDefaultConfig } = require('expo/metro-config');
-const path = require('path');
+const path = require('node:path');
 
 const projectRoot = __dirname;
-const workspaceRoot = path.resolve(projectRoot, '..');
+const workspaceRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
@@ -15,7 +15,7 @@ config.resolver.nodeModulesPaths = [
 config.resolver.disableHierarchicalLookup = true;
 
 config.resolver.extraNodeModules = {
-  'react': path.resolve(projectRoot, 'node_modules/react'),
+  'react': path.resolve(workspaceRoot, 'node_modules/react'),
   'react-native': path.resolve(workspaceRoot, 'node_modules/react-native'),
   'expo': path.resolve(workspaceRoot, 'node_modules/expo'),
   'expo-router': path.resolve(workspaceRoot, 'node_modules/expo-router'),

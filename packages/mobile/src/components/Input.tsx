@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, type TextInputProps, StyleSheet } from 'react-native';
+import { View, Text, TextInput, type TextInputProps } from 'react-native';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
