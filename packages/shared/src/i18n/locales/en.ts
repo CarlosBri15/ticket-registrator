@@ -245,7 +245,8 @@ export default {
   },
   layout: {
     menu: "Main Menu",
-    allTickets: "All Tickets",
+    home: "Home",
+    allTickets: "Tickets",
     expenseManagement: "Expense management",
     fullHistory: "Complete history",
     users: "Users",

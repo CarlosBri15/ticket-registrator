@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect } from "react";
 import { X } from "lucide-react";
-import { tokens } from '../../styles/design-tokens';
+import { tokens } from '../../styles/theme';
 
 type ModalSize = 'md' | 'lg' | 'xl';
 

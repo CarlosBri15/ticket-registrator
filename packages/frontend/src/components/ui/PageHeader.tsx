@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { tokens, radius } from '../../styles/design-tokens';
+import { tokens, radius } from '../../styles/theme';
 
 interface PageHeaderProps {
   title: string;

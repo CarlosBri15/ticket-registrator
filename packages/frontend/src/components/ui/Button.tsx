@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { tokens } from '../../styles/design-tokens';
+import { tokens } from '../../styles/theme';
 
 interface ButtonProps extends ComponentProps<'button'> {
   isLoading?: boolean;

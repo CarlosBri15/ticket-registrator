@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Loader2 } from 'lucide-react';
 import { useDropdown } from '../../hooks/useDropdown';
-import { tokens } from '../../styles/design-tokens';
+import { tokens } from '../../styles/theme';
 
 export interface SelectOption {
   value: string;

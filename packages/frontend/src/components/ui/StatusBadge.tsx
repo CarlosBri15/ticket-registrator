@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { tokens } from '../../styles/design-tokens';
+import { tokens } from '../../styles/theme';
 
 interface StatusBadgeProps {
   status: string;

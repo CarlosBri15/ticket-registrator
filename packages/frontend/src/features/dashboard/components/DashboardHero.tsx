@@ -1,5 +1,5 @@
 import { Sparkles } from "lucide-react";
-import { radius } from "../../../styles/design-tokens";
+import { radius } from "../../../styles/theme";
 
 interface DashboardHeroProps {
   user: any;

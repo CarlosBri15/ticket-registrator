@@ -1,5 +1,5 @@
 import { XCircle, CheckCircle2, AlertTriangle, Info, X } from 'lucide-react';
-import { tokens } from '../../styles/design-tokens';
+import { tokens } from '../../styles/theme';
 
 export type AlertVariant = 'error' | 'success' | 'warning' | 'info';
 

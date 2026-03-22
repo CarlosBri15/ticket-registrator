@@ -243,10 +243,37 @@ jobs:
           channelId: live
           entryPoint: "./packages/frontend"
 
+  # 4. Deploy Mobile (Expo EAS Update)
+  deploy-mobile:
+    name: Deploy Mobile
+    needs: [changes, ci-mobile]
+    if: always() && needs.changes.outputs.mobile == 'true' && (needs.ci-mobile.result == 'success' || needs.ci-mobile.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Install dependencies
+        run: npm ci
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Deploy Update to Expo (Preview)
+        working-directory: packages/mobile
+        run: EXPO_PUBLIC_API_URL=${{ secrets.VITE_API_URL_DEV }} npx eas update --auto --channel preview
+
   # 4. Final Notification (ONLY ON SUCCESS)
   notify-success:
     name: Notify Success
-    needs: [deploy-backend, deploy-frontend]
+    needs: [deploy-backend, deploy-frontend, deploy-mobile]
     runs-on: ubuntu-latest
     if: success()
     steps:
@@ -268,7 +295,7 @@ jobs:
   # 5. Alert on Failure (ANY PART)
   notify-failure:
     name: Notify Failure
-    needs: [ci-backend, ci-frontend, ci-mobile, ci-shared, deploy-backend, deploy-frontend]
+    needs: [ci-backend, ci-frontend, ci-mobile, ci-shared, deploy-backend, deploy-frontend, deploy-mobile]
     runs-on: ubuntu-latest
     if: failure()
     steps:

@@ -5,7 +5,7 @@ import { Button } from "../../../components/ui/Button";
 import { useUploadTicketMutation, useUpdateTicketMutation, useDeleteTicketMutation } from "@ticket-registrator/shared";
 import type { ITicket } from "@ticket-registrator/shared";
 import { TicketConfirmationForm } from "./TicketConfirmationForm";
-import { tokens, radius } from "../../../styles/design-tokens";
+import { tokens, radius } from "../../../styles/theme";
 
 interface TicketUploadModalProps {
   isOpen: boolean;

@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { tokens } from "../../styles/design-tokens";
+import { tokens } from "../../styles/theme";
 
 interface PaginationProps {
   page: number;

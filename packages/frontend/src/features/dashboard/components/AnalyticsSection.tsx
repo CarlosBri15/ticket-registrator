@@ -6,7 +6,7 @@ import {
 import { BarChart2 } from "lucide-react";
 import { getMonthlyExpenses, getExpensesByType } from "../../../utils/reportAnalytics";
 import type { IReport } from "@ticket-registrator/shared";
-import { tokens, radius } from "../../../styles/design-tokens";
+import { tokens, radius } from "../../../styles/theme";
 
 export const CHART_COLORS = ["#336b87", "#90afc5", "#4a8cae", "#059669", "#d97706", "#0284c7"];
 
