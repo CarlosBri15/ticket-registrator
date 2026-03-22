@@ -36,4 +36,4 @@ EXPOSE 8080
 
 WORKDIR /app/packages/backend
 
-CMD ["node", "dist/main.mjs"]
+CMD ["node", "dist/main.js"]
