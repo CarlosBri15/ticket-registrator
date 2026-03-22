@@ -3,20 +3,24 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { UserDetailScreen } from './UserDetailScreen';
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useUsersQuery: vi.fn(),
-  useReportsQuery: vi.fn(),
-  useRolesQuery: vi.fn(),
-  useDepartmentsQuery: vi.fn(),
-  useUpdateUserMutation: vi.fn(),
-  useScope: vi.fn(),
-  useScopeContext: vi.fn(),
-  useUserQuery: vi.fn(),
-  usePermissions: vi.fn(),
-  ReportStatus: { SUBMITTED: 'Submitted', APPROVED: 'Approved', CREATED: 'Created', DECLINED: 'Declined' },
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useUsersQuery: vi.fn(),
+    useReportsQuery: vi.fn(),
+    useRolesQuery: vi.fn(),
+    useDepartmentsQuery: vi.fn(),
+    useUpdateUserMutation: vi.fn(),
+    useScope: vi.fn(),
+    useScopeContext: vi.fn(),
+    useUserQuery: vi.fn(),
+    usePermissions: vi.fn(),
+    ReportStatus: { SUBMITTED: 'Submitted', APPROVED: 'Approved', CREATED: 'Created', DECLINED: 'Declined' },
+  };
+});
 
-vi.mock('./EditUserModal', () => ({
+vi.mock('../components/EditUserModal', () => ({
   EditUserModal: ({ isOpen, onClose }: any) =>
     isOpen ? (
       <div role="dialog" data-testid="edit-modal">
@@ -25,7 +29,7 @@ vi.mock('./EditUserModal', () => ({
     ) : null,
 }));
 
-vi.mock('../../components/ui/StatusBadge', () => ({
+vi.mock('../../../components/ui/StatusBadge', () => ({
   StatusBadge: ({ status }: any) => <span data-testid="status-badge">{status}</span>,
 }));
 

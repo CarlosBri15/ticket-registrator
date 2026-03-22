@@ -15,13 +15,17 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useUserQuery: vi.fn(),
-  usePermissions: vi.fn(),
-  useScope: vi.fn(),
-  useScopeContext: vi.fn(),
-  useOrganizationsQuery: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useUserQuery: vi.fn(),
+    usePermissions: vi.fn(),
+    useScope: vi.fn(),
+    useScopeContext: vi.fn(),
+    useOrganizationsQuery: vi.fn(),
+  };
+});
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -51,11 +55,11 @@ vi.mock('lucide-react', () => ({
   Layers: () => null,
 }));
 
-vi.mock('../api/client', () => ({
+vi.mock('../../api/client', () => ({
   tokenProvider: { removeToken: vi.fn() },
 }));
 
-vi.mock('../components/ui/LanguageSelector', () => ({
+vi.mock('../ui/LanguageSelector', () => ({
   LanguageSelector: () => <div data-testid="language-selector" />,
 }));
 

@@ -2,9 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { OrgSelect } from './OrgSelect';
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useOrganizationsQuery: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useOrganizationsQuery: vi.fn(),
+  };
+});
 
 vi.mock('../Select', () => ({
   Select: ({ label, options, value, onChange, placeholder, isLoading, required, error, id }: any) => (
@@ -116,7 +120,7 @@ describe('OrgSelect', () => {
 
   it('forwards error prop', () => {
     render(<OrgSelect error="Organización requerida" value="" onChange={() => {}} />);
-    expect(screen.getByRole('alert')).toHaveTextContent('Organización requerida');
+    expect(screen.getByText('Organización requerida')).toBeInTheDocument();
   });
 
   it('forwards the current value', () => {

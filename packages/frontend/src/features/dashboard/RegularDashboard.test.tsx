@@ -32,28 +32,32 @@ vi.mock('./components/QuickActionsGrid', () => ({
 }));
 // ─── Shared mock ──────────────────────────────────────────────────────────────
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useReportsQuery: vi.fn(),
-  useUserQuery: vi.fn(),
-  useTicketsQuery: vi.fn(),
-  useUsersQuery: vi.fn(),
-  useOrganizationsQuery: vi.fn(),
-  useDepartmentsQuery: vi.fn(),
-  useScope: vi.fn(),
-  useScopeContext: vi.fn(),
-  usePermissions: vi.fn(),
-  ReportStatus: {
-    SUBMITTED: 'SUBMITTED',
-    APPROVED: 'APPROVED',
-    CREATED: 'CREATED',
-    DECLINED: 'DECLINED',
-  },
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useReportsQuery: vi.fn(),
+    useUserQuery: vi.fn(),
+    useTicketsQuery: vi.fn(),
+    useUsersQuery: vi.fn(),
+    useOrganizationsQuery: vi.fn(),
+    useDepartmentsQuery: vi.fn(),
+    useScope: vi.fn(),
+    useScopeContext: vi.fn(),
+    usePermissions: vi.fn(),
+    ReportStatus: {
+      SUBMITTED: 'SUBMITTED',
+      APPROVED: 'APPROVED',
+      CREATED: 'CREATED',
+      DECLINED: 'DECLINED',
+    },
+  };
+});
 
 vi.mock('lucide-react', () => ({
   Wallet: () => null, Plane: () => null, AlertCircle: () => null, Plus: () => null,
   FileText: () => null, ArrowUpRight: () => null, ChevronRight: () => null,
-  TrendingUp: () => null, Clock: () => null, Calendar: () => null,
+  TrendingUp: () => null, TrendingDown: () => null, Clock: () => null, Calendar: () => null,
   Receipt: () => null, Sparkles: () => null, Users: () => null, CheckCircle: () => null,
   Building2: () => null, Shield: () => null, Layers: () => null, Lock: () => null,
   BarChart2: () => null, Globe: () => null, Search: () => null, X: () => null,

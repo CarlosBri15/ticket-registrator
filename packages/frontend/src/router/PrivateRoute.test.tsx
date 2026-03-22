@@ -12,10 +12,14 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useUserQuery: vi.fn(),
-  usePermissions: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useUserQuery: vi.fn(),
+    usePermissions: vi.fn(),
+  };
+});
 
 import { useUserQuery, usePermissions } from '@ticket-registrator/shared';
 

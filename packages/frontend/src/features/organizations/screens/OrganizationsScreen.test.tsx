@@ -16,11 +16,15 @@ vi.mock('react-router-dom', async () => {
 
 // ─── Mock shared hooks ────────────────────────────────────────────────────────
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useOrganizationsQuery: vi.fn(),
-  useOnboardOrganizationMutation: vi.fn(),
-  usePermissions: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useOrganizationsQuery: vi.fn(),
+    useOnboardOrganizationMutation: vi.fn(),
+    usePermissions: vi.fn(),
+  };
+});
 
 vi.mock('lucide-react', () => ({
   Globe: () => null,
@@ -30,19 +34,19 @@ vi.mock('lucide-react', () => ({
   ChevronRight: () => null,
 }));
 
-vi.mock('../../components/ui/Button', () => ({
+vi.mock('../../../components/ui/Button', () => ({
   Button: ({ children, onClick, disabled }: any) => (
     <button onClick={onClick} disabled={disabled}>{children}</button>
   ),
 }));
-vi.mock('../../components/ui/Input', () => ({
+vi.mock('../../../components/ui/Input', () => ({
   Input: ({ label, ...props }: any) => <input aria-label={label} {...props} />,
 }));
-vi.mock('../../components/ui/Modal', () => ({
+vi.mock('../../../components/ui/Modal', () => ({
   Modal: ({ isOpen, children, title }: any) =>
     isOpen ? <div role="dialog"><h2>{title}</h2>{children}</div> : null,
 }));
-vi.mock('../../components/ui/Alert', () => ({
+vi.mock('../../../components/ui/Alert', () => ({
   AlertError: ({ message }: any) => <div role="alert">{message}</div>,
   getApiErrorMessage: (e: any) => e?.message ?? 'Error',
 }));

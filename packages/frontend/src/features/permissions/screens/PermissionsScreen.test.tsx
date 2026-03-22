@@ -3,17 +3,21 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { PermissionsScreen } from './PermissionsScreen';
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useRolesQuery: vi.fn(),
-  useSystemRolesQuery: vi.fn(),
-  useAllPermissionsQuery: vi.fn(),
-  useRolePermissionsQuery: vi.fn(),
-  useAssignPermissionMutation: vi.fn(),
-  useUnassignPermissionMutation: vi.fn(),
-  usePermissions: vi.fn(),
-  useScope: vi.fn(),
-  useScopeContext: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useRolesQuery: vi.fn(),
+    useSystemRolesQuery: vi.fn(),
+    useAllPermissionsQuery: vi.fn(),
+    useRolePermissionsQuery: vi.fn(),
+    useAssignPermissionMutation: vi.fn(),
+    useUnassignPermissionMutation: vi.fn(),
+    usePermissions: vi.fn(),
+    useScope: vi.fn(),
+    useScopeContext: vi.fn(),
+  };
+});
 
 vi.mock('lucide-react', () => ({
   Lock: () => null,

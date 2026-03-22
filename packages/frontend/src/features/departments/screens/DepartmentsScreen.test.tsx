@@ -10,7 +10,7 @@ vi.mock('react-router-dom', async () => {
   return { ...(actual as object), useNavigate: () => mockNavigate };
 });
 
-vi.mock('./DepartmentModal', () => ({
+vi.mock('../components/DepartmentModal', () => ({
   DepartmentModal: ({ isOpen, onClose, department }: any) =>
     isOpen
       ? (
@@ -22,13 +22,17 @@ vi.mock('./DepartmentModal', () => ({
       : null,
 }));
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useDepartmentsQuery: vi.fn(),
-  useDeleteDepartmentMutation: vi.fn(),
-  usePermissions: vi.fn(),
-  useScope: vi.fn(),
-  useScopeContext: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useDepartmentsQuery: vi.fn(),
+    useDeleteDepartmentMutation: vi.fn(),
+    usePermissions: vi.fn(),
+    useScope: vi.fn(),
+    useScopeContext: vi.fn(),
+  };
+});
 
 vi.mock('lucide-react', () => ({
   Layers: () => null,
@@ -37,14 +41,20 @@ vi.mock('lucide-react', () => ({
   Trash2: () => null,
   Pencil: () => null,
   Building2: () => null,
+  XCircle: () => null,
+  CheckCircle: () => null,
+  CheckCircle2: () => null,
+  AlertTriangle: () => null,
+  Info: () => null,
+  X: () => null,
 }));
 
-vi.mock('../../components/ui/Button', () => ({
+vi.mock('../../../components/ui/Button', () => ({
   Button: ({ children, onClick, disabled }: any) => (
     <button onClick={onClick} disabled={disabled}>{children}</button>
   ),
 }));
-vi.mock('../../components/ui/Pagination', () => ({
+vi.mock('../../../components/ui/Pagination', () => ({
   Pagination: () => null,
 }));
 

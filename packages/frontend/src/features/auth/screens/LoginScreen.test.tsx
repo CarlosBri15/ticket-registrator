@@ -11,8 +11,8 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-vi.mock('@ticket-registrator/shared', async () => {
-  const actual = await vi.importActual<typeof import('@ticket-registrator/shared')>('@ticket-registrator/shared');
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
   return {
     ...actual,
     useLoginMutation: vi.fn(),
@@ -32,7 +32,7 @@ vi.mock('lucide-react', () => ({
   Sparkles: () => null,
 }));
 
-vi.mock('../../api/client', () => ({
+vi.mock('../../../api/client', () => ({
   tokenProvider: { setToken: vi.fn() },
 }));
 

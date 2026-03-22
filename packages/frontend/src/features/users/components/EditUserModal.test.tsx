@@ -3,13 +3,17 @@ import { render, screen, fireEvent } from '@testing-library/react';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useUpdateUserMutation: vi.fn(),
-  useRolesQuery: vi.fn(),
-  useSystemRolesQuery: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useUpdateUserMutation: vi.fn(),
+    useRolesQuery: vi.fn(),
+    useSystemRolesQuery: vi.fn(),
+  };
+});
 
-vi.mock('../../components/ui/selects', () => ({
+vi.mock('../../roles/components/RoleSelect', () => ({
   RoleSelect: ({ value, onChange, id, required }: any) => (
     <div data-testid="role-select">
       <select
@@ -27,7 +31,7 @@ vi.mock('../../components/ui/selects', () => ({
   ),
 }));
 
-vi.mock('../../components/ui/multiSelects', () => ({
+vi.mock('../../departments/components/DepartmentMultiSelect', () => ({
   DepartmentMultiSelect: ({ onChange }: any) => (
     <div data-testid="department-multi-select">
       <button onClick={() => onChange?.(['dept-1'])}>Select Department</button>
@@ -35,7 +39,7 @@ vi.mock('../../components/ui/multiSelects', () => ({
   ),
 }));
 
-vi.mock('../../components/ui/Modal', () => ({
+vi.mock('../../../components/ui/Modal', () => ({
   Modal: ({ isOpen, title, children }: any) =>
     isOpen ? (
       <div data-testid="modal">
@@ -45,7 +49,7 @@ vi.mock('../../components/ui/Modal', () => ({
     ) : null,
 }));
 
-vi.mock('../../components/ui/Button', () => ({
+vi.mock('../../../components/ui/Button', () => ({
   Button: ({ children, onClick, disabled, isLoading, type, ...rest }: any) => (
     <button type={type} onClick={onClick} disabled={disabled || isLoading} data-loading={isLoading} {...rest}>
       {children}
@@ -53,7 +57,7 @@ vi.mock('../../components/ui/Button', () => ({
   ),
 }));
 
-vi.mock('../../components/ui/Input', () => ({
+vi.mock('../../../components/ui/Input', () => ({
   Input: ({ label, value, onChange, type, ...rest }: any) => (
     <div>
       <label>{label}</label>
@@ -68,7 +72,7 @@ vi.mock('../../components/ui/Input', () => ({
   ),
 }));
 
-vi.mock('../../components/ui/Alert', () => ({
+vi.mock('../../../components/ui/Alert', () => ({
   AlertError: ({ message }: any) => (
     <div role="alert" data-testid="alert-error">
       {message}

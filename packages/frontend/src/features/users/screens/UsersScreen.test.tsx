@@ -10,18 +10,21 @@ vi.mock('react-router-dom', async () => {
   return { ...(actual as object), useNavigate: () => mockNavigate };
 });
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useUsersQuery: vi.fn(),
-  useCreateUserMutation: vi.fn(),
-  useDeleteUserMutation: vi.fn(),
-  useUpdateUserMutation: vi.fn(),
-  useRolesQuery: vi.fn(),
-  useDepartmentsQuery: vi.fn(),
-  usePermissions: vi.fn(),
-  useScope: vi.fn(),
-  useScopeContext: vi.fn(),
-  AUTHORITY_LEVELS: { GLOBAL: 100, COMPANY: 99, DEPARTMENT: 40, SELF: 0 },
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useUsersQuery: vi.fn(),
+    useCreateUserMutation: vi.fn(),
+    useDeleteUserMutation: vi.fn(),
+    useUpdateUserMutation: vi.fn(),
+    useRolesQuery: vi.fn(),
+    useDepartmentsQuery: vi.fn(),
+    usePermissions: vi.fn(),
+    useScope: vi.fn(),
+    useScopeContext: vi.fn(),
+  };
+});
 
 vi.mock('lucide-react', () => ({
   Users: () => null,
@@ -34,18 +37,18 @@ vi.mock('lucide-react', () => ({
   Pencil: () => <span data-testid="pencil-icon" />,
 }));
 
-vi.mock('../../components/ui/Button', () => ({
+vi.mock('../../../components/ui/Button', () => ({
   Button: ({ children, onClick, disabled }: any) => (
     <button onClick={onClick} disabled={disabled}>{children}</button>
   ),
 }));
-vi.mock('../../components/ui/Input', () => ({
+vi.mock('../../../components/ui/Input', () => ({
   Input: ({ label, ...props }: any) => <input aria-label={label} {...props} />,
 }));
 const MOCK_ROLES = [{ id: 'r1', name: 'Admin', hierarchy: 99, companyId: 'company-1', description: null }];
 const MOCK_SUPERADMIN_ROLE = { id: 'sa1', name: 'SuperAdmin', hierarchy: 100, companyId: null, description: null };
 
-vi.mock('../../components/ui/selects', () => ({
+vi.mock('../../roles/components/RoleSelect', () => ({
   RoleSelect: ({ value, onChange, placeholder, required, id }: any) => (
     <select
       aria-label="Rol"
@@ -62,6 +65,9 @@ vi.mock('../../components/ui/selects', () => ({
       <option value="sa1">SuperAdmin</option>
     </select>
   ),
+}));
+
+vi.mock('../../organizations/components/OrgSelect', () => ({
   OrgSelect: ({ value, onChange, placeholder, required, id }: any) => (
     <select
       aria-label="Organización"
@@ -75,18 +81,18 @@ vi.mock('../../components/ui/selects', () => ({
     </select>
   ),
 }));
-vi.mock('../../components/ui/multiSelects', () => ({
+vi.mock('../../departments/components/DepartmentMultiSelect', () => ({
   DepartmentMultiSelect: ({ onChange }: any) => (
     <div data-testid="dept-multiselect">
       <button onClick={() => onChange(['d1'])}>select-dept</button>
     </div>
   ),
 }));
-vi.mock('../../components/ui/Modal', () => ({
+vi.mock('../../../components/ui/Modal', () => ({
   Modal: ({ isOpen, children, title }: any) =>
     isOpen ? <div role="dialog"><h2>{title}</h2>{children}</div> : null,
 }));
-vi.mock('./EditUserModal', () => ({
+vi.mock('../components/EditUserModal', () => ({
   EditUserModal: ({ isOpen, onClose, user }: any) =>
     isOpen ? (
       <div role="dialog" data-testid="edit-modal">
@@ -97,7 +103,7 @@ vi.mock('./EditUserModal', () => ({
     ) : null,
 }));
 
-vi.mock('../../components/ui/Alert', () => ({
+vi.mock('../../../components/ui/Alert', () => ({
   AlertError: ({ message, onDismiss }: any) => (
     <div role="alert">
       <span>{message}</span>

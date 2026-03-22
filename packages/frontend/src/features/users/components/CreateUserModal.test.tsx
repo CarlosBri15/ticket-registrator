@@ -3,11 +3,15 @@ import { render, screen, fireEvent } from '@testing-library/react';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useCreateUserMutation: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useCreateUserMutation: vi.fn(),
+  };
+});
 
-vi.mock('../selects', () => ({
+vi.mock('../../roles/components/RoleSelect', () => ({
   RoleSelect: ({ label, value, onChange, placeholder, required }: any) => (
     <select aria-label={label} value={value ?? ''} onChange={(e) => onChange?.(e.target.value)} required={required}>
       <option value="">{placeholder}</option>
@@ -25,7 +29,7 @@ vi.mock('lucide-react', () => ({
   X: () => <span data-testid="icon-x" />,
 }));
 
-vi.mock('../Modal', () => ({
+vi.mock('../../../components/ui/Modal', () => ({
   Modal: ({ isOpen, children, title, subtitle }: { isOpen: boolean; children: React.ReactNode; title: string; subtitle?: string }) =>
     isOpen ? (
       <div role="dialog">
@@ -36,13 +40,13 @@ vi.mock('../Modal', () => ({
     ) : null,
 }));
 
-vi.mock('../Input', () => ({
+vi.mock('../../../components/ui/Input', () => ({
   Input: ({ label, ...props }: { label: string; [key: string]: unknown }) => (
     <input aria-label={label} {...(props as React.InputHTMLAttributes<HTMLInputElement>)} />
   ),
 }));
 
-vi.mock('../Button', () => ({
+vi.mock('../../../components/ui/Button', () => ({
   Button: ({
     children,
     onClick,
@@ -62,7 +66,7 @@ vi.mock('../Button', () => ({
   ),
 }));
 
-vi.mock('../Alert', () => ({
+vi.mock('../../../components/ui/Alert', () => ({
   AlertError: ({ message }: { message: string }) => <div role="alert">{message}</div>,
   getApiErrorMessage: (error: unknown) => {
     const data = (error as { response?: { data?: { message?: string } } })?.response?.data;

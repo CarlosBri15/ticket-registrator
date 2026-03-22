@@ -89,7 +89,7 @@ export const TicketDetailModal = ({
         location_name: formData.location_name || null,
         location_address: formData.location_address || null,
         date: formData.date || null,
-        amount: formData.amount ? parseFloat(formData.amount) : null,
+        amount: formData.amount ? Number.parseFloat(formData.amount) : null,
         currency: formData.currency || null,
         payment_type: formData.payment_type || null,
         expense_type: formData.expense_type || null,
@@ -100,6 +100,32 @@ export const TicketDetailModal = ({
   const handleClose = () => {
     setIsEditing(false);
     onClose();
+  };
+
+  const renderImage = () => {
+    if (isLoadingImage) {
+      return (
+        <View className="items-center gap-2">
+          <ActivityIndicator color={colors.brand} />
+          <Text className="text-xs text-gray-400">{t('ticketDetail.loadingImage')}</Text>
+        </View>
+      );
+    }
+    if (imageData?.url) {
+      return (
+        <Image
+          source={{ uri: imageData.url }}
+          className="w-full h-48"
+          resizeMode="contain"
+        />
+      );
+    }
+    return (
+      <View className="items-center">
+        <Feather name="image" size={32} color="#cbd5e1" />
+        <Text className="text-xs text-gray-400 mt-2">{t('ticketDetail.noImage')}</Text>
+      </View>
+    );
   };
 
   if (!ticket) return null;
@@ -281,23 +307,7 @@ export const TicketDetailModal = ({
 
               {/* Image */}
               <View className="bg-gray-50 rounded-2xl overflow-hidden items-center justify-center min-h-[180px] mb-6 border border-gray-100">
-                {isLoadingImage ? (
-                  <View className="items-center gap-2">
-                    <ActivityIndicator color={colors.brand} />
-                    <Text className="text-xs text-gray-400">{t('ticketDetail.loadingImage')}</Text>
-                  </View>
-                ) : imageData?.url ? (
-                  <Image
-                    source={{ uri: imageData.url }}
-                    className="w-full h-48"
-                    resizeMode="contain"
-                  />
-                ) : (
-                  <View className="items-center">
-                    <Feather name="image" size={32} color="#cbd5e1" />
-                    <Text className="text-xs text-gray-400 mt-2">{t('ticketDetail.noImage')}</Text>
-                  </View>
-                )}
+                {renderImage()}
               </View>
 
               {/* Items */}

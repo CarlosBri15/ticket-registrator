@@ -7,7 +7,7 @@ jest.mock('react', () => ({
 }));
 
 import React from 'react';
-import { render, screen, act } from '@testing-library/react';
+import { render, act } from '@testing-library/react';
 import { ScopeProvider, useScopeContext } from './ScopeProvider';
 import { useScope } from '../hooks/useScope';
 
@@ -42,47 +42,47 @@ describe('ScopeProvider', () => {
 
     it('provides scope context to children', () => {
         mockUseScope.mockReturnValue(makeScope('company'));
-        render(
+        const { getByTestId } = render(
             <ScopeProvider>
                 <ScopeConsumer />
             </ScopeProvider>,
         );
-        expect(screen.getByTestId('scope-type').textContent).toBe('company');
+        expect(getByTestId('scope-type').textContent).toBe('company');
     });
 
     it('initialises activeCompanyId as null', () => {
         mockUseScope.mockReturnValue(makeScope('global'));
-        render(
+        const { getByTestId } = render(
             <ScopeProvider>
                 <ScopeConsumer />
             </ScopeProvider>,
         );
-        expect(screen.getByTestId('active-company').textContent).toBe('none');
+        expect(getByTestId('active-company').textContent).toBe('none');
     });
 
     it('allows SuperAdmin to switch active company', () => {
         mockUseScope.mockReturnValue(makeScope('global'));
-        render(
+        const { getByTestId } = render(
             <ScopeProvider>
                 <ScopeConsumer />
             </ScopeProvider>,
         );
 
         act(() => {
-            screen.getByTestId('switch-btn').click();
+            getByTestId('switch-btn').click();
         });
 
-        expect(screen.getByTestId('active-company').textContent).toBe('org-switched');
+        expect(getByTestId('active-company').textContent).toBe('org-switched');
     });
 
     it('provides self scope correctly', () => {
         mockUseScope.mockReturnValue(makeScope('self'));
-        render(
+        const { getByTestId } = render(
             <ScopeProvider>
                 <ScopeConsumer />
             </ScopeProvider>,
         );
-        expect(screen.getByTestId('scope-type').textContent).toBe('self');
+        expect(getByTestId('scope-type').textContent).toBe('self');
     });
 });
 

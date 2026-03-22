@@ -11,16 +11,19 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useReportQuery: vi.fn(),
-  useTicketsQuery: vi.fn(),
-  useSubmitReportMutation: vi.fn(),
-  useDeleteTicketMutation: vi.fn(),
-  useDeleteReportMutation: vi.fn(),
-  useUpdateReportStatusMutation: vi.fn(),
-  usePermissions: vi.fn(),
-  ReportStatus: { SUBMITTED: 'SUBMITTED', APPROVED: 'APPROVED', CREATED: 'CREATED' },
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useReportQuery: vi.fn(),
+    useTicketsQuery: vi.fn(),
+    useSubmitReportMutation: vi.fn(),
+    useDeleteTicketMutation: vi.fn(),
+    useDeleteReportMutation: vi.fn(),
+    useUpdateReportStatusMutation: vi.fn(),
+    usePermissions: vi.fn(),
+  };
+});
 
 vi.mock('lucide-react', () => ({
   ArrowLeft: () => null,
@@ -43,17 +46,17 @@ vi.mock('lucide-react', () => ({
   XCircle: () => null,
 }));
 
-vi.mock('../../components/ui/Button', () => ({
+vi.mock('../../../components/ui/Button', () => ({
   Button: ({ children, onClick }: any) => <button onClick={onClick}>{children}</button>,
 }));
-vi.mock('../../components/ui/StatusBadge', () => ({
+vi.mock('../../../components/ui/StatusBadge', () => ({
   StatusBadge: ({ status }: any) => <span>{status}</span>,
 }));
-vi.mock('../tickets/components/TicketUploadModal', () => ({
+vi.mock('../../tickets/components/TicketUploadModal', () => ({
   TicketUploadModal: ({ isOpen }: any) =>
     isOpen ? <div role="dialog">upload-modal</div> : null,
 }));
-vi.mock('../tickets/components/TicketDetailModal', () => ({
+vi.mock('../../tickets/components/TicketDetailModal', () => ({
   TicketDetailModal: ({ isOpen }: any) =>
     isOpen ? <div role="dialog">ticket-detail</div> : null,
 }));

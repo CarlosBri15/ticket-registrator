@@ -11,13 +11,17 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useUserQuery: vi.fn(),
-  useUpdateUserMutation: vi.fn(() => ({
-    mutate: vi.fn(),
-    isPending: false,
-  })),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useUserQuery: vi.fn(),
+    useUpdateUserMutation: vi.fn(() => ({
+      mutate: vi.fn(),
+      isPending: false,
+    })),
+  };
+});
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -38,7 +42,7 @@ vi.mock('lucide-react', () => ({
   Key: () => <span data-testid="key-icon" />,
 }));
 
-vi.mock('../../api/client', () => ({
+vi.mock('../../../api/client', () => ({
   tokenProvider: { removeToken: vi.fn() },
 }));
 

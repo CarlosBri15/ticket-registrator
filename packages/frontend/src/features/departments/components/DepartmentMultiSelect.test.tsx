@@ -3,15 +3,19 @@ import { render, screen, fireEvent } from '@testing-library/react';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useDepartmentsQuery: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useDepartmentsQuery: vi.fn(),
+  };
+});
 
-vi.mock('./MultiSelect', () => ({
+vi.mock('../../../components/ui/MultiSelect', () => ({
   MultiSelect: ({ label, options, onChange, isLoading }: any) => (
     <div data-testid="multi-select">
       <span>{label}</span>
-      {isLoading && <span>loading</span>}
+      {isLoading && <span>Cargando...</span>}
       {options?.map((o: any) => (
         <button key={o.value} onClick={() => onChange?.([o.value])}>
           {o.label}
@@ -63,7 +67,7 @@ describe('DepartmentMultiSelect', () => {
       isLoading: true,
     });
     render(<DepartmentMultiSelect />);
-    expect(screen.getByText('loading')).toBeInTheDocument();
+    expect(screen.getByText('Cargando...')).toBeInTheDocument();
   });
 
   it('calls onChange with selected department id', () => {

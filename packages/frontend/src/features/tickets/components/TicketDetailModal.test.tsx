@@ -2,10 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TicketDetailModal } from './TicketDetailModal';
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useTicketImageQuery: vi.fn(),
-  useUpdateTicketMutation: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useTicketImageQuery: vi.fn(),
+    useUpdateTicketMutation: vi.fn(),
+  };
+});
 
 vi.mock('date-fns', () => ({
   format: () => '10 Jan 2024',

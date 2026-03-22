@@ -13,25 +13,29 @@ vi.mock('react-router-dom', async () => {
 
 // ─── Shared hooks mock ────────────────────────────────────────────────────────
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useOrganizationQuery: vi.fn(),
-  useDeleteOrganizationMutation: vi.fn(),
-  useUpdateOrganizationMutation: vi.fn(),
-  useDepartmentsQuery: vi.fn(),
-  useCreateDepartmentMutation: vi.fn(),
-  useUpdateDepartmentMutation: vi.fn(),
-  useDeleteDepartmentMutation: vi.fn(),
-  useUsersQuery: vi.fn(),
-  useRolesQuery: vi.fn(),
-  useCreateUserMutation: vi.fn(),
-  useCreateRoleMutation: vi.fn(),
-  useAllPermissionsQuery: vi.fn(),
-  useRolePermissionsQuery: vi.fn(),
-  useAssignPermissionMutation: vi.fn(),
-  useUnassignPermissionMutation: vi.fn(),
-  usePermissions: vi.fn(),
-  useScopeContext: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useOrganizationQuery: vi.fn(),
+    useDeleteOrganizationMutation: vi.fn(),
+    useUpdateOrganizationMutation: vi.fn(),
+    useDepartmentsQuery: vi.fn(),
+    useCreateDepartmentMutation: vi.fn(),
+    useUpdateDepartmentMutation: vi.fn(),
+    useDeleteDepartmentMutation: vi.fn(),
+    useUsersQuery: vi.fn(),
+    useRolesQuery: vi.fn(),
+    useCreateUserMutation: vi.fn(),
+    useCreateRoleMutation: vi.fn(),
+    useAllPermissionsQuery: vi.fn(),
+    useRolePermissionsQuery: vi.fn(),
+    useAssignPermissionMutation: vi.fn(),
+    useUnassignPermissionMutation: vi.fn(),
+    usePermissions: vi.fn(),
+    useScopeContext: vi.fn(),
+  };
+});
 
 vi.mock('lucide-react', () => ({
   Building: () => null, Layers: () => null, UserCircle: () => null,
@@ -43,22 +47,26 @@ vi.mock('lucide-react', () => ({
 }));
 
 // AssignPermissionsModal renders a testable dialog when open
-vi.mock('../../components/ui/modals', () => ({
+vi.mock('../../users/components/CreateUserModal', () => ({
   CreateUserModal: () => null,
+}));
+vi.mock('../../roles/components/CreateRoleModal', () => ({
   CreateRoleModal: () => null,
+}));
+vi.mock('../../users/components/AssignPermissionsModal', () => ({
   AssignPermissionsModal: ({ isOpen, roleName }: any) =>
     isOpen ? <div role="dialog" data-testid="assign-perms-modal">{roleName ?? 'permisos'}</div> : null,
 }));
 
-vi.mock('../../components/ui/Button', () => ({
+vi.mock('../../../components/ui/Button', () => ({
   Button: ({ children, onClick, disabled, type }: any) => (
     <button type={type ?? 'button'} onClick={onClick} disabled={disabled}>{children}</button>
   ),
 }));
-vi.mock('../../components/ui/Input', () => ({
+vi.mock('../../../components/ui/Input', () => ({
   Input: ({ label, ...props }: any) => <input aria-label={label} {...props} />,
 }));
-vi.mock('../../components/ui/Modal', () => ({
+vi.mock('../../../components/ui/Modal', () => ({
   Modal: ({ isOpen, children, title }: any) =>
     isOpen ? <div role="dialog"><h2>{title}</h2>{children}</div> : null,
 }));

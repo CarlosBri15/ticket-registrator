@@ -3,15 +3,19 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { RolesScreen } from './RolesScreen';
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useRolesQuery: vi.fn(),
-  useSystemRolesQuery: vi.fn(),
-  useCreateRoleMutation: vi.fn(),
-  useDeleteRoleMutation: vi.fn(),
-  usePermissions: vi.fn(),
-  useScope: vi.fn(),
-  useScopeContext: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useRolesQuery: vi.fn(),
+    useSystemRolesQuery: vi.fn(),
+    useCreateRoleMutation: vi.fn(),
+    useDeleteRoleMutation: vi.fn(),
+    usePermissions: vi.fn(),
+    useScope: vi.fn(),
+    useScopeContext: vi.fn(),
+  };
+});
 
 vi.mock('lucide-react', () => ({
   Shield: () => null,
@@ -20,15 +24,15 @@ vi.mock('lucide-react', () => ({
   Building2: () => null,
 }));
 
-vi.mock('../../components/ui/Button', () => ({
+vi.mock('../../../components/ui/Button', () => ({
   Button: ({ children, onClick, disabled }: any) => (
     <button onClick={onClick} disabled={disabled}>{children}</button>
   ),
 }));
-vi.mock('../../components/ui/Input', () => ({
+vi.mock('../../../components/ui/Input', () => ({
   Input: ({ label, ...props }: any) => <input aria-label={label} {...props} />,
 }));
-vi.mock('../../components/ui/Select', () => ({
+vi.mock('../../../components/ui/Select', () => ({
   Select: ({ label, options, value, onChange, required, id }: any) => (
     <select
       aria-label={label}
@@ -41,7 +45,7 @@ vi.mock('../../components/ui/Select', () => ({
     </select>
   ),
 }));
-vi.mock('../../components/ui/Modal', () => ({
+vi.mock('../../../components/ui/Modal', () => ({
   Modal: ({ isOpen, children, title }: any) =>
     isOpen ? <div role="dialog"><h2>{title}</h2>{children}</div> : null,
 }));

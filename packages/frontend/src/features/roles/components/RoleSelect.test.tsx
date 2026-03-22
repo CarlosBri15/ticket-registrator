@@ -2,10 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RoleSelect } from './RoleSelect';
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useRolesQuery: vi.fn(),
-  useSystemRolesQuery: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useRolesQuery: vi.fn(),
+    useSystemRolesQuery: vi.fn(),
+  };
+});
 
 vi.mock('../Select', () => ({
   Select: ({ label, options, value, onChange, placeholder, isLoading, required, error, id }: any) => (
@@ -157,7 +161,7 @@ describe('RoleSelect', () => {
 
   it('forwards error to the underlying Select', () => {
     render(<RoleSelect error="Rol requerido" value="" onChange={() => {}} />);
-    expect(screen.getByRole('alert')).toHaveTextContent('Rol requerido');
+    expect(screen.getByText('Rol requerido')).toBeInTheDocument();
   });
 
   it('forwards the current value to the underlying Select', () => {

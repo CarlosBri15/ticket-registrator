@@ -3,12 +3,16 @@ import { render, screen, fireEvent } from '@testing-library/react';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useAllPermissionsQuery: vi.fn(),
-  useRolePermissionsQuery: vi.fn(),
-  useAssignPermissionMutation: vi.fn(),
-  useUnassignPermissionMutation: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useAllPermissionsQuery: vi.fn(),
+    useRolePermissionsQuery: vi.fn(),
+    useAssignPermissionMutation: vi.fn(),
+    useUnassignPermissionMutation: vi.fn(),
+  };
+});
 
 vi.mock('lucide-react', () => ({
   XCircle: () => <span data-testid="icon-xcircle" />,
@@ -18,7 +22,7 @@ vi.mock('lucide-react', () => ({
   X: () => <span data-testid="icon-x" />,
 }));
 
-vi.mock('../Modal', () => ({
+vi.mock('../../../components/ui/Modal', () => ({
   Modal: ({ isOpen, children, title, subtitle }: { isOpen: boolean; children: React.ReactNode; title: string; subtitle?: string }) =>
     isOpen ? (
       <div role="dialog">
@@ -29,7 +33,7 @@ vi.mock('../Modal', () => ({
     ) : null,
 }));
 
-vi.mock('../Button', () => ({
+vi.mock('../../../components/ui/Button', () => ({
   Button: ({
     children,
     onClick,

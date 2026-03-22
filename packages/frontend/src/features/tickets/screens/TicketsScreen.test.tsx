@@ -3,10 +3,14 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AllTicketsScreen } from './TicketsScreen';
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useReportsQuery: vi.fn(),
-  useTicketsQuery: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useReportsQuery: vi.fn(),
+    useTicketsQuery: vi.fn(),
+  };
+});
 
 vi.mock('lucide-react', () => ({
   FileText: () => null,
@@ -16,11 +20,11 @@ vi.mock('lucide-react', () => ({
   Search: () => null,
 }));
 
-vi.mock('../../components/ui/StatusBadge', () => ({
+vi.mock('../../../components/ui/StatusBadge', () => ({
   StatusBadge: ({ status }: any) => <span>{status}</span>,
 }));
 
-vi.mock('./components/TicketDetailModal', () => ({
+vi.mock('../components/TicketDetailModal', () => ({
   TicketDetailModal: ({ isOpen }: any) =>
     isOpen ? <div role="dialog">ticket-detail</div> : null,
 }));

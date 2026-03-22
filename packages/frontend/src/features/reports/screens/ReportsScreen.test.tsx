@@ -11,9 +11,13 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-vi.mock('@ticket-registrator/shared', () => ({
-  useReportsQuery: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    useReportsQuery: vi.fn(),
+  };
+});
 
 vi.mock('lucide-react', () => ({
   Plus: () => null,
@@ -31,20 +35,20 @@ vi.mock('lucide-react', () => ({
   Filter: () => null,
 }));
 
-vi.mock('../../components/ui/Button', () => ({
+vi.mock('../../../components/ui/Button', () => ({
   Button: ({ children, onClick }: any) => <button onClick={onClick}>{children}</button>,
 }));
 
-vi.mock('../../components/ui/StatusBadge', () => ({
+vi.mock('../../../components/ui/StatusBadge', () => ({
   StatusBadge: ({ status }: any) => <span>{status}</span>,
 }));
 
-vi.mock('../../components/ui/Modal', () => ({
+vi.mock('../../../components/ui/Modal', () => ({
   Modal: ({ isOpen, children, title }: any) =>
     isOpen ? <div role="dialog"><h2>{title}</h2>{children}</div> : null,
 }));
 
-vi.mock('./components/ReportForm', () => ({
+vi.mock('../components/ReportForm', () => ({
   ReportForm: () => <div>report-form</div>,
 }));
 

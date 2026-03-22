@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-vi.mock('../Select', () => ({
+vi.mock('../../../components/ui/Select', () => ({
   Select: ({ label, options, onChange, value, placeholder, error }: any) => (
     <div data-testid="select">
       <span data-testid="select-label">{label}</span>
