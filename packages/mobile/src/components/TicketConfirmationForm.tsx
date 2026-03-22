@@ -82,8 +82,8 @@ export const TicketConfirmationForm = ({
       }
     }
     if (key === "amount") {
-      const num = parseFloat(raw);
-      return isNaN(num) ? raw : `${num.toFixed(2)} ${formData.currency}`;
+      const num = Number.parseFloat(raw);
+      return Number.isNaN(num) ? raw : `${num.toFixed(2)} ${formData.currency}`;
     }
     return raw;
   };
@@ -97,7 +97,7 @@ export const TicketConfirmationForm = ({
       location_name: formData.location_name || null,
       location_address: formData.location_address || null,
       date: formData.date || null,
-      amount: formData.amount ? parseFloat(formData.amount) : null,
+      amount: formData.amount ? Number.parseFloat(formData.amount) : null,
       currency: formData.currency || null,
       payment_type: formData.payment_type || null,
       expense_type: formData.expense_type || null,
@@ -142,9 +142,8 @@ export const TicketConfirmationForm = ({
               {extractedFields.map((key, idx) => (
                 <View
                   key={key}
-                  className={`flex-row items-center px-4 py-3.5 gap-3 ${
-                    idx < extractedFields.length - 1 ? "border-b border-gray-50" : ""
-                  }`}
+                  className={`flex-row items-center px-4 py-3.5 gap-3 ${idx < extractedFields.length - 1 ? "border-b border-gray-50" : ""
+                    }`}
                 >
                   <View className="w-7 h-7 bg-green-50 rounded-lg items-center justify-center">
                     <Feather name={fieldMeta[key].icon as any} size={13} color="#22c55e" />
@@ -177,9 +176,8 @@ export const TicketConfirmationForm = ({
               {missingFields.map((key, idx) => (
                 <View
                   key={key}
-                  className={`px-4 py-3.5 ${
-                    idx < missingFields.length - 1 ? "border-b border-gray-50" : ""
-                  }`}
+                  className={`px-4 py-3.5 ${idx < missingFields.length - 1 ? "border-b border-gray-50" : ""
+                    }`}
                 >
                   <View className="flex-row items-center gap-2 mb-2">
                     <Feather name={fieldMeta[key].icon as any} size={13} color="#f59e0b" />
@@ -212,10 +210,9 @@ export const TicketConfirmationForm = ({
             </View>
             {ticket.items.map((item, index) => (
               <View
-                key={index}
-                className={`flex-row justify-between items-center px-4 py-3 ${
-                  index < ticket.items!.length - 1 ? "border-b border-gray-50" : ""
-                }`}
+                key={item.id}
+                className={`flex-row justify-between items-center px-4 py-3 ${index < ticket.items!.length - 1 ? "border-b border-gray-50" : ""
+                  }`}
               >
                 <Text className="text-sm font-medium text-dark flex-1 mr-3" numberOfLines={1}>
                   {item.name}
