@@ -1,13 +1,11 @@
 name: SonarQube Monorepo Analysis
 
 on:
-  push:
-    branches:
-      - dev
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
       - dev
+      - main
 
 jobs:
   # 0. Detect Changes
