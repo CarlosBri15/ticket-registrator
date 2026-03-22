@@ -274,7 +274,14 @@ jobs:
   # 6. Final Notification (Only on Success of everything that ran)
   notify-success:
     needs: [ci-shared, deploy-backend, deploy-frontend, deploy-mobile]
-    if: success() && (needs.ci-shared.result == 'success' || needs.deploy-backend.result == 'success' || needs.deploy-frontend.result == 'success' || needs.deploy-mobile.result == 'success')
+    if: >
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      (needs.ci-shared.result == 'success' || 
+       needs.deploy-backend.result == 'success' || 
+       needs.deploy-frontend.result == 'success' || 
+       needs.deploy-mobile.result == 'success')
     name: Notify Discord
     runs-on: ubuntu-latest
     steps:
@@ -295,7 +302,7 @@ jobs:
   # 7. Failure Alerts (Separate for each project)
   alert-failure:
     needs: [ci-shared, ci-backend, deploy-backend, ci-frontend, deploy-frontend, ci-mobile, deploy-mobile]
-    if: failure()
+    if: always() && contains(needs.*.result, 'failure')
     name: Alert Failures
     runs-on: ubuntu-latest
     steps:
