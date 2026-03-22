@@ -314,9 +314,9 @@ export const TicketDetailModal = ({
               <View className="bg-gray-50 p-4 rounded-2xl mb-6">
                 <Text className="text-xs font-bold text-gray-400 uppercase mb-3">{t('reportDetail.items')}</Text>
                 {ticket.items && ticket.items.length > 0 ? (
-                  ticket.items.map((item, index) => (
+                  ticket.items.map((item) => (
                     <View
-                      key={`item-${item.name}-${index}`}
+                      key={item.id}
                       className="flex-row justify-between items-center bg-white p-3 rounded-xl border border-gray-100 mb-2"
                     >
                       <Text className="text-sm font-medium text-dark">{item.name}</Text>

@@ -1,0 +1,99 @@
+name: Dev Deployment (Mobile)
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'packages/mobile/**'
+      - 'packages/shared/**'
+      - '.github/workflows/deploy-mobile-dev.yml'
+
+jobs:
+  ci-mobile:
+    name: CI (mobile)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Run Linter
+        continue-on-error: true
+        working-directory: packages/mobile
+        run: npm run lint
+      - name: Run Unit Tests
+        working-directory: packages/mobile
+        run: npm test -- --coverage --watchAll=false
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: packages/mobile
+          args: >
+            -Dsonar.qualitygate.wait=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  deploy-mobile:
+    name: Deploy Mobile
+    needs: ci-mobile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Install dependencies
+        run: npm ci
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Deploy Update to Expo (Preview)
+        working-directory: packages/mobile
+        run: EXPO_PUBLIC_API_URL=${{ secrets.VITE_API_URL_DEV }} npx eas update --auto --channel preview
+
+  notify:
+    name: Notifications
+    needs: [ci-mobile, deploy-mobile]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Notify Discord Success
+        if: needs.deploy-mobile.result == 'success'
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_DEV_UPDATES }}
+          status: success
+          content: "@everyone 🚀 **App Mobile de `dev` actualizada (Expo Preview)**"
+          title: "📌 ${{ github.event.head_commit.message }}"
+          description: |
+            **Autor:** ${{ github.actor }}
+            **Estado:** CI pasado ✅ | EAS Update ✅
+          url: "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+          color: 0x2ecc71
+      - name: Notify Discord Failure
+        if: needs.ci-mobile.result == 'failure' || needs.deploy-mobile.result == 'failure'
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_ALERTS }}
+          status: failure
+          content: "@here 🚨 **Pipeline de Mobile en `dev` FALLIDO**"
+          title: "Error en el flujo de integración/despliegue (Mobile)"
+          url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          color: 0xff0000
