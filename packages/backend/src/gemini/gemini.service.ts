@@ -21,6 +21,7 @@ export class GeminiService {
 
   async extractReceipt(
     imageBase64: string,
+    mimeType: string = 'image/jpeg',
     languageCode: string = 'es',
   ): Promise<IReceiptExtraction> {
     this.logger.log(`Extracting receipt data. Language Code: ${languageCode}`);
@@ -41,7 +42,7 @@ export class GeminiService {
 
     try {
       const result = await model.generateContent([
-        { inlineData: { data: imageBase64, mimeType: 'image/jpeg' } },
+        { inlineData: { data: imageBase64, mimeType } },
       ]);
 
       const responseText = result.response.text();

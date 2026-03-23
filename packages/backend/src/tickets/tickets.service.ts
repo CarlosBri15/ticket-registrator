@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import sharp from 'sharp';
 import {
   ITicket,
   TicketStatus,
@@ -41,7 +42,7 @@ export class TicketsService {
     private readonly geminiService: GeminiService,
     private readonly storageService: StorageService,
     private readonly cryptoService: CryptoService,
-  ) {}
+  ) { }
 
   async create(
     requester: UserPayload,
@@ -71,55 +72,124 @@ export class TicketsService {
     }
 
     const imageBase64 = file.buffer.toString('base64');
-    const imageHash = await this.cryptoService.generatePerceptualHash(
-      file.buffer,
-    );
+    const isImage = file.mimetype?.startsWith('image/') ?? false;
+    let imageHash: string | null = null;
 
-    // Fraud prevention: Check for similar images in the entire DB
-    const existingFingerprints =
-      await this.ticketsRepository.findAllFingerprints();
+    if (isImage) {
+      imageHash = await this.cryptoService.generatePerceptualHash(file.buffer);
 
-    for (const entry of existingFingerprints) {
-      if (!entry.imageId) continue;
+      // Fraud prevention: Check for similar images in the entire DB
+      const existingFingerprints =
+        await this.ticketsRepository.findAllFingerprints();
 
-      const [oldHash, oldRatioStr] = entry.imageId.split('|');
-      const [newHash, newRatioStr] = imageHash.split('|');
+      for (const entry of existingFingerprints) {
+        if (!entry.imageId || !imageHash) continue;
 
-      if (oldRatioStr && newRatioStr) {
-        // New format: Check aspect ratio first (tolerance 5%)
-        if (Math.abs(parseFloat(oldRatioStr) - parseFloat(newRatioStr)) > 0.05)
-          continue;
+        const [oldHash, oldRatioStr] = entry.imageId.split('|');
+        const [newHash, newRatioStr] = imageHash.split('|');
 
-        const distance = this.cryptoService.calculateHammingDistance(
-          newHash,
-          oldHash,
-        );
+        if (oldRatioStr && newRatioStr) {
+          // New format: Check aspect ratio first (tolerance 5%)
+          if (Math.abs(parseFloat(oldRatioStr) - parseFloat(newRatioStr)) > 0.05)
+            continue;
 
-        // Hamming distance threshold for 24x24 (576 bits):
-        // 15 matches (approx 2.6% difference) is extremely safe.
-        if (distance <= 15) {
-          throw new DuplicateTicketException(
-            `This receipt has already been processed (Similarity match: ${distance})`,
+          const distance = this.cryptoService.calculateHammingDistance(
+            newHash,
+            oldHash,
           );
-        }
-      } else {
-        // Legacy fallback: only block if exactly identical for different versions
-        const distance = this.cryptoService.calculateHammingDistance(
-          newHash,
-          oldHash,
-        );
-        if (distance <= 2) {
-          throw new DuplicateTicketException(
-            `This receipt has already been processed (Similarity match: ${distance})`,
+
+          // Hamming distance threshold for 24x24 (576 bits):
+          // 20 matches (approx 3% difference) is used as a fast, conservative check for nearly-identical images.
+          // We rely on the subsequent Semantic Check (Date/Amount/Location) to catch duplicates 
+          // with different angles or minor visual variations, avoiding false positive collisions.
+          if (distance <= 20) {
+            throw new DuplicateTicketException(
+              `This receipt has already been processed (Similarity match: ${distance})`,
+            );
+          }
+        } else {
+          // Legacy fallback: only block if exactly identical for different versions
+          const distance = this.cryptoService.calculateHammingDistance(
+            newHash,
+            oldHash,
           );
+          if (distance <= 2) {
+            throw new DuplicateTicketException(
+              `This receipt has already been processed (Similarity match: ${distance})`,
+            );
+          }
         }
       }
     }
 
-    const [imageIdentifier, geminiData] = await Promise.all([
-      this.storageService.uploadFile(file),
-      this.geminiService.extractReceipt(imageBase64, language),
-    ]);
+    const geminiData = await this.geminiService.extractReceipt(
+      imageBase64,
+      file.mimetype || 'image/jpeg',
+      language,
+    );
+
+    let parsedDate: Date | null = null;
+    if (geminiData.date && geminiData.date !== '0000-00-00') {
+      const d = new Date(geminiData.date);
+      if (!Number.isNaN(d.getTime())) parsedDate = d;
+    }
+
+    // 1. Report Date Boundary Validation
+    if (parsedDate) {
+      if (parsedDate < report.startDate || parsedDate > report.endDate) {
+        geminiData.flag = true;
+        const startStr = report.startDate.toISOString().split('T')[0];
+        const endStr = report.endDate.toISOString().split('T')[0];
+        const dateStr =
+          geminiData.date || parsedDate.toISOString().split('T')[0];
+        const message = `Receipt date (${dateStr}) is outside report range (${startStr} to ${endStr}).`;
+
+        geminiData.llm_comment = geminiData.llm_comment
+          ? `${geminiData.llm_comment} / ${message}`
+          : message;
+      }
+    }
+
+    // 2. Semantic Duplicate Check
+    if (
+      parsedDate &&
+      geminiData.total != null &&
+      geminiData.establishment != null
+    ) {
+      const isDuplicate = await this.ticketsRepository.findSemanticDuplicate(
+        parsedDate,
+        geminiData.total,
+        geminiData.establishment,
+      );
+
+      if (isDuplicate) {
+        throw new DuplicateTicketException(
+          'This receipt has already been processed based on its extracted data.',
+        );
+      }
+    }
+
+    // 3. Image Compression & Storage
+    let uploadFile = file;
+
+    if (isImage) {
+      // Compress to WebP (quality 60) and resize (max 1000px width) to save storage.
+      const compressedBuffer = await sharp(file.buffer)
+        .resize({ width: 1000, withoutEnlargement: true })
+        .webp({ quality: 60 })
+        .toBuffer();
+
+      // Update file object for upload
+      const originalName = file.originalname.split('.')[0];
+      uploadFile = {
+        ...file,
+        buffer: compressedBuffer,
+        mimetype: 'image/webp',
+        originalname: `${originalName}.webp`,
+      } as Express.Multer.File;
+    }
+
+    const imageIdentifier = await this.storageService.uploadFile(uploadFile);
 
     const items: InsertItem[] =
       geminiData.items?.map((item) => ({
@@ -129,12 +199,6 @@ export class TicketsService {
         currency: report.currency ?? null,
         status: ItemStatus.PENDING,
       })) ?? [];
-
-    let parsedDate: Date | null = null;
-    if (geminiData.date && geminiData.date !== '0000-00-00') {
-      const d = new Date(geminiData.date);
-      if (!Number.isNaN(d.getTime())) parsedDate = d;
-    }
 
     const ticketData: InsertTicket = {
       reportId,
@@ -395,27 +459,27 @@ export class TicketsService {
       updateKey: keyof InsertTicket;
       meaningful: boolean;
     }> = [
-      { dtoKey: 'payment_type', updateKey: 'paymentType', meaningful: true },
-      { dtoKey: 'expense_type', updateKey: 'expenseType', meaningful: true },
-      { dtoKey: 'location_name', updateKey: 'locationName', meaningful: true },
-      {
-        dtoKey: 'location_address',
-        updateKey: 'locationAddress',
-        meaningful: true,
-      },
-      { dtoKey: 'amount', updateKey: 'amount', meaningful: true },
-      { dtoKey: 'currency', updateKey: 'currency', meaningful: true },
-      {
-        dtoKey: 'cgs_bucket_link_justification',
-        updateKey: 'cgsBucketLinkJustification',
-        meaningful: false,
-      },
-      {
-        dtoKey: 'last_four_digits',
-        updateKey: 'lastFourDigits',
-        meaningful: false,
-      },
-    ];
+        { dtoKey: 'payment_type', updateKey: 'paymentType', meaningful: true },
+        { dtoKey: 'expense_type', updateKey: 'expenseType', meaningful: true },
+        { dtoKey: 'location_name', updateKey: 'locationName', meaningful: true },
+        {
+          dtoKey: 'location_address',
+          updateKey: 'locationAddress',
+          meaningful: true,
+        },
+        { dtoKey: 'amount', updateKey: 'amount', meaningful: true },
+        { dtoKey: 'currency', updateKey: 'currency', meaningful: true },
+        {
+          dtoKey: 'cgs_bucket_link_justification',
+          updateKey: 'cgsBucketLinkJustification',
+          meaningful: false,
+        },
+        {
+          dtoKey: 'last_four_digits',
+          updateKey: 'lastFourDigits',
+          meaningful: false,
+        },
+      ];
 
     for (const mapping of fieldsMapping) {
       if (dto[mapping.dtoKey] !== undefined) {

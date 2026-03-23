@@ -18,6 +18,15 @@ import {
 } from './exceptions/tickets.exceptions';
 import { ReportNotFoundException } from '../reports/exceptions/reports.exceptions';
 import { CryptoService } from '../crypto/crypto.service';
+
+const sharpMock = {
+  resize: jest.fn().mockReturnThis(),
+  webp: jest.fn().mockReturnThis(),
+  toBuffer: jest.fn().mockResolvedValue(Buffer.from('compressed-webp-data')),
+};
+
+jest.mock('sharp', () => jest.fn(() => sharpMock));
+
 describe('TicketsService', () => {
   let service: TicketsService;
   let ticketsRepositoryMock: any;
@@ -34,6 +43,7 @@ describe('TicketsService', () => {
       findById: jest.fn(),
       findByReportId: jest.fn(),
       findAllFingerprints: jest.fn().mockResolvedValue([]),
+      findSemanticDuplicate: jest.fn(),
       create: jest.fn(),
       updateWithHistory: jest.fn(),
       softDelete: jest.fn(),
@@ -71,6 +81,7 @@ describe('TicketsService', () => {
     }).compile();
 
     service = module.get<TicketsService>(TicketsService);
+    jest.clearAllMocks();
   });
 
   const mockReport = {
@@ -79,6 +90,8 @@ describe('TicketsService', () => {
     status: ReportStatus.CREATED,
     deletedAt: null,
     currency: 'EUR',
+    startDate: new Date('2021-01-01'),
+    endDate: new Date('2021-01-31'),
   };
   const mockTicket = {
     id: 'ticket-1',
@@ -106,8 +119,122 @@ describe('TicketsService', () => {
 
       const result = await service.create(requester, 'report-1', {
         buffer: Buffer.from('f'),
-      } as any);
+        originalname: 'test.jpg',
+        mimetype: 'image/jpeg',
+      } as any, 'es');
+
+      expect(geminiServiceMock.extractReceipt).toHaveBeenCalledWith(
+        expect.any(String),
+        'image/jpeg',
+        'es',
+      );
       expect(result.id).toBe('ticket-1');
+      const sharp = require('sharp');
+      expect(sharp).toHaveBeenCalled();
+      expect(sharpMock.resize).toHaveBeenCalledWith({
+        width: 1000,
+        withoutEnlargement: true,
+      });
+      expect(storageServiceMock.uploadFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          buffer: Buffer.from('compressed-webp-data'),
+          mimetype: 'image/webp',
+          originalname: 'test.webp',
+        }),
+      );
+    });
+
+    it('should flag ticket as out of range if date does not match report timeframe', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
+      geminiServiceMock.extractReceipt.mockResolvedValue({
+        items: [],
+        total: 10,
+        date: '2021-02-01', // Outside range [2021-01-01, 2021-01-31]
+        establishment: 'Test Store',
+        address: {
+          formatted_address: 'Main 1',
+        },
+        flag: false,
+        llm_comment: null,
+      });
+      storageServiceMock.uploadFile.mockResolvedValue('link');
+
+      ticketsRepositoryMock.create.mockResolvedValue({ id: 'ticket-1' });
+      ticketsRepositoryMock.findById.mockResolvedValue({
+        id: 'ticket-1',
+        reportId: 'report-1',
+        flag: true,
+        llmComment:
+          'Receipt date (2021-02-01) is outside report range (2021-01-01 to 2021-01-31).',
+      });
+
+      const result = await service.create(requester, 'report-1', {
+        buffer: Buffer.from('f'),
+        originalname: 'test.jpg',
+        mimetype: 'image/jpeg',
+      } as any);
+
+      expect(result.flag).toBe(true);
+      expect(result.llm_comment).toContain('outside report range');
+    });
+
+    it('should create a ticket from a PDF file without sharp processing', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
+      ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
+      geminiServiceMock.extractReceipt.mockResolvedValue({
+        establishment: 'PDF Store',
+        total: 50,
+        date: '2026-03-21',
+        items: [],
+      });
+      cryptoServiceMock.generatePerceptualHash.mockResolvedValue('hash|1.0');
+      cryptoServiceMock.calculateHammingDistance.mockReturnValue(100);
+      ticketsRepositoryMock.create.mockResolvedValue(mockTicket);
+      ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
+
+      const result = await service.create(requester, 'report-1', {
+        buffer: Buffer.from('pdf-data'),
+        originalname: 'invoice.pdf',
+        mimetype: 'application/pdf',
+      } as any, 'es');
+
+      expect(result.id).toBe('ticket-1');
+      expect(sharpMock.resize).not.toHaveBeenCalled();
+      expect(geminiServiceMock.extractReceipt).toHaveBeenCalledWith(
+        expect.any(String),
+        'application/pdf',
+        'es',
+      );
+      expect(storageServiceMock.uploadFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          buffer: Buffer.from('pdf-data'),
+          mimetype: 'application/pdf',
+          originalname: 'invoice.pdf',
+        }),
+      );
+    });
+
+    it('should throw DuplicateTicketException when a semantic duplicate is found', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
+      geminiServiceMock.extractReceipt.mockResolvedValue({
+        items: [],
+        total: 10,
+        date: '2021-01-01',
+        establishment: 'Test Store',
+      });
+      cryptoServiceMock.generatePerceptualHash.mockResolvedValue('hash|1.0');
+      cryptoServiceMock.calculateHammingDistance.mockReturnValue(100);
+      ticketsRepositoryMock.findSemanticDuplicate.mockResolvedValue(mockTicket);
+
+      await expect(
+        service.create(requester, 'report-1', {
+          buffer: Buffer.from('f'),
+          mimetype: 'image/jpeg',
+        } as any),
+      ).rejects.toThrow('This receipt has already been processed based on its extracted data.');
     });
 
     it('should throw ReportNotFoundException when report not found', async () => {
@@ -173,6 +300,8 @@ describe('TicketsService', () => {
 
       const result = await service.create(requester, 'report-1', {
         buffer: Buffer.from('f'),
+        originalname: 'test.jpg',
+        mimetype: 'image/jpeg',
       } as any);
       expect(result.id).toBe('ticket-1');
     });
@@ -194,6 +323,8 @@ describe('TicketsService', () => {
 
       const result = await service.create(requester, 'report-1', {
         buffer: Buffer.from('f'),
+        originalname: 'test.jpg',
+        mimetype: 'image/jpeg',
       } as any);
       expect(result.id).toBe('ticket-1');
     });
