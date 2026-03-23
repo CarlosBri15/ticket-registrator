@@ -48,6 +48,7 @@ EXTRACTION AND TRANSLATION RULES:
    - Extract products and prices.
    - If quantity > 1, duplicate the item in the list.
    - Translate all descriptions to the requested language (${languageCode}).
+   - **Extract expense_type** for each item (e.g., "Food", "Transport", "Cleaning", "Electronics").
 
 7. TOTAL:
    - Extract the final total as a float.
@@ -81,8 +82,8 @@ Output: {
   "payment_method": "Card",
   "card_last_4": "1234",
   "items": [
-    { "description": "Daily menu", "price": 12.50 },
-    { "description": "Craft beer", "price": 3.50 }
+    { "description": "Daily menu", "price": 12.50, "expense_type": "Food" },
+    { "description": "Craft beer", "price": 3.50, "expense_type": "Food" }
   ],
   "total": 16.00,
   "flag": false,
@@ -126,16 +127,16 @@ Output: {
   "payment_method": "Card",
   "card_last_4": "9988",
   "items": [
-    { "description": "Whole milk 1L", "price": 0.95 },
-    { "description": "Sliced bread", "price": 1.20 },
-    { "description": "Apples kg", "price": 2.50 },
-    { "description": "Liquid detergent", "price": 5.99 },
-    { "description": "Natural yogurt x4", "price": 1.80 },
-    { "description": "Extra rice 1kg", "price": 1.35 },
-    { "description": "Olive oil 1L", "price": 8.50 },
-    { "description": "Toilet paper x12", "price": 4.25 },
-    { "description": "Eggs L x12", "price": 2.40 },
-    { "description": "Spaghetti pasta", "price": 0.85 }
+    { "description": "Whole milk 1L", "price": 0.95, "expense_type": "Groceries" },
+    { "description": "Sliced bread", "price": 1.20, "expense_type": "Groceries" },
+    { "description": "Apples kg", "price": 2.50, "expense_type": "Groceries" },
+    { "description": "Liquid detergent", "price": 5.99, "expense_type": "Cleaning" },
+    { "description": "Natural yogurt x4", "price": 1.80, "expense_type": "Groceries" },
+    { "description": "Extra rice 1kg", "price": 1.35, "expense_type": "Groceries" },
+    { "description": "Olive oil 1L", "price": 8.50, "expense_type": "Groceries" },
+    { "description": "Toilet paper x12", "price": 4.25, "expense_type": "Cleaning" },
+    { "description": "Eggs L x12", "price": 2.40, "expense_type": "Groceries" },
+    { "description": "Spaghetti pasta", "price": 0.85, "expense_type": "Groceries" }
   ],
   "total": 29.79,
   "flag": false,
@@ -158,8 +159,8 @@ Output: {
   "payment_method": "Card",
   "card_last_4": "5544",
   "items": [
-    { "description": "Gasoline 95 E5 40L", "price": 65.20 },
-    { "description": "Premium tunnel wash", "price": 9.00 }
+    { "description": "Gasoline 95 E5 40L", "price": 65.20, "expense_type": "Transport" },
+    { "description": "Premium tunnel wash", "price": 9.00, "expense_type": "Transport" }
   ],
   "total": 74.20,
   "flag": false,
@@ -182,8 +183,8 @@ Output: {
   "payment_method": "Card",
   "card_last_4": "0011",
   "items": [
-    { "description": "Wireless headphones", "price": 45.99 },
-    { "description": "Phone case", "price": 12.00 }
+    { "description": "Wireless headphones", "price": 45.99, "expense_type": "Electronics" },
+    { "description": "Phone case", "price": 12.00, "expense_type": "Electronics" }
   ],
   "total": 57.99,
   "flag": false,

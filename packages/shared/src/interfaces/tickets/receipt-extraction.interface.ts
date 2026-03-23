@@ -14,11 +14,11 @@ export interface IReceiptExtraction {
   items?: Array<{
     description: string;
     price: number;
+    expense_type?: string;
   }>;
   total?: number;
   converted_amount?: number;
   converted_currency?: string;
-  expense_type?: string;
   cgs_bucket_link_justification?: string;
   flag?: boolean;
   llm_comment?: string | null;

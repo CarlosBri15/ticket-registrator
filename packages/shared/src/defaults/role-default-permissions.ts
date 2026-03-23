@@ -86,8 +86,11 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<RoleType, PermissionType[]> = {
     permissions.VIEW_DEPARTMENTS,
     permissions.CREATE_DEPARTMENTS,
     permissions.EDIT_DEPARTMENTS,
-    permissions.DELETE_DEPARTMENTS
-    ,
+    permissions.DELETE_DEPARTMENTS,
+    permissions.VIEW_CATEGORIES,
+    permissions.CREATE_CATEGORIES,
+    permissions.EDIT_CATEGORIES,
+    permissions.DELETE_CATEGORIES,
   ],
 
   [Roles.SUPERADMIN]: all_permissions,

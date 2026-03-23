@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { PermissionType } from '../../user-roles/permissions';
+import type { PermissionType } from '../../defaults/permissions';
 
 export interface IPermissionGuardProps {
     /** Require a single permission */

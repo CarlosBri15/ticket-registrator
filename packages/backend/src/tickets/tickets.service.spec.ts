@@ -232,6 +232,7 @@ describe('TicketsService', () => {
       await expect(
         service.create(requester, 'report-1', {
           buffer: Buffer.from('f'),
+          originalname: 'test.jpg',
           mimetype: 'image/jpeg',
         } as any),
       ).rejects.toThrow('This receipt has already been processed based on its extracted data.');
@@ -242,6 +243,7 @@ describe('TicketsService', () => {
       await expect(
         service.create(requester, 'report-1', {
           buffer: Buffer.from('f'),
+          originalname: 'test.jpg',
         } as any),
       ).rejects.toThrow(ReportNotFoundException);
     });
@@ -254,6 +256,7 @@ describe('TicketsService', () => {
       await expect(
         service.create(requester, 'report-1', {
           buffer: Buffer.from('f'),
+          originalname: 'test.jpg',
         } as any),
       ).rejects.toThrow(ReportNotFoundException);
     });
@@ -264,6 +267,7 @@ describe('TicketsService', () => {
       await expect(
         service.create(requester, 'report-1', {
           buffer: Buffer.from('f'),
+          originalname: 'test.jpg',
         } as any),
       ).rejects.toThrow(TicketUnauthorizedException);
     });
@@ -277,6 +281,7 @@ describe('TicketsService', () => {
       await expect(
         service.create(requester, 'report-1', {
           buffer: Buffer.from('f'),
+          originalname: 'test.jpg',
         } as any),
       ).rejects.toThrow(TicketStatusConflictException);
     });
@@ -287,11 +292,10 @@ describe('TicketsService', () => {
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
       storageServiceMock.uploadFile.mockResolvedValue('link');
       geminiServiceMock.extractReceipt.mockResolvedValue({
-        items: [{ description: 'Coffee', price: 5 }],
-        total: 5,
         date: '2024-01-15',
         payment_method: 'CARD',
-        expense_type: 'MEALS',
+        items: [{ description: 'Coffee', price: 5, expense_type: 'MEALS' }],
+        total: 5,
       });
       cryptoServiceMock.generatePerceptualHash.mockResolvedValue('hash|1.0');
       cryptoServiceMock.calculateHammingDistance.mockReturnValue(100);
@@ -336,11 +340,14 @@ describe('TicketsService', () => {
       ticketsRepositoryMock.findAllFingerprints.mockResolvedValue([
         { imageId: 'oldhash|1.01' },
       ]);
+      geminiServiceMock.extractReceipt.mockResolvedValue({ items: [], total: 10 });
       cryptoServiceMock.calculateHammingDistance.mockReturnValue(5); // distance <= 15
 
       await expect(
         service.create(requester, 'report-1', {
           buffer: Buffer.from('f'),
+          originalname: 'test.jpg',
+          mimetype: 'image/jpeg',
         } as any),
       ).rejects.toThrow('This receipt has already been processed (Similarity match)');
     });
@@ -353,10 +360,13 @@ describe('TicketsService', () => {
         { imageId: 'newhash' },
       ]);
       cryptoServiceMock.calculateHammingDistance.mockReturnValue(0); // distance <= 2
+      geminiServiceMock.extractReceipt.mockResolvedValue({ items: [], total: 10 });
 
       await expect(
         service.create(requester, 'report-1', {
           buffer: Buffer.from('f'),
+          originalname: 'test.jpg',
+          mimetype: 'image/jpeg',
         } as any),
       ).rejects.toThrow('This receipt has already been processed (Exact match)');
     });
@@ -369,7 +379,7 @@ describe('TicketsService', () => {
         { imageId: 'oldhash|1.5' },
       ]);
       // Should not call hamming distance because ratio diff > 0.05
-      
+
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
       storageServiceMock.uploadFile.mockResolvedValue('link');
       geminiServiceMock.extractReceipt.mockResolvedValue({ items: [], total: 10 });
@@ -378,8 +388,10 @@ describe('TicketsService', () => {
 
       await service.create(requester, 'report-1', {
         buffer: Buffer.from('f'),
+        originalname: 'test.jpg',
+        mimetype: 'image/jpeg',
       } as any);
-      
+
       expect(ticketsRepositoryMock.create).toHaveBeenCalled();
     });
 
@@ -392,7 +404,7 @@ describe('TicketsService', () => {
         { imageId: 'other|1.0' },
       ]);
       cryptoServiceMock.calculateHammingDistance.mockReturnValue(100);
-      
+
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
       storageServiceMock.uploadFile.mockResolvedValue('link');
       geminiServiceMock.extractReceipt.mockResolvedValue({ items: [], total: 10 });
@@ -401,8 +413,10 @@ describe('TicketsService', () => {
 
       await service.create(requester, 'report-1', {
         buffer: Buffer.from('f'),
+        originalname: 'test.jpg',
+        mimetype: 'image/jpeg',
       } as any);
-      
+
       expect(ticketsRepositoryMock.create).toHaveBeenCalled();
     });
 
@@ -422,6 +436,8 @@ describe('TicketsService', () => {
 
       const result = await service.create(requester, 'report-1', {
         buffer: Buffer.from('f'),
+        originalname: 'test.jpg',
+        mimetype: 'image/jpeg',
       } as any);
       expect(result.id).toBe('ticket-1');
       expect(ticketsRepositoryMock.create).toHaveBeenCalledWith(
@@ -615,7 +631,6 @@ describe('TicketsService', () => {
 
       await service.update(requester, 'report-1', 'ticket-1', {
         location_name: 'New Shop',
-        expense_type: 'TRAVEL',
         amount: 20,
         currency: 'USD',
         location_address: '123 St',
@@ -626,7 +641,6 @@ describe('TicketsService', () => {
         'ticket-1',
         expect.objectContaining({
           locationName: 'New Shop',
-          expenseType: 'TRAVEL',
           amount: 20,
           currency: 'USD',
           lifecycle: TicketLifecycle.SUBMITTED,
@@ -644,7 +658,7 @@ describe('TicketsService', () => {
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
       const ticketInReview = { ...mockTicket, status: TicketStatus.APPROVED, lifecycle: TicketLifecycle.SUBMITTED };
       ticketsRepositoryMock.findById.mockResolvedValue(ticketInReview);
-      
+
       await service.update(requester, 'report-1', 'ticket-1', {
         cgs_bucket_link_justification: 'needed high res',
         last_four_digits: '5555',
@@ -659,7 +673,7 @@ describe('TicketsService', () => {
         expect.any(Object),
         undefined,
       );
-      
+
       // Ensure it DID NOT overwrite status/lifecycle
       const updateObject = ticketsRepositoryMock.updateWithHistory.mock.calls[0][1];
       expect(updateObject.status).toBeUndefined();

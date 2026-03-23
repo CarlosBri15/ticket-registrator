@@ -19,6 +19,9 @@ export * from './schemas/reports/updateReport.schema';
 
 // Tickets
 export * from './interfaces/tickets/ticket.interface';
+export * from './interfaces/categories/category.interface';
+export * from './schemas/categories/createCategory.schema';
+export * from './schemas/categories/updateCategory.schema';
 export * from './interfaces/tickets/item.interface';
 export * from './interfaces/tickets/receipt-extraction.interface';
 export * from './schemas/tickets/createTicket.schema';
@@ -56,9 +59,9 @@ export * from './i18n';
 export * from './styles/theme';
 
 //Roles and Permissions
-export * from './user-roles/roles'
-export * from './user-roles/permissions'
-export * from './user-roles/role-default-permissions'
+export * from './defaults/roles'
+export * from './defaults/permissions'
+export * from './defaults/role-default-permissions'
 
 // Organization
 export * from './interfaces/organization/organization.interface';
@@ -93,3 +96,6 @@ export * from './schemas/permissions/createPermission.schema';
 export * from './schemas/permissions/updatePermission.schema';
 export * from './schemas/permissions/assignPermission.schema';
 export * from './schemas/permissions/userPermissionOverride.schema';
+
+// Categories
+export * from './defaults/default-categories';

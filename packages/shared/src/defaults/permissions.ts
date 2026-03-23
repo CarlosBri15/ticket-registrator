@@ -47,6 +47,12 @@ export const permissions = {
   EDIT_COMPANY: 'edit_company',
   DELETE_COMPANY: 'delete_company',
 
+  // Categories
+  VIEW_CATEGORIES: 'view_categories',
+  CREATE_CATEGORIES: 'create_categories',
+  EDIT_CATEGORIES: 'edit_categories',
+  DELETE_CATEGORIES: 'delete_categories',
+
   // Special
   CREATE_ADMINS: 'create_admins', // Might keep this for specific security check
 } as const;

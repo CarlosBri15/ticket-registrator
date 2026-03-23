@@ -15,7 +15,9 @@ import {
   Roles,
   ROLE_HIERARCHY,
   ROLE_DEFAULT_PERMISSIONS,
+  DEFAULT_CATEGORIES,
 } from '@ticket-registrator/shared';
+import { CategoriesRepository } from '../categories/categories.repository';
 import { InsertRolePermission } from '../permissions/schemas/role-permission.schema';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { join } from 'node:path';
@@ -30,9 +32,10 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly cryptoService: CryptoService,
     private readonly rolesRepository: RolesRepository,
     private readonly permissionsService: PermissionsService,
+    private readonly categoriesRepository: CategoriesRepository,
     @Inject(DB_CONNECTION)
     private readonly db: PostgresJsDatabase<typeof schema>,
-  ) {}
+  ) { }
 
   async onApplicationBootstrap() {
     this.logger.log('--- AUTO MIGRATIONS START ---');
@@ -62,10 +65,12 @@ export class SeedService implements OnApplicationBootstrap {
     const permsResult = await this.seedDefaultPermissions();
     const rolesResult = await this.seedDefaultRoles();
     const rolePermsResult = await this.seedDefaultRolePermissions();
+    const categoriesResult = await this.seedDefaultCategories();
     return {
       permissions: permsResult,
       roles: rolesResult,
       rolePermissions: rolePermsResult,
+      categories: categoriesResult,
     };
   }
 
@@ -175,6 +180,42 @@ export class SeedService implements OnApplicationBootstrap {
         `Global '${UNASSIGNED_DEPARTMENT_NAME}' department seeded.`,
       );
     }
+  }
+
+  async seedDefaultCategories() {
+    const existingCategories = await this.categoriesRepository.findAllSystemCategories();
+    const existingMap = new Map(existingCategories.map((c) => [c.name, c]));
+
+    let seededCount = 0;
+    let updatedCount = 0;
+
+    for (const cat of DEFAULT_CATEGORIES) {
+      const existing = existingMap.get(cat.name);
+
+      if (existing) {
+        if (existing.description !== cat.description) {
+          await this.categoriesRepository.update(existing.id, {
+            description: cat.description,
+          });
+          updatedCount++;
+        }
+      } else {
+        await this.categoriesRepository.create({
+          name: cat.name,
+          description: cat.description,
+          organizationId: null,
+          isSystem: true,
+        });
+        seededCount++;
+      }
+    }
+
+    this.logger.log(
+      `Seeding categories: ${seededCount} new, ${updatedCount} updated`,
+    );
+    return {
+      message: `Processed ${DEFAULT_CATEGORIES.length} system categories (${seededCount} new, ${updatedCount} updated)`,
+    };
   }
 
   private async seedSuperAdmin() {

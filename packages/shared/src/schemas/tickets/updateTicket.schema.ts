@@ -5,7 +5,6 @@ import { createItemSchema } from '../../schemas/tickets/createItem.schema';
 export const updateTicketFieldsSchema = z.object({
   cgs_bucket_link: z.string().optional(),
   payment_type: z.string().optional(),
-  expense_type: z.string().optional(),
   date: z.coerce.date().optional(),
   location_name: z.string().optional(),
   location_address: z.string().optional(),

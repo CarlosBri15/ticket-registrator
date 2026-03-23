@@ -104,7 +104,7 @@ export class TicketsService {
           // with different angles or minor visual variations, avoiding false positive collisions.
           if (distance <= 20) {
             throw new DuplicateTicketException(
-              `This receipt has already been processed (Similarity match: ${distance})`,
+              `This receipt has already been processed (Similarity match)`,
             );
           }
         } else {
@@ -115,7 +115,7 @@ export class TicketsService {
           );
           if (distance <= 2) {
             throw new DuplicateTicketException(
-              `This receipt has already been processed (Similarity match: ${distance})`,
+              `This receipt has already been processed (Exact match)`,
             );
           }
         }
@@ -197,6 +197,7 @@ export class TicketsService {
         name: item.description ?? null,
         amount: item.price ?? null,
         currency: report.currency ?? null,
+        expenseType: item.expense_type ?? null,
         status: ItemStatus.PENDING,
       })) ?? [];
 
@@ -206,7 +207,6 @@ export class TicketsService {
       lifecycle: TicketLifecycle.DRAFT,
       cgsBucketLink: imageIdentifier,
       paymentType: geminiData.payment_method ?? null,
-      expenseType: geminiData.expense_type ?? null,
       date: parsedDate,
       locationName: geminiData.establishment ?? null,
       locationAddress: geminiData.address?.formatted_address ?? null,
@@ -460,7 +460,6 @@ export class TicketsService {
       meaningful: boolean;
     }> = [
         { dtoKey: 'payment_type', updateKey: 'paymentType', meaningful: true },
-        { dtoKey: 'expense_type', updateKey: 'expenseType', meaningful: true },
         { dtoKey: 'location_name', updateKey: 'locationName', meaningful: true },
         {
           dtoKey: 'location_address',
@@ -501,6 +500,7 @@ export class TicketsService {
         name: item.name ?? null,
         amount: item.amount ?? null,
         currency: item.currency ?? null,
+        expenseType: item.expense_type ?? null,
         status: ItemStatus.PENDING,
       }));
       meaningfulChange = true;
