@@ -1,3 +1,4 @@
+// NOSONAR - This file contains intentionally repetitive data (seed list) and is not a code duplication issue.
 export interface IDefaultCategory {
     name: string;
     description: string;
