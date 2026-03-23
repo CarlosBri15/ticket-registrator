@@ -3,6 +3,7 @@ import { Check, AlertCircle, Cpu, Home, MapPin, Calendar, DollarSign, CreditCard
 import type { ITicket } from "@ticket-registrator/shared";
 import { Input } from "../../../components/ui/Input";
 import { Button } from "../../../components/ui/Button";
+import { tokens, radius } from "../../../styles/theme";
 
 interface TicketConfirmationFormProps {
   ticket: ITicket;
@@ -103,16 +104,16 @@ export const TicketConfirmationForm = ({
     <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
       {/* AI Confidence Banner */}
-      <div className="flex items-center gap-4 p-4 rounded-2xl bg-brand/5 border border-brand/10">
-        <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-brand/20">
+      <div className={`flex items-center gap-4 p-4 ${radius.card} bg-brand/5 border border-brand/10`}>
+        <div className={`w-10 h-10 bg-brand ${radius.base} flex items-center justify-center shrink-0 shadow-sm`}>
           <Cpu className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1.5">
-            <p className="text-sm font-bold text-brand">
+            <p className="text-sm font-semibold text-brand">
               IA extrajo {extractedKeys.length}/{allKeys.length} campos
             </p>
-            <span className="text-xs font-black text-brand/70">{confidencePct}%</span>
+            <span className="text-xs font-semibold text-brand/70">{confidencePct}%</span>
           </div>
           <div className="h-1.5 bg-brand/15 rounded-full overflow-hidden">
             <div
@@ -127,29 +128,27 @@ export const TicketConfirmationForm = ({
       {extractedKeys.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Check className="w-3.5 h-3.5 text-green-600" />
-            <p className="text-[10px] font-black text-green-700 uppercase tracking-widest">
+            <Check className="w-3.5 h-3.5 text-success" />
+            <p className="text-[10px] font-semibold text-success uppercase tracking-widest">
               Datos extraídos automáticamente
             </p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50 overflow-hidden">
+          <div className={`${tokens.listSection} divide-y divide-slate-50`}>
             {extractedKeys.map((key) => {
               const Icon = FIELD_META[key].icon;
               return (
                 <div key={key} className="flex items-center gap-3 px-5 py-3.5">
-                  <div className="w-7 h-7 bg-green-50 rounded-lg flex items-center justify-center shrink-0">
-                    <Icon className="w-3.5 h-3.5 text-green-600" />
+                  <div className={`w-7 h-7 bg-success/10 ${radius.base} flex items-center justify-center shrink-0`}>
+                    <Icon className="w-3.5 h-3.5 text-success" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                      {FIELD_META[key].label}
-                    </p>
-                    <p className="text-sm font-bold text-dark truncate mt-0.5">
+                    <p className={tokens.statCardLabel}>{FIELD_META[key].label}</p>
+                    <p className="text-sm font-semibold text-dark truncate mt-0.5">
                       {formatExtractedValue(key)}
                     </p>
                   </div>
-                  <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center shrink-0">
-                    <Check className="w-3 h-3 text-green-600" />
+                  <div className="w-5 h-5 bg-success/10 rounded-full flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 text-success" />
                   </div>
                 </div>
               );
@@ -162,12 +161,12 @@ export const TicketConfirmationForm = ({
       {missingKeys.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-            <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest">
+            <AlertCircle className="w-3.5 h-3.5 text-warning" />
+            <p className="text-[10px] font-semibold text-warning uppercase tracking-widest">
               Completa estos campos
             </p>
           </div>
-          <div className="bg-amber-50/50 rounded-2xl border border-amber-100 p-5">
+          <div className={`bg-warning/5 ${radius.card} border border-warning/15 p-5`}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {missingKeys.map((key) => {
                 const meta = FIELD_META[key];
@@ -194,9 +193,9 @@ export const TicketConfirmationForm = ({
 
       {/* All fields extracted */}
       {missingKeys.length === 0 && (
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-green-50 border border-green-100">
-          <Check className="w-4 h-4 text-green-600 shrink-0" />
-          <p className="text-sm font-semibold text-green-700">
+        <div className={`${tokens.alert} ${tokens.alertSuccess}`}>
+          <Check className="w-4 h-4 shrink-0" />
+          <p className="text-sm font-semibold">
             La IA extrajo todos los campos. Revisa la información y confirma.
           </p>
         </div>
@@ -206,20 +205,18 @@ export const TicketConfirmationForm = ({
       {ticket.items && ticket.items.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <List className="w-3.5 h-3.5 text-gray-400" />
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-              Resumen de Items
-            </p>
+            <List className="w-3.5 h-3.5 text-slate-400" />
+            <p className={tokens.listSectionTitle}>Resumen de Items</p>
           </div>
-          <div className="glass-panel p-4 rounded-2xl">
+          <div className={`bg-slate-50 ${radius.card} p-4`}>
             <div className="max-h-40 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
               {ticket.items.map((item, index) => (
                 <div
                   key={item.id || `${item.name}-${index}`}
-                  className="flex justify-between items-center bg-white/80 p-3 rounded-xl border border-white/50 shadow-sm"
+                  className={`flex justify-between items-center bg-white p-3 ${radius.base} border border-slate-100 shadow-sm`}
                 >
                   <span className="text-sm font-medium text-dark truncate mr-3">{item.name}</span>
-                  <span className="text-sm font-bold text-brand shrink-0">
+                  <span className="text-sm font-semibold text-brand shrink-0">
                     {item.amount} {item.currency}
                   </span>
                 </div>
@@ -230,11 +227,11 @@ export const TicketConfirmationForm = ({
       )}
 
       {/* Actions */}
-      <div className="flex gap-3 pt-4 border-t border-gray-100">
+      <div className="flex gap-3 pt-4 border-t border-slate-100">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={isLoading} className="flex-1">
           Descartar
         </Button>
-        <Button type="submit" isLoading={isLoading} className="flex-[2] shadow-xl shadow-brand/20">
+        <Button type="submit" isLoading={isLoading} className="flex-[2]">
           <Check className="w-4 h-4 mr-2" />
           Confirmar Ticket
         </Button>

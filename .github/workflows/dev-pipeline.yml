@@ -1,25 +1,32 @@
-name: Dev Deployment Pipeline
+name: Dev Pipeline (CI/CD)
 
 on:
   push:
-    branches:
-      - dev
+    branches: [dev]
+    paths:
+      - 'packages/**'
+      - '.github/workflows/**'
 
 jobs:
-  # 0. Detect Changes
+  # 1. Identificar qué paquetes han cambiado
   changes:
     runs-on: ubuntu-latest
     outputs:
+      shared: ${{ steps.filter.outputs.shared }}
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
       mobile: ${{ steps.filter.outputs.mobile }}
-      shared: ${{ steps.filter.outputs.shared }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          base: ${{ github.event.before }}
           filters: |
+            shared:
+              - 'packages/shared/**'
             backend:
               - 'packages/backend/**'
               - 'packages/shared/**'
@@ -29,119 +36,12 @@ jobs:
             mobile:
               - 'packages/mobile/**'
               - 'packages/shared/**'
-            shared:
-              - 'packages/shared/**'
 
-  # 1. CI Jobs per project
-  ci-backend:
-    name: CI (backend)
-    needs: changes
-    if: needs.changes.outputs.backend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm install
-      - name: Build Shared Package
-        run: npm run build -w @ticket-registrator/shared
-      - name: Run Linter
-        continue-on-error: true
-        working-directory: packages/backend
-        run: npm run lint
-      - name: Run Unit Tests
-        working-directory: packages/backend
-        run: npm test -- --coverage --watchAll=false
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        with:
-          projectBaseDir: packages/backend
-          args: >
-            -Dsonar.qualitygate.wait=true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  ci-frontend:
-    name: CI (frontend)
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm install
-      - name: Build Shared Package
-        run: npm run build -w @ticket-registrator/shared
-      - name: Run Linter
-        continue-on-error: true
-        working-directory: packages/frontend
-        run: npm run lint
-      - name: Run Unit Tests
-        working-directory: packages/frontend
-        run: npm test -- --coverage --watchAll=false
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        with:
-          projectBaseDir: packages/frontend
-          args: >
-            -Dsonar.qualitygate.wait=true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  ci-mobile:
-    name: CI (mobile)
-    needs: changes
-    if: needs.changes.outputs.mobile == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm install
-      - name: Build Shared Package
-        run: npm run build -w @ticket-registrator/shared
-      - name: Run Linter
-        continue-on-error: true
-        working-directory: packages/mobile
-        run: npm run lint
-      - name: Run Unit Tests
-        working-directory: packages/mobile
-        run: npm test -- --coverage --watchAll=false
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        with:
-          projectBaseDir: packages/mobile
-          args: >
-            -Dsonar.qualitygate.wait=true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
+  # 2. CI Shared
   ci-shared:
-    name: CI (shared)
     needs: changes
     if: needs.changes.outputs.shared == 'true'
+    name: CI (Shared)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -167,17 +67,50 @@ jobs:
         uses: SonarSource/sonarcloud-github-action@master
         with:
           projectBaseDir: packages/shared
-          args: >
-            -Dsonar.qualitygate.wait=true
+          args: -Dsonar.qualitygate.wait=true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-  # 2. Deploy Backend
+  # 3. Backend Pipeline
+  ci-backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    name: CI (Backend)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Run Linter
+        continue-on-error: true
+        working-directory: packages/backend
+        run: npm run lint
+      - name: Run Unit Tests
+        working-directory: packages/backend
+        run: npm test -- --coverage --watchAll=false
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: packages/backend
+          args: -Dsonar.qualitygate.wait=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   deploy-backend:
-    name: Deploy Backend
     needs: [changes, ci-backend]
-    if: always() && needs.changes.outputs.backend == 'true' && (needs.ci-backend.result == 'success' || needs.ci-backend.result == 'skipped')
+    if: needs.changes.outputs.backend == 'true' && (needs.ci-backend.result == 'success' || needs.ci-backend.result == 'skipped')
+    name: Deploy Backend
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
@@ -211,11 +144,45 @@ jobs:
             PASSWORD_PEPPER=${{ secrets.PASSWORD_PEPPER }}
             NODE_ENV=production
 
-  # 3. Deploy Frontend
+  # 4. Frontend Pipeline
+  ci-frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    name: CI (Frontend)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Run Linter
+        continue-on-error: true
+        working-directory: packages/frontend
+        run: npm run lint
+      - name: Run Unit Tests
+        working-directory: packages/frontend
+        run: npm test -- --coverage --watchAll=false
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: packages/frontend
+          args: -Dsonar.qualitygate.wait=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   deploy-frontend:
-    name: Deploy Frontend
     needs: [changes, ci-frontend]
-    if: always() && needs.changes.outputs.frontend == 'true' && (needs.ci-frontend.result == 'success' || needs.ci-frontend.result == 'skipped')
+    if: needs.changes.outputs.frontend == 'true' && (needs.ci-frontend.result == 'success' || needs.ci-frontend.result == 'skipped')
+    name: Deploy Frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -225,7 +192,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - name: Create .env file
-        run: echo "VITE_API_URL=${{ secrets.VITE_API_URL_DEV }}" > ./packages/frontend/.env.dev
+        run: echo "VITE_API_URL=${{ secrets.VITE_API_URL_DEV }}" > ./packages/frontend/.env.production
       - name: Install and Build
         run: |
           npm ci
@@ -243,42 +210,111 @@ jobs:
           channelId: live
           entryPoint: "./packages/frontend"
 
-  # 4. Final Notification (ONLY ON SUCCESS)
-  notify-success:
-    name: Notify Success
-    needs: [deploy-backend, deploy-frontend]
+  # 5. Mobile Pipeline
+  ci-mobile:
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    name: CI (Mobile)
     runs-on: ubuntu-latest
-    if: success()
     steps:
-      - name: Notify Discord
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Run Linter
+        continue-on-error: true
+        working-directory: packages/mobile
+        run: npm run lint
+      - name: Run Unit Tests
+        working-directory: packages/mobile
+        run: npm test -- --coverage --watchAll=false
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: packages/mobile
+          args: -Dsonar.qualitygate.wait=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  deploy-mobile:
+    needs: [changes, ci-mobile]
+    if: needs.changes.outputs.mobile == 'true' && (needs.ci-mobile.result == 'success' || needs.ci-mobile.result == 'skipped')
+    name: Deploy Mobile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Install dependencies
+        run: npm ci
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Deploy Update to Expo (Preview)
+        working-directory: packages/mobile
+        run: EXPO_PUBLIC_API_URL=${{ secrets.VITE_API_URL_DEV }} npx eas update --auto --channel preview
+
+  # 6. Final Notification (Only on Success of everything that ran)
+  notify-success:
+    needs: [ci-shared, deploy-backend, deploy-frontend, deploy-mobile]
+    if: >
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      (needs.ci-shared.result == 'success' || 
+       needs.deploy-backend.result == 'success' || 
+       needs.deploy-frontend.result == 'success' || 
+       needs.deploy-mobile.result == 'success')
+    name: Notify Discord
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Discord Success
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_DEV_UPDATES }}
-          status: ${{ job.status }}
-          content: "@everyone 🚀 **Entorno de `dev` actualizado y verificado**"
+          status: success
+          content: "@everyone 🔄 **Nueva versión en `dev` disponible**"
           title: "📌 ${{ github.event.head_commit.message }}"
           description: |
             **Autor:** ${{ github.actor }}
-            **Estado:** Tests pasados ✅ | Deployed ✅
-            
-            Los cambios ya están disponibles. Por favor, haced un `git pull` para sincronizar.
+            **Cambios:** Se han desplegado los cambios correctamente en la rama `dev`.
+            Ejecuta `git pull` para actualizar tu entorno local.
           url: "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
-          color: 0x2ecc71
+          color: 0x3498db
 
-  # 5. Alert on Failure (ANY PART)
-  notify-failure:
-    name: Notify Failure
-    needs: [ci-backend, ci-frontend, ci-mobile, ci-shared, deploy-backend, deploy-frontend]
+  # 7. Failure Alerts (Separate for each project)
+  alert-failure:
+    needs: [ci-shared, ci-backend, deploy-backend, ci-frontend, deploy-frontend, ci-mobile, deploy-mobile]
+    if: always() && contains(needs.*.result, 'failure')
+    name: Alert Failures
     runs-on: ubuntu-latest
-    if: failure()
     steps:
-      - name: Notify Discord
+      - name: Notify Discord Failure
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_ALERTS }}
           status: failure
-          content: "@here 🚨 **Pipeline de `dev` FALLIDO**"
+          content: "@here 🚨 **El pipeline de `dev` ha fallado**"
           title: "Error en el flujo de integración/despliegue"
-          description: "Un paso crítico ha fallado. El entorno de `dev` podría estar inestable. Revisa los logs de GitHub Actions."
+          description: |
+            Uno o varios pasos han fallado en la rama `dev`. 
+            Revisa los logs para más detalles.
           url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           color: 0xff0000

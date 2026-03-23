@@ -75,7 +75,7 @@ export default {
     totalApproved: "Total aprobado",
     managementTitle: "Gestion",
     teamReports: "Informes del equipo",
-    activeTripsSubtitle: "viajes activos",
+    activeTripsSubtitle: "reportes activos",
   },
   reportDetail: {
     backToTrips: "Volver a Mis Reportes",
@@ -245,7 +245,8 @@ export default {
   },
   layout: {
     menu: "Menu Principal",
-    allTickets: "Todos los Tickets",
+    home: "Inicio",
+    allTickets: "Tickets",
     expenseManagement: "Gestion de gastos",
     fullHistory: "Historico completo",
     users: "Usuarios",

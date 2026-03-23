@@ -34,15 +34,22 @@ export default function AppLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: t('common.welcome'),
+          title: t('layout.home'),
           tabBarIcon: ({ color }) => <Feather name="home" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="trips"
+        name="reports"
         options={{
           title: t('trips.title'),
-          tabBarIcon: ({ color }) => <Feather name="briefcase" size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Feather name="file-text" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="tickets"
+        options={{
+          title: t('layout.allTickets'),
+          tabBarIcon: ({ color }) => <Feather name="credit-card" size={24} color={color} />,
         }}
       />
       <Tabs.Screen

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
+import * as crypto from 'node:crypto';
 import sharp from 'sharp';
 import { bmvbhash } from 'blockhash-core';
 
@@ -9,7 +9,7 @@ import { bmvbhash } from 'blockhash-core';
 export class CryptoService {
   private readonly SALT_ROUNDS = 10;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) { }
 
   private get pepper(): string {
     const value = this.configService.get<string>('PASSWORD_PEPPER');
@@ -51,8 +51,8 @@ export class CryptoService {
 
     let distance = 0;
     for (let i = 0; i < hash1.length; i++) {
-      const hex1 = parseInt(hash1[i], 16);
-      const hex2 = parseInt(hash2[i], 16);
+      const hex1 = Number.parseInt(hash1[i], 16);
+      const hex2 = Number.parseInt(hash2[i], 16);
       let xor = hex1 ^ hex2;
       while (xor > 0) {
         if (xor & 1) distance++;

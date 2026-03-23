@@ -328,6 +328,107 @@ describe('TicketsService', () => {
       } as any);
       expect(result.id).toBe('ticket-1');
     });
+
+    it('should throw DuplicateTicketException when a similar receipt is found', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
+      cryptoServiceMock.generatePerceptualHash.mockResolvedValue('newhash|1.0');
+      ticketsRepositoryMock.findAllFingerprints.mockResolvedValue([
+        { imageId: 'oldhash|1.01' },
+      ]);
+      cryptoServiceMock.calculateHammingDistance.mockReturnValue(5); // distance <= 15
+
+      await expect(
+        service.create(requester, 'report-1', {
+          buffer: Buffer.from('f'),
+        } as any),
+      ).rejects.toThrow('This receipt has already been processed (Similarity match)');
+    });
+
+    it('should throw DuplicateTicketException when an exact match is found (legacy)', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
+      cryptoServiceMock.generatePerceptualHash.mockResolvedValue('newhash');
+      ticketsRepositoryMock.findAllFingerprints.mockResolvedValue([
+        { imageId: 'newhash' },
+      ]);
+      cryptoServiceMock.calculateHammingDistance.mockReturnValue(0); // distance <= 2
+
+      await expect(
+        service.create(requester, 'report-1', {
+          buffer: Buffer.from('f'),
+        } as any),
+      ).rejects.toThrow('This receipt has already been processed (Exact match)');
+    });
+
+    it('should NOT throw DuplicateTicketException if ratio is too different', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
+      cryptoServiceMock.generatePerceptualHash.mockResolvedValue('newhash|1.0');
+      ticketsRepositoryMock.findAllFingerprints.mockResolvedValue([
+        { imageId: 'oldhash|1.5' },
+      ]);
+      // Should not call hamming distance because ratio diff > 0.05
+      
+      ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
+      storageServiceMock.uploadFile.mockResolvedValue('link');
+      geminiServiceMock.extractReceipt.mockResolvedValue({ items: [], total: 10 });
+      ticketsRepositoryMock.create.mockResolvedValue(mockTicket);
+      ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
+
+      await service.create(requester, 'report-1', {
+        buffer: Buffer.from('f'),
+      } as any);
+      
+      expect(ticketsRepositoryMock.create).toHaveBeenCalled();
+    });
+
+    it('should skip fingerprint entries with null imageId', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
+      cryptoServiceMock.generatePerceptualHash.mockResolvedValue('hash|1.0');
+      ticketsRepositoryMock.findAllFingerprints.mockResolvedValue([
+        { imageId: null },
+        { imageId: 'other|1.0' },
+      ]);
+      cryptoServiceMock.calculateHammingDistance.mockReturnValue(100);
+      
+      ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
+      storageServiceMock.uploadFile.mockResolvedValue('link');
+      geminiServiceMock.extractReceipt.mockResolvedValue({ items: [], total: 10 });
+      ticketsRepositoryMock.create.mockResolvedValue(mockTicket);
+      ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
+
+      await service.create(requester, 'report-1', {
+        buffer: Buffer.from('f'),
+      } as any);
+      
+      expect(ticketsRepositoryMock.create).toHaveBeenCalled();
+    });
+
+    it('should handle undefined gemini items and missing fields', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
+      ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
+      storageServiceMock.uploadFile.mockResolvedValue('link');
+      geminiServiceMock.extractReceipt.mockResolvedValue({
+        total: 10,
+        // items missing
+      });
+      cryptoServiceMock.generatePerceptualHash.mockResolvedValue('hash|1.0');
+      cryptoServiceMock.calculateHammingDistance.mockReturnValue(100);
+      ticketsRepositoryMock.create.mockResolvedValue(mockTicket);
+      ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
+
+      const result = await service.create(requester, 'report-1', {
+        buffer: Buffer.from('f'),
+      } as any);
+      expect(result.id).toBe('ticket-1');
+      expect(ticketsRepositoryMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ amount: 10 }),
+        [],
+      );
+    });
   });
 
   describe('findOne', () => {
@@ -504,6 +605,66 @@ describe('TicketsService', () => {
         }),
       ).rejects.toThrow(TicketNotFoundException);
     });
+
+    it('should update multiple fields and trigger meaningful change', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
+      ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
+      ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
+      ticketsRepositoryMock.updateWithHistory.mockResolvedValue(mockTicket);
+
+      await service.update(requester, 'report-1', 'ticket-1', {
+        location_name: 'New Shop',
+        expense_type: 'TRAVEL',
+        amount: 20,
+        currency: 'USD',
+        location_address: '123 St',
+        payment_type: 'CARD',
+      });
+
+      expect(ticketsRepositoryMock.updateWithHistory).toHaveBeenCalledWith(
+        'ticket-1',
+        expect.objectContaining({
+          locationName: 'New Shop',
+          expenseType: 'TRAVEL',
+          amount: 20,
+          currency: 'USD',
+          lifecycle: TicketLifecycle.SUBMITTED,
+          status: TicketStatus.PENDING,
+          version: 2,
+        }),
+        expect.any(Object),
+        undefined,
+      );
+    });
+
+    it('should update non-meaningful fields without changing status', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
+      ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
+      const ticketInReview = { ...mockTicket, status: TicketStatus.APPROVED, lifecycle: TicketLifecycle.SUBMITTED };
+      ticketsRepositoryMock.findById.mockResolvedValue(ticketInReview);
+      
+      await service.update(requester, 'report-1', 'ticket-1', {
+        cgs_bucket_link_justification: 'needed high res',
+        last_four_digits: '5555',
+      });
+
+      expect(ticketsRepositoryMock.updateWithHistory).toHaveBeenCalledWith(
+        'ticket-1',
+        expect.objectContaining({
+          cgsBucketLinkJustification: 'needed high res',
+          lastFourDigits: '5555',
+        }),
+        expect.any(Object),
+        undefined,
+      );
+      
+      // Ensure it DID NOT overwrite status/lifecycle
+      const updateObject = ticketsRepositoryMock.updateWithHistory.mock.calls[0][1];
+      expect(updateObject.status).toBeUndefined();
+      expect(updateObject.lifecycle).toBeUndefined();
+    });
   });
 
   describe('updateStatus', () => {
@@ -514,7 +675,7 @@ describe('TicketsService', () => {
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.updateWithHistory.mockResolvedValue(mockTicket);
 
-      const result = await service.updateStatus(
+      await service.updateStatus(
         requester,
         'report-1',
         'ticket-1',
@@ -622,8 +783,8 @@ describe('TicketsService', () => {
         { ...mockTicket, items: [] },
       ]);
 
-      const result = await service.findAll(requester, 'report-1');
-      expect(result).toHaveLength(1);
+      const fullResult = await service.findAll(requester, 'report-1');
+      expect(fullResult).toHaveLength(1);
       expect(ticketsRepositoryMock.findByReportId).toHaveBeenCalledWith(
         'report-1',
       );

@@ -1,4 +1,5 @@
 import { XCircle, CheckCircle2, AlertTriangle, Info, X } from 'lucide-react';
+import { tokens } from '../../styles/theme';
 
 export type AlertVariant = 'error' | 'success' | 'warning' | 'info';
 
@@ -11,37 +12,22 @@ export interface AlertProps {
 
 const VARIANT_STYLES: Record<AlertVariant, {
   container: string;
-  icon: string;
-  text: string;
-  dismiss: string;
   Icon: React.FC<{ className?: string; 'aria-hidden'?: boolean }>;
 }> = {
   error: {
-    container: 'bg-accent/5 border-accent/20',
-    icon: 'text-accent',
-    text: 'text-accent',
-    dismiss: 'text-accent/60 hover:text-accent',
+    container: tokens.alertError,
     Icon: XCircle,
   },
   success: {
-    container: 'bg-green-50 border-green-200',
-    icon: 'text-green-600',
-    text: 'text-green-700',
-    dismiss: 'text-green-400 hover:text-green-600',
+    container: tokens.alertSuccess,
     Icon: CheckCircle2,
   },
   warning: {
-    container: 'bg-amber-50 border-amber-200',
-    icon: 'text-amber-500',
-    text: 'text-amber-700',
-    dismiss: 'text-amber-400 hover:text-amber-600',
+    container: tokens.alertWarning,
     Icon: AlertTriangle,
   },
   info: {
-    container: 'bg-brand/5 border-brand/20',
-    icon: 'text-brand',
-    text: 'text-brand',
-    dismiss: 'text-brand/50 hover:text-brand',
+    container: tokens.alertInfo,
     Icon: Info,
   },
 };
@@ -54,16 +40,16 @@ export const Alert = ({ variant = 'error', message, onDismiss, className = '' }:
     <div
       role="alert"
       data-variant={variant}
-      className={`flex items-start gap-3 px-4 py-3 border rounded-xl animate-in slide-in-from-top-2 fade-in duration-200 ${styles.container} ${className}`}
+      className={`${tokens.alert} ${styles.container} ${className}`}
     >
-      <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${styles.icon}`} aria-hidden={true} />
-      <p className={`flex-1 text-sm font-semibold ${styles.text}`}>{message}</p>
+      <Icon className="w-4 h-4 shrink-0 mt-0.5" aria-hidden={true} />
+      <p className="flex-1 text-sm font-medium">{message}</p>
       {onDismiss && (
         <button
           type="button"
           onClick={onDismiss}
           aria-label="Cerrar"
-          className={`shrink-0 transition-colors ${styles.dismiss}`}
+          className="shrink-0 opacity-60 hover:opacity-100 transition-opacity"
         >
           <X className="w-4 h-4" />
         </button>

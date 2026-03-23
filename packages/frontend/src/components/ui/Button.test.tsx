@@ -56,6 +56,16 @@ describe('Button', () => {
     expect(container.querySelector('button')?.className).toContain('bg-transparent');
   });
 
+  it('renders with danger variant', () => {
+    const { container } = render(<Button variant="danger">Danger</Button>);
+    expect(container.querySelector('button')?.className).toContain('bg-danger');
+  });
+
+  it('renders with ghost-white variant', () => {
+    const { container } = render(<Button variant="ghost-white">Ghost White</Button>);
+    expect(container.querySelector('button')?.className).toContain('bg-white/10');
+  });
+
   it('applies custom className', () => {
     const { container } = render(<Button className="custom-class">Custom</Button>);
     expect(container.querySelector('button')?.className).toContain('custom-class');

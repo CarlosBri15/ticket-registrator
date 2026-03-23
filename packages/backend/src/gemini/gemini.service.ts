@@ -25,7 +25,6 @@ export class GeminiService {
     languageCode: string = 'es',
   ): Promise<IReceiptExtraction> {
     this.logger.log(`Extracting receipt data. Language Code: ${languageCode}`);
-    // this.logger.debug(`Prompt: ${prompt}`);
 
     const model = this.genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',

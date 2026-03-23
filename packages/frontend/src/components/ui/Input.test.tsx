@@ -26,13 +26,13 @@ describe('Input', () => {
   it('applies error styling when error is provided', () => {
     const { container } = render(<Input label="Email" error="Required" />);
     const input = container.querySelector('input');
-    expect(input?.className).toContain('border-accent');
+    expect(input?.className).toContain('border-danger');
   });
 
   it('applies normal border when no error', () => {
     const { container } = render(<Input label="Email" />);
     const input = container.querySelector('input');
-    expect(input?.className).toContain('border-gray-200');
+    expect(input?.className).toContain('border-slate-200');
   });
 
   it('passes extra props to input', () => {

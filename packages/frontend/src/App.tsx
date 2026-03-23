@@ -2,20 +2,22 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ScopeProvider } from "@ticket-registrator/shared";
 import { PrivateRoute } from "./router/PrivateRoute";
-import { AppLayout } from "./layouts/AppLayout";
-import { LoginForm } from "./features/auth/LoginScreen";
-import { RegisterForm } from "./features/auth/RegisterScreen";
+import { AppLayout } from "./components/layouts/AppLayout";
+import { LoginForm } from "./features/auth/screens/LoginScreen";
+import { RegisterForm } from "./features/auth/screens/RegisterScreen";
 import { DashboardPage } from "./features/dashboard/DashboardScreen";
-import { ReportsScreen } from "./features/reports/ReportsScreen";
-import { ReportDetailScreen } from "./features/reports/ReportDetailScreen";
-import { AllTicketsScreen } from "./features/tickets/TicketsScreen";
-import { SettingsScreen } from "./features/settings/SettingsScreen";
-import { UsersScreen } from "./features/users/UsersScreen";
-import { DepartmentsScreen } from "./features/departments/DepartmentsScreen";
-import { RolesScreen } from "./features/roles/RolesScreen";
-import { OrganizationsScreen } from "./features/organizations/OrganizationsScreen";
-import { OrganizationDetailScreen } from "./features/organizations/OrganizationDetailScreen";
-import { PermissionsScreen } from "./features/permissions/PermissionsScreen";
+import { ReportsScreen } from "./features/reports/screens/ReportsScreen";
+import { ReportDetailScreen } from "./features/reports/screens/ReportDetailScreen";
+import { AllTicketsScreen } from "./features/tickets/screens/TicketsScreen";
+import { SettingsScreen } from "./features/settings/screens/SettingsScreen";
+import { UsersScreen } from "./features/users/screens/UsersScreen";
+import { UserDetailScreen } from "./features/users/screens/UserDetailScreen";
+import { DepartmentsScreen } from "./features/departments/screens/DepartmentsScreen";
+import { DepartmentDetailScreen } from "./features/departments/screens/DepartmentDetailScreen";
+import { RolesScreen } from "./features/roles/screens/RolesScreen";
+import { OrganizationsScreen } from "./features/organizations/screens/OrganizationsScreen";
+import { OrganizationDetailScreen } from "./features/organizations/screens/OrganizationDetailScreen";
+import { PermissionsScreen } from "./features/permissions/screens/PermissionsScreen";
 
 const queryClient = new QueryClient();
 
@@ -35,8 +37,8 @@ function App() {
               <Route path="/home" element={<DashboardPage />} />
 
               {/* Tickets & Reports — all authenticated users */}
-              <Route path="/trips" element={<ReportsScreen />} />
-              <Route path="/trips/:id" element={<ReportDetailScreen />} />
+              <Route path="/reports" element={<ReportsScreen />} />
+              <Route path="/reports/:id" element={<ReportDetailScreen />} />
               <Route
                 path="/tickets"
                 element={
@@ -56,10 +58,26 @@ function App() {
                 }
               />
               <Route
+                path="/users/:id"
+                element={
+                  <PrivateRoute permission="view_users">
+                    <UserDetailScreen />
+                  </PrivateRoute>
+                }
+              />
+              <Route
                 path="/departments"
                 element={
                   <PrivateRoute permission="view_departments">
                     <DepartmentsScreen />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/departments/:id"
+                element={
+                  <PrivateRoute permission="view_departments">
+                    <DepartmentDetailScreen />
                   </PrivateRoute>
                 }
               />

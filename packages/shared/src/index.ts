@@ -52,6 +52,9 @@ export * from './components/ScopeProvider';
 // I18n
 export * from './i18n';
 
+// Design tokens (platform-agnostic: colors, radius, text, spacing)
+export * from './styles/theme';
+
 //Roles and Permissions
 export * from './user-roles/roles'
 export * from './user-roles/permissions'

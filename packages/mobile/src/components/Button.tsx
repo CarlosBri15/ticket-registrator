@@ -1,9 +1,8 @@
 import React from 'react';
-import { 
-  TouchableOpacity, 
-  Text, 
-  ActivityIndicator, 
-  StyleSheet,
+import {
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
   type TouchableOpacityProps,
   View
 } from 'react-native';
@@ -77,9 +76,9 @@ export const Button = ({
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator 
-          size="small" 
-          color={variant === 'outline' || variant === 'ghost' ? '#336b87' : '#ffffff'} 
+        <ActivityIndicator
+          size="small"
+          color={variant === 'outline' || variant === 'ghost' ? '#336b87' : '#ffffff'}
         />
       ) : (
         <View className="flex-row items-center">

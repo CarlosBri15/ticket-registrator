@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { tokens } from '../../styles/theme';
 
 interface StatusBadgeProps {
   status: string;
@@ -6,22 +7,20 @@ interface StatusBadgeProps {
 }
 
 type StatusConfig = {
-  bg: string;
-  text: string;
-  border: string;
+  classes: string;
   dot: string;
   pulse?: boolean;
 };
 
 const STATUS_CONFIG: Record<string, StatusConfig> = {
-  CREATED:   { bg: "bg-secondary/15", text: "text-brand-hover",  border: "border-secondary/30", dot: "bg-brand",    pulse: true  },
-  DRAFT:     { bg: "bg-secondary/15", text: "text-brand-hover",  border: "border-secondary/30", dot: "bg-brand",    pulse: true  },
-  PENDING:   { bg: "bg-amber-50",     text: "text-amber-700",    border: "border-amber-200",    dot: "bg-amber-500", pulse: true  },
-  SUBMITTED: { bg: "bg-brand/10",     text: "text-brand",        border: "border-brand/20",     dot: "bg-brand",    pulse: true  },
-  APPROVED:  { bg: "bg-green-50",     text: "text-green-700",    border: "border-green-200",    dot: "bg-green-500"              },
-  REJECTED:  { bg: "bg-red-50",       text: "text-accent",       border: "border-red-200",      dot: "bg-accent"                 },
-  PAID:      { bg: "bg-secondary/20", text: "text-brand-hover",  border: "border-secondary/30", dot: "bg-secondary"              },
-  DECLINED:  { bg: "bg-red-50",       text: "text-accent",       border: "border-red-200",      dot: "bg-accent"                 },
+  CREATED:   { classes: tokens.badgeNeutral,  dot: "bg-slate-400",  pulse: true  },
+  DRAFT:     { classes: tokens.badgeNeutral,  dot: "bg-slate-400",  pulse: true  },
+  PENDING:   { classes: tokens.badgeWarning,  dot: "bg-warning",    pulse: true  },
+  SUBMITTED: { classes: tokens.badgeBrand,    dot: "bg-brand",      pulse: true  },
+  APPROVED:  { classes: tokens.badgeSuccess,  dot: "bg-success"                  },
+  REJECTED:  { classes: tokens.badgeDanger,   dot: "bg-danger"                   },
+  PAID:      { classes: tokens.badgeSuccess,  dot: "bg-success"                  },
+  DECLINED:  { classes: tokens.badgeDanger,   dot: "bg-danger"                   },
 };
 
 export const StatusBadge = ({ status, size = "sm" }: StatusBadgeProps) => {
@@ -29,13 +28,11 @@ export const StatusBadge = ({ status, size = "sm" }: StatusBadgeProps) => {
   const key = status.toUpperCase();
   const cfg = STATUS_CONFIG[key] ?? STATUS_CONFIG.DRAFT;
 
+  const sizeClass = size === "sm" ? tokens.badgeSm : tokens.badge;
+
   return (
-    <span className={`
-      inline-flex items-center gap-1.5 font-bold border rounded-full
-      ${size === "sm" ? "px-2.5 py-1 text-[10px]" : "px-3 py-1.5 text-xs"}
-      ${cfg.bg} ${cfg.text} ${cfg.border}
-    `}>
-      <span className={`relative flex w-1.5 h-1.5 shrink-0`}>
+    <span className={`${sizeClass} ${cfg.classes}`}>
+      <span className="relative flex w-1.5 h-1.5 shrink-0">
         {cfg.pulse && (
           <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 ${cfg.dot}`} />
         )}
