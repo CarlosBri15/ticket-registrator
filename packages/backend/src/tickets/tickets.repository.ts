@@ -48,6 +48,21 @@ export class TicketsRepository {
     });
   }
 
+  async findSemanticDuplicate(
+    date: Date,
+    amount: number,
+    locationName: string,
+  ) {
+    return this.db.query.tickets.findFirst({
+      where: and(
+        eq(schema.tickets.date, date),
+        eq(schema.tickets.amount, amount),
+        eq(schema.tickets.locationName, locationName),
+        isNull(schema.tickets.deletedAt),
+      ),
+    });
+  }
+
   async create(
     data: typeof schema.tickets.$inferInsert,
     items?: (typeof schema.items.$inferInsert)[],

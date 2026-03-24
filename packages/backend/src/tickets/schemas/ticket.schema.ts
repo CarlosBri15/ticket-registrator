@@ -26,7 +26,6 @@ export const tickets = pgTable('tickets', {
 
   cgsBucketLink: varchar('cgs_bucket_link', { length: 255 }),
   paymentType: varchar('payment_type', { length: 50 }),
-  expenseType: varchar('expense_type', { length: 50 }),
   date: timestamp('date'),
   locationName: varchar('location_name', { length: 255 }),
   locationAddress: varchar('location_address', { length: 255 }),

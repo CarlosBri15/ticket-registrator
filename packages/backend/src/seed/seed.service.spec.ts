@@ -3,6 +3,7 @@ import { SeedService, UNASSIGNED_DEPARTMENT_NAME } from './seed.service';
 import { CryptoService } from '../crypto/crypto.service';
 import { RolesRepository } from '../roles/roles.repository';
 import { PermissionsService } from '../permissions/permissions.service';
+import { CategoriesRepository } from '../categories/categories.repository';
 import { DB_CONNECTION } from '../db/db.module';
 import {
   Roles,
@@ -19,6 +20,7 @@ describe('SeedService', () => {
   let cryptoServiceMock: any;
   let rolesRepositoryMock: any;
   let permissionsServiceMock: any;
+  let categoriesRepositoryMock: any;
   let dbMock: any;
 
   beforeEach(async () => {
@@ -37,6 +39,11 @@ describe('SeedService', () => {
 
     permissionsServiceMock = {
       seedDefaultPermissions: jest.fn().mockResolvedValue({ message: 'done' }),
+    };
+
+    categoriesRepositoryMock = {
+      findAllSystemCategories: jest.fn().mockResolvedValue([]),
+      createMany: jest.fn().mockResolvedValue([]),
     };
 
     dbMock = {
@@ -58,6 +65,7 @@ describe('SeedService', () => {
         { provide: CryptoService, useValue: cryptoServiceMock },
         { provide: RolesRepository, useValue: rolesRepositoryMock },
         { provide: PermissionsService, useValue: permissionsServiceMock },
+        { provide: CategoriesRepository, useValue: categoriesRepositoryMock },
         { provide: DB_CONNECTION, useValue: dbMock },
       ],
     }).compile();
@@ -120,11 +128,15 @@ describe('SeedService', () => {
       jest
         .spyOn(service, 'seedDefaultRolePermissions')
         .mockResolvedValue({ message: 'rolePerms' } as any);
+      jest
+        .spyOn(service, 'seedDefaultCategories')
+        .mockResolvedValue({ message: 'categories' } as any);
 
       const result = await service.seedSystemAll();
       expect(result.permissions).toEqual({ message: 'perms' });
       expect(result.roles).toEqual({ message: 'roles' });
       expect(result.rolePermissions).toEqual({ message: 'rolePerms' });
+      expect(result.categories).toEqual({ message: 'categories' });
     });
   });
 

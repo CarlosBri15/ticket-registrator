@@ -16,7 +16,6 @@ describe('mapTicketToITicket', () => {
     version: 1,
     cgsBucketLink: 'receipt.jpg',
     paymentType: 'credit_card',
-    expenseType: 'travel',
     date: now,
     locationName: 'Coffee Shop',
     locationAddress: '123 Main St',
@@ -26,6 +25,7 @@ describe('mapTicketToITicket', () => {
     convertedCurrency: 'EUR',
     cgsBucketLinkJustification: null,
     lastFourDigits: '1234',
+    imageId: 'image-1',
     llmApprovedPercentage: null,
     llmRecommendation: null,
     llmSuggestedAmount: null,
@@ -48,7 +48,6 @@ describe('mapTicketToITicket', () => {
     expect(result.version).toBe(1);
     expect(result.cgs_bucket_link).toBe('receipt.jpg');
     expect(result.payment_type).toBe('credit_card');
-    expect(result.expense_type).toBe('travel');
     expect(result.location_name).toBe('Coffee Shop');
     expect(result.location_address).toBe('123 Main St');
     expect(result.amount).toBe(10.5);
@@ -125,6 +124,7 @@ describe('mapTicketToITicket', () => {
         amount: 4.5,
         currency: 'USD',
         status: ItemStatus.PENDING,
+        expenseType: 'travel',
         createdAt: now,
         updatedAt: now,
       },
@@ -139,6 +139,7 @@ describe('mapTicketToITicket', () => {
       amount: 4.5,
       currency: 'USD',
       status: ItemStatus.PENDING,
+      expense_type: 'travel',
     });
   });
 
@@ -151,6 +152,7 @@ describe('mapTicketToITicket', () => {
         amount: 4.5,
         currency: 'USD',
         status: ItemStatus.PENDING,
+        expenseType: 'travel',
         createdAt: now,
         updatedAt: now,
       },
@@ -161,6 +163,7 @@ describe('mapTicketToITicket', () => {
         amount: 12.0,
         currency: 'USD',
         status: ItemStatus.APPROVED,
+        expenseType: 'taxi',
         createdAt: now,
         updatedAt: now,
       },

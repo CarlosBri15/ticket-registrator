@@ -12,6 +12,7 @@ export const items = pgTable('items', {
   name: varchar('name', { length: 255 }),
   amount: real('amount'),
   currency: varchar('currency', { length: 10 }),
+  expenseType: varchar('expense_type', { length: 50 }),
   status: varchar('status', { length: 50 })
     .$type<ItemStatusType>()
     .default(ItemStatus.PENDING)

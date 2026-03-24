@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import sharp from 'sharp';
 import {
   ITicket,
   TicketStatus,
@@ -49,27 +50,178 @@ export class TicketsService {
     file: Express.Multer.File,
     language?: string,
   ): Promise<ITicket> {
-    const report = await this.validateReportForTicketCreation(requester, reportId);
+    const report = await this.reportsRepository.findById(reportId);
+    if (!report || report.deletedAt)
+      throw new ReportNotFoundException(reportId);
+
+    if (
+      !(await this.ticketsAuthService.validateCanModifyReport(
+        requester,
+        report,
+      ))
+    ) {
+      throw new TicketUnauthorizedException(
+        'You can only add tickets to your own reports',
+      );
+    }
+
+    if (report.status !== ReportStatus.CREATED) {
+      throw new TicketStatusConflictException(
+        'Cannot add tickets to a report that is not in CREATED status',
+      );
+    }
 
     const imageBase64 = file.buffer.toString('base64');
-    const imageHash = await this.cryptoService.generatePerceptualHash(
-      file.buffer,
+    const isImage = file.mimetype?.startsWith('image/') ?? false;
+    let imageHash: string | null = null;
+
+    if (isImage) {
+      imageHash = await this.cryptoService.generatePerceptualHash(file.buffer);
+
+      // Fraud prevention: Check for similar images in the entire DB
+      const existingFingerprints =
+        await this.ticketsRepository.findAllFingerprints();
+
+      for (const entry of existingFingerprints) {
+        if (!entry.imageId || !imageHash) continue;
+
+        const [oldHash, oldRatioStr] = entry.imageId.split('|');
+        const [newHash, newRatioStr] = imageHash.split('|');
+
+        if (oldRatioStr && newRatioStr) {
+          // New format: Check aspect ratio first (tolerance 5%)
+          if (Math.abs(parseFloat(oldRatioStr) - parseFloat(newRatioStr)) > 0.05)
+            continue;
+
+          const distance = this.cryptoService.calculateHammingDistance(
+            newHash,
+            oldHash,
+          );
+
+          // Hamming distance threshold for 24x24 (576 bits):
+          // 20 matches (approx 3% difference) is used as a fast, conservative check for nearly-identical images.
+          // We rely on the subsequent Semantic Check (Date/Amount/Location) to catch duplicates 
+          // with different angles or minor visual variations, avoiding false positive collisions.
+          if (distance <= 20) {
+            throw new DuplicateTicketException(
+              `This receipt has already been processed (Similarity match)`,
+            );
+          }
+        } else {
+          // Legacy fallback: only block if exactly identical for different versions
+          const distance = this.cryptoService.calculateHammingDistance(
+            newHash,
+            oldHash,
+          );
+          if (distance <= 2) {
+            throw new DuplicateTicketException(
+              `This receipt has already been processed (Exact match)`,
+            );
+          }
+        }
+      }
+    }
+
+    const geminiData = await this.geminiService.extractReceipt(
+      imageBase64,
+      file.mimetype || 'image/jpeg',
+      language,
     );
 
-    await this.verifyNotDuplicate(imageHash);
+    let parsedDate: Date | null = null;
+    if (geminiData.date && geminiData.date !== '0000-00-00') {
+      const d = new Date(geminiData.date);
+      if (!Number.isNaN(d.getTime())) parsedDate = d;
+    }
 
-    const [imageIdentifier, geminiData] = await Promise.all([
-      this.storageService.uploadFile(file),
-      this.geminiService.extractReceipt(imageBase64, language),
-    ]);
+    // 1. Report Date Boundary Validation
+    if (parsedDate) {
+      if (parsedDate < report.startDate || parsedDate > report.endDate) {
+        geminiData.flag = true;
+        const startStr = report.startDate.toISOString().split('T')[0];
+        const endStr = report.endDate.toISOString().split('T')[0];
+        const dateStr =
+          geminiData.date || parsedDate.toISOString().split('T')[0];
+        const message = `Receipt date (${dateStr}) is outside report range (${startStr} to ${endStr}).`;
 
-    const { items, ticketData } = this.prepareTicketData(
-      report,
+        geminiData.llm_comment = geminiData.llm_comment
+          ? `${geminiData.llm_comment} / ${message}`
+          : message;
+      }
+    }
+
+    // 2. Semantic Duplicate Check
+    if (
+      parsedDate &&
+      geminiData.total != null &&
+      geminiData.establishment != null
+    ) {
+      const isDuplicate = await this.ticketsRepository.findSemanticDuplicate(
+        parsedDate,
+        geminiData.total,
+        geminiData.establishment,
+      );
+
+      if (isDuplicate) {
+        throw new DuplicateTicketException(
+          'This receipt has already been processed based on its extracted data.',
+        );
+      }
+    }
+
+    // 3. Image Compression & Storage
+    let uploadFile = file;
+
+    if (isImage) {
+      // Compress to WebP (quality 60) and resize (max 1000px width) to save storage.
+      const compressedBuffer = await sharp(file.buffer)
+        .resize({ width: 1000, withoutEnlargement: true })
+        .webp({ quality: 60 })
+        .toBuffer();
+
+      // Update file object for upload
+      const originalName = file.originalname.split('.')[0];
+      uploadFile = {
+        ...file,
+        buffer: compressedBuffer,
+        mimetype: 'image/webp',
+        originalname: `${originalName}.webp`,
+      } as Express.Multer.File;
+    }
+
+    const imageIdentifier = await this.storageService.uploadFile(uploadFile);
+
+    const items: InsertItem[] =
+      geminiData.items?.map((item) => ({
+        ticketId: '',
+        name: item.description ?? null,
+        amount: item.price ?? null,
+        currency: report.currency ?? null,
+        expenseType: item.expense_type ?? null,
+        status: ItemStatus.PENDING,
+      })) ?? [];
+
+    const ticketData: InsertTicket = {
       reportId,
-      imageIdentifier,
-      imageHash,
-      geminiData,
-    );
+      status: TicketStatus.PENDING,
+      lifecycle: TicketLifecycle.DRAFT,
+      cgsBucketLink: imageIdentifier,
+      paymentType: geminiData.payment_method ?? null,
+      date: parsedDate,
+      locationName: geminiData.establishment ?? null,
+      locationAddress: geminiData.address?.formatted_address ?? null,
+      amount: geminiData.total ?? null,
+      currency: report.currency ?? null,
+      convertedAmount: geminiData.converted_amount ?? null,
+      convertedCurrency: geminiData.converted_currency ?? null,
+      cgsBucketLinkJustification:
+        geminiData.cgs_bucket_link_justification ?? null,
+      lastFourDigits: geminiData.card_last_4 ?? null,
+      flag: geminiData.flag ?? false,
+      llmComment: geminiData.llm_comment ?? null,
+      imageId: imageHash,
+      version: 1,
+    };
 
     const ticket = await this.ticketsRepository.create(ticketData, items);
 
@@ -180,7 +332,7 @@ export class TicketsService {
     }
 
     const currentTicket = await this.ticketsRepository.findById(ticketId);
-    if (currentTicket?.reportId !== reportId)
+    if (!currentTicket || currentTicket.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     const oldSnapshot = {
@@ -237,7 +389,7 @@ export class TicketsService {
     }
 
     const ticket = await this.ticketsRepository.findById(ticketId);
-    if (ticket?.reportId !== reportId)
+    if (!ticket || ticket.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     const historyData: typeof schema.ticketHistories.$inferInsert = {
@@ -292,7 +444,7 @@ export class TicketsService {
     }
 
     const currentTicket = await this.ticketsRepository.findById(ticketId);
-    if (currentTicket?.reportId !== reportId)
+    if (!currentTicket || currentTicket.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     return { report, currentTicket };
@@ -308,7 +460,6 @@ export class TicketsService {
       meaningful: boolean;
     }> = [
         { dtoKey: 'payment_type', updateKey: 'paymentType', meaningful: true },
-        { dtoKey: 'expense_type', updateKey: 'expenseType', meaningful: true },
         { dtoKey: 'location_name', updateKey: 'locationName', meaningful: true },
         {
           dtoKey: 'location_address',
@@ -349,6 +500,7 @@ export class TicketsService {
         name: item.name ?? null,
         amount: item.amount ?? null,
         currency: item.currency ?? null,
+        expenseType: item.expense_type ?? null,
         status: ItemStatus.PENDING,
       }));
       meaningfulChange = true;
@@ -399,115 +551,5 @@ export class TicketsService {
     };
 
     return { update, historyData };
-  }
-
-  private async validateReportForTicketCreation(
-    requester: UserPayload,
-    reportId: string,
-  ): Promise<ReportEntity> {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
-
-    if (
-      !(await this.ticketsAuthService.validateCanModifyReport(
-        requester,
-        report,
-      ))
-    ) {
-      throw new TicketUnauthorizedException(
-        'You can only add tickets to your own reports',
-      );
-    }
-
-    if (report.status !== ReportStatus.CREATED) {
-      throw new TicketStatusConflictException(
-        'Cannot add tickets to a report that is not in CREATED status',
-      );
-    }
-
-    return report;
-  }
-
-  private async verifyNotDuplicate(newImageHash: string): Promise<void> {
-    const existingFingerprints =
-      await this.ticketsRepository.findAllFingerprints();
-
-    for (const entry of existingFingerprints) {
-      if (!entry.imageId) continue;
-
-      const [oldHash, oldRatioStr] = entry.imageId.split('|');
-      const [newHash, newRatioStr] = newImageHash.split('|');
-
-      if (oldRatioStr && newRatioStr) {
-        if (this.isSimilarWithRatio(oldHash, oldRatioStr, newHash, newRatioStr)) {
-          throw new DuplicateTicketException('This receipt has already been processed (Similarity match)');
-        }
-      } else if (this.cryptoService.calculateHammingDistance(newHash, oldHash) <= 2) {
-        throw new DuplicateTicketException('This receipt has already been processed (Exact match)');
-      }
-    }
-  }
-
-  private isSimilarWithRatio(
-    oldHash: string,
-    oldRatioStr: string,
-    newHash: string,
-    newRatioStr: string,
-  ): boolean {
-    const oldRatio = Number.parseFloat(oldRatioStr);
-    const newRatio = Number.parseFloat(newRatioStr);
-
-    if (Math.abs(oldRatio - newRatio) > 0.05) return false;
-
-    const distance = this.cryptoService.calculateHammingDistance(newHash, oldHash);
-    return distance <= 15;
-  }
-
-  private prepareTicketData(
-    report: ReportEntity,
-    reportId: string,
-    imageIdentifier: string,
-    imageHash: string,
-    geminiData: any,
-  ): { items: InsertItem[]; ticketData: InsertTicket } {
-    const items: InsertItem[] =
-      geminiData.items?.map((item) => ({
-        ticketId: '',
-        name: item.description ?? null,
-        amount: item.price ?? null,
-        currency: report.currency ?? null,
-        status: ItemStatus.PENDING,
-      })) ?? [];
-
-    const ticketData: InsertTicket = {
-      reportId,
-      status: TicketStatus.PENDING,
-      lifecycle: TicketLifecycle.DRAFT,
-      cgsBucketLink: imageIdentifier,
-      paymentType: geminiData.payment_method ?? null,
-      expenseType: geminiData.expense_type ?? null,
-      date: this.parseGeminiDate(geminiData.date),
-      locationName: geminiData.establishment ?? null,
-      locationAddress: geminiData.address?.formatted_address ?? null,
-      amount: geminiData.total ?? null,
-      currency: report.currency ?? null,
-      convertedAmount: geminiData.converted_amount ?? null,
-      convertedCurrency: geminiData.converted_currency ?? null,
-      cgsBucketLinkJustification: geminiData.cgs_bucket_link_justification ?? null,
-      lastFourDigits: geminiData.card_last_4 ?? null,
-      flag: geminiData.flag ?? false,
-      llmComment: geminiData.llm_comment ?? null,
-      imageId: imageHash,
-      version: 1,
-    };
-
-    return { items, ticketData };
-  }
-
-  private parseGeminiDate(dateStr?: string): Date | null {
-    if (!dateStr || dateStr === '0000-00-00') return null;
-    const d = new Date(dateStr);
-    return Number.isNaN(d.getTime()) ? null : d;
   }
 }

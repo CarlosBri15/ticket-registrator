@@ -10,7 +10,6 @@ export interface ITicket {
   status: TicketStatusType;
   cgs_bucket_link: string | null;
   payment_type: string | null;
-  expense_type: string | null;
   date: string | null;
   location_name: string | null;
   location_address: string | null;
