@@ -29,7 +29,7 @@ const ReportTicketGroup = ({
     const q = search.toLowerCase();
     return (
       t.location_name?.toLowerCase().includes(q) ||
-      t.expense_type?.toLowerCase().includes(q) ||
+      t.items?.[0]?.expense_type?.toLowerCase().includes(q) ||
       String(t.amount).includes(q)
     );
   });
@@ -75,9 +75,9 @@ const ReportTicketGroup = ({
                   <Calendar className="w-3 h-3" />
                   {ticket.date ? format(new Date(ticket.date), "dd MMM yyyy", { locale: dateLocale }) : "---"}
                 </p>
-                {ticket.expense_type && (
+                {ticket.items?.[0]?.expense_type && (
                   <span className={`text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 ${radius.full} font-medium uppercase tracking-wide`}>
-                    {ticket.expense_type}
+                    {ticket.items[0].expense_type}
                   </span>
                 )}
               </div>
