@@ -25,7 +25,6 @@ type EditableFields = {
   amount: string;
   currency: string;
   payment_type: string;
-  expense_type: string;
 };
 
 export const TicketDetailModal = ({
@@ -44,7 +43,6 @@ export const TicketDetailModal = ({
     amount: "",
     currency: "",
     payment_type: "",
-    expense_type: "",
   });
 
   const { data: imageData, isLoading: isLoadingImage } = useTicketImageQuery(
@@ -68,7 +66,6 @@ export const TicketDetailModal = ({
       amount: ticket.amount == null ? "" : ticket.amount.toString(),
       currency: ticket.currency || "",
       payment_type: ticket.payment_type || "",
-      expense_type: ticket.expense_type || "",
     });
     setIsEditing(true);
   };
@@ -91,7 +88,6 @@ export const TicketDetailModal = ({
         amount: formData.amount ? Number.parseFloat(formData.amount) : null,
         currency: formData.currency || null,
         payment_type: formData.payment_type || null,
-        expense_type: formData.expense_type || null,
       },
     });
   };
@@ -193,7 +189,7 @@ export const TicketDetailModal = ({
                 <Input
                   label={t("confirmForm.category")}
                   name="expense_type"
-                  value={formData.expense_type}
+                  value={formData.payment_type}
                   onChange={handleChange}
                   placeholder={t("confirmForm.categoryPlaceholder")}
                 />
@@ -257,7 +253,7 @@ export const TicketDetailModal = ({
                   </div>
                   <div>
                     <p className={tokens.statCardLabel}>{t("reportDetail.category")}</p>
-                    <p className="text-sm font-medium text-dark mt-0.5">{ticket.expense_type || "---"}</p>
+                    <p className="text-sm font-medium text-dark mt-0.5">{ticket.items?.[0]?.expense_type || "---"}</p>
                   </div>
                 </div>
               </div>
