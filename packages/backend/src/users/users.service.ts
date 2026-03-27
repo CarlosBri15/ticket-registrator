@@ -140,9 +140,9 @@ export class UsersService {
         maxHierarchy < AUTHORITY_LEVELS.COMPANY
       ) {
         userFilters.push(sql`EXISTS (
-          SELECT 1 FROM ${this.usersRepository.schema.usersToDepartments} ud
-          WHERE ud.user_id = ${this.usersRepository.schema.users.id}
-          AND ud.department_id = ANY(${requester.departmentIds}::uuid[])
+          SELECT 1 FROM ${this.usersRepository.schema.usersToDepartments}
+          WHERE ${this.usersRepository.schema.usersToDepartments.userId} = ${this.usersRepository.schema.users.id}
+          AND ${inArray(this.usersRepository.schema.usersToDepartments.departmentId, requester.departmentIds)}
         )`);
       } else if (maxHierarchy < AUTHORITY_LEVELS.DEPARTMENT) {
         userFilters.push(

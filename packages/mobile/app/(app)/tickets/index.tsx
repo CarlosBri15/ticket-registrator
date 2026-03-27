@@ -46,7 +46,7 @@ const ReportTicketGroup = ({ report, search, onTicketPress }: ReportTicketGroupP
         className="flex-row items-center gap-1 mb-2 ml-1"
       >
         <Text className={mt.sectionLabel}>{report.name}</Text>
-        <Feather name="chevron-right" size={12} color="#94a3b8" />
+        <Feather name="chevron-right" size={24} color="#94a3b8" />
       </TouchableOpacity>
 
       <View className={mt.listSection}>
@@ -58,7 +58,7 @@ const ReportTicketGroup = ({ report, search, onTicketPress }: ReportTicketGroupP
           >
             <View className="flex-row items-center gap-3 flex-1 min-w-0">
               <View className={`${mt.iconBox} bg-gray-50`}>
-                <Feather name="file-text" size={18} color="#94a3b8" />
+                <Feather name="file-text" size={32} color="#94a3b8" />
               </View>
               <View className="flex-1 min-w-0">
                 <Text className="font-bold text-dark text-sm" numberOfLines={1}>
@@ -109,7 +109,7 @@ export default function AllTicketsScreen() {
       {/* Header */}
       <View className={mt.pageHeader}>
         <View className="flex-row items-center gap-2 mb-1">
-          <Feather name="receipt" size={18} color={colors.brand} />
+          <Feather name="file-text" size={32} color={colors.brand} />
           <Text className={mt.pageHeaderTitle}>{t('layout.allTickets')}</Text>
         </View>
         <Text className="text-sm text-gray-400">{t('layout.fullHistory')}</Text>
@@ -118,7 +118,7 @@ export default function AllTicketsScreen() {
       {/* Search */}
       <View className="px-6 pt-4 pb-2">
         <View className={mt.searchBar}>
-          <Feather name="search" size={16} color="#94a3b8" />
+          <Feather name="search" size={28} color="#94a3b8" />
           <TextInput
             className={mt.searchInput}
             value={search}
@@ -128,7 +128,7 @@ export default function AllTicketsScreen() {
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <Feather name="x" size={16} color="#94a3b8" />
+              <Feather name="x" size={28} color="#94a3b8" />
             </TouchableOpacity>
           )}
         </View>
@@ -143,7 +143,7 @@ export default function AllTicketsScreen() {
         ) : !reports || reports.length === 0 ? (
           <View className={mt.emptyState}>
             <View className={mt.emptyStateIcon}>
-              <Feather name="inbox" size={32} color="#cbd5e1" />
+              <Feather name="inbox" size={56} color="#cbd5e1" />
             </View>
             <Text className={mt.emptyStateTitle}>No hay tickets registrados</Text>
             <Text className={mt.emptyStateText}>

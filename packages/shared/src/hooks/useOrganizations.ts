@@ -2,11 +2,18 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/clientContainer';
 import { OnboardOrganizationSchema } from '../schemas/organization/onboardOrganization.schema';
 import { UpdateOrganizationSchema } from '../schemas/organization/updateOrganization.schema';
+import { usePermissions } from './usePermissions';
+import { permissions } from '../user-roles/permissions';
 
-export const useOrganizationsQuery = () => {
+export const useOrganizationsQuery = (options?: { enabled?: boolean }) => {
+    const { can } = usePermissions();
+    const hasPermission = can(permissions.VIEW_COMPANY);
+
     return useQuery({
         queryKey: ['organizations'],
         queryFn: () => api.organizations().getAll(),
+        enabled: hasPermission && (options?.enabled !== false),
+        ...options,
     });
 };
 
@@ -50,11 +57,18 @@ export const useDeleteOrganizationMutation = (options?: any) => {
     });
 };
 
-export const useOrganizationQuery = (id?: string) => {
+export const useOrganizationQuery = (id?: string, options?: { enabled?: boolean }) => {
+    const { can } = usePermissions();
+    const hasPermission = can(permissions.VIEW_COMPANY);
+
     return useQuery({
-        queryKey: ['organizations'],
-        queryFn: () => api.organizations().getAll(),
-        select: (orgs) => orgs.find((o) => o.id === id),
-        enabled: !!id,
+        queryKey: ['organizations', id],
+        queryFn: async () => {
+            if (!id) return null;
+            const orgs = await api.organizations().getAll();
+            return orgs.find((o) => o.id === id) || null;
+        },
+        enabled: !!id && hasPermission && (options?.enabled !== false),
+        ...options,
     });
 };

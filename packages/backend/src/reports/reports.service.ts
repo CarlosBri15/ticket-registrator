@@ -10,6 +10,7 @@ import {
   isNull,
   sql,
   SQL,
+  inArray,
 } from 'drizzle-orm';
 import {
   IReport,
@@ -271,7 +272,7 @@ export class ReportsService {
       conditions.push(
         and(
           eq(schema.users.companyId, requester.companyId),
-          sql`EXISTS (SELECT 1 FROM ${schema.usersToDepartments} ud WHERE ud.user_id = ${schema.users.id} AND ud.department_id = ANY(${requester.departmentIds}::uuid[]))`,
+          sql`EXISTS (SELECT 1 FROM ${schema.usersToDepartments} WHERE ${schema.usersToDepartments.userId} = ${schema.users.id} AND ${inArray(schema.usersToDepartments.departmentId, requester.departmentIds)})`,
           isNull(schema.users.deletedAt),
         )!,
       );

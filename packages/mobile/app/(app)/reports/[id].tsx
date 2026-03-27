@@ -9,6 +9,9 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  StyleSheet,
+  StatusBar,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -32,6 +35,181 @@ import { TicketConfirmationForm } from '../../../src/components/TicketConfirmati
 import { TicketDetailModal } from '../../../src/components/TicketDetailModal';
 import { mt, colors } from '../../../src/styles/theme';
 
+const reportIcon = require('../../../../shared/src/assets/report.png') as number;
+const ticketIcon = require('../../../../shared/src/assets/ticket.png') as number;
+
+// ── Color tokens (match frontend theme) ──────────────────────────────────────
+const C = {
+  success:       '#059669',
+  successBg:     'rgba(5,150,105,0.08)',
+  successBorder: 'rgba(5,150,105,0.2)',
+  warning:       '#d97706',
+  warningBg:     'rgba(217,119,6,0.08)',
+  warningBorder: 'rgba(217,119,6,0.2)',
+  danger:        '#dc2626',
+  dangerBg:      'rgba(220,38,38,0.08)',
+  dangerBorder:  'rgba(220,38,38,0.2)',
+  brandBg:       'rgba(91,143,203,0.08)',
+  brandBorder:   'rgba(91,143,203,0.2)',
+};
+
+// ── FinancialSummary — adapts to report status ────────────────────────────────
+
+type FinancialSummaryProps = {
+  status: string;
+  currency: string;
+  requestedAmount: number;
+  approvedAmount: number;
+  ticketsTotal: number;
+  ticketCount: number;
+  t: (k: string) => string;
+};
+
+function FinancialSummary({
+  status, currency, requestedAmount, approvedAmount,
+  ticketsTotal, ticketCount, t,
+}: FinancialSummaryProps) {
+  const s = status.toUpperCase();
+
+  // ── CREATED / DRAFT ──
+  if (s === 'CREATED' || s === 'DRAFT') {
+    return (
+      <View style={fStyles.wrap}>
+        <Text style={[fStyles.amount, { color: '#1e293b' }]}>
+          {ticketsTotal.toFixed(2)}
+        </Text>
+        <Text style={fStyles.currencyLabel}>{currency}</Text>
+      </View>
+    );
+  }
+
+  // ── SUBMITTED / PENDING ──
+  if (s === 'SUBMITTED' || s === 'PENDING') {
+    return (
+      <View style={fStyles.wrap}>
+        <Text style={[fStyles.amount, { color: C.warning }]}>
+          {requestedAmount.toFixed(2)}
+        </Text>
+        <View style={fStyles.hintRow}>
+          <Feather name="clock" size={14} color={C.warning} />
+          <Text style={[fStyles.currencyLabel, { color: C.warning }]}>{currency}</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // ── APPROVED / PAID ──
+  if (s === 'APPROVED' || s === 'PAID') {
+    const rejectedAmount = Math.max(0, requestedAmount - approvedAmount);
+    return (
+      <View style={fStyles.splitWrap}>
+        <View style={fStyles.splitCol}>
+          <Text style={[fStyles.amountSplit, { color: C.success }]}>
+            {approvedAmount.toFixed(2)}
+          </Text>
+          <View style={fStyles.hintRow}>
+            <Feather name="check" size={14} color={C.success} />
+            <Text style={[fStyles.currencyLabel, { color: C.success }]}>{currency}</Text>
+          </View>
+        </View>
+        <View style={fStyles.splitDivider} />
+        <View style={fStyles.splitCol}>
+          <Text style={[fStyles.amountSplit, { color: rejectedAmount > 0 ? C.danger : '#94a3b8' }]}>
+            {rejectedAmount.toFixed(2)}
+          </Text>
+          <View style={fStyles.hintRow}>
+            <Feather name="x" size={14} color={rejectedAmount > 0 ? C.danger : '#cbd5e1'} />
+            <Text style={[fStyles.currencyLabel, { color: rejectedAmount > 0 ? C.danger : '#94a3b8' }]}>{currency}</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // ── DECLINED ──
+  return (
+    <View style={fStyles.wrap}>
+      <Text style={[fStyles.amount, { color: C.danger }]}>
+        {requestedAmount.toFixed(2)}
+      </Text>
+      <View style={fStyles.hintRow}>
+        <Feather name="x-circle" size={14} color={C.danger} />
+        <Text style={[fStyles.currencyLabel, { color: C.danger }]}>{currency}</Text>
+      </View>
+    </View>
+  );
+}
+
+const fStyles = StyleSheet.create({
+  wrap: {
+    paddingTop: 4,
+    alignItems: 'flex-end',
+  },
+  metaLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  amount: {
+    fontSize: 30,
+    fontWeight: '800',
+    letterSpacing: -0.8,
+    marginBottom: 6,
+  },
+  amountSplit: {
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.6,
+    marginBottom: 6,
+  },
+  currency: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  currencyLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#94a3b8',
+    letterSpacing: 0.4,
+  },
+  hintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  hint: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#94a3b8',
+  },
+  splitWrap: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingTop: 4,
+    justifyContent: 'flex-end',
+  },
+  splitCol: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  splitDivider: {
+    width: 1,
+    backgroundColor: '#f1f5f9',
+    alignSelf: 'stretch',
+    marginHorizontal: 16,
+  },
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 const buildFormData = (uri: string): FormData => {
   const formData = new FormData();
   const filename = uri.split('/').pop() ?? 'ticket.jpg';
@@ -40,6 +218,8 @@ const buildFormData = (uri: string): FormData => {
   formData.append('image', { uri, name: filename, type } as any);
   return formData;
 };
+
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function ReportDetailScreen() {
   const { t, i18n } = useTranslation();
@@ -57,13 +237,8 @@ export default function ReportDetailScreen() {
   const dateLocale = i18n.language.startsWith('es') ? es : enUS;
 
   const { mutate: uploadTicket, isPending: isUploading } = useUploadTicketMutation({
-    onSuccess: (ticket: ITicket) => {
-      setExtractedTicket(ticket);
-      setIsModalOpen(true);
-    },
-    onError: (error: any) => {
-      Alert.alert(t('common.error'), error?.response?.data?.message ?? t('common.error'));
-    },
+    onSuccess: (ticket: ITicket) => { setExtractedTicket(ticket); setIsModalOpen(true); },
+    onError: (error: any) => Alert.alert(t('common.error'), error?.response?.data?.message ?? t('common.error')),
   });
 
   const { mutate: updateTicket, isPending: isConfirming } = useUpdateTicketMutation({
@@ -83,32 +258,16 @@ export default function ReportDetailScreen() {
 
   const pickFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(t('common.error'), 'Se necesita permiso de cámara.');
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-    });
-    if (!result.canceled) {
-      uploadTicket({ reportId: id!, formData: buildFormData(result.assets[0].uri) });
-    }
+    if (status !== 'granted') { Alert.alert(t('common.error'), 'Se necesita permiso de cámara.'); return; }
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    if (!result.canceled) uploadTicket({ reportId: id!, formData: buildFormData(result.assets[0].uri) });
   };
 
   const pickFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(t('common.error'), 'Se necesita permiso de galería.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-    });
-    if (!result.canceled) {
-      uploadTicket({ reportId: id!, formData: buildFormData(result.assets[0].uri) });
-    }
+    if (status !== 'granted') { Alert.alert(t('common.error'), 'Se necesita permiso de galería.'); return; }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    if (!result.canceled) uploadTicket({ reportId: id!, formData: buildFormData(result.assets[0].uri) });
   };
 
   const handleConfirm = (updatedData: Partial<ITicket>) => {
@@ -139,25 +298,27 @@ export default function ReportDetailScreen() {
   const isEditable = report && ['CREATED', 'DRAFT'].includes(report.status.toUpperCase());
   const canSubmit = isEditable && (tickets?.length ?? 0) > 0;
 
+  // ── Loading ──
   if (loadingReport) {
     return (
-      <View className={`${mt.screen} justify-center items-center`}>
+      <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.brand} />
       </View>
     );
   }
 
+  // ── Not found ──
   if (!report) {
     return (
-      <SafeAreaView className={mt.screen}>
-        <View className="flex-1 items-center justify-center px-6">
-          <View className={`${mt.iconBox} bg-red-50 mb-4`}>
-            <Feather name="alert-circle" size={20} color="#dc2626" />
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.centered}>
+          <View style={styles.errorIcon}>
+            <Feather name="alert-circle" size={28} color="#dc2626" />
           </View>
-          <Text className="text-xl font-bold text-dark mb-2 text-center">{t('reportDetail.errorLoading')}</Text>
-          <Text className="text-sm text-gray-400 text-center mb-6">{t('reportDetail.errorDesc')}</Text>
-          <TouchableOpacity onPress={() => router.back()} className={`${mt.btnPrimary} px-8`}>
-            <Text className={mt.btnTextPrimary}>{t('common.cancel')}</Text>
+          <Text style={styles.errorTitle}>{t('reportDetail.errorLoading')}</Text>
+          <Text style={styles.errorText}>{t('reportDetail.errorDesc')}</Text>
+          <TouchableOpacity onPress={() => router.back()} style={styles.errorBtn}>
+            <Text style={styles.errorBtnText}>{t('common.cancel')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -165,229 +326,158 @@ export default function ReportDetailScreen() {
   }
 
   return (
-    <SafeAreaView className={mt.screen}>
+    <SafeAreaView style={styles.screen} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
-      {/* ── Page Header ── */}
-      <View className={`${mt.pageHeader} flex-row items-center gap-3`}>
-        <TouchableOpacity onPress={() => router.back()} className={`${mt.iconBoxSm} bg-gray-50`}>
-          <Feather name="arrow-left" size={18} color="#2a3132" />
+      {/* ── Header ── */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.75}>
+          <Feather name="arrow-left" size={22} color="#1e293b" />
         </TouchableOpacity>
-        <View className="flex-1">
-          <Text className="text-base font-bold text-dark" numberOfLines={1}>{report.name}</Text>
-          <Text className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-0.5">
-            {t('reportDetail.backToTrips')}
-          </Text>
+        <Image source={reportIcon} style={styles.headerIcon} resizeMode="contain" />
+        <View style={styles.headerMid}>
+          <Text style={styles.headerTitle} numberOfLines={1}>{report.name}</Text>
+          <Text style={styles.headerSubId}>#{id?.substring(0, 8)}</Text>
         </View>
         {canSubmit && (
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={isSubmitting}
-            className={`${mt.btnPrimary} px-3.5 py-2`}
+            style={styles.submitBtn}
+            activeOpacity={0.82}
           >
             {isSubmitting
               ? <ActivityIndicator size="small" color="white" />
               : (
                 <>
-                  <Feather name="send" size={14} color="white" />
-                  <Text className="text-white font-bold text-xs ml-1.5">{t('reportDetail.submitReport')}</Text>
+                  <Feather name="send" size={18} color="white" />
+                  <Text style={styles.submitBtnText}>{t('reportDetail.submitReport')}</Text>
                 </>
-              )
-            }
+              )}
           </TouchableOpacity>
         )}
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
-
-        {/* ── Hero Header — brand bg, matches web ── */}
-        <View className={`${mt.heroCard} shadow-lg shadow-brand/20 mb-6`}>
-          {/* Decorative circle */}
-          <View className="absolute -top-12 -right-12 w-40 h-40 bg-white/10 rounded-full" />
-
-          {/* Status + ID */}
-          <View className="flex-row items-center gap-2 mb-4 relative z-10">
-            <StatusBadge status={report.status} />
-            <View className="bg-white/10 px-2.5 py-1 rounded-full border border-white/10">
-              <Text className="text-[10px] font-mono text-white/40">
-                #{id?.substring(0, 8)}
-              </Text>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Report info card ── */}
+        <View style={styles.infoCard}>
+          {/* Dates + amount on same row, badge below */}
+          <View style={styles.infoCardTop}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.dateRow}>
+                <Feather name="calendar" size={18} color="#94a3b8" />
+                <Text style={styles.dateText}>
+                  {format(new Date(report.start_date), 'd MMM', { locale: dateLocale })}
+                  {' — '}
+                  {format(new Date(report.end_date), 'd MMM yyyy', { locale: dateLocale })}
+                </Text>
+              </View>
+              <View style={{ marginTop: 8 }}>
+                <StatusBadge status={report.status} />
+              </View>
             </View>
+            <FinancialSummary
+              status={report.status}
+              currency={report.currency}
+              requestedAmount={report.requested_amount ?? 0}
+              approvedAmount={report.approved_amount ?? 0}
+              ticketsTotal={tickets?.reduce((acc, tk) => acc + (tk.amount || 0), 0) ?? 0}
+              ticketCount={tickets?.length ?? 0}
+              t={t}
+            />
           </View>
 
-          {/* Name */}
-          <Text className="text-2xl font-bold text-white mb-3 leading-tight relative z-10" numberOfLines={2}>
-            {report.name}
-          </Text>
-
-          {/* Dates */}
-          <View className="flex-row items-center gap-1.5 mb-6 relative z-10">
-            <Feather name="calendar" size={13} color="rgba(255,255,255,0.6)" />
-            <Text className="text-white/60 text-sm font-medium">
-              {format(new Date(report.start_date), 'd MMM', { locale: dateLocale })}
-              {' — '}
-              {format(new Date(report.end_date), 'd MMM yyyy', { locale: dateLocale })}
-            </Text>
-          </View>
-
-          {/* Upload actions */}
-          <View className="flex-row gap-3 relative z-10">
+          {/* Upload actions — solo si el reporte es editable */}
+          {isEditable && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.uploadRow}>
             <TouchableOpacity
               onPress={pickFromCamera}
               disabled={isUploading || !isEditable}
-              className={`flex-[2] ${mt.btnPrimary} bg-white/20 border border-white/20 ${(!isEditable) ? 'opacity-40' : ''}`}
+              style={[styles.uploadBtnPrimary, (!isEditable || isUploading) && styles.disabled]}
+              activeOpacity={0.82}
             >
               {isUploading ? (
                 <>
                   <ActivityIndicator size="small" color="white" />
-                  <Text className="text-white font-bold text-sm ml-2">Procesando...</Text>
+                  <Text style={styles.uploadBtnPrimaryText}>Procesando...</Text>
                 </>
               ) : (
                 <>
-                  <Feather name="camera" size={16} color="white" />
-                  <Text className="text-white font-bold text-sm ml-2">{t('reportDetail.scanTicket')}</Text>
+                  <Feather name="camera" size={20} color="white" />
+                  <Text style={styles.uploadBtnPrimaryText}>{t('reportDetail.scanTicket')}</Text>
                 </>
               )}
             </TouchableOpacity>
             <TouchableOpacity
               onPress={pickFromGallery}
               disabled={isUploading || !isEditable}
-              className={`flex-1 bg-white/10 rounded-2xl py-3 items-center justify-center border border-white/20 ${!isEditable ? 'opacity-40' : ''}`}
+              style={[styles.uploadBtnSecondary, (!isEditable || isUploading) && styles.disabled]}
+              activeOpacity={0.82}
             >
-              <Feather name="image" size={16} color="white" />
-              <Text className="text-white/80 text-xs font-bold mt-0.5">Galería</Text>
+              <Feather name="image" size={20} color={colors.brand} />
+              <Text style={styles.uploadBtnSecondaryText}>Galería</Text>
             </TouchableOpacity>
           </View>
+            </>
+          )}
         </View>
 
-        {/* ── Financial Summary — matches web sidebar ── */}
-        <View className={`${mt.listSection} mb-6`}>
-          <View className="px-5 py-3.5 border-b border-gray-50 flex-row items-center gap-2 bg-brand/5">
-            <Feather name="bar-chart-2" size={14} color={colors.brand} />
-            <Text className="text-[10px] font-bold text-brand/70 uppercase tracking-widest">
-              {t('reportDetail.financialSummary')}
-            </Text>
-          </View>
-
-          <View className="p-5 space-y-3">
-            {/* Total requested */}
-            <View className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-              <Text className="text-[10px] text-gray-400 uppercase font-bold mb-1">
-                {t('reportDetail.totalRequested')}
-              </Text>
-              <Text className="text-3xl font-bold text-dark">
-                {(report.requested_amount ?? 0).toLocaleString()}
-                <Text className="text-sm font-semibold text-gray-400"> {report.currency}</Text>
-              </Text>
+        {/* ── Tickets ── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('reportDetail.ticketsTitle')}</Text>
+            <View style={styles.countPill}>
+              <Text style={styles.countPillText}>{tickets?.length ?? 0}</Text>
             </View>
-
-            {/* Approved + In review */}
-            <View className="flex-row gap-3">
-              <View className="flex-1 p-3.5 bg-green-50 rounded-2xl border border-green-100">
-                <Text className="text-[10px] font-bold text-green-700/60 uppercase mb-1.5">
-                  {t('reportDetail.approved')}
-                </Text>
-                <Text className="text-lg font-bold text-green-600">
-                  {(report.approved_amount ?? 0).toLocaleString()}
-                  <Text className="text-[10px] font-semibold text-green-500/50"> {report.currency}</Text>
-                </Text>
-              </View>
-              <View className="flex-1 p-3.5 bg-amber-50 rounded-2xl border border-amber-100">
-                <Text className="text-[10px] font-bold text-amber-700/60 uppercase mb-1.5">
-                  {t('reportDetail.inReview')}
-                </Text>
-                <Text className="text-lg font-bold text-amber-600">
-                  {pendingAmount.toLocaleString()}
-                  <Text className="text-[10px] font-semibold text-amber-500/50"> {report.currency}</Text>
-                </Text>
-              </View>
-            </View>
-
-            {/* Estimated reimbursement */}
-            <View className="flex-row items-center justify-between pt-3 border-t border-gray-50">
-              <View className="flex-row items-center gap-1.5">
-                <Feather name="trending-up" size={13} color="#94a3b8" />
-                <Text className="text-xs font-semibold text-gray-400">
-                  {t('reportDetail.estimatedReimbursement')}
-                </Text>
-              </View>
-              <Text className="text-sm font-bold text-dark">
-                {(report.approved_amount ?? 0).toLocaleString()}
-                <Text className="text-xs text-gray-400 font-medium"> {report.currency}</Text>
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ── AI Tip ── */}
-        <View className="p-4 bg-brand/5 rounded-2xl border border-brand/10 mb-6 flex-row items-start gap-3">
-          <Feather name="zap" size={14} color={colors.brand} style={{ marginTop: 1 }} />
-          <View className="flex-1">
-            <Text className="text-xs font-bold text-brand/80 mb-1">{t('reportDetail.aiTipTitle')}</Text>
-            <Text className="text-xs text-brand/60 leading-relaxed">{t('reportDetail.aiTipDesc')}</Text>
-          </View>
-        </View>
-
-        {/* ── Tickets List — matches web ── */}
-        <View>
-          <View className="flex-row items-center justify-between mb-4">
-            <View className="flex-row items-center gap-2">
-              <Feather name="credit-card" size={15} color="#94a3b8" />
-              <Text className={mt.sectionTitle}>{t('reportDetail.ticketsTitle')}</Text>
-              <View className="bg-gray-100 px-2 py-0.5 rounded-full">
-                <Text className="text-[10px] font-bold text-gray-500">{tickets?.length ?? 0}</Text>
-              </View>
-            </View>
-            {isEditable && (tickets?.length ?? 0) > 0 && (
-              <TouchableOpacity
-                onPress={pickFromCamera}
-                className="flex-row items-center gap-1"
-              >
-                <Feather name="plus" size={13} color={colors.brand} />
-                <Text className="text-xs font-bold text-brand">{t('reportDetail.addTicket')}</Text>
-              </TouchableOpacity>
-            )}
           </View>
 
           {loadingTickets ? (
-            <ActivityIndicator color={colors.brand} style={{ marginVertical: 20 }} />
+            <ActivityIndicator color={colors.brand} style={{ marginVertical: 24 }} />
           ) : (tickets && tickets.length > 0) ? (
-            <View className={mt.listSection}>
+            <View style={styles.ticketList}>
               {tickets.map((ticket, idx) => (
                 <TouchableOpacity
                   key={ticket.id ?? `ticket-${idx}`}
                   onPress={() => { setSelectedTicket(ticket); setIsDetailOpen(true); }}
-                  className={`p-4 flex-row items-center justify-between ${idx < tickets.length - 1 ? 'border-b border-gray-50' : ''}`}
+                  activeOpacity={0.78}
+                  style={[
+                    styles.ticketRow,
+                    idx < tickets.length - 1 && styles.ticketRowBorder,
+                  ]}
                 >
-                  <View className="flex-row items-center gap-3 flex-1 min-w-0">
-                    <View className={`${mt.iconBox} bg-brand/5 border border-brand/10`}>
-                      <Feather name="file-text" size={16} color={colors.brand} />
-                    </View>
-                    <View className="flex-1 min-w-0">
-                      <Text className="font-bold text-dark text-sm" numberOfLines={1}>
-                        {ticket.location_name ?? t('reportDetail.noTicketName')}
-                      </Text>
-                      <View className="flex-row items-center gap-2 mt-0.5">
-                        {ticket.date && (
-                          <Text className="text-[10px] text-gray-400 font-medium">
-                            {format(new Date(ticket.date), 'dd MMM yyyy', { locale: dateLocale })}
-                          </Text>
-                        )}
-                        {ticket.expense_type && (
-                          <View className="bg-brand/10 px-2 py-0.5 rounded-full">
-                            <Text className="text-[9px] font-bold text-brand">{ticket.expense_type}</Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
+                  <View style={styles.ticketIconWrap}>
+                    <Image source={ticketIcon} style={styles.ticketIconImg} resizeMode="contain" />
                   </View>
-                  <View className="items-end ml-3">
-                    <Text className="font-bold text-dark text-sm leading-tight">
-                      {ticket.amount == null ? '—' : ticket.amount.toLocaleString()}
-                      <Text className="text-[10px] text-gray-400 font-medium"> {ticket.currency}</Text>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.ticketName} numberOfLines={1}>
+                      {ticket.location_name ?? t('reportDetail.noTicketName')}
                     </Text>
-                    <StatusBadge status={ticket.status} />
+                    <View style={styles.ticketMeta}>
+                      {ticket.date && (
+                        <Text style={styles.ticketDate}>
+                          {format(new Date(ticket.date), 'dd MMM yyyy', { locale: dateLocale })}
+                        </Text>
+                      )}
+                      {ticket.expense_type && (
+                        <View style={styles.expenseTypePill}>
+                          <Text style={styles.expenseTypeText}>{ticket.expense_type}</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
-                  <Feather name="chevron-right" size={14} color="#cbd5e1" style={{ marginLeft: 8 }} />
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={styles.ticketAmount}>
+                      {ticket.amount == null ? '—' : ticket.amount.toLocaleString()}
+                      <Text style={styles.ticketCurrency}> {ticket.currency}</Text>
+                    </Text>
+                  </View>
+                  <Feather name="chevron-right" size={18} color="#e2e8f0" style={{ marginLeft: 8 }} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -395,25 +485,18 @@ export default function ReportDetailScreen() {
             <TouchableOpacity
               onPress={() => isEditable && pickFromCamera()}
               disabled={!isEditable}
-              className={`${mt.emptyState} py-14`}
+              style={styles.emptyState}
+              activeOpacity={isEditable ? 0.78 : 1}
             >
-              <View className={mt.emptyStateIcon}>
-                <Feather name="file-text" size={28} color="#cbd5e1" />
-              </View>
-              <Text className={mt.emptyStateTitle}>{t('reportDetail.startDigitalizing')}</Text>
-              <Text className={mt.emptyStateText}>{t('reportDetail.digitalizeDesc')}</Text>
-              {isEditable && (
-                <View className={`${mt.btnPrimary} mt-5 px-5`}>
-                  <Feather name="camera" size={16} color="white" />
-                  <Text className={`${mt.btnTextPrimary} ml-1.5`}>{t('reportDetail.scanFirstTicket')}</Text>
-                </View>
-              )}
+              <Image source={ticketIcon} style={styles.emptyIcon} resizeMode="contain" />
+              <Text style={styles.emptyTitle}>{t('reportDetail.startDigitalizing')}</Text>
+              <Text style={styles.emptyText}>{t('reportDetail.digitalizeDesc')}</Text>
             </TouchableOpacity>
           )}
         </View>
       </ScrollView>
 
-      {/* ── Ticket Detail Modal ── */}
+      {/* ── Ticket detail modal ── */}
       <TicketDetailModal
         visible={isDetailOpen}
         onClose={() => { setIsDetailOpen(false); setSelectedTicket(null); }}
@@ -422,26 +505,26 @@ export default function ReportDetailScreen() {
         isEditable={!!isEditable}
       />
 
-      {/* ── Upload Confirmation Modal ── */}
+      {/* ── Upload confirmation modal ── */}
       <Modal
         visible={isModalOpen}
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={handleDiscard}
       >
-        <SafeAreaView className="flex-1 bg-white">
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1"
+            style={{ flex: 1 }}
           >
-            <View className={`${mt.pageHeader} flex-row items-center justify-between`}>
-              <Text className={mt.pageHeaderTitle}>{t('upload.confirmTitle')}</Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('upload.confirmTitle')}</Text>
               <TouchableOpacity
                 onPress={handleDiscard}
                 disabled={isConfirming || isDeleting}
-                className={`${mt.iconBoxSm} bg-gray-50`}
+                style={styles.modalCloseBtn}
               >
-                <Feather name="x" size={18} color="#94a3b8" />
+                <Feather name="x" size={22} color="#94a3b8" />
               </TouchableOpacity>
             </View>
             {extractedTicket && (
@@ -458,3 +541,430 @@ export default function ReportDetailScreen() {
     </SafeAreaView>
   );
 }
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+    backgroundColor: '#f8fafc',
+  },
+  scroll: {
+    padding: 20,
+    paddingBottom: 48,
+  },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  headerIcon: {
+    width: 36,
+    height: 36,
+    flexShrink: 0,
+  },
+  headerMid: {
+    flex: 1,
+    minWidth: 0,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1e293b',
+    letterSpacing: -0.4,
+  },
+  headerSubId: {
+    fontSize: 10,
+    color: '#94a3b8',
+    fontWeight: '600',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginTop: 1,
+  },
+  submitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.brand,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexShrink: 0,
+    shadowColor: colors.brand,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  submitBtnText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // Report info card
+  infoCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#e8f0fa',
+    padding: 18,
+    marginBottom: 14,
+    shadowColor: '#1e293b',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  infoCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 0,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dateText: {
+    fontSize: 16,
+    color: '#1e293b',
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#f1f5f9',
+    marginTop: 16,
+    marginBottom: 14,
+  },
+  uploadRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  uploadBtnPrimary: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.brand,
+    borderRadius: 12,
+    paddingVertical: 12,
+    shadowColor: colors.brand,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  uploadBtnPrimaryText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  uploadBtnSecondary: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#f0f6fd',
+    borderRadius: 12,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+  },
+  uploadBtnSecondaryText: {
+    color: colors.brand,
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  disabled: {
+    opacity: 0.45,
+  },
+
+
+  // AI tip
+  aiTip: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: '#f0f6fd',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+    padding: 14,
+    marginBottom: 24,
+  },
+  aiTipIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  aiTipTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.brand,
+    marginBottom: 2,
+  },
+  aiTipText: {
+    fontSize: 11,
+    color: '#64748b',
+    lineHeight: 16,
+    fontWeight: '500',
+  },
+
+  // Tickets section
+  section: {
+    marginBottom: 8,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
+    letterSpacing: -0.2,
+  },
+  countPill: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 100,
+  },
+  countPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748b',
+  },
+  addTicketBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginLeft: 'auto',
+  },
+  addTicketText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.brand,
+  },
+  ticketList: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#e8f0fa',
+    overflow: 'hidden',
+    shadowColor: '#1e293b',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  ticketRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    gap: 12,
+  },
+  ticketRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  ticketIconWrap: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  ticketIconImg: {
+    width: 52,
+    height: 52,
+  },
+  ticketName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 3,
+  },
+  ticketMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  ticketDate: {
+    fontSize: 10,
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  expenseTypePill: {
+    backgroundColor: '#f0f6fd',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  expenseTypeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.brand,
+  },
+  ticketAmount: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1e293b',
+  },
+  ticketCurrency: {
+    fontSize: 10,
+    color: '#94a3b8',
+  },
+
+  // Empty state
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#e2e8f0',
+  },
+  emptyIconWrap: {
+    width: 60,
+    height: 60,
+    borderRadius: 18,
+    backgroundColor: '#f8fafc',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    marginBottom: 10,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1e293b',
+    marginBottom: 6,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: '#94a3b8',
+    textAlign: 'center',
+    paddingHorizontal: 32,
+    marginBottom: 0,
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+  emptyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    backgroundColor: colors.brand,
+    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+  },
+  emptyBtnText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+
+  // Error state
+  errorIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: '#fef2f2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1e293b',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginBottom: 20,
+    fontWeight: '500',
+  },
+  errorBtn: {
+    backgroundColor: colors.brand,
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 11,
+  },
+  errorBtnText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+
+  // Upload modal
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1e293b',
+    letterSpacing: -0.3,
+  },
+  modalCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

@@ -4,30 +4,30 @@
   /* Tipografía */
   --font-sans: 'Plus Jakarta Sans', sans-serif;
 
-  /* 1. COLOR PRINCIPAL (#336b87) - "Acero Azul" */
-  --color-brand: #336b87;
-  --color-brand-hover: #28556b;
-  --color-brand-light: #4a8cae;
+  /* 1. COLOR PRINCIPAL - "Cornflower Blue" */
+  --color-brand: #5b8fcb;
+  --color-brand-hover: #4878b8;
+  --color-brand-light: #8ab4de;
 
-  /* 2. SECUNDARIO (#90afc5) - "Niebla Azul" */
-  --color-secondary: #90afc5;
-  --color-secondary-light: #e0e9ef;
+  /* 2. SECUNDARIO - "Powder Blue" */
+  --color-secondary: #c5daf0;
+  --color-secondary-light: #f0f6fd;
 
-  /* 3. TEXTO / OSCURO (#2a3132) - "Carbón" */
-  --color-dark: #2a3132;
+  /* 3. TEXTO / OSCURO - "Slate-800" */
+  --color-dark: #1e293b;
 
-  /* 4. SEMÁNTICOS */
-  --color-success: #059669;
-  --color-warning: #d97706;
-  --color-danger: #dc2626;
-  --color-info: #0284c7;
+  /* 4. SEMÁNTICOS — pastel fintech */
+  --color-success: #3FA87A;
+  --color-warning: #D4822A;
+  --color-danger:  #C84E6A;
+  --color-info:    #3A88C0;
 
   /* EXTRAS: Superficies */
   --color-surface: #f8fafc;
 
   /* Legacy alias — old code referencing "accent" now maps to danger */
-  --color-accent: #dc2626;
-  --color-accent-hover: #b91c1c;
+  --color-accent: #C84E6A;
+  --color-accent-hover: #B03A58;
 }
 
 @layer base {
@@ -41,8 +41,8 @@
   .bg-grid-pattern {
     background-size: 40px 40px;
     background-image:
-      radial-gradient(circle at top right, rgba(51, 107, 135, 0.08), transparent 40%),
-      radial-gradient(circle at bottom left, rgba(144, 175, 197, 0.05), transparent 40%),
+      radial-gradient(circle at top right, rgba(91, 143, 203, 0.08), transparent 40%),
+      radial-gradient(circle at bottom left, rgba(197, 218, 240, 0.05), transparent 40%),
       linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
     background-color: var(--color-surface);
@@ -58,14 +58,14 @@
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow: 0 8px 32px 0 rgba(51, 107, 135, 0.05);
+    box-shadow: 0 8px 32px 0 rgba(91, 143, 203, 0.05);
   }
 }
 
 /* Custom scrollbar */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(51, 107, 135, 0.25) transparent;
+  scrollbar-color: rgba(91, 143, 203, 0.25) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -78,12 +78,12 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(51, 107, 135, 0.25);
+  background: rgba(91, 143, 203, 0.25);
   border-radius: 99px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(51, 107, 135, 0.5);
+  background: rgba(91, 143, 203, 0.5);
 }
 
 /* Gradient text */
@@ -117,3 +117,11 @@
 .stagger-children > *:nth-child(4) { animation-delay: 150ms; }
 .stagger-children > *:nth-child(5) { animation-delay: 200ms; }
 .stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+
+/* ─── Fintech dark card row — hover on dark background ──────────────────────── */
+.ft-dark-row { transition: background 0.15s ease; }
+.ft-dark-row:hover { background: rgba(245, 158, 11, 0.07); }
+
+/* ─── Fintech queue row — hover on white background ─────────────────────────── */
+.ft-queue-row { transition: background 0.15s ease; }
+.ft-queue-row:hover { background: rgba(245, 158, 11, 0.04); }

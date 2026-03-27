@@ -115,7 +115,7 @@ export const tokens = {
   statCard:        `bg-white ${radius.card} border border-slate-200 ${shadow.sm} ${spacing.card} flex flex-col gap-3`,
   statCardPrimary: `bg-brand ${radius.card} ${spacing.card} overflow-hidden shadow-md relative`,
   statCardLabel:   'text-xs font-medium text-slate-400 uppercase tracking-wide',
-  statCardValue:   'text-2xl font-bold text-dark tracking-tight leading-none',
+  statCardValue:   'text-3xl font-bold text-dark tracking-tight leading-none',
 
   // ── Table / List ──────────────────────────────────────────────────────────
   listItem:          `bg-white ${radius.card} border border-slate-200 ${shadow.sm} p-4 flex items-center justify-between ${transition.base} hover:border-brand/20 hover:shadow-md cursor-pointer`,

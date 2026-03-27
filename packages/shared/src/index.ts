@@ -93,3 +93,7 @@ export * from './schemas/permissions/createPermission.schema';
 export * from './schemas/permissions/updatePermission.schema';
 export * from './schemas/permissions/assignPermission.schema';
 export * from './schemas/permissions/userPermissionOverride.schema';
+
+
+// Assets are now exported from ./assets.ts to avoid breaking the backend.
+// We keep types and business logic here.

@@ -31,8 +31,8 @@ export const mt = {
   statCardDanger: 'bg-red-50 p-6 rounded-3xl border border-red-100',
 
   // ── Avatar / initials button
-  avatarBtn:   'w-14 h-14 bg-white rounded-3xl items-center justify-center shadow-sm border border-gray-100',
-  avatarInner: 'w-11 h-11 bg-secondary/10 rounded-2xl items-center justify-center',
+  avatarBtn:   'w-20 h-20 bg-white rounded-[24px] items-center justify-center shadow-md border border-gray-100',
+  avatarInner: 'w-16 h-16 bg-secondary/10 rounded-2xl items-center justify-center',
 
   // ── Compact empty state (no huge padding)
   emptyStateSm: 'items-center p-8 bg-white rounded-3xl border border-dashed border-gray-200',
@@ -69,13 +69,13 @@ export const mt = {
   listSection: 'bg-white rounded-3xl border border-gray-100 overflow-hidden',
 
   // ── Icon containers
-  iconBox:      'w-10 h-10 rounded-xl items-center justify-center',
-  iconBoxSm:    'w-8 h-8 rounded-xl items-center justify-center',
-  iconBoxRound: 'w-10 h-10 rounded-full items-center justify-center',
+  iconBox:      'w-16 h-16 rounded-2xl items-center justify-center',
+  iconBoxSm:    'w-12 h-12 rounded-xl items-center justify-center',
+  iconBoxRound: 'w-16 h-16 rounded-full items-center justify-center',
 
   // ── Empty state
   emptyState:      'items-center py-24 bg-white rounded-3xl border border-dashed border-gray-200',
-  emptyStateIcon:  'w-16 h-16 bg-gray-50 rounded-full items-center justify-center mb-4',
+  emptyStateIcon:  'w-24 h-24 bg-gray-50 rounded-full items-center justify-center mb-6',
   emptyStateTitle: 'text-xl font-bold text-dark mb-2',
   emptyStateText:  'text-sm text-gray-400 text-center px-8',
 

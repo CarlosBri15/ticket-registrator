@@ -22,6 +22,7 @@ export default defineConfig({
       { find: 'react', replacement: path.resolve(root, 'react') },
       { find: 'react-dom', replacement: path.resolve(root, 'react-dom') },
       { find: 'react/jsx-runtime', replacement: path.resolve(root, 'react/jsx-runtime') },
+      { find: '@ticket-registrator/shared/assets', replacement: path.resolve(__dirname, '../shared/src/assets.ts') },
       { find: '@ticket-registrator/shared', replacement: path.resolve(__dirname, '../shared/src/index.ts') },
     ],
   },

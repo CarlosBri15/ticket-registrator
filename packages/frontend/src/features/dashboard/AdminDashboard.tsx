@@ -1,6 +1,5 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import {
-  FileText,
   TrendingUp,
   Users,
   Building2,
@@ -26,7 +25,6 @@ import { PendingStatsCard } from "./components/PendingStatsCard";
 import { PendingApprovalsList } from "./components/PendingApprovalsList";
 import { RecentActivitySection } from "./components/RecentActivitySection.tsx";
 import { useDashboardHelpers } from "./hooks/useDashboardHelpers";
-import { Button } from "../../components/ui/Button";
 
 export const AdminDashboard = () => {
   const { t, getGreetingKey, dateLocale } = useDashboardHelpers();
@@ -87,28 +85,6 @@ export const AdminDashboard = () => {
         firstName={firstName}
         subtitle="Panel de Administración"
         subtitleIcon={<Shield className="w-3.5 h-3.5" />}
-        actions={
-          <React.Fragment>
-            {can("view_users") && (
-              <Button
-                variant="ghost-white"
-                className="w-auto"
-                onClick={() => navigate("/users")}
-              >
-                <Users className="w-4 h-4 mr-1.5" />
-                Equipo
-              </Button>
-            )}
-            <Button
-              variant="ghost-white"
-              className="w-auto"
-              onClick={() => navigate("/reports")}
-            >
-              <FileText className="w-4 h-4 mr-1.5" />
-              Ver viajes
-            </Button>
-          </React.Fragment>
-        }
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="admin-stats">

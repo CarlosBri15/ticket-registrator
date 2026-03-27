@@ -199,11 +199,11 @@ export const AppLayout = () => {
 
   const userInitials = user?.name
     ? user.name
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-        .substring(0, 2)
+      .split(" ")
+      .map((n: string) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2)
     : <User className="w-5 h-5" />;
 
   const visibleSections = MENU_SECTIONS.map((section) => ({
@@ -227,17 +227,15 @@ export const AppLayout = () => {
         className={({ isActive }) => `
           flex items-center ${radius.base} ${transition.base} group relative
           ${isCollapsed ? "justify-center p-3 mx-auto w-11" : "px-3.5 py-3 gap-3.5"}
-          ${
-            isActive
-              ? "bg-brand text-white shadow-md"
-              : "text-gray-400 hover:bg-white/5 hover:text-white"
+          ${isActive
+            ? "bg-brand text-white shadow-md"
+            : "text-white/60 hover:bg-white/8 hover:text-white"
           }
         `}
       >
         <Icon
-          className={`shrink-0 transition-transform group-hover:scale-110 ${
-            isCollapsed ? "w-5 h-5" : "w-[18px] h-[18px]"
-          }`}
+          className={`shrink-0 transition-transform group-hover:scale-110 ${isCollapsed ? "w-5 h-5" : "w-[18px] h-[18px]"
+            }`}
         />
 
         {!isCollapsed && (
@@ -266,7 +264,7 @@ export const AppLayout = () => {
       {/* ─── SIDEBAR ──────────────────────────────────────────────────────── */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50 bg-dark text-white transition-all duration-300 ease-in-out shadow-xl
+          fixed inset-y-0 left-0 z-50 bg-[#1e293b] text-white transition-all duration-300 ease-in-out shadow-xl border-r border-white/5
           ${isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
           ${isCollapsed ? "lg:w-20" : "lg:w-72"}
         `}
@@ -286,7 +284,7 @@ export const AppLayout = () => {
               </div>
               {!isCollapsed && (
                 <div className="flex flex-col">
-                  <span className="font-bold text-base tracking-tight leading-none whitespace-nowrap">
+                  <span className="font-bold text-base tracking-tight leading-none whitespace-nowrap text-white">
                     TicketReg
                   </span>
                   <span className="text-[10px] text-brand-light font-semibold uppercase tracking-widest mt-0.5 whitespace-nowrap">
@@ -302,11 +300,11 @@ export const AppLayout = () => {
                 className={`hidden lg:flex items-center justify-center h-8 w-8 bg-white/5 hover:bg-white/10 ${radius.base} ml-auto ${transition.base} shrink-0`}
                 title="Colapsar menú"
               >
-                <PanelLeftClose className="w-4 h-4 text-gray-400" />
+                <PanelLeftClose className="w-4 h-4 text-slate-400" />
               </button>
             )}
 
-            <button onClick={closeMobile} className="ml-auto lg:hidden p-2 text-gray-400">
+            <button onClick={closeMobile} className="ml-auto lg:hidden p-2 text-white/50">
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -324,9 +322,9 @@ export const AppLayout = () => {
           {/* SuperAdmin global mode indicator */}
           {isGlobalMode && !isCollapsed && (
             <div className="px-3 pt-4 pb-1">
-              <div className={`bg-purple-500/10 border border-purple-500/20 ${radius.card} px-3 py-2 flex items-center gap-2`}>
-                <Globe className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                <p className="text-[9px] font-semibold text-purple-400 uppercase tracking-widest">
+              <div className={`bg-purple-50 border border-purple-200 ${radius.card} px-3 py-2 flex items-center gap-2`}>
+                <Globe className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                <p className="text-[9px] font-semibold text-purple-500 uppercase tracking-widest">
                   Vista Global · SuperAdmin
                 </p>
               </div>
@@ -349,7 +347,7 @@ export const AppLayout = () => {
             {visibleSections.map((section) => (
               <div key={section.title}>
                 {!isCollapsed && (
-                  <p className="px-3.5 text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-2.5">
+                  <p className="px-3.5 text-[10px] font-semibold text-white/30 uppercase tracking-widest mb-2.5">
                     {section.title}
                   </p>
                 )}
@@ -371,14 +369,13 @@ export const AppLayout = () => {
           )}
 
           {/* User footer */}
-          <div className="p-4 bg-white/[0.02] border-t border-white/5 shrink-0 overflow-hidden">
+          <div className="p-4 bg-black/20 border-t border-white/5 shrink-0 overflow-hidden">
             <div
               className={`
                 p-2 ${radius.base} ${transition.base} mb-3
-                ${
-                  isCollapsed
-                    ? "bg-transparent flex justify-center"
-                    : "bg-transparent border border-white/10 flex items-center gap-3 p-3 hover:bg-white/5"
+                ${isCollapsed
+                  ? "bg-transparent flex justify-center"
+                  : "bg-white/5 border border-white/8 flex items-center gap-3 p-3 hover:bg-white/10"
                 }
               `}
             >
@@ -392,10 +389,10 @@ export const AppLayout = () => {
               </div>
               {!isCollapsed && (
                 <div className="flex flex-col min-w-0 overflow-hidden">
-                  <span className="text-sm font-semibold text-gray-100 truncate">
+                  <span className="text-sm font-semibold text-white truncate">
                     {user?.name || "Usuario"}
                   </span>
-                  <span className="text-[10px] text-brand-light truncate font-medium uppercase tracking-wider opacity-70">
+                  <span className="text-[10px] text-brand-light truncate font-medium uppercase tracking-wider">
                     {user?.roleName || user?.email?.split("@")[0] || ""}
                   </span>
                 </div>
@@ -406,7 +403,7 @@ export const AppLayout = () => {
               <NavLink
                 to="/settings"
                 title={t("settings.title")}
-                className={`flex flex-col items-center justify-center p-2.5 ${radius.base} border border-white/5 text-gray-400 hover:bg-white/5 hover:text-white ${transition.base} group`}
+                className={`flex flex-col items-center justify-center p-2.5 ${radius.base} border border-white/10 text-white/50 hover:bg-white/10 hover:text-white ${transition.base} group`}
               >
                 <Settings className="w-4 h-4 group-hover:rotate-45 transition-transform" />
                 {!isCollapsed && (
@@ -416,7 +413,7 @@ export const AppLayout = () => {
               <button
                 onClick={handleLogout}
                 title={t("settings.logout")}
-                className={`flex flex-col items-center justify-center p-2.5 ${radius.base} border border-white/5 text-red-400 hover:bg-red-500/10 hover:text-red-300 ${transition.base} group`}
+                className={`flex flex-col items-center justify-center p-2.5 ${radius.base} border border-white/10 text-red-400 hover:bg-red-500/10 hover:text-red-300 ${transition.base} group`}
               >
                 <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
                 {!isCollapsed && (
@@ -440,9 +437,8 @@ export const AppLayout = () => {
 
       {/* Main content */}
       <main
-        className={`flex-1 flex flex-col relative min-w-0 h-screen overflow-hidden ${transition.base} ${
-          isCollapsed ? "lg:ml-20" : "lg:ml-72"
-        }`}
+        className={`flex-1 flex flex-col relative min-w-0 h-screen overflow-hidden ${transition.base} ${isCollapsed ? "lg:ml-20" : "lg:ml-72"
+          }`}
       >
         <header className={`lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-5 z-40 shrink-0`}>
           <div className="flex items-center gap-2.5">
@@ -465,8 +461,8 @@ export const AppLayout = () => {
 
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand/3 rounded-full blur-[120px] -z-10 pointer-events-none translate-x-1/2 -translate-y-1/2" />
 
-        <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8 lg:py-10 scroll-smooth">
-          <div className="max-w-6xl mx-auto">
+        <div className="flex-1 overflow-y-auto bg-slate-100/70 px-6 py-7 md:px-10 lg:py-9 scroll-smooth">
+          <div className="max-w-7xl mx-auto">
             <Outlet />
           </div>
         </div>

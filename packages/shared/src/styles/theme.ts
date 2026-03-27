@@ -11,12 +11,12 @@
 // chart colors, StyleSheet values in React Native).
 
 export const colors = {
-  brand:          '#336b87',
-  brandHover:     '#28556b',
-  brandLight:     '#4a8cae',
-  secondary:      '#90afc5',
-  secondaryLight: '#e0e9ef',
-  dark:           '#2a3132',
+  brand:          '#5b8fcb',
+  brandHover:     '#4878b8',
+  brandLight:     '#8ab4de',
+  secondary:      '#c5daf0',
+  secondaryLight: '#f0f6fd',
+  dark:           '#1e293b',
   surface:        '#f8fafc',
 
   // Semantic

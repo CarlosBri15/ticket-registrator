@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { View, Platform } from "react-native";
+import { Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 
@@ -11,24 +11,25 @@ export default function AppLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
+          backgroundColor: '#1e293b',
           borderTopWidth: 0,
-          elevation: 20,
+          elevation: 0,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.05,
-          shadowRadius: 10,
+          shadowOpacity: 0.15,
+          shadowRadius: 12,
           height: Platform.OS === 'ios' ? 88 : 68,
-          paddingBottom: Platform.OS === 'ios' ? 30 : 12,
-          paddingTop: 12,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+          paddingTop: 10,
         },
-        tabBarActiveTintColor: '#336b87',
-        tabBarInactiveTintColor: '#9ca3af',
+        tabBarActiveTintColor: '#5b8fcb',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.4)',
         tabBarShowLabel: true,
         tabBarLabelStyle: {
-            fontSize: 10,
-            fontWeight: '600'
-        }
+          fontSize: 10,
+          fontWeight: '600',
+          letterSpacing: 0.3,
+        },
       }}
     >
       <Tabs.Screen

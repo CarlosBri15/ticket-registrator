@@ -16,10 +16,7 @@ export const StatCard = ({ title, value, icon, trend, trendUp, variant = "defaul
   if (variant === "primary") {
     return (
       <div className={`relative bg-brand ${radius.card} p-5 overflow-hidden ${shadow.md} border border-brand-light/20`}>
-        {/* Subtle bg accent */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-
-        <div className="relative z-10 flex flex-col h-full gap-3">
+        <div className="flex flex-col h-full gap-3">
           <div className="flex items-start justify-between">
             <p className={tokens.statCardLabel + " !text-brand-light/70"}>{title}</p>
             <div className={`w-8 h-8 bg-white/10 ${radius.base} flex items-center justify-center text-white/80 border border-white/10`}>
@@ -27,8 +24,8 @@ export const StatCard = ({ title, value, icon, trend, trendUp, variant = "defaul
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-white tracking-tight leading-none">{value}</h3>
-            {subtitle && <p className="text-xs text-brand-light/60 font-medium mt-1">{subtitle}</p>}
+            <h3 className="text-3xl font-bold text-white tracking-tight leading-none">{value}</h3>
+            {subtitle && <p className="text-xs text-brand-light/60 font-medium mt-1.5">{subtitle}</p>}
           </div>
           {trend && (
             <div className="flex items-center gap-1.5 mt-auto">

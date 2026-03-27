@@ -1,4 +1,5 @@
 import React from "react";
+import { radius } from "../../../styles/theme";
 
 interface WeeklyStatsCardProps {
   title: string;
@@ -9,53 +10,47 @@ interface WeeklyStatsCardProps {
 }
 
 export const WeeklyStatsCard = ({ title, count, icon, colorClass, subtitle }: WeeklyStatsCardProps) => {
-  const getColors = () => {
-    if (colorClass === "green") return "bg-green-50 text-green-500";
-    if (count > 0) return "bg-red-100 text-red-600";
-    return "bg-gray-50 text-gray-300";
-  };
+  const isAlert = colorClass === "red" && count > 0;
+  const isSuccess = colorClass === "green";
 
-  const getContainerClass = () => {
-    if (colorClass === "red" && count > 0) return "bg-red-50 border-red-200";
-    return "bg-white border-gray-100";
-  };
+  const iconBg = isAlert ? "bg-red-100 text-red-500" : isSuccess ? "bg-success/10 text-success" : "bg-slate-100 text-slate-400";
+  const valueCls = isAlert ? "text-red-600" : "text-dark";
+  const subtitleCls = isAlert ? "text-red-500/70" : "text-slate-400";
+  const labelCls = isAlert ? "text-red-500" : "text-slate-400";
+  const containerCls = isAlert
+    ? `bg-red-50 border-red-200`
+    : `bg-white border-slate-200`;
 
   return (
-    <div className={`relative overflow-hidden rounded-[2rem] p-6 flex flex-col gap-4 border shadow-sm transition-all duration-300 ${getContainerClass()}`}>
-      <div className="relative z-10 flex items-start justify-between">
-        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${colorClass === "red" && count > 0 ? "text-red-600" : "text-gray-400"}`}>
-          {title}
-        </p>
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${getColors()}`}>
+    <div className={`${radius.card} p-5 flex flex-col gap-3 border shadow-sm ${containerCls}`}>
+      <div className="flex items-start justify-between">
+        <p className={`text-[10px] font-semibold uppercase tracking-widest ${labelCls}`}>{title}</p>
+        <div className={`w-8 h-8 ${radius.base} flex items-center justify-center ${iconBg}`}>
           {icon}
         </div>
       </div>
-      <h3 className={`relative z-10 text-3xl font-black tracking-tighter ${colorClass === "red" && count > 0 ? "text-red-700" : "text-dark"}`} data-testid="stat-value">
+      <h3 className={`text-3xl font-bold tracking-tight leading-none ${valueCls}`} data-testid="stat-value">
         {count}
       </h3>
-      <p className={`relative z-10 text-xs font-bold ${colorClass === "red" && count > 0 ? "text-red-600/70" : "text-gray-400"}`}>
-        {subtitle}
-      </p>
+      <p className={`text-xs font-medium ${subtitleCls}`}>{subtitle}</p>
     </div>
   );
 };
 
 export const PendingAmountCard = ({ amount }: { amount: number }) => (
-  <div className="relative overflow-hidden rounded-[2rem] p-6 flex flex-col gap-4 border shadow-sm bg-white border-gray-100">
-    <div className="relative z-10 flex items-start justify-between">
-      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+  <div className={`${radius.card} p-5 flex flex-col gap-3 border border-slate-200 bg-white shadow-sm`}>
+    <div className="flex items-start justify-between">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
         Importe pendiente
       </p>
-      <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gray-50 text-gray-400">
-        <span className="font-bold text-xl">€</span>
+      <div className={`w-8 h-8 ${radius.base} flex items-center justify-center bg-brand/8 text-brand font-bold text-base`}>
+        €
       </div>
     </div>
-    <h3 className="relative z-10 text-3xl font-black tracking-tighter text-dark">
-      <span data-testid="stat-value">{amount.toFixed(2)}</span>
-      <span className="text-[10px] font-bold text-gray-400 ml-1">€</span>
+    <h3 className="text-3xl font-bold tracking-tight leading-none text-dark">
+      <span data-testid="stat-value">{amount.toFixed(0)}</span>
+      <span className="text-sm font-medium text-slate-400 ml-1">EUR</span>
     </h3>
-    <p className="relative z-10 text-xs font-bold text-gray-400">
-      Total por revisar
-    </p>
+    <p className="text-xs font-medium text-slate-400">Total por revisar</p>
   </div>
 );

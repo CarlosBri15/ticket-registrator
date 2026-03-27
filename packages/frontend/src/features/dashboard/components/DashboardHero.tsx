@@ -1,5 +1,5 @@
-import { Sparkles } from "lucide-react";
-import { radius } from "../../../styles/theme";
+import { Calendar } from "lucide-react";
+import { userIcon } from "@ticket-registrator/shared/assets";
 
 interface DashboardHeroProps {
   user: any;
@@ -9,10 +9,7 @@ interface DashboardHeroProps {
   subtitle: string;
   subtitleIcon: React.ReactNode;
   actions?: React.ReactNode;
-  avatarBgColor?: string;
-  avatarIcon?: React.ReactNode;
   badgeContent?: React.ReactNode;
-  badgeColorClass?: string;
 }
 
 export const DashboardHero = ({
@@ -22,45 +19,55 @@ export const DashboardHero = ({
   firstName,
   subtitle,
   subtitleIcon,
-  actions,
-  avatarBgColor = "bg-brand",
-  avatarIcon = <Sparkles className="w-5 h-5" />,
   badgeContent,
-  badgeColorClass = "text-brand/70 bg-brand/10",
+  actions,
 }: DashboardHeroProps) => {
-  return (
-    <div className={`relative bg-dark ${radius.card} p-6 overflow-hidden shadow-lg`}>
-      {/* Subtle decorative bg */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-brand/8 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-40 h-40 bg-secondary/5 rounded-full translate-y-1/2 pointer-events-none" />
+  const today = new Date().toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
-      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
-        <div className="flex items-center gap-4">
-          <div className="relative shrink-0">
-            <div className={`w-12 h-12 ${avatarBgColor} ${radius.base} flex items-center justify-center shadow-md text-white font-bold text-lg select-none`}>
-              {user?.name?.charAt(0).toUpperCase() ?? avatarIcon}
-            </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success border-2 border-dark rounded-full" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-brand/60">{subtitleIcon}</span>
-              <p className="text-[10px] font-medium text-brand/60 uppercase tracking-widest">
-                {subtitle}
-              </p>
-            </div>
-            <h1 className="text-xl font-semibold text-white tracking-tight">
-              {t(greetingKey, { name: firstName })}
-            </h1>
+
+  const fullGreeting: string = t(greetingKey, { name: firstName });
+  const nameIndex = fullGreeting.lastIndexOf(firstName);
+  const greetingPrefix = nameIndex > 0 ? fullGreeting.slice(0, nameIndex) : "";
+  const greetingName = nameIndex > 0 ? fullGreeting.slice(nameIndex) : fullGreeting;
+
+  return (
+    <div className="flex items-center justify-between gap-4 pb-6 mb-1">
+      <div className="flex items-center gap-4">
+        {/* Avatar */}
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-white overflow-hidden"
+          style={{ border: "1px solid #edf0f5", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}
+        >
+          <img src={userIcon} alt="avatar" className="w-10 h-10 object-contain" />
+        </div>
+
+        <div>
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            {subtitleIcon && <div className="shrink-0">{subtitleIcon}</div>}
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.18em]">{subtitle}</p>
             {(badgeContent || user?.roleName) && (
-              <span className={`inline-block mt-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 ${radius.full} ${badgeColorClass}`}>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand/10 text-brand border border-brand/15">
                 {badgeContent || user?.roleName}
               </span>
             )}
           </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 leading-tight">
+            <span className="text-slate-400 font-medium">{greetingPrefix}</span>
+            {greetingName}
+          </h1>
+          <p className="text-xs text-slate-400 font-medium mt-1 flex items-center gap-1.5 capitalize">
+            <Calendar className="w-3 h-3" />
+            {today}
+          </p>
         </div>
-        {actions && <div className="flex gap-2.5 shrink-0">{actions}</div>}
       </div>
+
+      {actions && <div className="shrink-0">{actions}</div>}
     </div>
   );
 };

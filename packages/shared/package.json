@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./assets": "./dist/assets.js"
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"require('fs').cpSync('src/assets', 'dist/assets', {recursive:true})\"",
     "test": "jest",
     "test:cov": "jest --coverage",
     "lint": "echo \"Skipping lint for shared...\""
