@@ -56,6 +56,18 @@ describe('GeminiService', () => {
     expect(service).toBeDefined();
   });
 
+  it('should throw Error if GEMINI_API_KEY is not defined', () => {
+    const configServiceMockEmpty = {
+      get: jest.fn().mockReturnValue(undefined),
+    };
+    const categoriesRepoMock = {
+      findByOrganization: jest.fn(),
+    } as any;
+    expect(() => new GeminiService(configServiceMockEmpty as any, categoriesRepoMock)).toThrow(
+      'GEMINI_API_KEY is not defined',
+    );
+  });
+
   // ── extractReceipt ────────────────────────────────────────────────────────────
 
   describe('extractReceipt', () => {
@@ -66,6 +78,46 @@ describe('GeminiService', () => {
 
       expect(mockGenerateContent).toHaveBeenCalled();
       expect(result).toBeDefined();
+    });
+
+    it('should map category names to category IDs correctly and handle usageMetadata', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        response: {
+          text: () =>
+            JSON.stringify({
+              total: 10,
+              items: [{ description: 'item1', category: 'Food' }],
+            }),
+          usageMetadata: {
+            promptTokenCount: 100,
+            candidatesTokenCount: 50,
+            totalTokenCount: 150,
+            cachedContentTokenCount: 0,
+          },
+        },
+      });
+
+      const categoriesRepoMock = {
+        findByOrganization: jest.fn().mockResolvedValue([
+          { id: 'cat-uuid-1', name: 'Food' },
+        ]),
+      };
+
+      // Mock service specifically for this test to inject categories
+      const testService = new GeminiService(
+        { get: () => 'fake-api-key' } as any,
+        categoriesRepoMock as any,
+      );
+      (testService as any).genAI = {
+        getGenerativeModel: () => ({
+          generateContent: mockGenerateContent,
+        }),
+      };
+
+      const result = await testService.extractReceipt('base64-data', 'org-1');
+
+      expect(result.items).toBeDefined();
+      expect(result.items![0].categoryId).toBe('cat-uuid-1');
     });
 
     it('should throw GeminiExtractionException if Gemini call fails', async () => {

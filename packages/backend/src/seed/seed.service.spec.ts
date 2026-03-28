@@ -9,6 +9,7 @@ import {
   Roles,
   ROLE_HIERARCHY,
   ROLE_DEFAULT_PERMISSIONS,
+  DEFAULT_CATEGORIES,
 } from '@ticket-registrator/shared';
 
 jest.mock('drizzle-orm/postgres-js/migrator', () => ({
@@ -44,6 +45,8 @@ describe('SeedService', () => {
     categoriesRepositoryMock = {
       findAllSystemCategories: jest.fn().mockResolvedValue([]),
       createMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({ id: 'cat-id' }),
+      update: jest.fn().mockResolvedValue(undefined),
     };
 
     dbMock = {
@@ -239,6 +242,46 @@ describe('SeedService', () => {
 
       const result = await service.seedDefaultRolePermissions();
       expect(result.message).toContain('already seeded');
+    });
+  });
+
+  describe('seedDefaultCategories', () => {
+    it('should create new categories when none exist', async () => {
+      categoriesRepositoryMock.findAllSystemCategories.mockResolvedValue([]);
+      
+      const result = await service.seedDefaultCategories();
+      
+      expect(categoriesRepositoryMock.create).toHaveBeenCalled();
+      expect(result.message).toContain('new');
+    });
+
+    it('should update existing categories with changed description', async () => {
+      const existingCategory = {
+        id: 'cat-1',
+        name: DEFAULT_CATEGORIES[0].name,
+        description: 'old description',
+      };
+      categoriesRepositoryMock.findAllSystemCategories.mockResolvedValue([existingCategory]);
+
+      await service.seedDefaultCategories();
+      
+      expect(categoriesRepositoryMock.update).toHaveBeenCalled();
+    });
+
+    it('should skip categories that are already up to date', async () => {
+      const allExistingCategories = DEFAULT_CATEGORIES.map((cat, idx) => ({
+        id: `cat-${idx}`,
+        name: cat.name,
+        description: cat.description,
+      }));
+      categoriesRepositoryMock.findAllSystemCategories.mockResolvedValue(allExistingCategories);
+      categoriesRepositoryMock.create.mockClear();
+      categoriesRepositoryMock.update.mockClear();
+
+      await service.seedDefaultCategories();
+      
+      expect(categoriesRepositoryMock.create).not.toHaveBeenCalled();
+      expect(categoriesRepositoryMock.update).not.toHaveBeenCalled();
     });
   });
 

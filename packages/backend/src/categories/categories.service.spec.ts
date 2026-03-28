@@ -111,6 +111,27 @@ describe('CategoriesService', () => {
     });
   });
 
+  describe('remove', () => {
+    it('should permanently delete a category', async () => {
+      const id = 'uuid';
+      mockRepository.delete.mockResolvedValue(true);
+
+      expect(await service.remove(id)).toBeUndefined();
+      expect(mockRepository.delete).toHaveBeenCalledWith(id);
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a single category', async () => {
+      const id = 'uuid';
+      const result = { id, name: 'Category 1' };
+      mockRepository.findById.mockResolvedValue(result);
+
+      expect(await service.findOne(id)).toEqual(result);
+      expect(mockRepository.findById).toHaveBeenCalledWith(id);
+    });
+  });
+
   describe('createDefaultFromSystem', () => {
     it('should copy system categories to organization', async () => {
       const orgId = 'org-uuid';
@@ -158,6 +179,20 @@ describe('CategoriesService', () => {
           isSystem: false,
         },
       ]);
+    });
+
+    it('should return empty array if no categories match', async () => {
+      const orgId = 'org-uuid';
+      const systemCats = [
+        { name: 'Cat 1', description: 'Desc 1', isSystem: true },
+        { name: 'Cat 2', description: 'Desc 2', isSystem: true },
+      ];
+      mockRepository.findAllSystemCategories.mockResolvedValue(systemCats);
+
+      const result = await service.createDefaultFromSystem(orgId, ['Cat 3']);
+
+      expect(result).toEqual([]);
+      expect(mockRepository.createMany).not.toHaveBeenCalled();
     });
   });
 });

@@ -50,9 +50,7 @@ export class TicketsService {
     file: Express.Multer.File,
     language?: string,
   ): Promise<ITicket> {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
+    const report = await this.getReportOrThrow(reportId);
 
     if (
       !(await this.ticketsAuthService.validateCanModifyReport(
@@ -235,14 +233,12 @@ export class TicketsService {
     const fullTicket = (await this.ticketsRepository.findById(ticket.id)) as
       | (Ticket & { items: Item[] })
       | undefined;
-    if (!fullTicket) throw new TicketNotFoundException(ticket.id);
+    if (fullTicket?.reportId !== reportId) throw new TicketNotFoundException(ticket.id);
     return mapTicketToITicket(fullTicket);
   }
 
   async findAll(requester: UserPayload, reportId: string): Promise<ITicket[]> {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
+    const report = await this.getReportOrThrow(reportId);
 
     if (
       !(await this.ticketsAuthService.validateCanViewReport(requester, report))
@@ -259,9 +255,7 @@ export class TicketsService {
     reportId: string,
     ticketId: string,
   ): Promise<ITicket> {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
+    const report = await this.getReportOrThrow(reportId);
 
     if (
       !(await this.ticketsAuthService.validateCanViewReport(requester, report))
@@ -272,7 +266,7 @@ export class TicketsService {
     const ticket = (await this.ticketsRepository.findById(ticketId)) as
       | (Ticket & { items: Item[] })
       | undefined;
-    if (!ticket || ticket.reportId !== reportId)
+    if (ticket?.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     return mapTicketToITicket(ticket);
@@ -324,9 +318,7 @@ export class TicketsService {
     ticketId: string,
     dto: UpdateTicketStatusDto,
   ): Promise<ITicket> {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
+    const report = await this.getReportOrThrow(reportId);
 
     if (report.status !== ReportStatus.SUBMITTED) {
       throw new TicketStatusConflictException(
@@ -335,7 +327,7 @@ export class TicketsService {
     }
 
     const currentTicket = await this.ticketsRepository.findById(ticketId);
-    if (!currentTicket || currentTicket.reportId !== reportId)
+    if (currentTicket?.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     const oldSnapshot = {
@@ -372,28 +364,12 @@ export class TicketsService {
   }
 
   async remove(requester: UserPayload, reportId: string, ticketId: string) {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
-
-    if (
-      !(await this.ticketsAuthService.validateCanModifyReport(
-        requester,
-        report,
-      ))
-    ) {
-      throw new TicketUnauthorizedException();
-    }
-
-    if (report.status !== ReportStatus.CREATED) {
-      throw new TicketStatusConflictException(
-        'Cannot hide tickets after submission',
-      );
-    }
-
-    const ticket = await this.ticketsRepository.findById(ticketId);
-    if (!ticket || ticket.reportId !== reportId)
-      throw new TicketNotFoundException(ticketId);
+    const { currentTicket: ticket } = await this.getValidatedReportAndTicket(
+      requester,
+      reportId,
+      ticketId,
+      'hide',
+    );
 
     const historyData: typeof schema.ticketHistories.$inferInsert = {
       ticketId,
@@ -410,28 +386,12 @@ export class TicketsService {
   }
 
   async hardDelete(requester: UserPayload, reportId: string, ticketId: string) {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
-
-    if (
-      !(await this.ticketsAuthService.validateCanModifyReport(
-        requester,
-        report,
-      ))
-    ) {
-      throw new TicketUnauthorizedException();
-    }
-
-    if (report.status !== ReportStatus.CREATED) {
-      throw new TicketStatusConflictException(
-        'Cannot hard delete tickets after report submission',
-      );
-    }
-
-    const ticket = await this.ticketsRepository.findById(ticketId);
-    if (!ticket || ticket.reportId !== reportId)
-      throw new TicketNotFoundException(ticketId);
+    const { currentTicket: ticket } = await this.getValidatedReportAndTicket(
+      requester,
+      reportId,
+      ticketId,
+      'hard delete',
+    );
 
     // Delete from GCS first
     if (ticket.cgsBucketLink) {
@@ -467,14 +427,20 @@ export class TicketsService {
     return { url };
   }
 
+  private async getReportOrThrow(reportId: string): Promise<ReportEntity> {
+    const report = await this.reportsRepository.findById(reportId);
+    if (!report || report.deletedAt)
+      throw new ReportNotFoundException(reportId);
+    return report;
+  }
+
   private async getValidatedReportAndTicket(
     requester: UserPayload,
     reportId: string,
     ticketId: string,
+    actionDesc: string = 'edit',
   ): Promise<{ report: ReportEntity; currentTicket: Ticket }> {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
+    const report = await this.getReportOrThrow(reportId);
 
     if (
       !(await this.ticketsAuthService.validateCanModifyReport(
@@ -487,12 +453,12 @@ export class TicketsService {
 
     if (report.status !== ReportStatus.CREATED) {
       throw new TicketStatusConflictException(
-        'Cannot edit tickets after report submission',
+        `Cannot ${actionDesc} tickets after report submission`,
       );
     }
 
     const currentTicket = await this.ticketsRepository.findById(ticketId);
-    if (!currentTicket || currentTicket.reportId !== reportId)
+    if (currentTicket?.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     return { report, currentTicket };
