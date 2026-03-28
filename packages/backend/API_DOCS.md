@@ -648,6 +648,141 @@ Soft-deletes a company role. System roles cannot be deleted. Cannot delete roles
 
 ---
 
+## Categories — `/categories`
+
+### Return types
+
+```ts
+ICategory {
+  id: string
+  name: string
+  description: string
+  organizationId: string | null   // null = system category (global)
+  isSystem: boolean
+  createdAt: string
+  updatedAt: string
+  deletedAt?: string | null
+}
+```
+
+---
+
+### `POST /categories`
+🔒 `create_categories`
+
+Creates a new category.
+
+**Body**
+```json
+{
+  "name": "string (required)",
+  "description": "string (optional)",
+  "organizationId": "string (optional)",
+  "isSystem": "boolean (optional, default: false)"
+}
+```
+
+**Response** `201` → `ICategory`
+
+---
+
+### `GET /categories/organization/:orgId`
+🔒 `view_categories`
+
+Returns all categories for a specific organization.
+
+**Params**
+| Param | Type | Description |
+|-------|------|-------------|
+| `orgId` | `string` | Organization ID |
+
+**Response** `200` → `ICategory[]`
+
+---
+
+### `GET /categories/system`
+🔒 `view_categories`
+
+Returns all global system categories.
+
+**Response** `200` → `ICategory[]`
+
+---
+
+### `GET /categories/:id`
+🔒 `view_categories`
+
+Returns a single category by ID.
+
+**Params**
+| Param | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Category ID |
+
+**Response** `200` → `ICategory`
+
+---
+
+### `PATCH /categories/:id`
+🔒 `edit_categories`
+
+Updates an existing category.
+
+**Params**
+| Param | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Category ID |
+
+**Body**
+```json
+{
+  "name": "string (optional)",
+  "description": "string (optional)"
+}
+```
+
+**Response** `200` → `ICategory`
+
+---
+
+### `DELETE /categories/:id`
+🔒 `delete_categories`
+
+Soft-deletes a category.
+
+**Params**
+| Param | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Category ID |
+
+**Response** `200`
+```json
+{ "deleted": true }
+```
+
+---
+
+### `POST /categories/organization/:orgId/defaults`
+🔒 `create_categories`
+
+Clones specified system categories (or all if none specified) into an organization.
+
+**Params**
+| Param | Type | Description |
+|-------|------|-------------|
+| `orgId` | `string` | Organization ID |
+
+**Body**
+```json
+{
+  "categoryNames": "string[] (optional)"
+}
+```
+
+**Response** `201` → `ICategory[]`
+
+---
+
 ## Permission matrix by role
 
 | Permission | Employee | Manager | Controller | Admin | SuperAdmin |
@@ -670,4 +805,8 @@ Soft-deletes a company role. System roles cannot be deleted. Cannot delete roles
 | `create_roles` | ❌ | ❌ | ❌ | ✅ | ✅ |
 | `view_roles` | ❌ | ❌ | ❌ | ✅ | ✅ |
 | `delete_roles` | ❌ | ❌ | ❌ | ✅ | ✅ |
+| `create_categories` | ❌ | ❌ | ❌ | ✅ | ✅ |
+| `view_categories` | ❌ | ❌ | ❌ | ✅ | ✅ |
+| `edit_categories` | ❌ | ❌ | ❌ | ✅ | ✅ |
+| `delete_categories` | ❌ | ❌ | ❌ | ✅ | ✅ |
 | `manage_permissions` | ❌ | ❌ | ❌ | ❌ | ✅ |

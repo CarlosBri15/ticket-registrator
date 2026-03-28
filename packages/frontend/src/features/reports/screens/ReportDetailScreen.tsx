@@ -224,9 +224,9 @@ export const ReportDetailScreen = () => {
                         {format(new Date(ticket.date), "dd MMM yyyy", { locale: dateLocale })}
                       </span>
                     )}
-                    {ticket.items?.[0]?.expense_type && (
+                    {ticket.items?.[0]?.categoryName && (
                       <span className={`${tokens.badgeSm} ${tokens.badgeBrand}`}>
-                        {ticket.items[0].expense_type}
+                        {ticket.items[0].categoryName}
                       </span>
                     )}
                   </div>

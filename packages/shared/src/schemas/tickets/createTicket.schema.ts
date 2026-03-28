@@ -16,7 +16,6 @@ export const createTicketSchema = z.object({
   image_id: z.string().optional(),
   language: z.string().optional(),
   items: z.array(createItemSchema).optional(),
-  isVisible: z.boolean().optional()
 });
 
 export type CreateTicketSchema = z.infer<typeof createTicketSchema>;

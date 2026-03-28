@@ -13,7 +13,6 @@ export const updateTicketFieldsSchema = z.object({
   cgs_bucket_link_justification: z.string().optional(),
   last_four_digits: z.string().optional(),
   items: z.array(createItemSchema).optional(),
-  isVisible: z.boolean().optional(),
 }).strict();
 
 export const updateTicketStatusSchema = z.object({

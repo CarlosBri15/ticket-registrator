@@ -36,7 +36,7 @@ describe('TicketsService', () => {
   let storageServiceMock: any;
   let cryptoServiceMock: any;
 
-  const requester = { id: 'user-1' } as any;
+  const requester = { id: 'user-1', companyId: 'org-1' } as any;
 
   beforeEach(async () => {
     ticketsRepositoryMock = {
@@ -47,6 +47,7 @@ describe('TicketsService', () => {
       create: jest.fn(),
       updateWithHistory: jest.fn(),
       softDelete: jest.fn(),
+      hardDelete: jest.fn(),
     };
     reportsRepositoryMock = {
       findById: jest.fn(),
@@ -61,6 +62,7 @@ describe('TicketsService', () => {
     storageServiceMock = {
       uploadFile: jest.fn(),
       findFile: jest.fn(),
+      removeFile: jest.fn(),
     };
     cryptoServiceMock = {
       hashPassword: jest.fn(),
@@ -117,14 +119,20 @@ describe('TicketsService', () => {
       ticketsRepositoryMock.create.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
 
-      const result = await service.create(requester, 'report-1', {
-        buffer: Buffer.from('f'),
-        originalname: 'test.jpg',
-        mimetype: 'image/jpeg',
-      } as any, 'es');
+      const result = await service.create(
+        requester,
+        'report-1',
+        {
+          buffer: Buffer.from('f'),
+          originalname: 'test.jpg',
+          mimetype: 'image/jpeg',
+        } as any,
+        'es',
+      );
 
       expect(geminiServiceMock.extractReceipt).toHaveBeenCalledWith(
         expect.any(String),
+        requester.companyId,
         'image/jpeg',
         'es',
       );
@@ -194,16 +202,22 @@ describe('TicketsService', () => {
       ticketsRepositoryMock.create.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
 
-      const result = await service.create(requester, 'report-1', {
-        buffer: Buffer.from('pdf-data'),
-        originalname: 'invoice.pdf',
-        mimetype: 'application/pdf',
-      } as any, 'es');
+      const result = await service.create(
+        requester,
+        'report-1',
+        {
+          buffer: Buffer.from('pdf-data'),
+          originalname: 'invoice.pdf',
+          mimetype: 'application/pdf',
+        } as any,
+        'es',
+      );
 
       expect(result.id).toBe('ticket-1');
       expect(sharpMock.resize).not.toHaveBeenCalled();
       expect(geminiServiceMock.extractReceipt).toHaveBeenCalledWith(
         expect.any(String),
+        requester.companyId,
         'application/pdf',
         'es',
       );
@@ -235,7 +249,9 @@ describe('TicketsService', () => {
           originalname: 'test.jpg',
           mimetype: 'image/jpeg',
         } as any),
-      ).rejects.toThrow('This receipt has already been processed based on its extracted data.');
+      ).rejects.toThrow(
+        'This receipt has already been processed based on its extracted data.',
+      );
     });
 
     it('should throw ReportNotFoundException when report not found', async () => {
@@ -340,7 +356,10 @@ describe('TicketsService', () => {
       ticketsRepositoryMock.findAllFingerprints.mockResolvedValue([
         { imageId: 'oldhash|1.01' },
       ]);
-      geminiServiceMock.extractReceipt.mockResolvedValue({ items: [], total: 10 });
+      geminiServiceMock.extractReceipt.mockResolvedValue({
+        items: [],
+        total: 10,
+      });
       cryptoServiceMock.calculateHammingDistance.mockReturnValue(5); // distance <= 15
 
       await expect(
@@ -349,7 +368,9 @@ describe('TicketsService', () => {
           originalname: 'test.jpg',
           mimetype: 'image/jpeg',
         } as any),
-      ).rejects.toThrow('This receipt has already been processed (Similarity match)');
+      ).rejects.toThrow(
+        'This receipt has already been processed (Similarity match)',
+      );
     });
 
     it('should throw DuplicateTicketException when an exact match is found (legacy)', async () => {
@@ -360,7 +381,10 @@ describe('TicketsService', () => {
         { imageId: 'newhash' },
       ]);
       cryptoServiceMock.calculateHammingDistance.mockReturnValue(0); // distance <= 2
-      geminiServiceMock.extractReceipt.mockResolvedValue({ items: [], total: 10 });
+      geminiServiceMock.extractReceipt.mockResolvedValue({
+        items: [],
+        total: 10,
+      });
 
       await expect(
         service.create(requester, 'report-1', {
@@ -368,7 +392,9 @@ describe('TicketsService', () => {
           originalname: 'test.jpg',
           mimetype: 'image/jpeg',
         } as any),
-      ).rejects.toThrow('This receipt has already been processed (Exact match)');
+      ).rejects.toThrow(
+        'This receipt has already been processed (Exact match)',
+      );
     });
 
     it('should NOT throw DuplicateTicketException if ratio is too different', async () => {
@@ -382,7 +408,10 @@ describe('TicketsService', () => {
 
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
       storageServiceMock.uploadFile.mockResolvedValue('link');
-      geminiServiceMock.extractReceipt.mockResolvedValue({ items: [], total: 10 });
+      geminiServiceMock.extractReceipt.mockResolvedValue({
+        items: [],
+        total: 10,
+      });
       ticketsRepositoryMock.create.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
 
@@ -407,7 +436,10 @@ describe('TicketsService', () => {
 
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
       storageServiceMock.uploadFile.mockResolvedValue('link');
-      geminiServiceMock.extractReceipt.mockResolvedValue({ items: [], total: 10 });
+      geminiServiceMock.extractReceipt.mockResolvedValue({
+        items: [],
+        total: 10,
+      });
       ticketsRepositoryMock.create.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
 
@@ -656,7 +688,11 @@ describe('TicketsService', () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
       ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
-      const ticketInReview = { ...mockTicket, status: TicketStatus.APPROVED, lifecycle: TicketLifecycle.SUBMITTED };
+      const ticketInReview = {
+        ...mockTicket,
+        status: TicketStatus.APPROVED,
+        lifecycle: TicketLifecycle.SUBMITTED,
+      };
       ticketsRepositoryMock.findById.mockResolvedValue(ticketInReview);
 
       await service.update(requester, 'report-1', 'ticket-1', {
@@ -675,7 +711,8 @@ describe('TicketsService', () => {
       );
 
       // Ensure it DID NOT overwrite status/lifecycle
-      const updateObject = ticketsRepositoryMock.updateWithHistory.mock.calls[0][1];
+      const updateObject =
+        ticketsRepositoryMock.updateWithHistory.mock.calls[0][1];
       expect(updateObject.status).toBeUndefined();
       expect(updateObject.lifecycle).toBeUndefined();
     });
@@ -689,12 +726,10 @@ describe('TicketsService', () => {
       ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
       ticketsRepositoryMock.updateWithHistory.mockResolvedValue(mockTicket);
 
-      await service.updateStatus(
-        requester,
-        'report-1',
-        'ticket-1',
-        { status: TicketStatus.APPROVED, approved_amount: 10 },
-      );
+      await service.updateStatus(requester, 'report-1', 'ticket-1', {
+        status: TicketStatus.APPROVED,
+        approved_amount: 10,
+      });
       expect(ticketsRepositoryMock.updateWithHistory).toHaveBeenCalled();
     });
 
@@ -775,16 +810,65 @@ describe('TicketsService', () => {
         service.remove(requester, 'report-1', 'ticket-1'),
       ).rejects.toThrow(TicketNotFoundException);
     });
+  });
 
-    it('should throw TicketNotFoundException when ticket reportId mismatch', async () => {
+  describe('hardDelete', () => {
+    it('should hard delete ticket and remove GCS file', async () => {
+      const ticketWithImage = { ...mockTicket, items: [], cgsBucketLink: 'test-image.webp' };
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
       ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
-      ticketsRepositoryMock.findById.mockResolvedValue({
-        ...mockTicket,
-        reportId: 'other-report',
-      });
+      ticketsRepositoryMock.findById.mockResolvedValue(ticketWithImage);
+
+      await service.hardDelete(requester, 'report-1', 'ticket-1');
+
+      expect(storageServiceMock.removeFile).toHaveBeenCalledWith('test-image.webp');
+      expect(ticketsRepositoryMock.hardDelete).toHaveBeenCalledWith('ticket-1');
+    });
+
+    it('should hard delete ticket even if GCS file removal fails', async () => {
+      const ticketWithImage = { ...mockTicket, items: [], cgsBucketLink: 'test-image.webp' };
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
+      ticketsRepositoryMock.findById.mockResolvedValue(ticketWithImage);
+      storageServiceMock.removeFile.mockRejectedValue(new Error('GCS Error'));
+
+      await service.hardDelete(requester, 'report-1', 'ticket-1');
+
+      expect(ticketsRepositoryMock.hardDelete).toHaveBeenCalledWith('ticket-1');
+    });
+
+    it('should throw ReportNotFoundException when report not found', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(null);
       await expect(
-        service.remove(requester, 'report-1', 'ticket-1'),
+        service.hardDelete(requester, 'report-1', 'ticket-1'),
+      ).rejects.toThrow(ReportNotFoundException);
+    });
+
+    it('should throw TicketUnauthorizedException when user cannot modify report', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(false);
+      await expect(
+        service.hardDelete(requester, 'report-1', 'ticket-1'),
+      ).rejects.toThrow(TicketUnauthorizedException);
+    });
+
+    it('should throw TicketStatusConflictException when report is not CREATED', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue({
+        ...mockReport,
+        status: ReportStatus.SUBMITTED,
+      });
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
+      await expect(
+        service.hardDelete(requester, 'report-1', 'ticket-1'),
+      ).rejects.toThrow(TicketStatusConflictException);
+    });
+
+    it('should throw TicketNotFoundException when ticket not found', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
+      ticketsRepositoryMock.findById.mockResolvedValue(null);
+      await expect(
+        service.hardDelete(requester, 'report-1', 'ticket-1'),
       ).rejects.toThrow(TicketNotFoundException);
     });
   });

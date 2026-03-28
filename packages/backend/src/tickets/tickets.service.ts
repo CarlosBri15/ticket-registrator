@@ -42,7 +42,7 @@ export class TicketsService {
     private readonly geminiService: GeminiService,
     private readonly storageService: StorageService,
     private readonly cryptoService: CryptoService,
-  ) { }
+  ) {}
 
   async create(
     requester: UserPayload,
@@ -90,7 +90,9 @@ export class TicketsService {
 
         if (oldRatioStr && newRatioStr) {
           // New format: Check aspect ratio first (tolerance 5%)
-          if (Math.abs(parseFloat(oldRatioStr) - parseFloat(newRatioStr)) > 0.05)
+          if (
+            Math.abs(parseFloat(oldRatioStr) - parseFloat(newRatioStr)) > 0.05
+          )
             continue;
 
           const distance = this.cryptoService.calculateHammingDistance(
@@ -100,7 +102,7 @@ export class TicketsService {
 
           // Hamming distance threshold for 24x24 (576 bits):
           // 20 matches (approx 3% difference) is used as a fast, conservative check for nearly-identical images.
-          // We rely on the subsequent Semantic Check (Date/Amount/Location) to catch duplicates 
+          // We rely on the subsequent Semantic Check (Date/Amount/Location) to catch duplicates
           // with different angles or minor visual variations, avoiding false positive collisions.
           if (distance <= 20) {
             throw new DuplicateTicketException(
@@ -124,6 +126,7 @@ export class TicketsService {
 
     const geminiData = await this.geminiService.extractReceipt(
       imageBase64,
+      requester.companyId,
       file.mimetype || 'image/jpeg',
       language,
     );
@@ -197,7 +200,7 @@ export class TicketsService {
         name: item.description ?? null,
         amount: item.price ?? null,
         currency: report.currency ?? null,
-        expenseType: item.expense_type ?? null,
+        categoryId: item.categoryId ?? null,
         status: ItemStatus.PENDING,
       })) ?? [];
 
@@ -406,6 +409,51 @@ export class TicketsService {
     return { deleted: true };
   }
 
+  async hardDelete(requester: UserPayload, reportId: string, ticketId: string) {
+    const report = await this.reportsRepository.findById(reportId);
+    if (!report || report.deletedAt)
+      throw new ReportNotFoundException(reportId);
+
+    if (
+      !(await this.ticketsAuthService.validateCanModifyReport(
+        requester,
+        report,
+      ))
+    ) {
+      throw new TicketUnauthorizedException();
+    }
+
+    if (report.status !== ReportStatus.CREATED) {
+      throw new TicketStatusConflictException(
+        'Cannot hard delete tickets after report submission',
+      );
+    }
+
+    const ticket = await this.ticketsRepository.findById(ticketId);
+    if (!ticket || ticket.reportId !== reportId)
+      throw new TicketNotFoundException(ticketId);
+
+    // Delete from GCS first
+    if (ticket.cgsBucketLink) {
+      try {
+        await this.storageService.removeFile(ticket.cgsBucketLink);
+      } catch (error) {
+        this.logger.error(
+          `Failed to delete GCS file ${ticket.cgsBucketLink} during hard delete of ticket ${ticketId}`,
+          error,
+        );
+        // We continue with DB deletion even if GCS fail (optional strategy)
+        // Or we could rethrow if we want strict consistency.
+        // User asked to "fully delete", so we aim for both.
+      }
+    }
+
+    await this.ticketsRepository.hardDelete(ticketId);
+
+    this.logger.log(`Ticket hard deleted: ${ticketId} by user ${requester.id}`);
+    return { deleted: true };
+  }
+
   async getTicketImageUrl(
     requester: UserPayload,
     reportId: string,
@@ -459,26 +507,26 @@ export class TicketsService {
       updateKey: keyof InsertTicket;
       meaningful: boolean;
     }> = [
-        { dtoKey: 'payment_type', updateKey: 'paymentType', meaningful: true },
-        { dtoKey: 'location_name', updateKey: 'locationName', meaningful: true },
-        {
-          dtoKey: 'location_address',
-          updateKey: 'locationAddress',
-          meaningful: true,
-        },
-        { dtoKey: 'amount', updateKey: 'amount', meaningful: true },
-        { dtoKey: 'currency', updateKey: 'currency', meaningful: true },
-        {
-          dtoKey: 'cgs_bucket_link_justification',
-          updateKey: 'cgsBucketLinkJustification',
-          meaningful: false,
-        },
-        {
-          dtoKey: 'last_four_digits',
-          updateKey: 'lastFourDigits',
-          meaningful: false,
-        },
-      ];
+      { dtoKey: 'payment_type', updateKey: 'paymentType', meaningful: true },
+      { dtoKey: 'location_name', updateKey: 'locationName', meaningful: true },
+      {
+        dtoKey: 'location_address',
+        updateKey: 'locationAddress',
+        meaningful: true,
+      },
+      { dtoKey: 'amount', updateKey: 'amount', meaningful: true },
+      { dtoKey: 'currency', updateKey: 'currency', meaningful: true },
+      {
+        dtoKey: 'cgs_bucket_link_justification',
+        updateKey: 'cgsBucketLinkJustification',
+        meaningful: false,
+      },
+      {
+        dtoKey: 'last_four_digits',
+        updateKey: 'lastFourDigits',
+        meaningful: false,
+      },
+    ];
 
     for (const mapping of fieldsMapping) {
       if (dto[mapping.dtoKey] !== undefined) {
@@ -500,7 +548,7 @@ export class TicketsService {
         name: item.name ?? null,
         amount: item.amount ?? null,
         currency: item.currency ?? null,
-        expenseType: item.expense_type ?? null,
+        categoryId: item.categoryId ?? null,
         status: ItemStatus.PENDING,
       }));
       meaningfulChange = true;

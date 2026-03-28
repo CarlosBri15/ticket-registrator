@@ -8,9 +8,6 @@ describe('createTicketSchema', () => {
 
     it('should validate with all fields provided', () => {
         const result = createTicketSchema.safeParse({
-            cgs_bucket_link: 'https://storage.example.com/file.jpg',
-            payment_type: 'credit_card',
-            expense_type: 'meals',
             date: '2024-03-01',
             location_name: 'Restaurant',
             location_address: '123 Main St',
@@ -20,7 +17,6 @@ describe('createTicketSchema', () => {
             converted_currency: 'USD',
             cgs_bucket_link_justification: 'Business lunch',
             last_four_digits: '1234',
-            isVisible: true,
         });
         expect(result.success).toBe(true);
     });

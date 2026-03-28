@@ -1,6 +1,7 @@
 import { pgTable, uuid, varchar, real, timestamp } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tickets } from '../../tickets/schemas/ticket.schema';
+import { categories } from '../../categories/schemas/category.schema';
 import { ItemStatus } from '@ticket-registrator/shared';
 import type { ItemStatusType } from '@ticket-registrator/shared';
 
@@ -9,10 +10,10 @@ export const items = pgTable('items', {
   ticketId: uuid('ticket_id')
     .references(() => tickets.id, { onDelete: 'cascade' })
     .notNull(),
+  categoryId: uuid('category_id').references(() => categories.id),
   name: varchar('name', { length: 255 }),
   amount: real('amount'),
   currency: varchar('currency', { length: 10 }),
-  expenseType: varchar('expense_type', { length: 50 }),
   status: varchar('status', { length: 50 })
     .$type<ItemStatusType>()
     .default(ItemStatus.PENDING)
@@ -25,6 +26,10 @@ export const itemRelations = relations(items, ({ one }) => ({
   ticket: one(tickets, {
     fields: [items.ticketId],
     references: [tickets.id],
+  }),
+  category: one(categories, {
+    fields: [items.categoryId],
+    references: [categories.id],
   }),
 }));
 

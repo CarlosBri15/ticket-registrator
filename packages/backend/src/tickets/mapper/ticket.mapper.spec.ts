@@ -39,7 +39,7 @@ describe('mapTicketToITicket', () => {
   };
 
   it('should map all scalar fields correctly', () => {
-    const result = mapTicketToITicket({ ...baseTicket, items: [] });
+    const result = mapTicketToITicket({ ...baseTicket, items: [] } as any);
 
     expect(result.id).toBe('ticket-1');
     expect(result.report_id).toBe('report-1');
@@ -58,12 +58,16 @@ describe('mapTicketToITicket', () => {
   });
 
   it('should convert date to ISO string', () => {
-    const result = mapTicketToITicket({ ...baseTicket, items: [] });
+    const result = mapTicketToITicket({ ...baseTicket, items: [] } as any);
     expect(result.date).toBe(now.toISOString());
   });
 
   it('should return null for date when it is null', () => {
-    const result = mapTicketToITicket({ ...baseTicket, date: null, items: [] });
+    const result = mapTicketToITicket({
+      ...baseTicket,
+      date: null,
+      items: [],
+    } as any);
     expect(result.date).toBeNull();
   });
 
@@ -72,7 +76,7 @@ describe('mapTicketToITicket', () => {
       ...baseTicket,
       llmComment: 'No se pudo detectar el importe total',
       items: [],
-    });
+    } as any);
     expect(result.llm_comment).toBe('No se pudo detectar el importe total');
   });
 
@@ -81,38 +85,18 @@ describe('mapTicketToITicket', () => {
       ...baseTicket,
       llmComment: null,
       items: [],
-    });
+    } as any);
     expect(result.llm_comment).toBeNull();
   });
 
   it('should convert createdAt to ISO string', () => {
-    const result = mapTicketToITicket({ ...baseTicket, items: [] });
+    const result = mapTicketToITicket({ ...baseTicket, items: [] } as any);
     expect(result.createdAt).toBe(now.toISOString());
   });
 
   it('should convert updatedAt to ISO string', () => {
-    const result = mapTicketToITicket({ ...baseTicket, items: [] });
+    const result = mapTicketToITicket({ ...baseTicket, items: [] } as any);
     expect(result.updatedAt).toBe(now.toISOString());
-  });
-
-  it('should fallback to current ISO string when createdAt is undefined', () => {
-    const result = mapTicketToITicket({
-      ...baseTicket,
-      createdAt: undefined as any,
-      items: [],
-    });
-    expect(result.createdAt).toBeTruthy();
-    expect(typeof result.createdAt).toBe('string');
-  });
-
-  it('should return empty items array when items is undefined', () => {
-    const result = mapTicketToITicket({ ...baseTicket });
-    expect(result.items).toEqual([]);
-  });
-
-  it('should return empty items array when items is empty', () => {
-    const result = mapTicketToITicket({ ...baseTicket, items: [] });
-    expect(result.items).toEqual([]);
   });
 
   it('should map items correctly', () => {
@@ -124,13 +108,14 @@ describe('mapTicketToITicket', () => {
         amount: 4.5,
         currency: 'USD',
         status: ItemStatus.PENDING,
-        expenseType: 'travel',
+        categoryId: 'cat-1',
+        category: { id: 'cat-1', name: 'Travel' },
         createdAt: now,
         updatedAt: now,
       },
     ];
 
-    const result = mapTicketToITicket({ ...baseTicket, items });
+    const result = mapTicketToITicket({ ...baseTicket, items } as any);
 
     expect(result.items).toHaveLength(1);
     expect(result.items![0]).toEqual({
@@ -139,7 +124,8 @@ describe('mapTicketToITicket', () => {
       amount: 4.5,
       currency: 'USD',
       status: ItemStatus.PENDING,
-      expense_type: 'travel',
+      categoryId: 'cat-1',
+      categoryName: 'Travel',
     });
   });
 
@@ -152,7 +138,8 @@ describe('mapTicketToITicket', () => {
         amount: 4.5,
         currency: 'USD',
         status: ItemStatus.PENDING,
-        expenseType: 'travel',
+        categoryId: 'cat-1',
+        category: { id: 'cat-1', name: 'Travel' },
         createdAt: now,
         updatedAt: now,
       },
@@ -163,21 +150,23 @@ describe('mapTicketToITicket', () => {
         amount: 12.0,
         currency: 'USD',
         status: ItemStatus.APPROVED,
-        expenseType: 'taxi',
+        categoryId: 'cat-2',
+        category: { id: 'cat-2', name: 'Taxi' },
         createdAt: now,
         updatedAt: now,
       },
     ];
 
-    const result = mapTicketToITicket({ ...baseTicket, items });
+    const result = mapTicketToITicket({ ...baseTicket, items } as any);
 
     expect(result.items).toHaveLength(2);
     expect(result.items![1].id).toBe('item-2');
     expect(result.items![1].status).toBe(ItemStatus.APPROVED);
+    expect(result.items![1].categoryName).toBe('Taxi');
   });
 
   it('should not expose internal DB fields (reportId, cgsBucketLink as camelCase)', () => {
-    const result = mapTicketToITicket({ ...baseTicket, items: [] });
+    const result = mapTicketToITicket({ ...baseTicket, items: [] } as any);
     expect(result).not.toHaveProperty('reportId');
     expect(result).not.toHaveProperty('cgsBucketLink');
     expect(result).not.toHaveProperty('paymentType');

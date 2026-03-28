@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GeminiService } from './gemini.service';
 import { ConfigService } from '@nestjs/config';
 import { GeminiExtractionException } from './exceptions/gemini.exceptions';
+import { CategoriesRepository } from '../categories/categories.repository';
 
 describe('GeminiService', () => {
   let service: GeminiService;
@@ -19,16 +20,24 @@ describe('GeminiService', () => {
       get: jest.fn().mockReturnValue('fake-api-key'),
     };
 
+    const categoriesRepoMock = {
+      findByOrganization: jest.fn().mockResolvedValue([]),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GeminiService,
         { provide: ConfigService, useValue: configServiceMock },
+        { provide: CategoriesRepository, useValue: categoriesRepoMock },
       ],
     })
       .overrideProvider(GeminiService)
       .useFactory({
-        factory: (configService: ConfigService) => {
-          const svc = new GeminiService(configService);
+        factory: (
+          configService: ConfigService,
+          categoriesRepository: CategoriesRepository,
+        ) => {
+          const svc = new GeminiService(configService, categoriesRepository);
           (svc as any).genAI = {
             getGenerativeModel: () => ({
               generateContent: mockGenerateContent,
@@ -36,7 +45,7 @@ describe('GeminiService', () => {
           };
           return svc;
         },
-        inject: [ConfigService],
+        inject: [ConfigService, CategoriesRepository],
       })
       .compile();
 
@@ -53,7 +62,7 @@ describe('GeminiService', () => {
     it('should call Gemini and return parsed data', async () => {
       const imageBase64 = Buffer.from('fake-image').toString('base64');
 
-      const result = await service.extractReceipt(imageBase64);
+      const result = await service.extractReceipt(imageBase64, 'org-1');
 
       expect(mockGenerateContent).toHaveBeenCalled();
       expect(result).toBeDefined();
@@ -62,9 +71,9 @@ describe('GeminiService', () => {
     it('should throw GeminiExtractionException if Gemini call fails', async () => {
       mockGenerateContent.mockRejectedValueOnce(new Error('API error'));
 
-      await expect(service.extractReceipt('base64-data')).rejects.toThrow(
-        GeminiExtractionException,
-      );
+      await expect(
+        service.extractReceipt('base64-data', 'org-1'),
+      ).rejects.toThrow(GeminiExtractionException);
     });
 
     it('should throw GeminiExtractionException if response is not valid JSON', async () => {
@@ -72,9 +81,9 @@ describe('GeminiService', () => {
         response: { text: () => 'not-valid-json{{' },
       });
 
-      await expect(service.extractReceipt('base64-data')).rejects.toThrow(
-        GeminiExtractionException,
-      );
+      await expect(
+        service.extractReceipt('base64-data', 'org-1'),
+      ).rejects.toThrow(GeminiExtractionException);
     });
   });
 });

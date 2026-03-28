@@ -8,6 +8,7 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
     ...actual,
     useTicketImageQuery: vi.fn(),
     useUpdateTicketMutation: vi.fn(),
+    useCategoriesQuery: vi.fn(),
   };
 });
 
@@ -66,7 +67,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-import { useTicketImageQuery, useUpdateTicketMutation } from '@ticket-registrator/shared';
+import { useTicketImageQuery, useUpdateTicketMutation, useCategoriesQuery } from '@ticket-registrator/shared';
 
 const mockMutate = vi.fn();
 
@@ -76,11 +77,13 @@ const mockTicket = {
   location_address: 'Calle Mayor 1',
   amount: 25,
   currency: 'EUR',
-  status: 'PENDING',
+  status: 'Pending',
   date: '2024-01-10',
-  expense_type: 'Comida',
   payment_type: 'Tarjeta',
   last_four_digits: '1234',
+  items: [
+    { id: 'i1', name: 'Consulta', categoryId: 'cat1', categoryName: 'Comida', amount: 25, currency: 'EUR', status: 'Pending' }
+  ],
 };
 
 const renderModal = (props: any = {}) =>
@@ -101,6 +104,13 @@ describe('TicketDetailModal', () => {
     (useUpdateTicketMutation as ReturnType<typeof vi.fn>).mockReturnValue({
       mutate: mockMutate,
       isPending: false,
+    });
+    (useCategoriesQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [
+        { id: 'cat1', name: 'Comida' },
+        { id: 'cat2', name: 'Transporte' },
+      ],
+      isLoading: false,
     });
   });
 
@@ -288,20 +298,21 @@ describe('TicketDetailModal', () => {
     expect(saveBtn).toBeDisabled();
   });
 
-  it('sends null for empty optional fields on save', () => {
+  it('updates categoryId when user selects a category', () => {
     renderModal({ isEditable: true });
     fireEvent.click(screen.getByTestId('edit-ticket-btn'));
 
-    // Clear location_address
-    fireEvent.change(screen.getByTestId('input-location_address'), {
-      target: { name: 'location_address', value: '' },
-    });
+    // In our mock, Input name="categoryId" becomes data-testid="input-categoryId"
+    const select = screen.getByTestId('input-categoryId');
+    fireEvent.change(select, { target: { name: 'categoryId', value: 'cat2' } });
 
     fireEvent.click(screen.getByText('common.save'));
 
     expect(mockMutate).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ location_address: null }),
+        data: expect.objectContaining({
+          categoryId: 'cat2',
+        }),
       }),
     );
   });

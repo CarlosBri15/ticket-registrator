@@ -71,6 +71,13 @@
       "when": 1774307564494,
       "tag": "0009_jittery_william_stryker",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1774648703758,
+      "tag": "0010_blushing_dragon_lord",
+      "breakpoints": true
     }
   ]
 }

@@ -22,7 +22,7 @@ type FieldKey =
   | "amount"
   | "currency"
   | "payment_type"
-  | "expense_type";
+  | "categoryId";
 
 export const TicketConfirmationForm = ({
   ticket,
@@ -44,7 +44,7 @@ export const TicketConfirmationForm = ({
         : "",
     currency: ticket.currency || "",
     payment_type: ticket.payment_type || "",
-    expense_type: ticket.expense_type || "",
+    categoryId: ticket.items?.[0]?.categoryId || "",
   });
 
   const extracted: Record<FieldKey, boolean> = {
@@ -54,7 +54,7 @@ export const TicketConfirmationForm = ({
     amount: ticket.amount !== null && ticket.amount !== undefined,
     currency: isExtracted(ticket.currency),
     payment_type: isExtracted(ticket.payment_type),
-    expense_type: isExtracted(ticket.expense_type),
+    categoryId: isExtracted(ticket.items?.[0]?.categoryId),
   };
 
   const extractedCount = Object.values(extracted).filter(Boolean).length;
@@ -69,7 +69,7 @@ export const TicketConfirmationForm = ({
     amount: { label: t("confirmForm.amount"), placeholder: "0.00", icon: "dollar-sign", numeric: true },
     currency: { label: t("confirmForm.currency"), placeholder: "EUR", icon: "credit-card" },
     payment_type: { label: t("confirmForm.paymentMethod"), placeholder: t("confirmForm.paymentMethodPlaceholder"), icon: "credit-card" },
-    expense_type: { label: t("confirmForm.category"), placeholder: t("confirmForm.categoryPlaceholder"), icon: "tag" },
+    categoryId: { label: t("confirmForm.category"), placeholder: t("confirmForm.categoryPlaceholder"), icon: "tag" },
   };
 
   const formatExtractedValue = (key: FieldKey): string => {
@@ -100,7 +100,10 @@ export const TicketConfirmationForm = ({
       amount: formData.amount ? Number.parseFloat(formData.amount) : null,
       currency: formData.currency || null,
       payment_type: formData.payment_type || null,
-      expense_type: formData.expense_type || null,
+      items: ticket.items?.map((item, idx) => ({
+        ...item,
+        categoryId: idx === 0 ? formData.categoryId : item.categoryId,
+      })) || [],
     });
   };
 
@@ -153,7 +156,7 @@ export const TicketConfirmationForm = ({
                       {fieldMeta[key].label}
                     </Text>
                     <Text className="text-sm font-bold text-dark mt-0.5" numberOfLines={1}>
-                      {formatExtractedValue(key)}
+                      {key === "categoryId" ? (ticket.items?.[0]?.categoryName || "---") : formatExtractedValue(key)}
                     </Text>
                   </View>
                   <Feather name="check" size={14} color="#22c55e" />
@@ -190,7 +193,7 @@ export const TicketConfirmationForm = ({
                     placeholder={fieldMeta[key].placeholder}
                     placeholderTextColor="#d1a84a"
                     value={formData[key]}
-                    onChangeText={(v) => handleChange(key, v)}
+                    onChangeText={(v: string) => handleChange(key, v)}
                     keyboardType={fieldMeta[key].numeric ? "numeric" : "default"}
                   />
                 </View>

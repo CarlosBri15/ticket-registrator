@@ -20,6 +20,7 @@ interface ButtonProps extends TouchableOpacityProps {
   children: React.ReactNode;
   className?: string;
   textClassName?: string;
+  onPress?: () => void;
 }
 
 export const Button = ({
