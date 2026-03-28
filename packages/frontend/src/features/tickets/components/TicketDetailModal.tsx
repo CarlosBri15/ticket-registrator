@@ -3,11 +3,11 @@ import { Modal } from "../../../components/ui/Modal";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
-import { useTicketImageQuery, useUpdateTicketMutation, useCategoriesQuery, type ITicket } from "@ticket-registrator/shared";
+import { useTicketImageQuery, useUpdateTicketMutation, type ITicket } from "@ticket-registrator/shared";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
-import { MapPin, CreditCard, Tag, ExternalLink, Image as ImageIcon, Loader2, Pencil, X, ChevronDown } from "lucide-react";
+import { MapPin, CreditCard, ExternalLink, Image as ImageIcon, Loader2, Pencil, X } from "lucide-react";
 import { tokens, radius } from "../../../styles/theme";
 
 interface TicketDetailModalProps {
@@ -50,7 +50,7 @@ export const TicketDetailModal = ({
     ticket?.id || "",
   );
 
-  const { data: categories } = useCategoriesQuery();
+
 
   const updateMutation = useUpdateTicketMutation({
     onSuccess: () => setIsEditing(false),
