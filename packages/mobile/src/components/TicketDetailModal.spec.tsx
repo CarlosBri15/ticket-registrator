@@ -188,7 +188,7 @@ describe('TicketDetailModal — edit flow', () => {
     expect(getByDisplayValue('Restaurante Test')).toBeTruthy();
     expect(getByDisplayValue('EUR')).toBeTruthy();
     expect(getByDisplayValue('Tarjeta')).toBeTruthy();
-    expect(getByDisplayValue('Comida')).toBeTruthy();
+    expect(getByDisplayValue('cat1')).toBeTruthy();
   });
 
   it('pre-populates amount as string', () => {
