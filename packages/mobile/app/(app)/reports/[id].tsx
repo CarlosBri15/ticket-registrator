@@ -372,9 +372,9 @@ export default function ReportDetailScreen() {
                             {format(new Date(ticket.date), 'dd MMM yyyy', { locale: dateLocale })}
                           </Text>
                         )}
-                        {ticket.expense_type && (
+                        {ticket.items?.[0]?.categoryName && (
                           <View className="bg-brand/10 px-2 py-0.5 rounded-full">
-                            <Text className="text-[9px] font-bold text-brand">{ticket.expense_type}</Text>
+                            <Text className="text-[9px] font-bold text-brand">{ticket.items[0].categoryName}</Text>
                           </View>
                         )}
                       </View>

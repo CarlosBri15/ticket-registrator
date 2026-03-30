@@ -38,6 +38,7 @@ describe('clientContainer', () => {
         expect(typeof api.roles).toBe('function');
         expect(typeof api.organizations).toBe('function');
         expect(typeof api.permissions).toBe('function');
+        expect(typeof api.categories).toBe('function');
     });
 
     it('api.auth() should return authApi methods', () => {
@@ -157,5 +158,21 @@ describe('clientContainer', () => {
         expect(typeof methods.get).toBe('function');
         expect(typeof methods.update).toBe('function');
         expect(typeof methods.upload).toBe('function');
+    });
+
+    it('api.categories() should return categoriesApi methods', () => {
+        let setApiClient: (c: any) => void;
+        let api: any;
+        jest.isolateModules(() => {
+            ({ setApiClient, api } = require('./clientContainer'));
+        });
+        const mockClient = { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() };
+        setApiClient(mockClient);
+        const methods = api.categories();
+        expect(typeof methods.getAll).toBe('function');
+        expect(typeof methods.get).toBe('function');
+        expect(typeof methods.create).toBe('function');
+        expect(typeof methods.update).toBe('function');
+        expect(typeof methods.delete).toBe('function');
     });
 });

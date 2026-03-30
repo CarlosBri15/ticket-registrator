@@ -124,6 +124,10 @@ export class TicketsRepository {
     });
   }
 
+  async hardDelete(ticketId: string) {
+    return this.db.delete(schema.tickets).where(eq(schema.tickets.id, ticketId));
+  }
+
   async transaction<T>(
     callback: (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
   ): Promise<T> {

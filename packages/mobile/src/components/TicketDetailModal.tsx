@@ -27,7 +27,6 @@ interface TicketDetailModalProps {
   reportId: string;
   isEditable?: boolean;
 }
-
 type EditableFields = {
   location_name: string;
   location_address: string;
@@ -35,7 +34,7 @@ type EditableFields = {
   amount: string;
   currency: string;
   payment_type: string;
-  expense_type: string;
+  categoryId: string;
 };
 
 export const TicketDetailModal = ({
@@ -54,7 +53,7 @@ export const TicketDetailModal = ({
     amount: '',
     currency: '',
     payment_type: '',
-    expense_type: '',
+    categoryId: '',
   });
 
   const { data: imageData, isLoading: isLoadingImage } = useTicketImageQuery(
@@ -75,7 +74,7 @@ export const TicketDetailModal = ({
       amount: ticket.amount == null ? '' : String(ticket.amount),
       currency: ticket.currency ?? '',
       payment_type: ticket.payment_type ?? '',
-      expense_type: ticket.expense_type ?? '',
+      categoryId: ticket.items?.[0]?.categoryId ?? '',
     });
     setIsEditing(true);
   };
@@ -92,7 +91,10 @@ export const TicketDetailModal = ({
         amount: formData.amount ? Number.parseFloat(formData.amount) : null,
         currency: formData.currency || null,
         payment_type: formData.payment_type || null,
-        expense_type: formData.expense_type || null,
+        items: ticket.items?.map((item, idx) => ({
+          ...item,
+          categoryId: idx === 0 ? formData.categoryId : item.categoryId,
+        })) || [],
       },
     });
   };
@@ -188,7 +190,7 @@ export const TicketDetailModal = ({
                 <TextInput
                   className={mt.input}
                   value={formData.location_name}
-                  onChangeText={v => setFormData(p => ({ ...p, location_name: v }))}
+                  onChangeText={(v: string) => setFormData(p => ({ ...p, location_name: v }))}
                   placeholder={t('confirmForm.establishmentPlaceholder')}
                 />
               </View>
@@ -197,7 +199,7 @@ export const TicketDetailModal = ({
                 <TextInput
                   className={mt.input}
                   value={formData.location_address}
-                  onChangeText={v => setFormData(p => ({ ...p, location_address: v }))}
+                  onChangeText={(v: string) => setFormData(p => ({ ...p, location_address: v }))}
                   placeholder={t('confirmForm.addressPlaceholder')}
                 />
               </View>
@@ -207,7 +209,7 @@ export const TicketDetailModal = ({
                   <TextInput
                     className={mt.input}
                     value={formData.amount}
-                    onChangeText={v => setFormData(p => ({ ...p, amount: v }))}
+                    onChangeText={(v: string) => setFormData(p => ({ ...p, amount: v }))}
                     keyboardType="decimal-pad"
                     placeholder="0.00"
                   />
@@ -217,7 +219,7 @@ export const TicketDetailModal = ({
                   <TextInput
                     className={mt.input}
                     value={formData.currency}
-                    onChangeText={v => setFormData(p => ({ ...p, currency: v }))}
+                    onChangeText={(v: string) => setFormData(p => ({ ...p, currency: v }))}
                     placeholder="EUR"
                     autoCapitalize="characters"
                   />
@@ -228,7 +230,7 @@ export const TicketDetailModal = ({
                 <TextInput
                   className={mt.input}
                   value={formData.payment_type}
-                  onChangeText={v => setFormData(p => ({ ...p, payment_type: v }))}
+                  onChangeText={(v: string) => setFormData(p => ({ ...p, payment_type: v }))}
                   placeholder={t('confirmForm.paymentMethodPlaceholder')}
                 />
               </View>
@@ -236,8 +238,8 @@ export const TicketDetailModal = ({
                 <Text className="text-xs font-bold text-gray-400 uppercase mb-1">{t('confirmForm.category')}</Text>
                 <TextInput
                   className={mt.input}
-                  value={formData.expense_type}
-                  onChangeText={v => setFormData(p => ({ ...p, expense_type: v }))}
+                  value={formData.categoryId}
+                  onChangeText={(v: string) => setFormData(p => ({ ...p, categoryId: v }))}
                   placeholder={t('confirmForm.categoryPlaceholder')}
                 />
               </View>
@@ -299,7 +301,7 @@ export const TicketDetailModal = ({
                   <View className="flex-1">
                     <Text className="text-[10px] font-bold text-gray-400 uppercase">{t('reportDetail.category')}</Text>
                     <Text className="text-sm font-medium text-dark mt-0.5">
-                      {ticket.expense_type || '---'}
+                      {ticket.items?.[0]?.categoryName || '---'}
                     </Text>
                   </View>
                 </View>

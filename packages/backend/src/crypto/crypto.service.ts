@@ -9,7 +9,7 @@ import { bmvbhash } from 'blockhash-core';
 export class CryptoService {
   private readonly SALT_ROUNDS = 10;
 
-  constructor(private readonly configService: ConfigService) { }
+  constructor(private readonly configService: ConfigService) {}
 
   private get pepper(): string {
     const value = this.configService.get<string>('PASSWORD_PEPPER');

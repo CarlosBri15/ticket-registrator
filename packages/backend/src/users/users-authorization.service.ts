@@ -37,7 +37,7 @@ export class UsersAuthorizationService {
     requester: {
       id: string;
       roleHierarchy: number;
-      companyId: string;
+      companyId: string | null;
       permissions: PermissionType[];
     },
     targetUser: User & { role: { hierarchy: number } | null },

@@ -106,8 +106,9 @@ describe('TicketUploadModal', () => {
     act(() => {
       capturedConfig.onSuccess({
         id: 't1', location_name: 'Test Restaurant', amount: 25, currency: 'EUR',
-        status: 'PENDING', date: '2024-01-10', expense_type: 'Comida',
+        status: 'Pending', date: '2024-01-10',
         location_address: 'Calle 1', payment_type: 'Tarjeta',
+        items: [{ id: 'i1', name: 'Item 1', categoryId: 'cat1', categoryName: 'Comida', amount: 25, currency: 'EUR', status: 'Pending' }]
       });
     });
 
@@ -127,8 +128,9 @@ describe('TicketUploadModal', () => {
     act(() => {
       capturedConfig.onSuccess({
         id: 't1', location_name: null, amount: null, currency: null,
-        status: 'PENDING', date: null, expense_type: null,
+        status: 'Pending', date: null,
         location_address: null, payment_type: null,
+        items: [],
       });
     });
 
@@ -162,7 +164,7 @@ describe('TicketUploadModal', () => {
 
     render(<TicketUploadModal isOpen={true} onClose={vi.fn()} reportId="r1" />);
     act(() => {
-      capturedUploadSuccess?.({ id: 't1', location_name: 'Cafe', amount: 10, currency: 'EUR', status: 'PENDING', date: '2025-01-01', expense_type: 'Food', location_address: 'Calle 1', payment_type: 'Card' });
+      capturedUploadSuccess?.({ id: 't1', location_name: 'Cafe', amount: 10, currency: 'EUR', status: 'Pending', date: '2025-01-01', location_address: 'Calle 1', payment_type: 'Card', items: [] });
     });
     act(() => {
       capturedOnConfirm?.({ amount: 12 });
@@ -181,7 +183,7 @@ describe('TicketUploadModal', () => {
 
     render(<TicketUploadModal isOpen={true} onClose={vi.fn()} reportId="r1" />);
     act(() => {
-      capturedUploadSuccess?.({ id: 't1', location_name: 'Cafe', amount: 10, currency: 'EUR', status: 'PENDING', date: '2025-01-01', expense_type: 'Food', location_address: 'Calle 1', payment_type: 'Card' });
+      capturedUploadSuccess?.({ id: 't1', location_name: 'Cafe', amount: 10, currency: 'EUR', status: 'Pending', date: '2025-01-01', location_address: 'Calle 1', payment_type: 'Card', items: [] });
     });
     act(() => {
       capturedOnCancel?.();

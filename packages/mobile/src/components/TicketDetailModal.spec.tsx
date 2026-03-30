@@ -27,19 +27,30 @@ jest.mock('react-native-safe-area-context', () => ({
 
 const baseTicket: ITicket = {
   id: 'ticket-1',
-  status: 'CREATED',
+  report_id: 'report-1',
+  lifecycle: 'Draft',
+  version: 1,
+  status: 'Pending',
+  cgs_bucket_link: null,
   location_name: 'Restaurante Test',
   location_address: 'Calle Mayor 1',
   date: '2024-03-15T00:00:00.000Z',
   amount: 42.5,
   currency: 'EUR',
+  converted_amount: null,
+  converted_currency: null,
+  cgs_bucket_link_justification: null,
   payment_type: 'Tarjeta',
-  expense_type: 'Comida',
   last_four_digits: '1234',
+  image_id: null,
+  flag: false,
+  llm_comment: null,
   items: [
-    { name: 'Menú', amount: 30, currency: 'EUR' },
-    { name: 'Bebida', amount: 12.5, currency: 'EUR' },
+    { id: 'i1', name: 'Menú', amount: 30, currency: 'EUR', status: 'Pending', categoryId: 'cat1', categoryName: 'Comida' },
+    { id: 'i2', name: 'Bebida', amount: 12.5, currency: 'EUR', status: 'Pending', categoryId: 'cat1', categoryName: 'Comida' },
   ],
+  createdAt: '2024-03-15T00:00:00.000Z',
+  updatedAt: '2024-03-15T00:00:00.000Z',
 };
 
 describe('TicketDetailModal — read-only view', () => {
@@ -177,7 +188,7 @@ describe('TicketDetailModal — edit flow', () => {
     expect(getByDisplayValue('Restaurante Test')).toBeTruthy();
     expect(getByDisplayValue('EUR')).toBeTruthy();
     expect(getByDisplayValue('Tarjeta')).toBeTruthy();
-    expect(getByDisplayValue('Comida')).toBeTruthy();
+    expect(getByDisplayValue('cat1')).toBeTruthy();
   });
 
   it('pre-populates amount as string', () => {
@@ -250,7 +261,7 @@ describe('TicketDetailModal — edit flow', () => {
   });
 
   it('passes null for empty string fields when saving', () => {
-    const ticket = { ...baseTicket, location_name: null, payment_type: null, expense_type: null, amount: null };
+    const ticket = { ...baseTicket, location_name: null, payment_type: null, items: [], amount: null };
     const mutate = jest.fn();
     const shared = require('@ticket-registrator/shared');
     (shared.useUpdateTicketMutation as jest.Mock).mockReturnValue({ mutate, isPending: false });
@@ -346,7 +357,7 @@ describe('TicketDetailModal — edit flow', () => {
     expect(getByDisplayValue('Efectivo')).toBeTruthy();
   });
 
-  it('updates expense_type when user types', () => {
+  it('updates categoryId when user types', () => {
     const { getByTestId, getByPlaceholderText, getByDisplayValue } = render(
       <TicketDetailModal visible={true} onClose={jest.fn()} ticket={baseTicket} reportId="r1" isEditable={true} />,
     );

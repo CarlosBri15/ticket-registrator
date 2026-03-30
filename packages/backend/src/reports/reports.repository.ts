@@ -10,7 +10,7 @@ export class ReportsRepository {
   constructor(
     @Inject(DB_CONNECTION)
     private readonly db: PostgresJsDatabase<typeof schema>,
-  ) { }
+  ) {}
 
   async findById(id: string): Promise<Report | undefined> {
     return this.db.query.reports.findFirst({

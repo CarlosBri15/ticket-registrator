@@ -51,7 +51,7 @@ export class ReportsService {
   constructor(
     private readonly reportsRepository: ReportsRepository,
     private readonly reportsAuthorizationService: ReportsAuthorizationService,
-  ) { }
+  ) {}
 
   async create(requester: UserPayload, dto: CreateReportDto): Promise<IReport> {
     await this.reportsAuthorizationService.getVisibleUser(requester.id);
@@ -263,14 +263,14 @@ export class ReportsService {
     } else if (maxHierarchy >= AUTHORITY_LEVELS.COMPANY) {
       conditions.push(
         and(
-          eq(schema.users.companyId, requester.companyId),
+          eq(schema.users.companyId, requester.companyId!),
           isNull(schema.users.deletedAt),
         )!,
       );
     } else if (maxHierarchy >= AUTHORITY_LEVELS.DEPARTMENT) {
       conditions.push(
         and(
-          eq(schema.users.companyId, requester.companyId),
+          eq(schema.users.companyId, requester.companyId!),
           sql`EXISTS (SELECT 1 FROM ${schema.usersToDepartments} ud WHERE ud.user_id = ${schema.users.id} AND ud.department_id = ANY(${requester.departmentIds}::uuid[]))`,
           isNull(schema.users.deletedAt),
         )!,

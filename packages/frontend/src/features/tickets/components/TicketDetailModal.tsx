@@ -7,7 +7,7 @@ import { useTicketImageQuery, useUpdateTicketMutation, type ITicket } from "@tic
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
-import { MapPin, CreditCard, Tag, ExternalLink, Image as ImageIcon, Loader2, Pencil, X } from "lucide-react";
+import { MapPin, CreditCard, ExternalLink, Image as ImageIcon, Loader2, Pencil, X } from "lucide-react";
 import { tokens, radius } from "../../../styles/theme";
 
 interface TicketDetailModalProps {
@@ -50,6 +50,8 @@ export const TicketDetailModal = ({
     ticket?.id || "",
   );
 
+
+
   const updateMutation = useUpdateTicketMutation({
     onSuccess: () => setIsEditing(false),
   });
@@ -88,6 +90,7 @@ export const TicketDetailModal = ({
         amount: formData.amount ? Number.parseFloat(formData.amount) : null,
         currency: formData.currency || null,
         payment_type: formData.payment_type || null,
+        items: ticket.items || [],
       },
     });
   };
@@ -185,15 +188,6 @@ export const TicketDetailModal = ({
                 onChange={handleChange}
                 placeholder={t("confirmForm.paymentMethodPlaceholder")}
               />
-              <div className="md:col-span-2">
-                <Input
-                  label={t("confirmForm.category")}
-                  name="expense_type"
-                  value={formData.payment_type}
-                  onChange={handleChange}
-                  placeholder={t("confirmForm.categoryPlaceholder")}
-                />
-              </div>
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -247,15 +241,6 @@ export const TicketDetailModal = ({
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <div className={`w-8 h-8 bg-slate-50 ${radius.base} flex items-center justify-center shrink-0`}>
-                    <Tag className="w-4 h-4 text-slate-400" />
-                  </div>
-                  <div>
-                    <p className={tokens.statCardLabel}>{t("reportDetail.category")}</p>
-                    <p className="text-sm font-medium text-dark mt-0.5">{ticket.items?.[0]?.expense_type || "---"}</p>
-                  </div>
-                </div>
               </div>
 
               <div className={`bg-slate-50 ${radius.card} p-4 overflow-hidden flex flex-col items-center justify-center min-h-[200px] border border-slate-100 group relative`}>

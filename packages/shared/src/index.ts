@@ -47,6 +47,7 @@ export * from './hooks/useOrganizations';
 export * from './hooks/usePermissions';
 export * from './hooks/usePermissionsManagement';
 export * from './hooks/useScope';
+export * from './hooks/useCategories';
 
 // Shared components (React.Fragment only — compatible with web and mobile)
 export * from './components/PermissionGuard';

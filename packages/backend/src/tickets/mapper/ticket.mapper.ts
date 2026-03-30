@@ -5,9 +5,10 @@ import {
   TicketLifecycleType,
 } from '@ticket-registrator/shared';
 import { Item } from '../../items/schemas/item.schema';
+import { Category } from '../../categories/schemas/category.schema';
 
 export const mapTicketToITicket = (
-  ticketDoc: Ticket & { items?: Item[] },
+  ticketDoc: Ticket & { items?: (Item & { category?: Category })[] },
 ): ITicket => ({
   id: ticketDoc.id,
   report_id: ticketDoc.reportId,
@@ -35,7 +36,8 @@ export const mapTicketToITicket = (
       amount: item.amount,
       currency: item.currency,
       status: item.status,
-      expense_type: item.expenseType,
+      categoryId: item.categoryId,
+      categoryName: item.category?.name,
     })) ?? [],
   createdAt: ticketDoc.createdAt?.toISOString() ?? new Date().toISOString(),
   updatedAt: ticketDoc.updatedAt?.toISOString() ?? new Date().toISOString(),

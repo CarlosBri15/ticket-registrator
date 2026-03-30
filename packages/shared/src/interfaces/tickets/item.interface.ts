@@ -6,6 +6,7 @@ export interface IItem {
   amount: number | null;
   currency: string | null;
   status: ItemStatusType;
-  expense_type: string | null;
+  categoryId: string | null;
+  categoryName?: string | null;
 }
 

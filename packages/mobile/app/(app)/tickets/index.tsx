@@ -31,7 +31,7 @@ const ReportTicketGroup = ({ report, search, onTicketPress }: ReportTicketGroupP
     const q = search.toLowerCase();
     return (
       ticket.location_name?.toLowerCase().includes(q) ||
-      ticket.expense_type?.toLowerCase().includes(q) ||
+      ticket.items?.[0]?.categoryName?.toLowerCase().includes(q) ||
       String(ticket.amount).includes(q)
     );
   });
@@ -68,9 +68,9 @@ const ReportTicketGroup = ({ report, search, onTicketPress }: ReportTicketGroupP
                   <Text className="text-[10px] text-gray-400">
                     {ticket.date ? new Date(ticket.date).toLocaleDateString() : '---'}
                   </Text>
-                  {ticket.expense_type ? (
+                  {ticket.items?.[0]?.categoryName ? (
                     <View className="bg-gray-100 px-2 py-0.5 rounded-full">
-                      <Text className="text-[9px] font-bold text-gray-500 uppercase">{ticket.expense_type}</Text>
+                      <Text className="text-[9px] font-bold text-gray-500 uppercase">{ticket.items[0].categoryName}</Text>
                     </View>
                   ) : null}
                 </View>
@@ -109,7 +109,7 @@ export default function AllTicketsScreen() {
       {/* Header */}
       <View className={mt.pageHeader}>
         <View className="flex-row items-center gap-2 mb-1">
-          <Feather name="receipt" size={18} color={colors.brand} />
+          <Feather name="file-text" size={18} color={colors.brand} />
           <Text className={mt.pageHeaderTitle}>{t('layout.allTickets')}</Text>
         </View>
         <Text className="text-sm text-gray-400">{t('layout.fullHistory')}</Text>

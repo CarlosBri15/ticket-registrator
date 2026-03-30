@@ -10,14 +10,14 @@ const mapItemToIItem = (item: Item): IItem => ({
   amount: item.amount,
   currency: item.currency,
   status: item.status,
-  expense_type: item.expenseType,
+  categoryId: item.categoryId,
 });
 
 @Injectable()
 export class ItemsService {
   private readonly logger = new Logger(ItemsService.name);
 
-  constructor(private readonly itemsRepository: ItemsRepository) { }
+  constructor(private readonly itemsRepository: ItemsRepository) {}
 
   async findByTicketId(ticketId: string): Promise<IItem[]> {
     const items = await this.itemsRepository.findByTicketId(ticketId);

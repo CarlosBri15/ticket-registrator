@@ -1,7 +1,22 @@
-export const getReceiptPrompt = (languageCode: string = 'en') => `
+export const getReceiptPrompt = (
+  languageCode: string = 'en',
+  categories: { name: string; description: string }[] = [],
+) => `
 Act as an expert OCR data extraction and receipt translation system.
 
 Your goal is to extract information from a ticket image and return it structured in the defined JSON format.
+
+${
+  categories.length > 0
+    ? `
+CLASSIFICATION RULE (CRITICAL):
+You must assign EXACTLY ONE category to each item from the following list:
+${categories.map((cat) => `- ${cat.name}: ${cat.description}`).join('\n')}
+
+If an item does not fit any category clearly, choose the most logical one from the list above.
+`
+    : ''
+}
 
 EXTRACTION AND TRANSLATION RULES:
 
@@ -36,7 +51,7 @@ EXTRACTION AND TRANSLATION RULES:
      - Use the establishment's location (country/region) to infer the most likely date format:
        - **Europe/Spain/LatAm:** Usually **DD/MM/YY** or **DD/MM/YYYY**.
        - **USA/Canada:** Usually **MM/DD/YY** or **MM/DD/YYYY**.
-   - **ANTI-HALLUCINATION RULE:** If the date is not clearly visible, is obscured, or you are unsure, **DO NOT GUESS**. Return **null** for the date and set the "flag" to true. Do not invent a date based on today's date unless the receipt explicitly says "Today".
+   - **ANTI-HALLUCINATION RULE:** If the date is not clearly visible, is obscured, or you are unsure, **DO NOT GUESS**. Do not return any date and set the "flag" to true. Do not invent a date based on today's date unless the receipt explicitly says "Today".
 
 5. PAYMENT:
    - Extract and translate the method (e.g., "Card", "Cash").
@@ -48,7 +63,7 @@ EXTRACTION AND TRANSLATION RULES:
    - Extract products and prices.
    - If quantity > 1, duplicate the item in the list.
    - Translate all descriptions to the requested language (${languageCode}).
-   - **Extract expense_type** for each item (e.g., "Food", "Transport", "Cleaning", "Electronics").
+    - **Extract category** for each item using the CLASSIFICATION RULE above.
 
 7. TOTAL:
    - Extract the final total as a float.
@@ -82,8 +97,8 @@ Output: {
   "payment_method": "Card",
   "card_last_4": "1234",
   "items": [
-    { "description": "Daily menu", "price": 12.50, "expense_type": "Food" },
-    { "description": "Craft beer", "price": 3.50, "expense_type": "Food" }
+    { "description": "Daily menu", "price": 12.50, "category": "Food" },
+    { "description": "Craft beer", "price": 3.50, "category": "Food" }
   ],
   "total": 16.00,
   "flag": false,
@@ -127,16 +142,16 @@ Output: {
   "payment_method": "Card",
   "card_last_4": "9988",
   "items": [
-    { "description": "Whole milk 1L", "price": 0.95, "expense_type": "Groceries" },
-    { "description": "Sliced bread", "price": 1.20, "expense_type": "Groceries" },
-    { "description": "Apples kg", "price": 2.50, "expense_type": "Groceries" },
-    { "description": "Liquid detergent", "price": 5.99, "expense_type": "Cleaning" },
-    { "description": "Natural yogurt x4", "price": 1.80, "expense_type": "Groceries" },
-    { "description": "Extra rice 1kg", "price": 1.35, "expense_type": "Groceries" },
-    { "description": "Olive oil 1L", "price": 8.50, "expense_type": "Groceries" },
-    { "description": "Toilet paper x12", "price": 4.25, "expense_type": "Cleaning" },
-    { "description": "Eggs L x12", "price": 2.40, "expense_type": "Groceries" },
-    { "description": "Spaghetti pasta", "price": 0.85, "expense_type": "Groceries" }
+    { "description": "Whole milk 1L", "price": 0.95, "category": "Groceries" },
+    { "description": "Sliced bread", "price": 1.20, "category": "Groceries" },
+    { "description": "Apples kg", "price": 2.50, "category": "Groceries" },
+    { "description": "Liquid detergent", "price": 5.99, "category": "Cleaning" },
+    { "description": "Natural yogurt x4", "price": 1.80, "category": "Groceries" },
+    { "description": "Extra rice 1kg", "price": 1.35, "category": "Groceries" },
+    { "description": "Olive oil 1L", "price": 8.50, "category": "Groceries" },
+    { "description": "Toilet paper x12", "price": 4.25, "category": "Cleaning" },
+    { "description": "Eggs L x12", "price": 2.40, "category": "Groceries" },
+    { "description": "Spaghetti pasta", "price": 0.85, "category": "Groceries" }
   ],
   "total": 29.79,
   "flag": false,
@@ -159,8 +174,8 @@ Output: {
   "payment_method": "Card",
   "card_last_4": "5544",
   "items": [
-    { "description": "Gasoline 95 E5 40L", "price": 65.20, "expense_type": "Transport" },
-    { "description": "Premium tunnel wash", "price": 9.00, "expense_type": "Transport" }
+    { "description": "Gasoline 95 E5 40L", "price": 65.20, "category": "Transport" },
+    { "description": "Premium tunnel wash", "price": 9.00, "category": "Transport" }
   ],
   "total": 74.20,
   "flag": false,
@@ -183,8 +198,8 @@ Output: {
   "payment_method": "Card",
   "card_last_4": "0011",
   "items": [
-    { "description": "Wireless headphones", "price": 45.99, "expense_type": "Electronics" },
-    { "description": "Phone case", "price": 12.00, "expense_type": "Electronics" }
+    { "description": "Wireless headphones", "price": 45.99, "category": "Electronics" },
+    { "description": "Phone case", "price": 12.00, "category": "Electronics" }
   ],
   "total": 57.99,
   "flag": false,

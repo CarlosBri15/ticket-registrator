@@ -99,6 +99,17 @@ export class TicketsController {
   }
 
   @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(permissions.DELETE_TICKETS)
+  @Delete(':ticketId/hard')
+  hardDelete(
+    @CurrentUser() requester: UserPayload,
+    @Param('reportId', ParseUUIDPipe) reportId: string,
+    @Param('ticketId', ParseUUIDPipe) ticketId: string,
+  ) {
+    return this.ticketsService.hardDelete(requester, reportId, ticketId);
+  }
+
+  @UseGuards(PermissionsGuard)
   @RequireAnyPermission(permissions.VIEW_TICKETS)
   @Get(':ticketId/image')
   getImage(

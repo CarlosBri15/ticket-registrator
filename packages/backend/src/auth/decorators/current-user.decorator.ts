@@ -6,7 +6,7 @@ export interface UserPayload {
   roleId: string;
   roleName: RoleType;
   roleHierarchy: number;
-  companyId: string;
+  companyId: string | null;
   departmentIds: string[];
   permissions: PermissionType[];
 }

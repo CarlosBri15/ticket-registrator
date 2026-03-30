@@ -35,7 +35,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly categoriesRepository: CategoriesRepository,
     @Inject(DB_CONNECTION)
     private readonly db: PostgresJsDatabase<typeof schema>,
-  ) { }
+  ) {}
 
   async onApplicationBootstrap() {
     this.logger.log('--- AUTO MIGRATIONS START ---');
@@ -183,7 +183,8 @@ export class SeedService implements OnApplicationBootstrap {
   }
 
   async seedDefaultCategories() {
-    const existingCategories = await this.categoriesRepository.findAllSystemCategories();
+    const existingCategories =
+      await this.categoriesRepository.findAllSystemCategories();
     const existingMap = new Map(existingCategories.map((c) => [c.name, c]));
 
     let seededCount = 0;

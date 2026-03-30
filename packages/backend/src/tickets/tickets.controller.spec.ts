@@ -18,6 +18,7 @@ describe('TicketsController', () => {
       update: jest.fn(),
       updateStatus: jest.fn(),
       remove: jest.fn(),
+      hardDelete: jest.fn(),
       getTicketImageUrl: jest.fn(),
     };
 
@@ -144,7 +145,27 @@ describe('TicketsController', () => {
     });
   });
 
+  describe('hardDelete', () => {
+    it('should call service.hardDelete', async () => {
+      const requester = { id: 'user-1' } as any;
+      serviceMock.hardDelete.mockResolvedValue({ deleted: true });
+
+      const result = await controller.hardDelete(
+        requester,
+        'report-1',
+        'ticket-1',
+      );
+      expect(serviceMock.hardDelete).toHaveBeenCalledWith(
+        requester,
+        'report-1',
+        'ticket-1',
+      );
+      expect(result).toEqual({ deleted: true });
+    });
+  });
+
   describe('getImage', () => {
+
     it('should call service.getTicketImageUrl', async () => {
       const requester = { id: 'user-1' } as any;
       serviceMock.getTicketImageUrl.mockResolvedValue({

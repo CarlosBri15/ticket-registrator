@@ -77,7 +77,10 @@ describe('TicketsRepository', () => {
 
   describe('findByImageId', () => {
     it('should call db.query.tickets.findFirst with the imageId', async () => {
-      dbMock.query.tickets.findFirst.mockResolvedValue({ id: 'ticket-1', imageId: 'img-1' });
+      dbMock.query.tickets.findFirst.mockResolvedValue({
+        id: 'ticket-1',
+        imageId: 'img-1',
+      });
       const result = await repository.findByImageId('img-1');
       expect(dbMock.query.tickets.findFirst).toHaveBeenCalled();
       expect(result?.imageId).toBe('img-1');
@@ -118,14 +121,22 @@ describe('TicketsRepository', () => {
     it('should return a ticket when a semantic duplicate exists', async () => {
       const date = new Date('2024-01-01');
       dbMock.query.tickets.findFirst.mockResolvedValue({ id: 'ticket-1' });
-      const result = await repository.findSemanticDuplicate(date, 50.0, 'Coffee Shop');
+      const result = await repository.findSemanticDuplicate(
+        date,
+        50.0,
+        'Coffee Shop',
+      );
       expect(dbMock.query.tickets.findFirst).toHaveBeenCalled();
       expect(result?.id).toBe('ticket-1');
     });
 
     it('should return undefined when no semantic duplicate exists', async () => {
       dbMock.query.tickets.findFirst.mockResolvedValue(undefined);
-      const result = await repository.findSemanticDuplicate(new Date(), 0, 'Unknown');
+      const result = await repository.findSemanticDuplicate(
+        new Date(),
+        0,
+        'Unknown',
+      );
       expect(result).toBeUndefined();
     });
   });
@@ -181,7 +192,11 @@ describe('TicketsRepository', () => {
     it('should insert history and update ticket in a transaction', async () => {
       dbMock.returning.mockResolvedValue([{ id: 'ticket-1' }]);
 
-      await repository.updateWithHistory('ticket-1', { status: 'APPROVED' } as any, historyData);
+      await repository.updateWithHistory(
+        'ticket-1',
+        { status: 'APPROVED' } as any,
+        historyData,
+      );
 
       expect(dbMock.insert).toHaveBeenCalledWith(schema.ticketHistories);
       expect(dbMock.update).toHaveBeenCalledWith(schema.tickets);
@@ -191,7 +206,12 @@ describe('TicketsRepository', () => {
       dbMock.returning.mockResolvedValue([{ id: 'ticket-1' }]);
       const items = [{ name: 'Item 1', amount: 10 }] as any;
 
-      await repository.updateWithHistory('ticket-1', {} as any, historyData, items);
+      await repository.updateWithHistory(
+        'ticket-1',
+        {} as any,
+        historyData,
+        items,
+      );
 
       expect(dbMock.delete).toHaveBeenCalledWith(schema.items);
       expect(dbMock.insert).toHaveBeenCalledWith(schema.items);
@@ -200,7 +220,12 @@ describe('TicketsRepository', () => {
     it('should delete items but NOT re-insert when itemsToUpdate is empty array', async () => {
       dbMock.returning.mockResolvedValue([{ id: 'ticket-1' }]);
 
-      await repository.updateWithHistory('ticket-1', {} as any, historyData, []);
+      await repository.updateWithHistory(
+        'ticket-1',
+        {} as any,
+        historyData,
+        [],
+      );
 
       expect(dbMock.delete).toHaveBeenCalledWith(schema.items);
       expect(dbMock.insert).not.toHaveBeenCalledWith(schema.items);
@@ -210,7 +235,12 @@ describe('TicketsRepository', () => {
       dbMock.returning.mockResolvedValue([{ id: 'ticket-1' }]);
       dbMock.delete.mockClear();
 
-      await repository.updateWithHistory('ticket-1', {} as any, historyData, undefined);
+      await repository.updateWithHistory(
+        'ticket-1',
+        {} as any,
+        historyData,
+        undefined,
+      );
 
       expect(dbMock.delete).not.toHaveBeenCalledWith(schema.items);
     });

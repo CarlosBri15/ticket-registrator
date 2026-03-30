@@ -87,7 +87,8 @@ describe('AllTicketsScreen', () => {
     (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
       data: [{
         id: 't1', location_name: 'Restaurante El Sol', amount: 25, currency: 'EUR',
-        status: 'PENDING', date: '2024-01-10', expense_type: 'Comida',
+        status: 'Pending', date: '2024-01-10',
+        items: [{ id: 'i1', categoryName: 'Comida', categoryId: 'cat1', status: 'Pending', amount: 25, currency: 'EUR', name: 'Item 1' }]
       }],
       isLoading: false,
     });
@@ -103,7 +104,8 @@ describe('AllTicketsScreen', () => {
     (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
       data: [{
         id: 't1', location_name: 'Tienda ABC', amount: 10, currency: 'EUR',
-        status: 'PENDING', date: '2024-01-10', expense_type: 'Otro',
+        status: 'Pending', date: '2024-01-10',
+        items: [{ id: 'i1', categoryName: 'Otro', categoryId: 'cat2', status: 'Pending', amount: 10, currency: 'EUR', name: 'Item 1' }]
       }],
       isLoading: false,
     });
@@ -127,7 +129,7 @@ describe('AllTicketsScreen', () => {
       isLoading: false,
     });
     (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 't1', location_name: 'Restaurante Sol', amount: 25, currency: 'EUR', status: 'PENDING', date: '2024-01-10' }],
+      data: [{ id: 't1', location_name: 'Restaurante Sol', amount: 25, currency: 'EUR', status: 'Pending', date: '2024-01-10', items: [] }],
       isLoading: false,
     });
     renderScreen();
@@ -142,8 +144,8 @@ describe('AllTicketsScreen', () => {
     });
     (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
       data: [
-        { id: 't1', location_name: 'Restaurante Sol', amount: 25, currency: 'EUR', status: 'PENDING', date: '2024-01-10', expense_type: 'Comida' },
-        { id: 't2', location_name: 'Hotel Central', amount: 120, currency: 'EUR', status: 'APPROVED', date: '2024-01-11', expense_type: 'Alojamiento' },
+        { id: 't1', location_name: 'Restaurante Sol', amount: 25, currency: 'EUR', status: 'Pending', date: '2024-01-10', items: [{ categoryName: 'Comida' }] },
+        { id: 't2', location_name: 'Hotel Central', amount: 120, currency: 'EUR', status: 'Approved', date: '2024-01-11', items: [{ categoryName: 'Alojamiento' }] },
       ],
       isLoading: false,
     });
@@ -159,7 +161,7 @@ describe('AllTicketsScreen', () => {
       isLoading: false,
     });
     (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 't1', location_name: 'Restaurante Sol', amount: 25, currency: 'EUR', status: 'PENDING', date: '2024-01-10', expense_type: 'Comida' }],
+      data: [{ id: 't1', location_name: 'Restaurante Sol', amount: 25, currency: 'EUR', status: 'Pending', date: '2024-01-10', items: [{ categoryName: 'Comida' }] }],
       isLoading: false,
     });
     renderScreen();
@@ -173,7 +175,7 @@ describe('AllTicketsScreen', () => {
       isLoading: false,
     });
     (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 't1', location_name: 'Ticket sin fecha', amount: 10, currency: 'EUR', status: 'PENDING', date: null }],
+      data: [{ id: 't1', location_name: 'Ticket sin fecha', amount: 10, currency: 'EUR', status: 'Pending', date: null, items: [] }],
       isLoading: false,
     });
     renderScreen();
@@ -186,7 +188,7 @@ describe('AllTicketsScreen', () => {
       isLoading: false,
     });
     (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 't1', location_name: null, amount: 10, currency: 'EUR', status: 'PENDING', date: '2024-01-10' }],
+      data: [{ id: 't1', location_name: null, amount: 10, currency: 'EUR', status: 'Pending', date: '2024-01-10', items: [] }],
       isLoading: false,
     });
     renderScreen();
