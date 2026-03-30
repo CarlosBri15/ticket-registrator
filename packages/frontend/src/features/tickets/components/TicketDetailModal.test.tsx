@@ -274,10 +274,21 @@ describe('TicketDetailModal', () => {
     expect(screen.queryByTestId('input-location_name')).not.toBeInTheDocument();
   });
 
-  it('view mode shows close button', () => {
-    renderModal({ isEditable: true });
-    // In view mode (not editing) the close button is visible
-    expect(screen.getByText('common.close')).toBeInTheDocument();
+  it('view mode shows close button and calls onClose when clicked', () => {
+    const mockOnClose = vi.fn();
+    render(
+      <TicketDetailModal
+        isOpen={true}
+        onClose={mockOnClose}
+        ticket={mockTicket as any}
+        reportId="r1"
+        isEditable={true}
+      />
+    );
+    const closeBtn = screen.getByText('common.close');
+    expect(closeBtn).toBeInTheDocument();
+    fireEvent.click(closeBtn);
+    expect(mockOnClose).toHaveBeenCalled();
   });
 
   it('edit mode hides the close button', () => {

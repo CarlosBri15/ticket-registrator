@@ -186,6 +186,29 @@ describe('ReportDetailScreen', () => {
     expect(screen.getByText('Hotel Central')).toBeInTheDocument();
   });
 
+  it('renders ticket with category badge when items have categoryName', () => {
+    (useReportQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: {
+        id: 'r1', name: 'Viaje Madrid', status: 'CREATED',
+        start_date: '2024-01-01', end_date: '2024-01-05',
+        requested_amount: 300, approved_amount: null, currency: 'EUR',
+      },
+      isLoading: false,
+      isError: false,
+    });
+    (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [
+        {
+          id: 't1', location_name: 'Restaurante Sol', amount: 25, currency: 'EUR', status: 'PENDING', date: '2024-01-10',
+          items: [{ categoryId: 'c1', categoryName: 'Gastos de Comida', amount: 25, currency: 'EUR' }]
+        },
+      ],
+      isLoading: false,
+    });
+    renderScreen();
+    expect(screen.getByText('Gastos de Comida')).toBeInTheDocument();
+  });
+
   it('shows delete confirm dialog when delete button is clicked', () => {
     (useReportQuery as ReturnType<typeof vi.fn>).mockReturnValue({
       data: {
@@ -422,10 +445,10 @@ describe('ReportDetailScreen', () => {
       isError: false,
     });
     renderScreen();
-    
+
     // Open delete dialog
     fireEvent.click(screen.getByText('common.delete'));
-    
+
     // Confirm delete
     fireEvent.click(screen.getAllByText('common.delete')[1]); // The one in the dialog
     expect(mockDeleteReport).toHaveBeenCalledWith('r1');
@@ -454,7 +477,7 @@ describe('ReportDetailScreen', () => {
       isLoading: false,
     });
     renderScreen();
-    
+
     // Pending amount should be 100 + 75 = 175
     expect(screen.getByText('175')).toBeInTheDocument();
   });
@@ -470,10 +493,10 @@ describe('ReportDetailScreen', () => {
       isError: false,
     });
     renderScreen();
-    
+
     fireEvent.click(screen.getAllByText('reportDetail.submitReport')[0]);
     expect(screen.getByText('reportDetail.confirmSubmit')).toBeInTheDocument();
-    
+
     fireEvent.click(screen.getByText('common.cancel'));
     expect(screen.queryByText('reportDetail.confirmSubmit')).not.toBeInTheDocument();
   });

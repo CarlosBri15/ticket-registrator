@@ -349,7 +349,7 @@ describe('TicketsService', () => {
       expect(result.id).toBe('ticket-1');
     });
 
-    it('should throw DuplicateTicketException when a similar receipt is found', async () => {
+    it('should throw DuplicateTicketException when an exact match is found (new format)', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
       ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       cryptoServiceMock.generatePerceptualHash.mockResolvedValue('newhash|1.0');
@@ -360,7 +360,7 @@ describe('TicketsService', () => {
         items: [],
         total: 10,
       });
-      cryptoServiceMock.calculateHammingDistance.mockReturnValue(5); // distance <= 15
+      cryptoServiceMock.calculateHammingDistance.mockReturnValue(0); // exact match
 
       await expect(
         service.create(requester, 'report-1', {

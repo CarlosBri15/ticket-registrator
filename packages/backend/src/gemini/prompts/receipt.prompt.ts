@@ -51,7 +51,7 @@ EXTRACTION AND TRANSLATION RULES:
      - Use the establishment's location (country/region) to infer the most likely date format:
        - **Europe/Spain/LatAm:** Usually **DD/MM/YY** or **DD/MM/YYYY**.
        - **USA/Canada:** Usually **MM/DD/YY** or **MM/DD/YYYY**.
-   - **ANTI-HALLUCINATION RULE:** If the date is not clearly visible, is obscured, or you are unsure, **DO NOT GUESS**. Return **null** for the date and set the "flag" to true. Do not invent a date based on today's date unless the receipt explicitly says "Today".
+   - **ANTI-HALLUCINATION RULE:** If the date is not clearly visible, is obscured, or you are unsure, **DO NOT GUESS**. Do not return any date and set the "flag" to true. Do not invent a date based on today's date unless the receipt explicitly says "Today".
 
 5. PAYMENT:
    - Extract and translate the method (e.g., "Card", "Cash").

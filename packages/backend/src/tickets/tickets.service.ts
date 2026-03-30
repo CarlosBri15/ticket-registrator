@@ -42,7 +42,7 @@ export class TicketsService {
     private readonly geminiService: GeminiService,
     private readonly storageService: StorageService,
     private readonly cryptoService: CryptoService,
-  ) {}
+  ) { }
 
   async create(
     requester: UserPayload,
@@ -102,7 +102,7 @@ export class TicketsService {
           // 20 matches (approx 3% difference) is used as a fast, conservative check for nearly-identical images.
           // We rely on the subsequent Semantic Check (Date/Amount/Location) to catch duplicates
           // with different angles or minor visual variations, avoiding false positive collisions.
-          if (distance <= 20) {
+          if (distance === 0) {
             throw new DuplicateTicketException(
               `This receipt has already been processed (Similarity match)`,
             );
@@ -113,7 +113,7 @@ export class TicketsService {
             newHash,
             oldHash,
           );
-          if (distance <= 2) {
+          if (distance === 0) {
             throw new DuplicateTicketException(
               `This receipt has already been processed (Exact match)`,
             );
@@ -473,26 +473,26 @@ export class TicketsService {
       updateKey: keyof InsertTicket;
       meaningful: boolean;
     }> = [
-      { dtoKey: 'payment_type', updateKey: 'paymentType', meaningful: true },
-      { dtoKey: 'location_name', updateKey: 'locationName', meaningful: true },
-      {
-        dtoKey: 'location_address',
-        updateKey: 'locationAddress',
-        meaningful: true,
-      },
-      { dtoKey: 'amount', updateKey: 'amount', meaningful: true },
-      { dtoKey: 'currency', updateKey: 'currency', meaningful: true },
-      {
-        dtoKey: 'cgs_bucket_link_justification',
-        updateKey: 'cgsBucketLinkJustification',
-        meaningful: false,
-      },
-      {
-        dtoKey: 'last_four_digits',
-        updateKey: 'lastFourDigits',
-        meaningful: false,
-      },
-    ];
+        { dtoKey: 'payment_type', updateKey: 'paymentType', meaningful: true },
+        { dtoKey: 'location_name', updateKey: 'locationName', meaningful: true },
+        {
+          dtoKey: 'location_address',
+          updateKey: 'locationAddress',
+          meaningful: true,
+        },
+        { dtoKey: 'amount', updateKey: 'amount', meaningful: true },
+        { dtoKey: 'currency', updateKey: 'currency', meaningful: true },
+        {
+          dtoKey: 'cgs_bucket_link_justification',
+          updateKey: 'cgsBucketLinkJustification',
+          meaningful: false,
+        },
+        {
+          dtoKey: 'last_four_digits',
+          updateKey: 'lastFourDigits',
+          meaningful: false,
+        },
+      ];
 
     for (const mapping of fieldsMapping) {
       if (dto[mapping.dtoKey] !== undefined) {
