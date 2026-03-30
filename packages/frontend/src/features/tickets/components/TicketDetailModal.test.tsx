@@ -298,22 +298,20 @@ describe('TicketDetailModal', () => {
     expect(saveBtn).toBeDisabled();
   });
 
-  it('updates categoryId when user selects a category', () => {
+  it('updates payment_type when user edits it and saves', () => {
     renderModal({ isEditable: true });
     fireEvent.click(screen.getByTestId('edit-ticket-btn'));
-
-    // In our mock, Input name="categoryId" becomes data-testid="input-categoryId"
-    const select = screen.getByTestId('input-categoryId');
-    fireEvent.change(select, { target: { name: 'categoryId', value: 'cat2' } });
-
+    fireEvent.change(screen.getByTestId('input-payment_type'), {
+      target: { name: 'payment_type', value: 'Efectivo' },
+    });
     fireEvent.click(screen.getByText('common.save'));
-
     expect(mockMutate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          categoryId: 'cat2',
+          payment_type: 'Efectivo',
         }),
       }),
     );
   });
+
 });
