@@ -1,783 +1,362 @@
-import React, { useMemo, useState, useCallback } from 'react';
 import {
+  Image,
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   RefreshControl,
   StatusBar,
   StyleSheet,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  Wallet,
-  Briefcase,
-  AlertCircle,
-  FileText,
-  ChevronRight,
-  Plus,
-  Receipt,
-  Camera,
-  ArrowUpRight,
-} from 'lucide-react-native';
-import {
-  useUserQuery,
-  useReportsQuery,
-  useTicketsQuery,
-  ReportStatus,
-  type IReport,
-} from '@ticket-registrator/shared';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { format } from 'date-fns';
-import { es, enUS } from 'date-fns/locale';
-import { StatusBadge } from '../../src/components/StatusBadge';
-import { mt, colors } from '../../src/styles/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { IconChevronRight, IconClock, IconX, IconCamera, IconPhoto } from '@tabler/icons-react-native';
 
-// ── Active Trip Card ──────────────────────────────────────────────────────────
+import {
+  PixelCard,
+  DARK,
+  CARD_BG,
+  SCREEN_BG,
+  BORDER_WIDTH,
+  colors,
+} from '../../src/components/ui/PixelCard';
+import { HeroReportCard, HistoryRow } from '../../src/components/features/ReportListItem';
+import { EmptyState } from '../../src/components/ui/EmptyState';
+import { ScanningOverlay } from '../../src/components/features/ScanningOverlay';
+import { TicketConfirmationForm } from '../../src/components/features/TicketConfirmationForm';
 
-const ActiveTripCard = ({
-  report,
-  onPress,
-  t,
-  dateLocale,
-}: {
-  report: IReport;
-  onPress: () => void;
-  t: (key: string, opts?: any) => string;
-  dateLocale: any;
-}) => {
-  const { data: tickets } = useTicketsQuery(report.id);
-  const ticketCount = tickets?.length ?? 0;
-  const totalAmount =
-    tickets?.reduce((acc: number, tk: any) => acc + (tk.amount || 0), 0) ?? 0;
+import { useHomeScreen } from '../../src/hooks/useHomeScreen';
+import { reportIcon, userIcon, cameraIcon } from '@ticket-registrator/shared/assets';
 
-  return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.82} style={styles.tripCard}>
-      {/* Status + ID */}
-      <View style={styles.tripCardRow}>
-        <StatusBadge status={report.status} />
-        <Text style={styles.tripId}>#{report.id.substring(0, 8)}</Text>
-      </View>
-
-      {/* Name */}
-      <Text style={styles.tripName} numberOfLines={2}>
-        {report.name}
-      </Text>
-
-      {/* Dates */}
-      <View style={styles.tripDateRow}>
-        <FileText size={20} color="#94a3b8" />
-        <Text style={styles.tripDate}>
-          {format(new Date(report.start_date), 'dd MMM', { locale: dateLocale })}
-          {' — '}
-          {format(new Date(report.end_date), 'dd MMM yyyy', { locale: dateLocale })}
-        </Text>
-      </View>
-
-      {/* Footer */}
-      <View style={styles.tripFooter}>
-        <View style={styles.tripTicketPill}>
-          <Receipt size={20} color={colors.brand} />
-          <Text style={styles.tripTicketCount}>{ticketCount}</Text>
-          <Text style={styles.tripTicketLabel}>{t('home.processedTickets')}</Text>
-        </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={styles.tripAmountLabel}>{t('home.currentExpense')}</Text>
-          <Text style={styles.tripAmount}>
-            {(totalAmount > 0
-              ? totalAmount
-              : (report.requested_amount ?? 0)
-            ).toFixed(2)}
-            <Text style={styles.tripCurrency}> {report.currency}</Text>
-          </Text>
-        </View>
-      </View>
-
-      {/* Arrow */}
-      <View style={styles.tripArrow}>
-        <ChevronRight size={22} color={colors.brand} />
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-// ── Home Screen ───────────────────────────────────────────────────────────────
+const AVATAR_BG = '#E8E8FF';
 
 export default function HomeScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
-  const [refreshing, setRefreshing] = useState(false);
+  const insets = useSafeAreaInsets();
 
-  const { data: user } = useUserQuery();
-  const { data: reports, isLoading, refetch } = useReportsQuery();
-
-  const dateLocale = i18n.language.startsWith('es') ? es : enUS;
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
-  }, [refetch]);
-
-  const stats = useMemo(
-    () => ({
-      pendingAmount:
-        reports
-          ?.filter(r =>
-            ['CREATED', 'SUBMITTED', 'PENDING'].includes(r.status.toUpperCase()),
-          )
-          ?.reduce((acc, r) => acc + (r.requested_amount ?? 0), 0) ?? 0,
-      activeCount:
-        reports?.filter(
-          r =>
-            r.status === ReportStatus.CREATED ||
-            r.status === ReportStatus.SUBMITTED,
-        ).length ?? 0,
-      rejectedCount:
-        reports?.filter(r => r.status === ReportStatus.DECLINED).length ?? 0,
-    }),
-    [reports],
-  );
-
-  const activeReport = useMemo(
-    () => reports?.find(r => r.status === ReportStatus.CREATED) ?? null,
-    [reports],
-  );
-
-  const recentCompleted = useMemo(
-    () =>
-      reports
-        ?.filter(r =>
-          ['APPROVED', 'PAID', 'DECLINED'].includes(r.status.toUpperCase()),
-        )
-        .slice(0, 5) ?? [],
-    [reports],
-  );
-
-  const userInitials = user?.name
-    ? user.name
-        .split(' ')
-        .map((n: string) => n[0])
-        .join('')
-        .toUpperCase()
-        .substring(0, 2)
-    : '?';
-
-  const firstName = user?.name?.split(' ')[0] ?? '';
-
-  const hour = new Date().getHours();
-  const greetingKey =
-    hour >= 5 && hour < 12
-      ? 'home.greetingMorning'
-      : hour >= 12 && hour < 20
-        ? 'home.greetingAfternoon'
-        : 'home.greetingEvening';
-
-  const formattedDate = new Date().toLocaleDateString(i18n.language, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+  const {
+    refreshing,
+    onRefresh,
+    stats,
+    activeReport,
+    recentCompleted,
+    firstName,
+    dateLocale,
+    scanSheetOpen,
+    setScanSheetOpen,
+    isModalOpen,
+    extractedTicket,
+    isUploading,
+    isConfirming,
+    pickFromCamera,
+    pickFromGallery,
+    handleConfirm,
+    handleDiscard,
+  } = useHomeScreen();
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
+    <View style={s.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={CARD_BG} />
+      <View style={{ height: insets.top, backgroundColor: CARD_BG }} />
+
+      {/* ── Header ── */}
+      <View style={s.header}>
+        <Text style={s.headerTitle}>{firstName}</Text>
+
+        <PixelCard
+          bg={AVATAR_BG}
+          shadowOffset={3}
+          radius={14}
+          onPress={() => router.push('/(app)/profile')}
+        >
+          <View style={s.avatarInner}>
+            <Image source={userIcon} style={s.avatarImage} />
+          </View>
+        </PixelCard>
+      </View>
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 48 }}
+        contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.brand}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />
         }
       >
-        {/* ── Header ─────────────────────────────────────────────────── */}
-        <View style={styles.header}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.dateLabel}>{formattedDate}</Text>
-            <Text style={styles.greetingName}>{firstName}</Text>
-            <Text style={styles.greetingSub}>
-              {t(greetingKey, { name: '' })}
-            </Text>
+        {/* ── Reporte activo + cámara ── */}
+        {activeReport ? (
+          <View style={s.activeBlock}>
+            <HeroReportCard
+              report={activeReport}
+              onPress={() => router.push(`/(app)/reports/${activeReport.id}`)}
+              dateLocale={dateLocale}
+            />
+            <PixelCard
+              bg={colors.brand}
+              shadowOffset={4}
+              style={s.scanCard}
+              onPress={() => setScanSheetOpen(true)}
+            >
+              <View style={s.scanInner}>
+                <Image source={cameraIcon} style={s.scanIconImage} resizeMode="contain" />
+                <Text style={s.scanTitle}>{t('reportDetail.scanTicket')}</Text>
+                <IconChevronRight size={20} color="rgba(255,255,255,0.6)" />
+              </View>
+            </PixelCard>
           </View>
-          <TouchableOpacity
-            onPress={() => router.push('/(app)/profile')}
-            activeOpacity={0.8}
-            style={styles.avatarBtn}
-          >
-            <Text style={styles.avatarText}>{userInitials}</Text>
-          </TouchableOpacity>
+        ) : (
+          <View style={s.section}>
+            <EmptyState
+              icon={reportIcon}
+              title={t('home.noActive')}
+              description={t('home.noActiveDesc')}
+              buttonLabel={t('home.createFirst')}
+              onButtonPress={() => router.push('/(app)/reports/create')}
+            />
+          </View>
+        )}
+
+        {/* ── Stats ── */}
+        <View style={s.sectionHeader}>
+          <IconClock size={11} color={DARK} />
+          <Text style={s.sectionTitle}>En revisión</Text>
         </View>
-
-        <View style={styles.content}>
-          {/* ── Summary cards ── */}
-          <View style={styles.summaryRow}>
-            {/* Pending amount — primary card */}
-            <View style={[styles.summaryCard, styles.summaryCardPrimary]}>
-              <View style={styles.summaryIconWrap}>
-                <Wallet size={32} color={colors.brand} />
+        <PixelCard bg={colors.secondary} shadowOffset={4} style={s.statCard}>
+          <View style={s.statCardInner}>
+            <View style={s.statCardBody}>
+              <View style={s.statItem}>
+                <Text style={s.statBigNum}>{stats.inReviewCount}</Text>
+                <Text style={s.statItemLabel}>{stats.inReviewCount === 1 ? 'reporte' : 'reportes'}</Text>
               </View>
-              <Text style={styles.summaryLabel}>{t('home.pendingReimbursement')}</Text>
-              <Text style={styles.summaryValuePrimary}>
-                {stats.pendingAmount.toFixed(2)}
-                <Text style={styles.summaryUnit}> €</Text>
-              </Text>
-            </View>
-
-            <View style={styles.summaryCol}>
-              {/* Active */}
-              <View style={[styles.summaryCard, styles.summaryCardSm]}>
-                <Briefcase size={28} color={colors.brand} />
-                <Text style={styles.summaryValueSm}>{stats.activeCount}</Text>
-                <Text style={styles.summaryLabelSm}>{t('home.activeTrips')}</Text>
-              </View>
-              {/* Rejected */}
-              <View style={[styles.summaryCard, styles.summaryCardSm, styles.summaryCardDanger]}>
-                <AlertCircle size={28} color="#dc2626" />
-                <Text style={[styles.summaryValueSm, { color: '#dc2626' }]}>
-                  {stats.rejectedCount}
-                </Text>
-                <Text style={[styles.summaryLabelSm, { color: '#dc2626' }]}>
-                  {t('home.rejectedItems')}
-                </Text>
+              <View style={s.statDivider} />
+              <View style={s.statItem}>
+                <Text style={s.statBigNum}>{stats.inReview.toFixed(0)}€</Text>
+                <Text style={s.statItemLabel}>pendiente</Text>
               </View>
             </View>
           </View>
+        </PixelCard>
 
-          {/* ── Quick actions ── */}
-          <View style={styles.actionsRow}>
-            <TouchableOpacity
-              style={styles.actionPrimary}
-              activeOpacity={0.82}
-              onPress={() => router.push('/(app)/tickets')}
-            >
-              <Camera size={32} color="white" />
-              <Text style={styles.actionPrimaryText}>{t('tickets.addTicket')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionSecondary}
-              activeOpacity={0.82}
-              onPress={() => router.push('/(app)/reports')}
-            >
-              <FileText size={32} color={colors.brand} />
-              <Text style={styles.actionSecondaryText}>{t('trips.title')}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* ── Active Trip ── */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionDot} />
-              <Text style={styles.sectionTitle}>{t('home.activeTrip')}</Text>
+        {/* ── Actividad reciente ── */}
+        {recentCompleted.length > 0 && (
+          <View style={s.section}>
+            <View style={s.sectionHeader}>
+              <IconClock size={11} color={DARK} />
+              <Text style={s.sectionTitle}>{t('home.recentCompleted')}</Text>
             </View>
-
-            {activeReport ? (
-              <ActiveTripCard
-                report={activeReport}
-                onPress={() => router.push(`/(app)/reports/${activeReport.id}`)}
-                t={t}
+            {recentCompleted.map(r => (
+              <HistoryRow
+                key={r.id}
+                report={r}
+                onPress={() => router.push(`/(app)/reports/${r.id}`)}
                 dateLocale={dateLocale}
               />
-            ) : (
-              !isLoading && (
-                <View style={styles.emptyState}>
-                  <View style={styles.emptyIconWrap}>
-                    <FileText size={40} color="#cbd5e1" />
-                  </View>
-                  <Text style={styles.emptyText}>{t('trips.noActiveTrips')}</Text>
-                  <TouchableOpacity
-                    onPress={() => router.push('/(app)/reports')}
-                    style={styles.emptyBtn}
-                    activeOpacity={0.82}
-                  >
-                    <Plus size={24} color="white" />
-                    <Text style={styles.emptyBtnText}>{t('home.createFirst')}</Text>
-                  </TouchableOpacity>
-                </View>
-              )
-            )}
+            ))}
           </View>
-
-          {/* ── Recent Activity ── */}
-          {recentCompleted.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{t('home.recentActivity')}</Text>
-                <TouchableOpacity onPress={() => router.push('/(app)/reports')}>
-                  <Text style={styles.viewAll}>{t('common.viewAll')}</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.activityList}>
-                {recentCompleted.map((report, idx) => (
-                  <TouchableOpacity
-                    key={report.id ?? `report-${idx}`}
-                    onPress={() => router.push(`/(app)/reports/${report.id}`)}
-                    activeOpacity={0.78}
-                    style={[
-                      styles.activityItem,
-                      idx < recentCompleted.length - 1 && styles.activityItemBorder,
-                    ]}
-                  >
-                    <View style={styles.activityIcon}>
-                      <ArrowUpRight size={24} color="#94a3b8" />
-                    </View>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={styles.activityName} numberOfLines={1}>
-                        {report.name}
-                      </Text>
-                      <Text style={styles.activityDate}>
-                        {format(new Date(report.end_date), 'dd MMM yyyy', {
-                          locale: dateLocale,
-                        })}
-                      </Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                      <Text style={styles.activityAmount}>
-                        {(
-                          report.approved_amount ??
-                          report.requested_amount ??
-                          0
-                        ).toLocaleString()}
-                        <Text style={styles.activityCurrency}> {report.currency}</Text>
-                      </Text>
-                      <StatusBadge status={report.status} />
-                    </View>
-                    <ChevronRight size={24} color="#e2e8f0" style={{ marginLeft: 6 }} />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
-        </View>
+        )}
       </ScrollView>
-    </SafeAreaView>
+
+      {/* ── Sheet: cámara o galería ── */}
+      <Modal
+        visible={scanSheetOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setScanSheetOpen(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setScanSheetOpen(false)}>
+          <View style={s.sheetOverlay} />
+        </TouchableWithoutFeedback>
+        <View style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+          <View style={s.sheetHandle} />
+          <View style={s.sheetHeader}>
+            <Text style={s.sheetTitle}>{t('reportDetail.scanTicket')}</Text>
+            <PixelCard bg={colors.danger} shadowOffset={3} radius={8} onPress={() => setScanSheetOpen(false)}>
+              <View style={s.iconBtnInner}>
+                <IconX size={15} color="white" />
+              </View>
+            </PixelCard>
+          </View>
+          <View style={s.sheetOptions}>
+            <PixelCard bg={CARD_BG} shadowOffset={4} style={{ flex: 1 }} onPress={pickFromCamera}>
+              <View style={s.sheetOption}>
+                <View style={[s.sheetOptionIcon, { backgroundColor: `${colors.brand}15`, borderColor: colors.brand }]}>
+                  <IconCamera size={22} color={colors.brand} />
+                </View>
+                <Text style={s.sheetOptionTitle}>Cámara</Text>
+                <Text style={s.sheetOptionSub}>Toma una foto</Text>
+              </View>
+            </PixelCard>
+            <PixelCard bg={CARD_BG} shadowOffset={4} style={{ flex: 1 }} onPress={pickFromGallery}>
+              <View style={s.sheetOption}>
+                <View style={[s.sheetOptionIcon, { backgroundColor: `${DARK}08`, borderColor: `${DARK}30` }]}>
+                  <IconPhoto size={22} color={DARK} />
+                </View>
+                <Text style={s.sheetOptionTitle}>Galería</Text>
+                <Text style={s.sheetOptionSub}>Elige una imagen</Text>
+              </View>
+            </PixelCard>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Modal de confirmación ── */}
+      <Modal
+        visible={isModalOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleDiscard}
+      >
+        <View style={{ flex: 1, backgroundColor: CARD_BG }}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+            <View style={s.modalHandle} />
+            <View style={s.modalHeader}>
+              <Text style={s.modalTitle}>{t('upload.confirmTitle')}</Text>
+              <PixelCard bg={colors.danger} shadowOffset={3} radius={8} onPress={handleDiscard}>
+                <View style={s.iconBtnInner}>
+                  <IconX size={15} color="white" />
+                </View>
+              </PixelCard>
+            </View>
+            <View style={{ flex: 1, backgroundColor: SCREEN_BG }}>
+              {extractedTicket && (
+                <TicketConfirmationForm
+                  ticket={extractedTicket}
+                  onConfirm={handleConfirm}
+                  onCancel={handleDiscard}
+                  isLoading={isConfirming}
+                />
+              )}
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+
+      {/* ── Scanning overlay ── */}
+      <ScanningOverlay visible={isUploading} />
+    </View>
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
+const s = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: SCREEN_BG },
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-
-  // Header
+  // ── Header
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 24,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    paddingTop: 10,
+    paddingBottom: 12,
+    backgroundColor: CARD_BG,
+    borderBottomWidth: 4,
+    borderBottomColor: DARK,
   },
-  dateLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    color: colors.brand,
-    marginBottom: 4,
-  },
-  greetingName: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#1e293b',
-    letterSpacing: -0.5,
-    lineHeight: 32,
-  },
-  greetingSub: {
-    fontSize: 13,
-    color: '#94a3b8',
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  avatarBtn: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    backgroundColor: '#f0f6fd',
-    borderWidth: 1.5,
-    borderColor: '#dbeafe',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
-  },
-  avatarText: {
-    color: colors.brand,
+  headerTitle: {
+    fontFamily: 'SpaceGrotesk-Bold',
     fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.3,
+    color: DARK,
+    letterSpacing: 0.5,
   },
+  avatarInner: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  avatarImage: { width: '100%', height: '100%' },
+  avatarText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 18, color: DARK },
 
-  // Content area
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
+  scroll: { padding: 20, paddingBottom: 120 },
 
-  // Summary cards
-  summaryRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  summaryCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#e8f0fa',
-    padding: 16,
-    shadowColor: '#1e293b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  summaryCardPrimary: {
-    flex: 1.4,
-    borderColor: '#dbeafe',
-    backgroundColor: '#f8fbff',
-  },
-  summaryCol: {
-    flex: 1,
-    gap: 12,
-  },
-  summaryCardSm: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  summaryCardDanger: {
-    borderColor: '#fee2e2',
-    backgroundColor: '#fff8f8',
-  },
-  summaryIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: '#f0f6fd',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  summaryLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#94a3b8',
-    marginBottom: 4,
-  },
-  summaryValuePrimary: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1e293b',
-    letterSpacing: -0.5,
-  },
-  summaryUnit: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#94a3b8',
-  },
-  summaryValueSm: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#1e293b',
-    marginTop: 4,
-    marginBottom: 2,
-    letterSpacing: -0.4,
-  },
-  summaryLabelSm: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#94a3b8',
-  },
+  // ── Active block
+  activeBlock: { marginBottom: 28 },
 
-  // Quick actions
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 28,
-  },
-  actionPrimary: {
-    flex: 1,
+  // ── Scan CTA
+  scanCard: { marginTop: 8 },
+  scanInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.brand,
-    borderRadius: 14,
-    paddingVertical: 13,
-    shadowColor: colors.brand,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
+    gap: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 3,
   },
-  actionPrimaryText: {
-    color: 'white',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  actionSecondary: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    paddingVertical: 13,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  actionSecondaryText: {
-    color: '#1e293b',
-    fontWeight: '700',
-    fontSize: 14,
-  },
+  scanIconImage: { width: 58, height: 58 },
+  scanTitle: { flex: 1, fontFamily: 'SpaceGrotesk-Bold', fontSize: 15, color: 'white', letterSpacing: 0.2 },
 
-  // Section
-  section: {
-    marginBottom: 28,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  sectionDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.brand,
-  },
-  sectionTitle: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1e293b',
-    letterSpacing: -0.2,
-  },
-  viewAll: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.brand,
-  },
+  // ── Stats
+  statCard: { marginBottom: 28 },
+  statCardInner: { padding: 16 },
+  statCardBody: { flexDirection: 'row', alignItems: 'center' },
+  statItem: { flex: 1, alignItems: 'center' },
+  statBigNum: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 32, color: DARK, letterSpacing: -1 },
+  statItemLabel: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 10, color: `${DARK}80`, letterSpacing: 0.3, marginTop: 2 },
+  statDivider: { width: 2, height: 44, backgroundColor: `${DARK}15` },
 
-  // Trip card
-  tripCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#e8f0fa',
-    padding: 18,
-    shadowColor: '#1e293b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-    position: 'relative',
-  },
-  tripCardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  tripId: {
-    fontSize: 9,
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    fontWeight: '600',
-  },
-  tripName: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#1e293b',
-    letterSpacing: -0.3,
-    lineHeight: 22,
-    marginBottom: 6,
-  },
-  tripDateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginBottom: 14,
-  },
-  tripDate: {
-    fontSize: 11,
-    color: '#94a3b8',
-    fontWeight: '500',
-  },
-  tripFooter: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
-  },
-  tripTicketPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#f0f6fd',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: '#dbeafe',
-  },
-  tripTicketCount: {
-    fontWeight: '800',
-    color: '#1e293b',
-    fontSize: 12,
-  },
-  tripTicketLabel: {
-    fontSize: 10,
-    color: '#94a3b8',
-  },
-  tripAmountLabel: {
-    fontSize: 9,
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    marginBottom: 2,
-    textAlign: 'right',
-  },
-  tripAmount: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.brand,
-    letterSpacing: -0.4,
-  },
-  tripCurrency: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#94a3b8',
-  },
-  tripArrow: {
+  // ── Sections
+  section: { marginBottom: 28 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  sectionTitle: { flex: 1, fontFamily: 'SpaceGrotesk-Bold', fontSize: 12, color: DARK, letterSpacing: 0.3 },
+
+  // ── Scan sheet
+  sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
+  sheet: {
     position: 'absolute',
-    top: 18,
-    right: 18,
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: '#f0f6fd',
-    alignItems: 'center',
-    justifyContent: 'center',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: CARD_BG,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
   },
-
-  // Empty state
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    backgroundColor: 'white',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: '#e2e8f0',
+  sheetHandle: {
+    width: 48, height: 6,
+    backgroundColor: DARK,
+    alignSelf: 'center',
+    marginTop: 14, marginBottom: 0,
   },
-  emptyIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#f8fafc',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  emptyText: {
-    fontSize: 13,
-    color: '#94a3b8',
-    textAlign: 'center',
-    marginBottom: 14,
-    fontWeight: '500',
-  },
-  emptyBtn: {
+  sheetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.brand,
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 4,
+    borderBottomColor: DARK,
+  },
+  sheetTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 20, color: DARK, letterSpacing: 0.3 },
+  iconBtnInner: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  sheetOptions: { flexDirection: 'row', gap: 12, padding: 20 },
+  sheetOption: { alignItems: 'center', paddingVertical: 20, paddingHorizontal: 12, gap: 8 },
+  sheetOptionIcon: {
+    width: 56, height: 56,
     borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  emptyBtnText: {
-    color: 'white',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-
-  // Activity list
-  activityList: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#e8f0fa',
-    overflow: 'hidden',
-    shadowColor: '#1e293b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  activityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    gap: 12,
-  },
-  activityItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  activityIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#e8f0fa',
+    borderWidth: BORDER_WIDTH,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 4,
   },
-  activityName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 2,
+  sheetOptionTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK },
+  sheetOptionSub: { fontFamily: 'SpaceGrotesk-Medium', fontSize: 10, color: `${DARK}55` },
+
+  // ── Confirmation modal
+  modalHandle: {
+    width: 48, height: 6,
+    backgroundColor: DARK,
+    alignSelf: 'center',
+    marginTop: 14,
   },
-  activityDate: {
-    fontSize: 10,
-    color: '#94a3b8',
-    fontWeight: '500',
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 16,
+    backgroundColor: CARD_BG,
+    borderBottomWidth: 4,
+    borderBottomColor: DARK,
   },
-  activityAmount: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1e293b',
-  },
-  activityCurrency: {
-    fontSize: 10,
-    color: '#94a3b8',
-  },
+  modalTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 20, color: DARK, letterSpacing: 0.3 },
 });

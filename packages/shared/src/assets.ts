@@ -4,3 +4,7 @@ export { default as reportIcon } from './assets/report.png';
 export { default as settingsIcon } from './assets/settings.png';
 export { default as ticketIcon } from './assets/ticket.png';
 export { default as userIcon } from './assets/user.png';
+export { default as locationIcon } from './assets/location.png';
+export { default as commerceIcon } from './assets/commerce.png';
+export { default as paymentMethodIcon } from './assets/payment_method.png';
+export { default as cameraIcon } from './assets/camera.png';

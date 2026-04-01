@@ -8,10 +8,10 @@
  * Usage:
  *   import { mt, colors } from '../../src/styles/theme';
  *   <View className={mt.card}>...</View>
- *   <Feather color={colors.brand} />
+ *   <IconCamera color={colors.brand} />
  */
 
-export { colors, radius, text, spacing } from '@ticket-registrator/shared';
+export { colors, radius, text, spacing, borders } from '@ticket-registrator/shared';
 
 // ─── Mobile Composite Tokens ─────────────────────────────────────────────────
 
@@ -21,70 +21,70 @@ export const mt = {
   screenPadded: 'flex-1 bg-surface px-6',
 
   // ── Card
-  card:    'bg-white rounded-3xl border border-gray-100',
-  cardPad: 'bg-white rounded-3xl border border-gray-100 p-5',
+  card:    'bg-white border-4 border-dark rounded-[24px] shadow-hard',
+  cardPad: 'bg-white border-4 border-dark rounded-[24px] p-5 shadow-hard',
 
   // ── Branded hero card (active report, prominent CTA)
-  heroCard: 'bg-brand rounded-3xl p-6 relative overflow-hidden',
+  heroCard: 'bg-brand border-4 border-dark rounded-[24px] p-6 relative overflow-hidden shadow-hard',
 
   // ── Stat cards
-  statCardDanger: 'bg-red-50 p-6 rounded-3xl border border-red-100',
+  statCardDanger: 'bg-red-50 p-6 border-4 border-dark rounded-[24px] shadow-hard',
 
   // ── Avatar / initials button
-  avatarBtn:   'w-20 h-20 bg-white rounded-[24px] items-center justify-center shadow-md border border-gray-100',
-  avatarInner: 'w-16 h-16 bg-secondary/10 rounded-2xl items-center justify-center',
+  avatarBtn:   'w-20 h-20 bg-white border-4 border-dark items-center justify-center rounded-[20px] shadow-hard',
+  avatarInner: 'w-16 h-16 bg-secondary/10 items-center justify-center',
 
-  // ── Compact empty state (no huge padding)
-  emptyStateSm: 'items-center p-8 bg-white rounded-3xl border border-dashed border-gray-200',
+  // ── Compact empty state
+  emptyStateSm: 'items-center p-8 bg-white border-4 border-dark rounded-[24px] shadow-hard',
 
   // ── Page header
-  pageHeader:      'px-6 py-4 bg-white border-b border-gray-50',
-  pageHeaderTitle: 'text-2xl font-bold text-dark',
+  pageHeader:      'px-6 py-4 bg-surface border-b-4 border-dark',
+  pageHeaderTitle: 'text-2xl font-black text-dark tracking-tighter uppercase',
 
   // ── Section
-  sectionTitle: 'text-lg font-bold text-dark',
-  sectionLabel: 'text-xs font-bold text-gray-400 uppercase',
+  sectionTitle: 'text-lg font-black text-dark uppercase',
+  sectionLabel: 'text-[10px] font-black text-dark/40 uppercase',
 
   // ── Stat card
-  statCard:        'bg-white p-6 rounded-3xl border border-gray-100',
-  statCardPrimary: 'bg-brand p-6 rounded-3xl',
-  statCardLabel:   'text-sm font-medium text-gray-500',
-  statCardValue:   'text-3xl font-bold mt-1',
+  statCard:        'bg-white p-6 border-4 border-dark rounded-[24px] shadow-hard',
+  statCardPrimary: 'bg-brand p-6 border-4 border-dark rounded-[24px] shadow-hard',
+  statCardLabel:   'text-xs font-black text-dark uppercase',
+  statCardValue:   'text-3xl font-black mt-1 text-dark',
 
   // ── Input
-  input:      'bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-dark font-medium',
-  inputLabel: 'text-xs font-bold text-gray-400 uppercase mb-2',
+  input:      'bg-white border-4 border-dark px-4 py-3 text-black font-black uppercase rounded-xl',
+  inputLabel: 'text-[10px] font-black text-dark uppercase mb-2',
 
   // ── Button
-  btnPrimary:       'bg-brand rounded-2xl py-3.5 px-5 items-center justify-center flex-row',
-  btnSecondary:     'bg-white rounded-2xl py-3.5 px-5 items-center justify-center flex-row border border-gray-200',
-  btnGhost:         'rounded-2xl py-3 px-5 items-center justify-center border border-gray-200',
-  btnDanger:        'bg-red-500 rounded-2xl py-3.5 px-5 items-center justify-center flex-row',
-  btnTextPrimary:   'text-white font-bold',
-  btnTextSecondary: 'text-dark font-bold',
-  btnTextGhost:     'text-gray-600 font-bold',
+  btnPrimary:       'bg-brand border-4 border-dark py-3.5 px-5 items-center justify-center flex-row rounded-full shadow-hard',
+  btnSecondary:     'bg-white border-4 border-dark py-3.5 px-5 items-center justify-center flex-row rounded-full shadow-hard',
+  btnGhost:         'bg-transparent border-4 border-dark py-3 px-5 items-center justify-center rounded-xl',
+  btnDanger:        'bg-danger border-4 border-dark py-3.5 px-5 items-center justify-center flex-row rounded-full shadow-hard',
+  btnTextPrimary:   'text-white font-black uppercase text-sm',
+  btnTextSecondary: 'text-dark font-black uppercase text-sm',
+  btnTextGhost:     'text-dark font-black uppercase text-sm',
 
   // ── List item
-  listItem:    'bg-white rounded-3xl border border-gray-100 p-4 flex-row items-center justify-between mb-3',
-  listSection: 'bg-white rounded-3xl border border-gray-100 overflow-hidden',
+  listItem:    'bg-white border-4 border-dark p-4 flex-row items-center justify-between mb-4 rounded-[20px] shadow-hard',
+  listSection: 'bg-white border-4 border-dark overflow-hidden rounded-[20px] shadow-hard',
 
   // ── Icon containers
-  iconBox:      'w-16 h-16 rounded-2xl items-center justify-center',
-  iconBoxSm:    'w-12 h-12 rounded-xl items-center justify-center',
-  iconBoxRound: 'w-16 h-16 rounded-full items-center justify-center',
+  iconBox:      'w-16 h-16 items-center justify-center',
+  iconBoxSm:    'w-12 h-12 items-center justify-center',
+  iconBoxRound: 'w-16 h-16 items-center justify-center',
 
   // ── Empty state
-  emptyState:      'items-center py-24 bg-white rounded-3xl border border-dashed border-gray-200',
-  emptyStateIcon:  'w-24 h-24 bg-gray-50 rounded-full items-center justify-center mb-6',
-  emptyStateTitle: 'text-xl font-bold text-dark mb-2',
-  emptyStateText:  'text-sm text-gray-400 text-center px-8',
+  emptyState:      'items-center py-20 bg-white border-4 border-dark rounded-[24px] shadow-hard',
+  emptyStateIcon:  'w-24 h-24 bg-brand border-4 border-dark items-center justify-center mb-6 shadow-hard',
+  emptyStateTitle: 'text-xl font-black text-dark uppercase mb-2',
+  emptyStateText:  'text-sm text-dark font-bold text-center px-8',
 
   // ── Badge
-  badgeBrand:   'bg-brand/10 px-3 py-1 rounded-full',
-  badgeSuccess: 'bg-green-100 px-3 py-1 rounded-full flex-row items-center gap-1',
-  badgeDanger:  'bg-red-100 px-3 py-1 rounded-full',
+  badgeBrand:   'bg-brand border-4 border-dark px-5 py-2.5 rounded-full shadow-hard-sm',
+  badgeSuccess: 'bg-success border-4 border-dark px-5 py-2.5 rounded-full flex-row items-center gap-1.5 shadow-hard-sm',
+  badgeDanger:  'bg-danger border-4 border-dark px-5 py-2.5 rounded-full shadow-hard-sm',
 
   // ── Search
-  searchBar:   'flex-row items-center bg-white border border-gray-100 rounded-2xl px-4 py-3 gap-3',
-  searchInput: 'flex-1 text-dark text-sm',
+  searchBar:   'flex-row items-center bg-white border-4 border-dark rounded-xl px-4 py-3 gap-3 shadow-hard',
+  searchInput: 'flex-1 text-dark text-sm font-black uppercase',
 } as const;

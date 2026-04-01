@@ -26,6 +26,26 @@ describe('reportsApi', () => {
         });
     });
 
+    describe('getPaginated', () => {
+        it('should call GET /reports/paginated with params', async () => {
+            const params = { page: 1, limit: 10 };
+            const paginatedResponse = {
+                data: [{ id: '1', name: 'Trip 1' }],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1
+            };
+            mockClient.get.mockResolvedValue({ data: paginatedResponse });
+
+            const result = await api.getPaginated(params);
+
+            expect(mockClient.get).toHaveBeenCalledWith('/reports/paginated', { params });
+            expect(result).toEqual(paginatedResponse);
+        });
+    });
+
+
     describe('getOne', () => {
         it('should call GET /reports/:id', async () => {
             const report = { id: 'abc', name: 'Trip 1' };

@@ -3,7 +3,7 @@ import { api } from '../api/clientContainer';
 import { OnboardOrganizationSchema } from '../schemas/organization/onboardOrganization.schema';
 import { UpdateOrganizationSchema } from '../schemas/organization/updateOrganization.schema';
 import { usePermissions } from './usePermissions';
-import { permissions } from '../user-roles/permissions';
+import { permissions } from '../defaults/permissions';
 
 export const useOrganizationsQuery = (options?: { enabled?: boolean }) => {
     const { can } = usePermissions();

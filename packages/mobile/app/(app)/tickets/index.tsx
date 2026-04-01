@@ -1,176 +1,261 @@
-import { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
-  TextInput,
+  StyleSheet,
+  StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IconFolder, IconChevronRight } from '@tabler/icons-react-native';
 import { useTranslation } from 'react-i18next';
-import { useRouter } from 'expo-router';
-import { useReportsQuery, useTicketsQuery, type ITicket, type IReport } from '@ticket-registrator/shared';
-import { StatusBadge } from '../../../src/components/StatusBadge';
-import { TicketDetailModal } from '../../../src/components/TicketDetailModal';
-import { mt, colors } from '../../../src/styles/theme';
+import { format } from 'date-fns';
 
-interface ReportTicketGroupProps {
-  report: IReport;
-  search: string;
-  onTicketPress: (ticket: ITicket, reportId: string) => void;
-}
-
-const ReportTicketGroup = ({ report, search, onTicketPress }: ReportTicketGroupProps) => {
-  const router = useRouter();
-  const { data: tickets, isLoading } = useTicketsQuery(report.id);
-
-  const filtered = tickets?.filter(ticket => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      ticket.location_name?.toLowerCase().includes(q) ||
-      ticket.expense_type?.toLowerCase().includes(q) ||
-      String(ticket.amount).includes(q)
-    );
-  });
-
-  if (isLoading) return <ActivityIndicator color={colors.brand} style={{ marginVertical: 8 }} />;
-  if (!filtered || filtered.length === 0) return null;
-
-  return (
-    <View className="mb-6">
-      <TouchableOpacity
-        onPress={() => router.push(`/(app)/reports/${report.id}`)}
-        className="flex-row items-center gap-1 mb-2 ml-1"
-      >
-        <Text className={mt.sectionLabel}>{report.name}</Text>
-        <Feather name="chevron-right" size={24} color="#94a3b8" />
-      </TouchableOpacity>
-
-      <View className={mt.listSection}>
-        {filtered.map((ticket, idx) => (
-          <TouchableOpacity
-            key={ticket.id}
-            onPress={() => onTicketPress(ticket, report.id)}
-            className={`p-4 flex-row items-center justify-between ${idx < filtered.length - 1 ? 'border-b border-gray-50' : ''}`}
-          >
-            <View className="flex-row items-center gap-3 flex-1 min-w-0">
-              <View className={`${mt.iconBox} bg-gray-50`}>
-                <Feather name="file-text" size={32} color="#94a3b8" />
-              </View>
-              <View className="flex-1 min-w-0">
-                <Text className="font-bold text-dark text-sm" numberOfLines={1}>
-                  {ticket.location_name ?? 'Ticket'}
-                </Text>
-                <View className="flex-row items-center gap-2 mt-0.5">
-                  <Text className="text-[10px] text-gray-400">
-                    {ticket.date ? new Date(ticket.date).toLocaleDateString() : '---'}
-                  </Text>
-                  {ticket.expense_type ? (
-                    <View className="bg-gray-100 px-2 py-0.5 rounded-full">
-                      <Text className="text-[9px] font-bold text-gray-500 uppercase">{ticket.expense_type}</Text>
-                    </View>
-                  ) : null}
-                </View>
-              </View>
-            </View>
-            <View className="items-end ml-2">
-              <Text className="font-semibold text-dark text-sm">
-                {ticket.amount ?? '—'}{' '}
-                <Text className="text-[10px] text-gray-400">{ticket.currency}</Text>
-              </Text>
-              <StatusBadge status={ticket.status} />
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-};
+import {
+  PixelCard,
+  DARK,
+  CARD_BG,
+  SCREEN_BG,
+  colors,
+} from '../../../src/components/ui/PixelCard';
+import { TicketDetailModal } from '../../../src/components/features/TicketDetailModal';
+import { TicketsFilterPanel } from '../../../src/components/features/TicketsFilterPanel';
+import { useTicketsScreen } from '../../../src/hooks/useTicketsScreen';
+import { ticketIcon } from '@ticket-registrator/shared/assets';
 
 export default function AllTicketsScreen() {
   const { t } = useTranslation();
-  const { data: reports, isLoading } = useReportsQuery();
-  const [selectedTicket, setSelectedTicket] = useState<ITicket | null>(null);
-  const [selectedReportId, setSelectedReportId] = useState('');
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [search, setSearch] = useState('');
+  const insets = useSafeAreaInsets();
 
-  const handleTicketPress = (ticket: ITicket, reportId: string) => {
-    setSelectedTicket(ticket);
-    setSelectedReportId(reportId);
-    setIsDetailOpen(true);
-  };
+  const {
+    tickets,
+    isLoading,
+    search,        setSearch,
+    ticketDate,    setTicketDate,
+    uploadDate,    setUploadDate,
+    reportFilter,  setReportFilter,
+    reportOptions,
+    hasFilters,
+    clearFilters,
+    isDetailOpen,  setIsDetailOpen,
+    selectedTicket, setSelectedTicket,
+    selectedReportId,
+    handleTicketPress,
+  } = useTicketsScreen();
 
   return (
-    <SafeAreaView className={mt.screen}>
-      {/* Header */}
-      <View className={mt.pageHeader}>
-        <View className="flex-row items-center gap-2 mb-1">
-          <Feather name="file-text" size={32} color={colors.brand} />
-          <Text className={mt.pageHeaderTitle}>{t('layout.allTickets')}</Text>
-        </View>
-        <Text className="text-sm text-gray-400">{t('layout.fullHistory')}</Text>
-      </View>
+    <View style={s.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={CARD_BG} />
+      <View style={{ height: insets.top, backgroundColor: CARD_BG }} />
 
-      {/* Search */}
-      <View className="px-6 pt-4 pb-2">
-        <View className={mt.searchBar}>
-          <Feather name="search" size={28} color="#94a3b8" />
-          <TextInput
-            className={mt.searchInput}
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Buscar por establecimiento, categoria..."
-            placeholderTextColor="#94a3b8"
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Feather name="x" size={28} color="#94a3b8" />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-      <ScrollView className="flex-1 px-6 pt-4" contentContainerStyle={{ paddingBottom: 40 }}>
-        {isLoading ? (
-          <View className="flex-1 items-center justify-center py-24">
-            <ActivityIndicator size="large" color={colors.brand} />
-            <Text className="text-gray-400 mt-3 text-sm">Cargando tickets...</Text>
+      {/* ── Header ── */}
+      <View style={s.header}>
+        <Text style={s.headerTitle}>{t('layout.allTickets')}</Text>
+        {tickets.length > 0 && (
+          <View style={s.countPill}>
+            <Text style={s.countPillText}>{tickets.length}</Text>
           </View>
-        ) : !reports || reports.length === 0 ? (
-          <View className={mt.emptyState}>
-            <View className={mt.emptyStateIcon}>
-              <Feather name="inbox" size={56} color="#cbd5e1" />
-            </View>
-            <Text className={mt.emptyStateTitle}>No hay tickets registrados</Text>
-            <Text className={mt.emptyStateText}>
-              Sube tickets de gasto desde tus reportes para verlos aqui.
+        )}
+      </View>
+
+      {/* ── Filters ── */}
+      <TicketsFilterPanel
+        search={search}           onSearch={setSearch}
+        ticketDate={ticketDate}   onTicketDate={(s, e) => setTicketDate({ start: s, end: e })}
+        uploadDate={uploadDate}   onUploadDate={(s, e) => setUploadDate({ start: s, end: e })}
+        reportFilter={reportFilter} onReportFilter={setReportFilter}
+        reports={reportOptions}
+        hasFilters={hasFilters}
+        onClear={clearFilters}
+      />
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={s.scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {isLoading ? (
+          <View style={s.centered}>
+            <ActivityIndicator size="large" color={colors.brand} />
+          </View>
+        ) : tickets.length === 0 ? (
+          <View style={s.centered}>
+            <Image source={ticketIcon} style={s.emptyIcon} contentFit="contain" />
+            <Text style={s.emptyTitle}>SIN TICKETS</Text>
+            <Text style={s.emptyText}>
+              {hasFilters
+                ? 'No hay resultados para los filtros aplicados.'
+                : 'Sube tickets desde tus reportes para verlos aquí.'}
             </Text>
           </View>
         ) : (
-          reports.map(report => (
-            <ReportTicketGroup
-              key={report.id}
-              report={report}
-              search={search}
-              onTicketPress={handleTicketPress}
-            />
+          tickets.map(ticket => (
+            <PixelCard
+              key={ticket.id}
+              bg={CARD_BG}
+              shadowOffset={3}
+              style={s.ticketCard}
+              onPress={() => handleTicketPress(ticket)}
+            >
+              <View style={s.ticketRow}>
+                <Image source={ticketIcon} style={s.ticketIcon} contentFit="contain" />
+
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={s.ticketName} numberOfLines={1}>
+                    {ticket.location_name ?? t('reportDetail.noTicketName')}
+                  </Text>
+                  <View style={s.pillRow}>
+                    {ticket.expense_type ? (
+                      <View style={s.expensePill}>
+                        <Text style={s.expenseText}>{ticket.expense_type}</Text>
+                      </View>
+                    ) : null}
+                    <View style={s.reportPill}>
+                      <IconFolder size={8} color={`${DARK}50`} />
+                      <Text style={s.reportPillText} numberOfLines={1}>{ticket.reportName}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={s.ticketRight}>
+                  <Text style={s.ticketAmount}>
+                    {ticket.amount == null ? '—' : ticket.amount.toLocaleString()}
+                    {ticket.currency
+                      ? <Text style={s.ticketCurrency}> {ticket.currency}</Text>
+                      : null}
+                  </Text>
+                  <Text style={s.ticketDate}>
+                    {format(new Date(ticket.createdAt), 'dd/MM/yy')}
+                  </Text>
+                </View>
+
+                <IconChevronRight size={16} color={`${DARK}30`} style={{ marginLeft: 4 }} />
+              </View>
+            </PixelCard>
           ))
         )}
       </ScrollView>
 
-      <TicketDetailModal
-        visible={isDetailOpen}
-        onClose={() => {
-          setIsDetailOpen(false);
-          setSelectedTicket(null);
-        }}
-        ticket={selectedTicket}
-        reportId={selectedReportId}
-      />
-    </SafeAreaView>
+      {selectedTicket && (
+        <TicketDetailModal
+          visible={isDetailOpen}
+          onClose={() => { setIsDetailOpen(false); setSelectedTicket(null); }}
+          ticket={selectedTicket}
+          reportId={selectedReportId}
+          reportName={selectedTicket.reportName}
+          isEditable={false}
+        />
+      )}
+    </View>
   );
 }
+
+const s = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: SCREEN_BG },
+
+  // ── Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 12,
+    backgroundColor: CARD_BG,
+    borderBottomWidth: 4,
+    borderBottomColor: DARK,
+  },
+  headerTitle: {
+    fontFamily: 'SpaceGrotesk-Bold',
+    fontSize: 24,
+    color: DARK,
+    letterSpacing: 0.5,
+  },
+  countPill: {
+    backgroundColor: DARK,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  countPillText: {
+    fontFamily: 'SpaceGrotesk-Bold',
+    fontSize: 10,
+    color: CARD_BG,
+  },
+
+  scroll: { padding: 20, paddingBottom: 60 },
+
+  // ── Ticket cards
+  ticketCard: { marginBottom: 10 },
+  ticketRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    gap: 10,
+  },
+  ticketIcon: { width: 44, height: 44, flexShrink: 0 },
+  ticketName: {
+    fontFamily: 'SpaceGrotesk-Bold',
+    fontSize: 13,
+    color: DARK,
+    marginBottom: 4,
+  },
+  pillRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap' },
+  expensePill: {
+    backgroundColor: `${colors.brand}18`,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1.5,
+    borderColor: colors.brand,
+    borderRadius: 4,
+  },
+  expenseText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 8, color: colors.brand },
+  reportPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: `${DARK}08`,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    maxWidth: 120,
+  },
+  reportPillText: {
+    fontFamily: 'SpaceGrotesk-Bold',
+    fontSize: 8,
+    color: `${DARK}50`,
+  },
+  ticketRight: { alignItems: 'flex-end', flexShrink: 0 },
+  ticketAmount: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK },
+  ticketCurrency: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 9, color: `${DARK}55` },
+  ticketDate: {
+    fontFamily: 'SpaceGrotesk-Medium',
+    fontSize: 9,
+    color: `${DARK}40`,
+    marginTop: 2,
+  },
+
+  // ── Empty / loading
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
+  emptyIcon: { width: 64, height: 64, marginBottom: 12 },
+  emptyTitle: {
+    fontFamily: 'SpaceGrotesk-Bold',
+    fontSize: 13,
+    color: DARK,
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  emptyText: {
+    fontFamily: 'SpaceGrotesk-Medium',
+    fontSize: 11,
+    color: `${DARK}50`,
+    textAlign: 'center',
+    lineHeight: 16,
+    maxWidth: 220,
+  },
+
+});

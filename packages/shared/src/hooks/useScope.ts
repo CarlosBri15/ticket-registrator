@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useUserQuery } from './useAuth';
-import { AUTHORITY_LEVELS } from '../user-roles/roles';
+import { AUTHORITY_LEVELS } from '../defaults/roles';
 import type { Scope } from '../interfaces/scope/scope.interface';
 
 export const useScope = () => {

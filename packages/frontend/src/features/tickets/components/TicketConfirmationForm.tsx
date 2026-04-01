@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, AlertCircle, Cpu, Home, MapPin, Calendar, DollarSign, CreditCard, Tag, List } from "lucide-react";
+import { Check, AlertCircle, Cpu, Home, MapPin, Calendar, DollarSign, CreditCard, List } from "lucide-react";
 import type { ITicket } from "@ticket-registrator/shared";
 import { Input } from "../../../components/ui/Input";
 import { Button } from "../../../components/ui/Button";
@@ -18,20 +18,18 @@ type FieldKey =
   | "date"
   | "amount"
   | "currency"
-  | "payment_type"
-  | "expense_type";
+  | "payment_type";
 
 const isExtracted = (value: any): boolean =>
   value !== null && value !== undefined && value !== "";
 
 const FIELD_META: Record<FieldKey, { label: string; placeholder: string; icon: React.ElementType; type?: string; step?: string }> = {
-  location_name:    { label: "Establecimiento",    placeholder: "Nombre del comercio",     icon: Home },
-  location_address: { label: "Dirección",           placeholder: "Dirección completa",      icon: MapPin },
-  date:             { label: "Fecha",               placeholder: "",                        icon: Calendar, type: "date" },
-  amount:           { label: "Importe Total",       placeholder: "0.00",                   icon: DollarSign, type: "number", step: "0.01" },
-  currency:         { label: "Moneda",              placeholder: "EUR",                    icon: CreditCard },
-  payment_type:     { label: "Método de Pago",      placeholder: "Ej: Tarjeta, Efectivo",  icon: CreditCard },
-  expense_type:     { label: "Categoría",           placeholder: "Ej: Comida, Transporte", icon: Tag },
+  location_name: { label: "Establecimiento", placeholder: "Nombre del comercio", icon: Home },
+  location_address: { label: "Dirección", placeholder: "Dirección completa", icon: MapPin },
+  date: { label: "Fecha", placeholder: "", icon: Calendar, type: "date" },
+  amount: { label: "Importe Total", placeholder: "0.00", icon: DollarSign, type: "number", step: "0.01" },
+  currency: { label: "Moneda", placeholder: "EUR", icon: CreditCard },
+  payment_type: { label: "Método de Pago", placeholder: "Ej: Tarjeta, Efectivo", icon: CreditCard },
 };
 
 export const TicketConfirmationForm = ({
@@ -41,28 +39,26 @@ export const TicketConfirmationForm = ({
   isLoading,
 }: TicketConfirmationFormProps) => {
   const [formData, setFormData] = useState<Record<FieldKey, string>>({
-    location_name:    ticket.location_name    || "",
+    location_name: ticket.location_name || "",
     location_address: ticket.location_address || "",
-    date:             ticket.date ? new Date(ticket.date).toISOString().split("T")[0] : "",
-    amount:           ticket.amount == null   ? "" : ticket.amount.toString(),
-    currency:         ticket.currency         || "",
-    payment_type:     ticket.payment_type     || "",
-    expense_type:     ticket.expense_type     || "",
+    date: ticket.date ? new Date(ticket.date).toISOString().split("T")[0] : "",
+    amount: ticket.amount == null ? "" : ticket.amount.toString(),
+    currency: ticket.currency || "",
+    payment_type: ticket.payment_type || "",
   });
 
   const extracted: Record<FieldKey, boolean> = {
-    location_name:    isExtracted(ticket.location_name),
+    location_name: isExtracted(ticket.location_name),
     location_address: isExtracted(ticket.location_address),
-    date:             isExtracted(ticket.date),
-    amount:           ticket.amount !== null && ticket.amount !== undefined,
-    currency:         isExtracted(ticket.currency),
-    payment_type:     isExtracted(ticket.payment_type),
-    expense_type:     isExtracted(ticket.expense_type),
+    date: isExtracted(ticket.date),
+    amount: ticket.amount !== null && ticket.amount !== undefined,
+    currency: isExtracted(ticket.currency),
+    payment_type: isExtracted(ticket.payment_type),
   };
 
   const allKeys = Object.keys(extracted) as FieldKey[];
   const extractedKeys = allKeys.filter((k) => extracted[k]);
-  const missingKeys   = allKeys.filter((k) => !extracted[k]);
+  const missingKeys = allKeys.filter((k) => !extracted[k]);
   const confidencePct = Math.round((extractedKeys.length / allKeys.length) * 100);
 
   const formatExtractedValue = (key: FieldKey): string => {
@@ -90,13 +86,12 @@ export const TicketConfirmationForm = ({
   const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     onConfirm({
-      location_name:    formData.location_name    || null,
+      location_name: formData.location_name || null,
       location_address: formData.location_address || null,
-      date:             formData.date             || null,
-      amount:           formData.amount ? Number.parseFloat(formData.amount) : null,
-      currency:         formData.currency         || null,
-      payment_type:     formData.payment_type     || null,
-      expense_type:     formData.expense_type     || null,
+      date: formData.date || null,
+      amount: formData.amount ? Number.parseFloat(formData.amount) : null,
+      currency: formData.currency || null,
+      payment_type: formData.payment_type || null,
     });
   };
 

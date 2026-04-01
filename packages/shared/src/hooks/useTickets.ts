@@ -60,11 +60,12 @@ export const useDeleteTicketMutation = (options?: any) => {
     });
 };
 
-export const useTicketImageQuery = (reportId: string, ticketId: string) => {
-    return useQuery({
+export const useTicketImageQuery = (reportId: string, ticketId: string, options?: any) => {
+    return useQuery<{ url: string }>({
         queryKey: ['tickets', reportId, ticketId, 'image'],
         queryFn: () => api.tickets().getImageUrl(reportId, ticketId),
         enabled: !!reportId && !!ticketId,
         staleTime: 10 * 60 * 1000,
+        ...options
     });
 };

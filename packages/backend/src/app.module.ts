@@ -14,6 +14,7 @@ import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { SeedModule } from './seed/seed.module';
 import { CryptoModule } from './crypto/crypto.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { CryptoModule } from './crypto/crypto.module';
     RolesModule,
     PermissionsModule,
     SeedModule,
+    CategoriesModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

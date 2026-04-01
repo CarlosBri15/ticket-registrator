@@ -132,24 +132,24 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
 
               {file ? (
                 <div className="flex flex-col items-center animate-in zoom-in-95 duration-300">
-                   <div className={`w-14 h-14 bg-success/10 text-success ${radius.base} flex items-center justify-center mb-4`}>
-                      <File className="w-7 h-7" />
-                   </div>
-                   <p className="text-dark font-semibold mb-1">{file.name}</p>
-                   <p className="text-slate-400 text-sm">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                   {!uploadMutation.isPending && (
-                     <button
+                  <div className={`w-14 h-14 bg-success/10 text-success ${radius.base} flex items-center justify-center mb-4`}>
+                    <File className="w-7 h-7" />
+                  </div>
+                  <p className="text-dark font-semibold mb-1">{file.name}</p>
+                  <p className="text-slate-400 text-sm">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  {!uploadMutation.isPending && (
+                    <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setFile(null); }}
                       className="mt-4 text-xs font-semibold text-danger hover:text-red-700 uppercase tracking-wide"
-                     >
-                       Quitar archivo
-                     </button>
-                   )}
+                    >
+                      Quitar archivo
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center text-center">
                   <div className={`w-14 h-14 bg-brand/10 text-brand ${radius.base} flex items-center justify-center mb-4`}>
-                      <Upload className="w-7 h-7" />
+                    <Upload className="w-7 h-7" />
                   </div>
                   <h4 className="text-base font-semibold text-dark mb-1">Arrastra tu ticket aquí</h4>
                   <p className="text-slate-500 text-sm max-w-[200px]">Soporta imágenes (JPG, PNG) y documentos PDF</p>
@@ -161,25 +161,25 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
             </label>
 
             <div className={`${tokens.alert} ${tokens.alertWarning}`}>
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <p className="text-xs leading-relaxed font-medium">
-                  Asegúrate de que el ticket sea legible y contenga claramente la fecha, el importe total y el comercio. Nuestra IA se encargará del resto.
-                </p>
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <p className="text-xs leading-relaxed font-medium">
+                Asegúrate de que el ticket sea legible y contenga claramente la fecha, el importe total y el comercio. Nuestra IA se encargará del resto.
+              </p>
             </div>
 
             <div className="flex gap-3 pt-2">
-                <Button variant="ghost" onClick={handleClose} disabled={uploadMutation.isPending} className="flex-1">
-                    Cancelar
-                </Button>
-                <Button
-                    onClick={handleUpload}
-                    isLoading={uploadMutation.isPending}
-                    disabled={!file}
-                    className="flex-1"
-                >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Procesar con IA
-                </Button>
+              <Button variant="ghost" onClick={handleClose} disabled={uploadMutation.isPending} className="flex-1">
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleUpload}
+                isLoading={uploadMutation.isPending}
+                disabled={!file}
+                className="flex-1"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Procesar con IA
+              </Button>
             </div>
           </>
         ) : (
@@ -188,7 +188,7 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
               const missing = [
                 extractedTicket.location_name, extractedTicket.location_address,
                 extractedTicket.date, extractedTicket.currency,
-                extractedTicket.payment_type, extractedTicket.expense_type
+                extractedTicket.payment_type
               ].filter(v => v === null || v === undefined || v === "").length;
               const hasMissing = missing > 0 || (extractedTicket.amount === null || extractedTicket.amount === undefined);
               return hasMissing ? (

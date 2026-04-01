@@ -64,6 +64,13 @@
       "when": 1773854195688,
       "tag": "0008_sudden_magma",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1774307564494,
+      "tag": "0009_jittery_william_stryker",
+      "breakpoints": true
     }
   ]
 }

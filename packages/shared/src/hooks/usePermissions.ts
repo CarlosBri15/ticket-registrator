@@ -1,5 +1,5 @@
 import { useUserQuery } from './useAuth';
-import type { PermissionType } from '../user-roles/permissions';
+import type { PermissionType } from '../defaults/permissions';
 
 /**
  * Centralised permission checker.

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CreateReportSchema } from '../index';
+import { CreateReportSchema, ReportPaginationParams } from '../index';
 import { api } from '../api/clientContainer';
 
 export const useReportsQuery = () => {
@@ -8,6 +8,14 @@ export const useReportsQuery = () => {
         queryFn: () => api.reports().getAll(),
     });
 };
+
+export const useReportsPaginatedQuery = (params: ReportPaginationParams) => {
+    return useQuery({
+        queryKey: ['reports', 'paginated', params],
+        queryFn: () => api.reports().getPaginated(params),
+    });
+};
+
 
 export const useReportQuery = (id?: string) => {
     return useQuery({

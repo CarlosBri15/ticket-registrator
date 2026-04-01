@@ -9,7 +9,7 @@ export class TicketsRepository {
   constructor(
     @Inject(DB_CONNECTION)
     private readonly db: PostgresJsDatabase<typeof schema>,
-  ) {}
+  ) { }
 
   async findById(id: string) {
     return this.db.query.tickets.findFirst({
@@ -45,6 +45,21 @@ export class TicketsRepository {
         id: true,
         imageId: true,
       },
+    });
+  }
+
+  async findSemanticDuplicate(
+    date: Date,
+    amount: number,
+    locationName: string,
+  ) {
+    return this.db.query.tickets.findFirst({
+      where: and(
+        eq(schema.tickets.date, date),
+        eq(schema.tickets.amount, amount),
+        eq(schema.tickets.locationName, locationName),
+        isNull(schema.tickets.deletedAt),
+      ),
     });
   }
 

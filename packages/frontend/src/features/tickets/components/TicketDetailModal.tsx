@@ -39,7 +39,6 @@ type EditableFields = {
   amount: string;
   currency: string;
   payment_type: string;
-  expense_type: string;
 };
 
 // ─── Item status helpers ───────────────────────────────────────────────────────
@@ -85,7 +84,6 @@ export const TicketDetailModal = ({
     amount: "",
     currency: "",
     payment_type: "",
-    expense_type: "",
   });
 
   const { data: imageData, isLoading: isLoadingImage } = useTicketImageQuery(
@@ -131,7 +129,6 @@ export const TicketDetailModal = ({
       amount: ticket.amount == null ? "" : ticket.amount.toString(),
       currency: ticket.currency || "",
       payment_type: ticket.payment_type || "",
-      expense_type: ticket.expense_type || "",
     });
     setIsEditing(true);
   };
@@ -152,7 +149,6 @@ export const TicketDetailModal = ({
         amount: formData.amount ? Number.parseFloat(formData.amount) : null,
         currency: formData.currency || null,
         payment_type: formData.payment_type || null,
-        expense_type: formData.expense_type || null,
       },
     });
   };
@@ -195,11 +191,6 @@ export const TicketDetailModal = ({
             <Input label={t("confirmForm.paymentMethod")} name="payment_type"
               value={formData.payment_type} onChange={handleChange}
               placeholder={t("confirmForm.paymentMethodPlaceholder")} />
-            <div className="md:col-span-2">
-              <Input label={t("confirmForm.category")} name="expense_type"
-                value={formData.expense_type} onChange={handleChange}
-                placeholder={t("confirmForm.categoryPlaceholder")} />
-            </div>
           </div>
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}

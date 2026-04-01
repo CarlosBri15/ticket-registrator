@@ -1,44 +1,74 @@
-import { useTranslation } from "react-i18next";
-import { tokens } from '../../styles/theme';
+/**
+ * StatusBadge — Web version of the mobile StatusBadge.
+ *
+ * Matches mobile exactly:
+ *   - Solid colored background (no translucency)
+ *   - Lucide icon (matches Feather icon names)
+ *   - 9px bold Space Grotesk text, all white
+ *   - 2px solid dark border (BORDER_WIDTH = 2)
+ *   - borderRadius: 8 (RADIUS = 8) → rounded-lg
+ *   - Hard shadow: 3px offset (shadowOffset = 3)
+ */
+
+import {
+  FileText, Clock, Send, CheckCircle, DollarSign, XCircle, Slash, Edit2,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import type { LucideIcon } from 'lucide-react';
+import { statusColors } from '@ticket-registrator/shared';
+
+type StatusKey = keyof typeof statusColors;
+
+const STATUS_ICONS: Record<string, LucideIcon> = {
+  DRAFT:     Edit2,
+  CREATED:   FileText,
+  PENDING:   Clock,
+  SUBMITTED: Send,
+  APPROVED:  CheckCircle,
+  PAID:      DollarSign,
+  REJECTED:  XCircle,
+  DECLINED:  Slash,
+};
 
 interface StatusBadgeProps {
   status: string;
-  size?: "sm" | "md";
+  /** size="sm" is the default (matches mobile StatusBadge); size="md" is larger */
+  size?: 'sm' | 'md';
 }
 
-type StatusConfig = {
-  classes: string;
-  dot: string;
-  pulse?: boolean;
-};
-
-const STATUS_CONFIG: Record<string, StatusConfig> = {
-  CREATED:   { classes: tokens.badgeNeutral,  dot: "bg-slate-400",  pulse: true  },
-  DRAFT:     { classes: tokens.badgeNeutral,  dot: "bg-slate-400",  pulse: true  },
-  PENDING:   { classes: tokens.badgeWarning,  dot: "bg-warning",    pulse: true  },
-  SUBMITTED: { classes: tokens.badgeBrand,    dot: "bg-brand",      pulse: true  },
-  APPROVED:  { classes: tokens.badgeSuccess,  dot: "bg-success"                  },
-  REJECTED:  { classes: tokens.badgeDanger,   dot: "bg-danger"                   },
-  PAID:      { classes: tokens.badgeSuccess,  dot: "bg-success"                  },
-  DECLINED:  { classes: tokens.badgeDanger,   dot: "bg-danger"                   },
-};
-
-export const StatusBadge = ({ status, size = "sm" }: StatusBadgeProps) => {
+export const StatusBadge = ({ status, size = 'sm' }: StatusBadgeProps) => {
   const { t } = useTranslation();
-  const key = status.toUpperCase();
-  const cfg = STATUS_CONFIG[key] ?? STATUS_CONFIG.DRAFT;
+  const key = status.toUpperCase() as StatusKey;
+  const cfg = statusColors[key] ?? statusColors.DRAFT;
+  const Icon = STATUS_ICONS[key] ?? FileText;
 
-  const sizeClass = size === "sm" ? tokens.badgeSm : tokens.badge;
+  const iconSize = size === 'sm' ? 10 : 12;
 
   return (
-    <span className={`${sizeClass} ${cfg.classes}`}>
-      <span className="relative flex w-1.5 h-1.5 shrink-0">
-        {cfg.pulse && (
-          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 ${cfg.dot}`} />
-        )}
-        <span className={`relative inline-flex rounded-full w-1.5 h-1.5 ${cfg.dot}`} />
-      </span>
-      {t(`status.${key}`)}
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: cfg.bg,
+        color: cfg.text,
+        border: '2px solid rgba(26, 26, 26, 0.15)',
+        borderRadius: 8,
+        paddingLeft: 8,
+        paddingRight: 8,
+        paddingTop: 3,
+        paddingBottom: 3,
+        boxShadow: '3px 3px 0px rgba(26, 26, 26, 0.15)',
+        fontFamily: "'Space Grotesk', sans-serif",
+        fontWeight: 700,
+        fontSize: 9,
+        letterSpacing: '0.2px',
+        whiteSpace: 'nowrap',
+        lineHeight: 1,
+      }}
+    >
+      <Icon size={iconSize} strokeWidth={2.5} style={{ flexShrink: 0 }} />
+      {t(`status.${key}`, { defaultValue: key })}
     </span>
   );
 };

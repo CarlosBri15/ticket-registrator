@@ -30,7 +30,6 @@ import {
 import type { PermissionType } from "@ticket-registrator/shared";
 import { tokenProvider } from "../../api/client";
 import { useTranslation } from "react-i18next";
-import { LanguageSelector } from "../ui/LanguageSelector";
 import { radius, transition } from "../../styles/theme";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -455,16 +454,10 @@ export const AppLayout = () => {
           </button>
         </header>
 
-        <div className="hidden lg:flex absolute top-6 right-10 z-50">
-          <LanguageSelector />
-        </div>
-
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand/3 rounded-full blur-[120px] -z-10 pointer-events-none translate-x-1/2 -translate-y-1/2" />
 
         <div className="flex-1 overflow-y-auto bg-slate-100/70 px-6 py-7 md:px-10 lg:py-9 scroll-smooth">
-          <div className="max-w-7xl mx-auto">
-            <Outlet />
-          </div>
+          <Outlet />
         </div>
       </main>
     </div>

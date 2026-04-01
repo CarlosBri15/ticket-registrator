@@ -12,13 +12,15 @@ config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
   path.resolve(workspaceRoot, 'node_modules'),
 ];
-config.resolver.disableHierarchicalLookup = true;
+config.resolver.disableHierarchicalLookup = false;
 
 config.resolver.extraNodeModules = {
   'react': path.resolve(workspaceRoot, 'node_modules/react'),
   'react-native': path.resolve(workspaceRoot, 'node_modules/react-native'),
   'expo': path.resolve(workspaceRoot, 'node_modules/expo'),
   'expo-router': path.resolve(workspaceRoot, 'node_modules/expo-router'),
+  'react-native-web': path.resolve(workspaceRoot, 'node_modules/react-native-web'),
+  'react-dom': path.resolve(workspaceRoot, 'node_modules/react-dom'),
   '@tanstack/react-query': path.resolve(workspaceRoot, 'node_modules/@tanstack/react-query'),
 };
 

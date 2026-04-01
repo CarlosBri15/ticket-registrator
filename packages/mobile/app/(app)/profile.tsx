@@ -1,12 +1,37 @@
-import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
-import { useUserQuery, useUpdateUserMutation } from '@ticket-registrator/shared';
-import { useRouter } from 'expo-router';
+import React from 'react';
+import {
+  Image,
+  View,
+  Text,
+  ScrollView,
+  ActivityIndicator,
+  StyleSheet,
+  StatusBar,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { 
+  IconLogout, 
+  IconShield, 
+  IconUser, 
+  IconEdit, 
+  IconX, 
+  IconCheck, 
+  IconCircleCheck, 
+  IconGlobe 
+} from '@tabler/icons-react-native';
 import { useTranslation } from 'react-i18next';
-import { tokenProvider } from '../../src/api/client';
-import { mt, colors } from '../../src/styles/theme';
+
+import {
+  PixelCard,
+  DARK,
+  CARD_BG,
+  SCREEN_BG,
+  colors,
+} from '../../src/components/ui/PixelCard';
+import { PixelField } from '../../src/components/ui/PixelField';
+import { PixelInput } from '../../src/components/ui/PixelInput';
+import { useProfileScreen } from '../../src/hooks/useProfileScreen';
+import { userIcon } from '@ticket-registrator/shared/assets';
 
 const LANGUAGES = [
   { code: 'es', label: 'Español', flag: '🇪🇸' },
@@ -14,214 +39,319 @@ const LANGUAGES = [
 ];
 
 export default function ProfileScreen() {
-  const { t, i18n } = useTranslation();
-  const router = useRouter();
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
-  const { data: user } = useUserQuery();
-  const { mutate: updateUser, isPending: isSaving } = useUpdateUserMutation({
-    onSuccess: () => {
-      setIsEditing(false);
-      setSaveOk(true);
-      setTimeout(() => setSaveOk(false), 3000);
-    },
-  });
+  const {
+    user,
+    isEditing,
+    setIsEditing,
+    saveOk,
+    form,
+    setForm,
+    startEdit,
+    handleSave,
+    handleLogout,
+    isSaving,
+    language,
+    changeLanguage,
+  } = useProfileScreen();
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [saveOk, setSaveOk] = useState(false);
-  const [form, setForm] = useState({ name: '', surname: '', email: '' });
-
-  const startEdit = () => {
-    setForm({
-      name: user?.name ?? '',
-      surname: (user as any)?.surname ?? '',
-      email: user?.email ?? '',
-    });
-    setIsEditing(true);
-    setSaveOk(false);
-  };
-
-  const handleSave = () => {
-    if (!user?.id || !form.name.trim()) return;
-    const payload: Record<string, string> = {};
-    if (form.name.trim()) payload.name = form.name.trim();
-    if (form.surname.trim()) payload.surname = form.surname.trim();
-    if (form.email.trim()) payload.email = form.email.trim();
-    updateUser({ id: user.id, data: payload });
-  };
-
-  const handleLogout = async () => {
-    await tokenProvider.removeToken();
-    router.replace('/(auth)/login');
-  };
-
-  const userInitials = user?.name
-    ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2)
-    : '?';
+  const roleName: string = (user as any)?.roleName ?? '';
 
   return (
-    <SafeAreaView className={mt.screen}>
-      <View className={`${mt.pageHeader} flex-row justify-between items-center`}>
-        <Text className={mt.pageHeaderTitle}>{t('settings.profile')}</Text>
-        {!isEditing && (
-          <TouchableOpacity onPress={startEdit} className="flex-row items-center gap-1.5">
-            <Feather name="edit-2" size={16} color={colors.brand} />
-            <Text className="text-brand font-semibold text-sm">{t('settings.editProfile')}</Text>
-          </TouchableOpacity>
-        )}
+    <View style={s.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={CARD_BG} />
+      <View style={{ height: insets.top, backgroundColor: CARD_BG }} />
+
+      {/* ── Header ── */}
+      <View style={s.header}>
+        <Text style={s.headerTitle}>{t('settings.profile') ?? 'Perfil'}</Text>
+        <PixelCard
+          bg={colors.danger}
+          shadowOffset={3}
+          radius={8}
+          onPress={handleLogout}
+        >
+          <View style={s.headerBtn}>
+            <IconLogout size={16} color="white" />
+          </View>
+        </PixelCard>
       </View>
 
-      <ScrollView className="flex-1 px-6 pt-6" contentContainerStyle={{ paddingBottom: 40 }}>
-
-        {/* Profile Card */}
-        <View className={`${mt.listSection} mb-6`}>
-          <View className="p-5 border-b border-gray-50 flex-row items-center gap-4">
-            <View className="w-14 h-14 bg-brand rounded-2xl items-center justify-center">
-              <Text className="text-white font-black text-xl">{userInitials}</Text>
-            </View>
-            <View className="flex-1">
-              <Text className="font-bold text-dark text-base">
-                {user?.name ?? '—'} {(user as any)?.surname ?? ''}
-              </Text>
-              <Text className="text-sm text-gray-400">{user?.email ?? '—'}</Text>
-            </View>
-            {saveOk && (
-              <View className={`${mt.badgeSuccess}`}>
-                <Feather name="check" size={12} color="#16a34a" />
-                <Text className="text-green-700 text-xs font-bold">{t('settings.updateSuccess')}</Text>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={s.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Avatar card ── */}
+        <PixelCard bg={CARD_BG} shadowOffset={4} style={s.profileCardWrap}>
+          <View style={s.profileCardInner}>
+            <PixelCard bg={colors.secondary} shadowOffset={3} radius={14}>
+              <View style={s.avatarBubbleInner}>
+                <Image source={userIcon} style={s.avatarImage} />
               </View>
+            </PixelCard>
+            <View style={s.profileMeta}>
+              <Text style={s.userName}>{user?.name ?? '...'}</Text>
+              <Text style={s.userEmail}>{user?.email}</Text>
+              {roleName ? (
+                <View style={s.rolePill}>
+                  <IconShield size={9} color={CARD_BG} />
+                  <Text style={s.rolePillText}>{roleName}</Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        </PixelCard>
+
+        {/* ── Personal data ── */}
+        <View style={s.section}>
+          <View style={s.sectionHeader}>
+            <IconUser size={11} color={DARK} />
+            <Text style={s.sectionTitle}>{t('settings.personalData')}</Text>
+            {isEditing ? (
+              <PixelCard
+                bg={CARD_BG}
+                shadowOffset={3}
+                radius={8}
+                onPress={() => setIsEditing(false)}
+              >
+                <View style={s.sectionBtnInner}>
+                  <IconX size={13} color={DARK} />
+                  <Text style={s.sectionBtnText}>{t('common.cancel')}</Text>
+                </View>
+              </PixelCard>
+            ) : (
+              <PixelCard
+                bg={colors.brand}
+                shadowOffset={3}
+                radius={8}
+                onPress={startEdit}
+              >
+                <View style={s.sectionBtnInner}>
+                  <IconEdit size={13} color="white" />
+                  <Text style={[s.sectionBtnText, { color: 'white' }]}>{t('common.edit')}</Text>
+                </View>
+              </PixelCard>
             )}
           </View>
 
-          {/* Role & permissions info */}
-          {!isEditing && ((user as any)?.roleName || (user as any)?.permissions?.length > 0) && (
-            <View className="p-5 space-y-3">
-              {(user as any)?.roleName && (
-                <View className="flex-row justify-between items-center">
-                  <View className="flex-row items-center gap-2">
-                    <Feather name="shield" size={14} color="#94a3b8" />
-                    <Text className={mt.sectionLabel}>{t('settings.myRole')}</Text>
-                  </View>
-                  <View className={mt.badgeBrand}>
-                    <Text className="text-brand font-bold text-xs">{(user as any).roleName}</Text>
-                  </View>
-                </View>
-              )}
-              {(user as any)?.permissions?.length > 0 && (
-                <View className="flex-row justify-between items-center">
-                  <View className="flex-row items-center gap-2">
-                    <Feather name="key" size={14} color="#94a3b8" />
-                    <Text className={mt.sectionLabel}>{t('settings.myPermissions')}</Text>
-                  </View>
-                  <Text className="text-xs font-semibold text-gray-500">
-                    {t('settings.permissionsCount', { count: (user as any).permissions.length })}
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
+          <View style={s.formContainer}>
+            <PixelField label={t('common.name')}>
+              <PixelInput
+                value={form.name}
+                onChangeText={(v) => setForm({ ...form, name: v })}
+                placeholder="Tu nombre"
+                editable={isEditing}
+              />
+            </PixelField>
 
-          {/* Edit form */}
-          {isEditing && (
-            <View className="p-5 space-y-4">
-              <View className="flex-row gap-3">
-                <View className="flex-1">
-                  <Text className={mt.inputLabel}>{t('settings.nameLabel')}</Text>
-                  <TextInput
-                    className={mt.input}
-                    value={form.name}
-                    onChangeText={v => setForm(p => ({ ...p, name: v }))}
-                    placeholder="Carlos"
-                  />
+            <PixelField label={t('common.email')}>
+              <PixelInput
+                value={form.email}
+                onChangeText={(v) => setForm({ ...form, email: v })}
+                placeholder="email@ejemplo.com"
+                editable={isEditing}
+                keyboardType="email-address"
+              />
+            </PixelField>
+
+            {isEditing && (
+              <PixelCard
+                bg={colors.brand}
+                shadowOffset={4}
+                style={isSaving ? s.savingOpacity : undefined}
+                onPress={isSaving ? undefined : handleSave}
+              >
+                <View style={s.saveBtnInner}>
+                  {isSaving ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <>
+                      <IconCheck size={16} color="white" />
+                      <Text style={s.saveBtnText}>{t('common.save')}</Text>
+                    </>
+                  )}
                 </View>
-                <View className="flex-1">
-                  <Text className={mt.inputLabel}>{t('settings.surnameLabel')}</Text>
-                  <TextInput
-                    className={mt.input}
-                    value={form.surname}
-                    onChangeText={v => setForm(p => ({ ...p, surname: v }))}
-                    placeholder="García"
-                  />
-                </View>
+              </PixelCard>
+            )}
+
+            {saveOk && !isEditing && (
+              <View style={s.successMsg}>
+                <IconCircleCheck size={14} color={colors.success} />
+                <Text style={s.successText}>{t('common.success')}</Text>
               </View>
-              <View>
-                <Text className={mt.inputLabel}>{t('settings.email')}</Text>
-                <TextInput
-                  className={mt.input}
-                  value={form.email}
-                  onChangeText={v => setForm(p => ({ ...p, email: v }))}
-                  placeholder="usuario@empresa.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-              <View className="flex-row gap-3 pt-2">
-                <TouchableOpacity
-                  onPress={() => setIsEditing(false)}
-                  className={`flex-1 ${mt.btnGhost} justify-center`}
-                >
-                  <Text className="text-gray-600 font-bold">{t('settings.cancelEdit')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleSave}
-                  disabled={isSaving || !form.name.trim()}
-                  className={`flex-[2] ${mt.btnPrimary} ${isSaving || !form.name.trim() ? 'opacity-60' : ''}`}
-                >
-                  {isSaving
-                    ? <ActivityIndicator color="white" size="small" />
-                    : <Text className="text-white font-bold">{t('settings.saveChanges')}</Text>
-                  }
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+            )}
+          </View>
         </View>
 
-        {/* Language */}
-        <View className={`${mt.listSection} mb-6`}>
-          <View className="p-5 border-b border-gray-50 flex-row items-center gap-3">
-            <View className={`${mt.iconBox} bg-blue-50`}>
-              <Feather name="globe" size={20} color="#3b82f6" />
-            </View>
-            <View>
-              <Text className="font-bold text-dark">{t('settings.language')}</Text>
-              <Text className="text-xs text-gray-400 mt-0.5">{t('settings.languageDesc')}</Text>
-            </View>
+        {/* ── Language ── */}
+        <View style={s.section}>
+          <View style={s.sectionHeader}>
+            <IconGlobe size={11} color={DARK} />
+            <Text style={s.sectionTitle}>{t('settings.language')}</Text>
           </View>
-          <View className="p-2">
-            {LANGUAGES.map(lang => {
-              const isActive = i18n.language.startsWith(lang.code);
+
+          <View style={s.langRow}>
+            {LANGUAGES.map((lang) => {
+              const active = language === lang.code;
               return (
-                <TouchableOpacity
+                <PixelCard
                   key={lang.code}
-                  onPress={() => i18n.changeLanguage(lang.code)}
-                  className={`flex-row items-center justify-between p-4 rounded-2xl ${isActive ? 'bg-brand/5' : ''}`}
+                  bg={active ? colors.brand : CARD_BG}
+                  shadowOffset={active ? 4 : 3}
+                  active={active}
+                  style={s.langCard}
+                  onPress={() => changeLanguage(lang.code)}
                 >
-                  <View className="flex-row items-center gap-3">
-                    <Text className="text-2xl">{lang.flag}</Text>
-                    <Text className={`font-semibold ${isActive ? 'text-brand' : 'text-gray-600'}`}>{lang.label}</Text>
+                  <View style={s.langBox}>
+                    <Text style={s.langFlag}>{lang.flag}</Text>
+                    <Text style={[s.langText, active && s.langTextActive]}>
+                      {lang.label}
+                    </Text>
+                    {active && <IconCheck size={14} color="white" />}
                   </View>
-                  {isActive && <Feather name="check" size={20} color={colors.brand} />}
-                </TouchableOpacity>
+                </PixelCard>
               );
             })}
           </View>
         </View>
 
-        {/* Logout */}
-        <TouchableOpacity
-          onPress={handleLogout}
-          className={`${mt.card} p-5 border-red-100 flex-row items-center gap-3`}
-        >
-          <View className={`${mt.iconBox} bg-red-50`}>
-            <Feather name="log-out" size={20} color="#ef4444" />
-          </View>
-          <View>
-            <Text className="font-bold text-red-500">{t('settings.logout')}</Text>
-            <Text className="text-xs text-red-400 mt-0.5">{t('settings.closeSessionDesc')}</Text>
-          </View>
-        </TouchableOpacity>
-
+        {/* ── Version ── */}
+        <View style={s.versionBox}>
+          <Text style={s.versionText}>Ticket Registrator Mobile</Text>
+          <Text style={s.versionNumber}>v1.2.0 · Build 245</Text>
+        </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
+
+const s = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: SCREEN_BG },
+  scroll: { padding: 20, paddingBottom: 60 },
+
+  // ── Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 12,
+    backgroundColor: CARD_BG,
+    borderBottomWidth: 4,
+    borderBottomColor: DARK,
+  },
+  headerTitle: {
+    fontFamily: 'SpaceGrotesk-Bold',
+    fontSize: 24,
+    color: DARK,
+    letterSpacing: 0.5,
+  },
+  headerBtn: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── Profile card
+  profileCardWrap: { marginBottom: 28 },
+  profileCardInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: 16,
+  },
+  avatarBubbleInner: { width: 68, height: 68, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  avatarImage: { width: '100%', height: '100%' },
+  avatarText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 26, color: DARK },
+  profileMeta: { flex: 1 },
+  userName: {
+    fontFamily: 'SpaceGrotesk-Bold',
+    fontSize: 18,
+    color: DARK,
+    letterSpacing: -0.3,
+  },
+  userEmail: {
+    fontFamily: 'SpaceGrotesk-Medium',
+    fontSize: 12,
+    color: `${DARK}50`,
+    marginTop: 2,
+  },
+  rolePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    backgroundColor: DARK,
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  rolePillText: {
+    fontFamily: 'SpaceGrotesk-Bold',
+    fontSize: 9,
+    color: CARD_BG,
+    letterSpacing: 0.5,
+  },
+
+  // ── Sections
+  section: { marginBottom: 28 },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    flex: 1,
+    fontFamily: 'SpaceGrotesk-Bold',
+    fontSize: 12,
+    color: DARK,
+    letterSpacing: 0.3,
+  },
+  sectionBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  sectionBtnText: {
+    fontFamily: 'SpaceGrotesk-Bold',
+    fontSize: 11,
+    color: DARK,
+    letterSpacing: 0.2,
+  },
+
+  // ── Form
+  formContainer: { gap: 0 },
+  saveBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+  },
+  savingOpacity: { opacity: 0.6 },
+  saveBtnText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 14, color: 'white', letterSpacing: 0.3 },
+  successMsg: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 },
+  successText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 12, color: colors.success },
+
+  // ── Language
+  langRow: { flexDirection: 'row', gap: 12 },
+  langCard: { flex: 1 },
+  langBox: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 16 },
+  langFlag: { fontSize: 18 },
+  langText: { flex: 1, fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK },
+  langTextActive: { color: 'white' },
+
+  // ── Version
+  versionBox: { alignItems: 'center', marginTop: 8 },
+  versionText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 9, color: `${DARK}30`, letterSpacing: 0.5 },
+  versionNumber: { fontFamily: 'SpaceGrotesk-Medium', fontSize: 10, color: `${DARK}30`, marginTop: 3 },
+});

@@ -14,3 +14,4 @@ export interface IReport {
     createdAt: string;
     updatedAt: string;
 }
+

@@ -1,5 +1,5 @@
 import { userPermissionOverrideSchema } from './userPermissionOverride.schema';
-import { permissions } from '../../user-roles/permissions';
+import { permissions } from '../../defaults/permissions';
 
 const validUUID = '123e4567-e89b-12d3-a456-426614174000';
 
