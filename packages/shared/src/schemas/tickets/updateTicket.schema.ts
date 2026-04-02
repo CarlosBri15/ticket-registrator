@@ -2,11 +2,9 @@ import { z } from 'zod';
 import { TicketStatus } from '../../statuses/ticket-status';
 import { createItemSchema } from '../../schemas/tickets/createItem.schema';
 
-// Update ticket fields schema
 export const updateTicketFieldsSchema = z.object({
   cgs_bucket_link: z.string().optional(),
   payment_type: z.string().optional(),
-  expense_type: z.string().optional(),
   date: z.coerce.date().optional(),
   location_name: z.string().optional(),
   location_address: z.string().optional(),
@@ -18,13 +16,11 @@ export const updateTicketFieldsSchema = z.object({
   isVisible: z.boolean().optional(),
 }).strict();
 
-// Update ticket status schema
 export const updateTicketStatusSchema = z.object({
   status: z.enum([TicketStatus.PENDING, TicketStatus.APPROVED, TicketStatus.REJECTED]),
   approved_amount: z.number(),
 }).strict();
 
-// LLM-specific update schema
 export const updateTicketLlmSchema = z.object({
   llm_appproved_percentage: z.number().optional(),
   llm_recomendation: z.string().optional(),
@@ -32,7 +28,6 @@ export const updateTicketLlmSchema = z.object({
   llm_suggested_currency: z.string().optional(),
 }).strict();
 
-// Inferred types
 export type UpdateTicketStatus = z.infer<typeof updateTicketStatusSchema>;
 export type UpdateTicketLlm = z.infer<typeof updateTicketLlmSchema>;
 export type UpdateTicketFields = z.infer<typeof updateTicketFieldsSchema>;

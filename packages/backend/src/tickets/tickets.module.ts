@@ -6,15 +6,12 @@ import { StorageModule } from '../storage/storage.module';
 import { TicketsRepository } from './tickets.repository';
 import { TicketsAuthorizationService } from './tickets-authorization.service';
 import { ReportsModule } from '../reports/reports.module';
+import { CryptoModule } from '../crypto/crypto.module';
 
 @Module({
-  imports: [GeminiModule, StorageModule, ReportsModule],
+  imports: [GeminiModule, StorageModule, ReportsModule, CryptoModule],
   controllers: [TicketsController],
-  providers: [
-    TicketsService,
-    TicketsRepository,
-    TicketsAuthorizationService
-  ],
+  providers: [TicketsService, TicketsRepository, TicketsAuthorizationService],
   exports: [TicketsService, TicketsRepository],
 })
-export class TicketsModule { }
+export class TicketsModule {}

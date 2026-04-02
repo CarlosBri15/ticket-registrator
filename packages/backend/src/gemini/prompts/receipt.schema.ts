@@ -14,13 +14,7 @@ export const receiptSchema = {
         city: { type: SchemaType.STRING },
         formatted_address: { type: SchemaType.STRING },
       },
-      required: [
-        'street',
-        'number',
-        'zip_code',
-        'city',
-        'formatted_address',
-      ],
+      required: ['street', 'number', 'zip_code', 'city', 'formatted_address'],
     },
 
     date: { type: SchemaType.STRING },
@@ -39,12 +33,19 @@ export const receiptSchema = {
         properties: {
           description: { type: SchemaType.STRING },
           price: { type: SchemaType.NUMBER },
+          expense_type: { type: SchemaType.STRING, nullable: true },
         },
-        required: ['description', 'price'],
+        required: ['description', 'price', 'expense_type'],
       },
     },
 
     total: { type: SchemaType.NUMBER },
+
+    flag: { type: SchemaType.BOOLEAN },
+    llm_comment: {
+      type: SchemaType.STRING,
+      nullable: true,
+    },
   },
 
   required: [
@@ -55,5 +56,6 @@ export const receiptSchema = {
     'payment_method',
     'items',
     'total',
+    'flag',
   ],
 } satisfies ObjectSchema;

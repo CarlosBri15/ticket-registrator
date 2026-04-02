@@ -1,172 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  /* Tipografía */
-  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  /* ── Typography ──────────────────────────────────────────────────────────── */
+  --font-sans: 'Space Grotesk', sans-serif;
 
-  /* 1. COLOR PRINCIPAL (#336b87) - "Acero Azul" */
-  --color-brand: #336b87;
-  --color-brand-hover: #28556b;
-  --color-brand-light: #4a8cae;
+  /* ── Brand — Neobrutalista Electric Blue ─────────────────────────────────── */
+  --color-brand:       #4D4DFF;
+  --color-brand-hover: #3A3AC2;
+  --color-brand-light: #7575FF;
 
-  /* 2. SECUNDARIO (#90afc5) - "Niebla Azul" */
-  --color-secondary: #90afc5;
-  --color-secondary-light: #e0e9ef;
+  /* ── Secondary ───────────────────────────────────────────────────────────── */
+  --color-secondary:       #FFC83D;
+  --color-secondary-light: #FFE08A;
 
-  /* 3. TEXTO / OSCURO (#2a3132) - "Carbón" */
-  --color-dark: #2a3132;
+  /* ── Dark — Near Black ───────────────────────────────────────────────────── */
+  --color-dark: #1A1A1A;
 
-  /* 4. ACENTO (#763626) - "Óxido / Cuero" */
-  --color-accent: #763626;
-  --color-accent-hover: #5e2b1e;
+  /* ── Semantic ────────────────────────────────────────────────────────────── */
+  --color-success: #00C896;
+  --color-warning: #E6B800;
+  --color-danger:  #FF4B4B;
+  --color-info:    #4D4DFF;
 
-  /* EXTRAS: Superficies */
-  --color-surface: #f8fafc;
+  /* ── Surface — neutral light gray (matches mobile SCREEN_BG #F5F5F5) ─────── */
+  --color-surface: #F5F5F5;
+
+  /* ── Borders ─────────────────────────────────────────────────────────────── */
+  --color-border-main: rgba(26, 26, 26, 0.15);
+
+  /* ── Neobrutalista Hard Shadows ──────────────────────────────────────────── */
+  /* shadow-hard    → regular cards (3px, matches most mobile PixelCards)       */
+  /* shadow-hard-lg → hero card (6px, matches HeroReportCard shadowOffset=6)    */
+  /* shadow-hard-sm → badges, inputs (2px)                                      */
+  --shadow-hard:    3px 3px 0px rgba(26, 26, 26, 0.15);
+  --shadow-hard-lg: 6px 6px 0px rgba(26, 26, 26, 0.15);
+  --shadow-hard-sm: 2px 2px 0px rgba(26, 26, 26, 0.15);
 }
 
 @layer base {
   body {
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     @apply antialiased text-dark bg-surface;
   }
 }
 
 @layer utilities {
-  .bg-grid-pattern {
-    background-size: 40px 40px;
-    background-image:
-      radial-gradient(circle at top right, rgba(51, 107, 135, 0.08), transparent 40%),
-      radial-gradient(circle at bottom left, rgba(144, 175, 197, 0.05), transparent 40%),
-      linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-    background-color: var(--color-surface);
+  /* ── Space Grotesk compound utilities (font-family + weight) ─────────────── */
+  .font-space          { font-family: 'Space Grotesk', sans-serif; font-weight: 400; }
+  .font-space-medium   { font-family: 'Space Grotesk', sans-serif; font-weight: 500; }
+  .font-space-semibold { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+  .font-space-bold     { font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+
+  /* ── Neobrutalista press animations ──────────────────────────────────────── */
+  /* Used on cards/buttons; :active collapses shadow + translates               */
+  .neo-press {
+    transition: transform 80ms ease, box-shadow 80ms ease;
+  }
+  .neo-press:active {
+    transform: translate(3px, 3px) !important;
+    box-shadow: none !important;
+  }
+  .neo-press-lg {
+    transition: transform 80ms ease, box-shadow 80ms ease;
+  }
+  .neo-press-lg:active {
+    transform: translate(6px, 6px) !important;
+    box-shadow: none !important;
+  }
+  .neo-press-sm {
+    transition: transform 80ms ease, box-shadow 80ms ease;
+  }
+  .neo-press-sm:active {
+    transform: translate(2px, 2px) !important;
+    box-shadow: none !important;
   }
 
-  .glass {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+  /* ── Scrollbar ───────────────────────────────────────────────────────────── */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(77, 77, 255, 0.25) transparent;
   }
-
-  .glass-panel {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow: 0 8px 32px 0 rgba(51, 107, 135, 0.05);
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(77, 77, 255, 0.25);
+    border-radius: 99px;
   }
-}
-
-/* Animaciones personalizadas */
-@keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-10px);
-  }
-
-  100% {
-    transform: translateY(0px);
-  }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-@keyframes pulse-slow {
-
-  0%,
-  100% {
-    opacity: 0.1;
-  }
-
-  50% {
-    opacity: 0.3;
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(77, 77, 255, 0.5);
   }
 }
 
-.animate-pulse-slow {
-  animation: pulse-slow 4s ease-in-out infinite;
-}
-
-/* Custom scrollbar */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(51, 107, 135, 0.25) transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(51, 107, 135, 0.25);
-  border-radius: 99px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(51, 107, 135, 0.5);
-}
-
-/* Card hover effect */
-.card-hover {
-  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
-}
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 48px -8px rgba(51, 107, 135, 0.12);
-}
-
-/* Gradient text */
-.text-gradient {
-  background: linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-light) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Brand glow */
-.glow-brand {
-  box-shadow: 0 0 24px -4px rgba(51, 107, 135, 0.4);
-}
-
-/* Subtle noise texture overlay */
-.noise-overlay::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none;
-  border-radius: inherit;
-}
-
-/* Slide up animation for list items */
+/* ── Slide-up stagger animations ─────────────────────────────────────────────── */
 @keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);    }
 }
+.animate-slide-up { animation: slide-up 0.25s ease-out both; }
 
-.animate-slide-up {
-  animation: slide-up 0.4s ease-out both;
-}
-
-/* Stagger children */
-.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(1) { animation-delay:   0ms; }
+.stagger-children > *:nth-child(2) { animation-delay:  40ms; }
+.stagger-children > *:nth-child(3) { animation-delay:  80ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 200ms; }

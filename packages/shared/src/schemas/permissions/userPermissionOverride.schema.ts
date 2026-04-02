@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { permissions } from '../../user-roles/permissions';
+import { permissions } from '../../defaults/permissions';
 
 export const userPermissionOverrideSchema = z.object({
     userId: z.string().uuid(),

@@ -13,11 +13,13 @@ const tokenProvider: TokenProvider = {
         localStorage.removeItem('access_token');
     },
     onUnauthorized: () => {
-        window.location.href = '/login';
+        const publicPaths = ['/login', '/register'];
+        if (!publicPaths.includes(globalThis.location.pathname)) {
+            globalThis.location.href = '/login';
+        }
     }
 };
 
-// Inicializamos la instancia global de la API para los hooks de shared
 const client = createApiClient(API_URL, tokenProvider);
 setApiClient(client);
 

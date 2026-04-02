@@ -9,7 +9,8 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-font"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -29,6 +30,19 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/mobile"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "50b0d278-e6eb-4387-a05a-9dc3e096f0a6"
+      }
+    },
+    "owner": "ticket-registrator"
   }
 }

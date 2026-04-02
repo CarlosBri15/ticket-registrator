@@ -1,33 +1,211 @@
 name: SonarQube Monorepo Analysis
 
 on:
-  push:
-    branches:
-      - main
-      - dev
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - dev 
+      - dev
+      - main
 
 jobs:
-  sonarcloud:
-    name: Analyze ${{ matrix.project }}
+  # 0. Detect Changes
+  changes:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        project: [backend, frontend, mobile, shared]
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+      shared: ${{ steps.filter.outputs.shared }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'packages/backend/**'
+              - 'packages/shared/**'
+            frontend:
+              - 'packages/frontend/**'
+              - 'packages/shared/**'
+            mobile:
+              - 'packages/mobile/**'
+              - 'packages/shared/**'
+            shared:
+              - 'packages/shared/**'
 
+  analyze-backend:
+    name: Analyze backend
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: SonarCloud Scan (${{ matrix.project }})
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Run Linter
+        continue-on-error: true
+        working-directory: packages/backend
+        run: npm run lint
+      - name: Run Unit Tests
+        working-directory: packages/backend
+        run: npm test -- --coverage --watchAll=false
+      - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         with:
-          projectBaseDir: packages/${{ matrix.project }}
+          projectBaseDir: packages/backend
+          args: >
+            -Dsonar.qualitygate.wait=true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  analyze-frontend:
+    name: Analyze frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Run Linter
+        continue-on-error: true
+        working-directory: packages/frontend
+        run: npm run lint
+      - name: Run Unit Tests
+        working-directory: packages/frontend
+        run: npm test -- --coverage --watchAll=false
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: packages/frontend
+          args: >
+            -Dsonar.qualitygate.wait=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  analyze-mobile:
+    name: Analyze mobile
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Run Linter
+        continue-on-error: true
+        working-directory: packages/mobile
+        run: npm run lint
+      - name: Run Unit Tests
+        working-directory: packages/mobile
+        run: npm test -- --coverage --watchAll=false
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: packages/mobile
+          args: >
+            -Dsonar.qualitygate.wait=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  analyze-shared:
+    name: Analyze shared
+    needs: changes
+    if: needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build Shared Package
+        run: npm run build -w @ticket-registrator/shared
+      - name: Run Linter
+        continue-on-error: true
+        working-directory: packages/shared
+        run: npm run lint
+      - name: Run Unit Tests
+        working-directory: packages/shared
+        run: npm test -- --coverage --watchAll=false
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: packages/shared
+          args: >
+            -Dsonar.qualitygate.wait=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # 5. Final Summary Notification
+  notify-summary:
+    name: Notify PR Summary
+    needs: [changes, analyze-backend, analyze-frontend, analyze-mobile, analyze-shared]
+    if: always() && (needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true' || needs.changes.outputs.mobile == 'true' || needs.changes.outputs.shared == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discord Notification
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_CI }}
+          status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
+          title: "🔎 Resumen de Calidad: PR #${{ github.event.pull_request.number }}"
+          content: "Se ha completado el análisis del PR: **${{ github.event.pull_request.title }}**"
+          description: |
+            **Estado por proyecto:**
+            - **Backend:** ${{ needs.analyze-backend.result == 'success' && format('✅ Pass [Reporte](https://sonarcloud.io/summary/new_code?id=ticket-registrator-backend&pullRequest={0})', github.event.pull_request.number) || (needs.analyze-backend.result == 'failure' && format('❌ Fail [Reporte](https://sonarcloud.io/summary/new_code?id=ticket-registrator-backend&pullRequest={0})', github.event.pull_request.number) || '➖ Skip') }}
+            - **Frontend:** ${{ needs.analyze-frontend.result == 'success' && format('✅ Pass [Reporte](https://sonarcloud.io/summary/new_code?id=ticket-registrator-frontend&pullRequest={0})', github.event.pull_request.number) || (needs.analyze-frontend.result == 'failure' && format('❌ Fail [Reporte](https://sonarcloud.io/summary/new_code?id=ticket-registrator-frontend&pullRequest={0})', github.event.pull_request.number) || '➖ Skip') }}
+            - **Mobile:** ${{ needs.analyze-mobile.result == 'success' && format('✅ Pass [Reporte](https://sonarcloud.io/summary/new_code?id=ticket-registrator-mobile&pullRequest={0})', github.event.pull_request.number) || (needs.analyze-mobile.result == 'failure' && format('❌ Fail [Reporte](https://sonarcloud.io/summary/new_code?id=ticket-registrator-mobile&pullRequest={0})', github.event.pull_request.number) || '➖ Skip') }}
+            - **Shared:** ${{ needs.analyze-shared.result == 'success' && format('✅ Pass [Reporte](https://sonarcloud.io/summary/new_code?id=ticket-registrator-shared&pullRequest={0})', github.event.pull_request.number) || (needs.analyze-shared.result == 'failure' && format('❌ Fail [Reporte](https://sonarcloud.io/summary/new_code?id=ticket-registrator-shared&pullRequest={0})', github.event.pull_request.number) || '➖ Skip') }}
+
+            **Autor:** ${{ github.event.pull_request.user.login }}
+          url: "${{ github.event.pull_request.html_url }}"
+
+  # 6. Failure Alerts (Optional alerts channel fallback)
+  alert-failure-pr:
+    needs: [analyze-backend, analyze-frontend, analyze-mobile, analyze-shared]
+    if: always() && contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Alert on Failure
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_ALERTS }}
+          status: failure
+          content: "@here 🚨 **Ha fallado el análisis de calidad en el PR #${{ github.event.pull_request.number }}**"
+          title: "PR Quality Gate FAILED"
+          url: "${{ github.event.pull_request.html_url }}"
+          color: 0xff0000

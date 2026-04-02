@@ -1,213 +1,227 @@
-import { Injectable, ConflictException, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
-import { DB_CONNECTION } from '../db/db.module';
-import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { eq, inArray } from 'drizzle-orm';
 import * as schema from '../db/schema';
-import { eq, isNull, and, inArray } from 'drizzle-orm';
+import {
+  IOrganization,
+  IOnboardResponse,
+  Roles,
+} from '@ticket-registrator/shared';
+import { randomBytes } from 'node:crypto';
 import { OnboardOrganizationDto } from './dto/onboard-organization.dto';
+import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { OrganizationRepository } from './organization.repository';
+import { OrganizationAuthorizationService } from './organization-authorization.service';
+import { mapCompanyToIOrganization } from './mapper/organization.mapper';
+import {
+  OrganizationNotFoundException,
+  OrganizationConflictException,
+  OrganizationAlreadyDeletedException,
+} from './exceptions/organization.exceptions';
 import { DepartmentService } from '../department/department.service';
-import { AuthService } from '../auth/auth.service';
-import { Roles } from '@ticket-registrator/shared';
+import { CryptoService } from '../crypto/crypto.service';
+import { UserPayload } from '../auth/decorators/current-user.decorator';
 import { UNASSIGNED_DEPARTMENT_NAME } from '../seed/seed.service';
-import { randomBytes } from 'crypto';
 
 @Injectable()
 export class OrganizationService {
-    constructor(
-        @Inject(DB_CONNECTION) private db: PostgresJsDatabase<typeof schema>,
-        private departmentService: DepartmentService,
-        private authService: AuthService,
-    ) { }
+  private readonly logger = new Logger(OrganizationService.name);
 
-    /**
-     * Onboards a new company: atomically creates the company, seeds departments,
-     * and creates the initial admin users with temporary credentials.
-     */
-    async onboard(dto: OnboardOrganizationDto) {
-        // Destructure with non-null assertions (nestjs-zod infers fields as optional)
-        const company = dto.company!;
-        const admins = dto.admins!;
+  constructor(
+    private readonly organizationRepository: OrganizationRepository,
+    private readonly organizationAuthService: OrganizationAuthorizationService,
+    private readonly departmentService: DepartmentService,
+    private readonly cryptoService: CryptoService,
+  ) {}
 
-        // 1. Find the global Unassigned department
-        const unassignedDept = await this.db.query.departments.findFirst({
-            where: eq(schema.departments.departmentName, UNASSIGNED_DEPARTMENT_NAME),
-        });
-        if (!unassignedDept) {
-            throw new BadRequestException('System is not ready: global Unassigned department not found. Please restart the server.');
-        }
+  async onboard(
+    requester: UserPayload,
+    dto: OnboardOrganizationDto,
+  ): Promise<IOnboardResponse> {
+    this.organizationAuthService.validateCanCreate(requester);
 
-        // 2. Find the Admin role
-        const adminRole = await this.db.query.roles.findFirst({
-            where: eq(schema.roles.name, Roles.ADMIN),
-        });
-        if (!adminRole) {
-            throw new BadRequestException('System is not ready: Admin role not found. Please restart the server.');
-        }
+    const company = dto.company!;
+    const admins = dto.admins!;
 
-        return this.db.transaction(async (tx) => {
-            // 3. Create the company
-            const companyName = company.name!; // nestjs-zod infers as optional, assert it's defined
-            const existingCompany = await tx.query.companies.findFirst({
-                where: eq(schema.companies.orgName, companyName),
-            });
-            if (existingCompany) {
-                throw new ConflictException(`Organization "${companyName}" already exists`);
-            }
-
-            const [createdCompany] = await tx
-                .insert(schema.companies)
-                .values({ orgName: companyName })
-                .returning();
-
-            // 5. Create admin users with temporary credentials
-            const createdAdmins: { id: string; name: string | null; email: string | null; username: string; temporaryPassword: string }[] = [];
-            for (const adminInfo of admins) {
-                // Check email uniqueness
-                const emailExists = await tx.query.users.findFirst({
-                    where: eq(schema.users.email, adminInfo.email!),
-                });
-                if (emailExists) {
-                    throw new ConflictException(`Email "${adminInfo.email}" is already in use`);
-                }
-
-                // Generate temporary credentials
-                const tempPassword = randomBytes(8).toString('hex'); // 16 char hex string
-                const tempUsername = `admin_${randomBytes(4).toString('hex')}`; // e.g. admin_a3f2b1c0
-                const hashedPassword = await this.authService.hashPassword(tempPassword);
-
-                const [newAdmin] = await tx.insert(schema.users).values({
-                    name: adminInfo.name,
-                    surname: adminInfo.surname,
-                    email: adminInfo.email,
-                    username: tempUsername,
-                    password: hashedPassword,
-                    companyId: createdCompany.id,
-                    roleId: adminRole.id,
-                }).returning();
-
-                // Assign department
-                await tx.insert(schema.usersToDepartments).values({
-                    userId: newAdmin.id,
-                    departmentId: unassignedDept.id,
-                });
-
-
-                createdAdmins.push({
-                    id: newAdmin.id,
-                    name: newAdmin.name,
-                    email: newAdmin.email,
-                    username: tempUsername,
-                    temporaryPassword: tempPassword, // Displayed once, should be sent via email
-                });
-            }
-
-            return {
-                company: createdCompany,
-                admins: createdAdmins,
-                message: `Company "${createdCompany.orgName}" onboarded. Send the temporary credentials to each admin via email.`,
-            };
-        });
+    const existing = await this.organizationRepository.findByName(
+      company.name!,
+    );
+    if (existing) {
+      throw new OrganizationConflictException(
+        `Organization "${company.name}" already exists`,
+      );
     }
 
-    async findAll() {
-        return this.db.query.companies.findMany({
-            where: isNull(schema.companies.deletedAt),
-        });
-    }
+    return this.organizationRepository.transaction(async (tx) => {
+      const unassignedDept = await tx.query.departments.findFirst({
+        where: eq(
+          schema.departments.departmentName,
+          UNASSIGNED_DEPARTMENT_NAME,
+        ),
+      });
+      if (!unassignedDept) {
+        throw new BadRequestException(
+          'System is not ready: global Unassigned department not found.',
+        );
+      }
 
-    async findOne(id: string) {
-        const company = await this.db.query.companies.findFirst({
-            where: and(
-                eq(schema.companies.id, id),
-                isNull(schema.companies.deletedAt)
-            ),
+      const adminRole = await tx.query.roles.findFirst({
+        where: eq(schema.roles.name, Roles.ADMIN),
+      });
+      if (!adminRole) {
+        throw new BadRequestException(
+          'System is not ready: Admin role not found.',
+        );
+      }
+
+      const [createdCompany] = await tx
+        .insert(schema.companies)
+        .values({ orgName: company.name! })
+        .returning();
+
+      const createdAdmins: IOnboardResponse['admins'] = [];
+
+      for (const adminInfo of admins) {
+        const emailExists = await tx.query.users.findFirst({
+          where: eq(schema.users.email, adminInfo.email!),
         });
-        if (!company) {
-            throw new NotFoundException('Organization not found');
+        if (emailExists) {
+          throw new OrganizationConflictException(
+            `Email "${adminInfo.email}" is already in use`,
+          );
         }
-        return company;
-    }
 
-    async update(id: string, dto: { name?: string }) {
-        const company = await this.db.query.companies.findFirst({
-            where: and(
-                eq(schema.companies.id, id),
-                isNull(schema.companies.deletedAt)
-            ),
+        const tempPassword = randomBytes(8).toString('hex');
+        const tempUsername = `admin_${randomBytes(4).toString('hex')}`;
+        const hashedPassword =
+          await this.cryptoService.hashPassword(tempPassword);
+
+        const [newAdmin] = await tx
+          .insert(schema.users)
+          .values({
+            name: adminInfo.name,
+            surname: adminInfo.surname,
+            email: adminInfo.email,
+            username: tempUsername,
+            password: hashedPassword,
+            companyId: createdCompany.id,
+            roleId: adminRole.id,
+          })
+          .returning();
+
+        await tx.insert(schema.usersToDepartments).values({
+          userId: newAdmin.id,
+          departmentId: unassignedDept.id,
         });
-        if (!company) {
-            throw new NotFoundException('Organization not found');
+
+        createdAdmins.push({
+          id: newAdmin.id,
+          name: newAdmin.name,
+          email: newAdmin.email,
+          username: tempUsername,
+          temporaryPassword: tempPassword,
+        });
+      }
+
+      this.logger.log(
+        `Organization onboarded: ${createdCompany.id} by user ${requester.id}`,
+      );
+
+      return {
+        company: mapCompanyToIOrganization(createdCompany),
+        admins: createdAdmins,
+        message: `Company "${createdCompany.orgName}" onboarded. Send the temporary credentials to each admin via email.`,
+      };
+    });
+  }
+
+  async findAll(requester: UserPayload): Promise<IOrganization[]> {
+    this.organizationAuthService.validateCanViewAll(requester);
+    const companies = await this.organizationRepository.findAll();
+    return companies.map(mapCompanyToIOrganization);
+  }
+
+  async findOne(id: string): Promise<IOrganization> {
+    const company = await this.organizationRepository.findById(id);
+    if (!company) throw new OrganizationNotFoundException(id);
+    return mapCompanyToIOrganization(company);
+  }
+
+  async update(
+    requester: UserPayload,
+    id: string,
+    dto: UpdateOrganizationDto,
+  ): Promise<IOrganization> {
+    this.organizationAuthService.validateCanUpdate(requester, id);
+
+    const company = await this.organizationRepository.findById(id);
+    if (!company) throw new OrganizationNotFoundException(id);
+
+    if (!dto.name) return mapCompanyToIOrganization(company);
+
+    const updated = await this.organizationRepository.update(id, {
+      orgName: dto.name,
+    });
+    if (!updated) throw new OrganizationNotFoundException(id);
+
+    this.logger.log(`Organization updated: ${id} by user ${requester.id}`);
+    return mapCompanyToIOrganization(updated);
+  }
+
+  async softDelete(
+    requester: UserPayload,
+    id: string,
+  ): Promise<{ deleted: boolean }> {
+    this.organizationAuthService.validateCanDelete(requester);
+
+    const company =
+      await this.organizationRepository.findByIdIncludingDeleted(id);
+    if (!company) throw new OrganizationNotFoundException(id);
+    if (company.deletedAt) throw new OrganizationAlreadyDeletedException();
+
+    await this.organizationRepository.transaction(async (tx) => {
+      await tx
+        .update(schema.companies)
+        .set({ deletedAt: new Date(), updatedAt: new Date() })
+        .where(eq(schema.companies.id, id));
+
+      await tx
+        .update(schema.departments)
+        .set({ deletedAt: new Date(), updatedAt: new Date() })
+        .where(eq(schema.departments.companyId, id));
+
+      const companyUsers = await tx.query.users.findMany({
+        where: eq(schema.users.companyId, id),
+        columns: { id: true },
+      });
+      const userIds = companyUsers.map((u: { id: string }) => u.id);
+
+      if (userIds.length > 0) {
+        await tx
+          .update(schema.users)
+          .set({ deletedAt: new Date(), updatedAt: new Date() })
+          .where(inArray(schema.users.id, userIds));
+
+        const userReports = await tx.query.reports.findMany({
+          where: inArray(schema.reports.userId, userIds),
+          columns: { id: true },
+        });
+        const reportIds = userReports.map((r: { id: string }) => r.id);
+
+        if (reportIds.length > 0) {
+          await tx
+            .update(schema.reports)
+            .set({ deletedAt: new Date(), updatedAt: new Date() })
+            .where(inArray(schema.reports.id, reportIds));
+
+          await tx
+            .update(schema.tickets)
+            .set({ deletedAt: new Date(), updatedAt: new Date() })
+            .where(inArray(schema.tickets.reportId, reportIds));
         }
+      }
+    });
 
-        const updates: any = {};
-        if (dto.name !== undefined) updates.orgName = dto.name;
-
-        if (Object.keys(updates).length === 0) {
-            return company;
-        }
-
-        updates.updatedAt = new Date();
-
-        const [updatedCompany] = await this.db
-            .update(schema.companies)
-            .set(updates)
-            .where(eq(schema.companies.id, id))
-            .returning();
-
-        return updatedCompany;
-    }
-
-    async softDelete(id: string) {
-        const company = await this.db.query.companies.findFirst({
-            where: eq(schema.companies.id, id),
-        });
-        if (!company) throw new NotFoundException('Organization not found');
-        if (company.deletedAt) throw new ConflictException('Organization already deleted');
-
-        await this.db.transaction(async (tx) => {
-            // 1. Soft delete the company
-            await tx.update(schema.companies)
-                .set({ deletedAt: new Date(), updatedAt: new Date() })
-                .where(eq(schema.companies.id, id));
-
-            // 2. Soft delete all departments for the company
-            await tx.update(schema.departments)
-                .set({ deletedAt: new Date(), updatedAt: new Date() })
-                .where(eq(schema.departments.companyId, id));
-
-            // 3. Find all users for the company
-            const companyUsers = await tx.query.users.findMany({
-                where: eq(schema.users.companyId, id),
-                columns: { id: true }
-            });
-            const userIds = companyUsers.map(u => u.id);
-
-            if (userIds.length > 0) {
-                // 4. Soft delete users
-                await tx.update(schema.users)
-                    .set({ deletedAt: new Date(), updatedAt: new Date() })
-                    .where(inArray(schema.users.id, userIds));
-
-                // 5. Find all reports for these users
-                const userReports = await tx.query.reports.findMany({
-                    where: inArray(schema.reports.userId, userIds),
-                    columns: { id: true }
-                });
-                const reportIds = userReports.map(r => r.id);
-
-                if (reportIds.length > 0) {
-                    // 6. Soft delete reports
-                    await tx.update(schema.reports)
-                        .set({ isVisible: false, updatedAt: new Date() })
-                        .where(inArray(schema.reports.id, reportIds));
-
-                    // 7. Soft delete tickets
-                    await tx.update(schema.tickets)
-                        .set({ isVisible: false, updatedAt: new Date() })
-                        .where(inArray(schema.tickets.reportId, reportIds));
-                }
-            }
-        });
-
-        return { deleted: true };
-    }
+    this.logger.log(`Organization soft-deleted: ${id} by user ${requester.id}`);
+    return { deleted: true };
+  }
 }

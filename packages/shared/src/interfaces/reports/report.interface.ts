@@ -1,4 +1,5 @@
 import type { ReportStatusType } from '../../statuses/report-status';
+
 export interface IReport {
     id: string;
     user_id: string;
@@ -13,3 +14,4 @@ export interface IReport {
     createdAt: string;
     updatedAt: string;
 }
+

@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="256" height="256" shape-rendering="crispEdges">
+  <defs>
+    <style>
+      /* Fondo del ticket con bordes estilo pixel */
+      .ticket-bg { 
+        fill: #f4f4f4; 
+        stroke: #1a1a1a; 
+        stroke-width: 1; 
+      }
+      
+      /* Líneas de texto del ticket (simulando items comprados) */
+      .text-block { 
+        fill: #1a1a1a; 
+      }
+      
+      /* Láser del escáner */
+      .scanner-core { 
+        fill: #39ff14; /* Verde neón */
+      }
+      .scanner-glow { 
+        fill: rgba(57, 255, 20, 0.4); 
+      }
+      
+      /* Animaciones */
+      .scanner-group { 
+        animation: scan 1.5s ease-in-out infinite alternate; 
+      }
+      .dot { 
+        fill: #1a1a1a; 
+        animation: blink 1.2s infinite; 
+      }
+      .dot-1 { animation-delay: 0s; }
+      .dot-2 { animation-delay: 0.2s; }
+      .dot-3 { animation-delay: 0.4s; }
+
+      /* Keyframes para el láser subiendo y bajando */
+      @keyframes scan {
+        0%   { transform: translateY(1px); }
+        100% { transform: translateY(18px); }
+      }
+
+      /* Keyframes para los puntos de "procesando" */
+      @keyframes blink {
+        0%, 100% { opacity: 0.2; }
+        50% { opacity: 1; }
+      }
+    </style>
+  </defs>
+
+  <path class="ticket-bg" d="M8 4 h16 v19 l-2 -2 l-2 2 l-2 -2 l-2 2 l-2 -2 l-2 2 l-2 -2 l-2 2 z" />
+
+  <rect class="text-block" x="11" y="7" width="10" height="2" />
+
+  <rect class="text-block" x="10" y="11" width="8" height="1" />
+  <rect class="text-block" x="20" y="11" width="2" height="1" />
+
+  <rect class="text-block" x="10" y="13" width="6" height="1" />
+  <rect class="text-block" x="20" y="13" width="2" height="1" />
+
+  <rect class="text-block" x="10" y="15" width="7" height="1" />
+  <rect class="text-block" x="20" y="15" width="2" height="1" />
+
+  <rect class="text-block" x="10" y="18" width="12" height="1" />
+
+  <rect class="text-block" x="10" y="20" width="3" height="1" />
+  <rect class="text-block" x="18" y="20" width="4" height="1" />
+
+  <g class="scanner-group">
+    <rect class="scanner-glow" x="6" y="3" width="20" height="3" />
+    <rect class="scanner-core" x="6" y="4" width="20" height="1" />
+  </g>
+
+  <rect class="dot dot-1" x="13" y="28" width="1" height="1" />
+  <rect class="dot dot-2" x="15" y="28" width="1" height="1" />
+  <rect class="dot dot-3" x="17" y="28" width="1" height="1" />
+</svg>

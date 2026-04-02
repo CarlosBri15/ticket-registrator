@@ -1,41 +1,128 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RegisterForm } from "./screens/RegisterForm";
-import { LoginForm } from "./screens/LoginForm";
-import { DashboardPage } from "./screens/HomeScreen";
-import { AppLayout } from "./screens/AppLayout";
-import { ReportsScreen } from "./screens/ReportsScreen";
-import { ReportDetailScreen } from "./screens/ReportDetailScreen";
-import { SettingsScreen } from "./screens/SettingsScreen";
-import { AllTicketsScreen } from "./screens/AllTicketsScreen";
+import { ScopeProvider } from "@ticket-registrator/shared";
+import { PrivateRoute } from "./router/PrivateRoute";
+import { AppLayout } from "./components/layouts/AppLayout";
+import { LoginForm } from "./features/auth/screens/LoginScreen";
+import { RegisterForm } from "./features/auth/screens/RegisterScreen";
+import { DashboardPage } from "./features/dashboard/DashboardScreen";
+import { ReportsScreen } from "./features/reports/screens/ReportsScreen";
+import { ReportDetailScreen } from "./features/reports/screens/ReportDetailScreen";
+import { AllTicketsScreen } from "./features/tickets/screens/TicketsScreen";
+import { SettingsScreen } from "./features/settings/screens/SettingsScreen";
+import { UsersScreen } from "./features/users/screens/UsersScreen";
+import { UserDetailScreen } from "./features/users/screens/UserDetailScreen";
+import { DepartmentsScreen } from "./features/departments/screens/DepartmentsScreen";
+import { DepartmentDetailScreen } from "./features/departments/screens/DepartmentDetailScreen";
+import { RolesScreen } from "./features/roles/screens/RolesScreen";
+import { OrganizationsScreen } from "./features/organizations/screens/OrganizationsScreen";
+import { OrganizationDetailScreen } from "./features/organizations/screens/OrganizationDetailScreen";
+import { PermissionsScreen } from "./features/permissions/screens/PermissionsScreen";
 
 const queryClient = new QueryClient();
-
-
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const token = localStorage.getItem('access_token');
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-  return <>{children}</>;
-};
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/home" replace />} />
-          <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-             <Route path="/home" element={<DashboardPage />} />
-             <Route path="/trips" element={<ReportsScreen />} />
-             <Route path="/trips/:id" element={<ReportDetailScreen />} />
-             <Route path="/tickets" element={<AllTicketsScreen />} />
-             <Route path="/settings" element={<SettingsScreen />} />
-          </Route>
-          <Route path="/register" element={<RegisterForm />} />
-          <Route path="/login" element={<LoginForm />} />
-        </Routes>
+        <ScopeProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<LoginForm />} />
+            <Route path="/register" element={<RegisterForm />} />
+
+            {/* Protected routes — auth required */}
+            <Route element={<PrivateRoute><AppLayout /></PrivateRoute>}>
+              <Route path="/" element={<Navigate to="/home" replace />} />
+              <Route path="/home" element={<DashboardPage />} />
+
+              {/* Tickets & Reports — all authenticated users */}
+              <Route path="/reports" element={<ReportsScreen />} />
+              <Route path="/reports/:id" element={<ReportDetailScreen />} />
+              <Route
+                path="/tickets"
+                element={
+                  <PrivateRoute permission="view_tickets">
+                    <AllTicketsScreen />
+                  </PrivateRoute>
+                }
+              />
+
+              {/* Management — permission-gated */}
+              <Route
+                path="/users"
+                element={
+                  <PrivateRoute permission="view_users">
+                    <UsersScreen />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/users/:id"
+                element={
+                  <PrivateRoute permission="view_users">
+                    <UserDetailScreen />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/departments"
+                element={
+                  <PrivateRoute permission="view_departments">
+                    <DepartmentsScreen />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/departments/:id"
+                element={
+                  <PrivateRoute permission="view_departments">
+                    <DepartmentDetailScreen />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/roles"
+                element={
+                  <PrivateRoute permission="view_roles">
+                    <RolesScreen />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/organizations"
+                element={
+                  <PrivateRoute permission="view_company">
+                    <OrganizationsScreen />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/organizations/:id"
+                element={
+                  <PrivateRoute permission="view_company">
+                    <OrganizationDetailScreen />
+                  </PrivateRoute>
+                }
+              />
+
+              <Route
+                path="/permissions"
+                element={
+                  <PrivateRoute permission="view_permissions">
+                    <PermissionsScreen />
+                  </PrivateRoute>
+                }
+              />
+
+              {/* Settings — all authenticated users */}
+              <Route path="/settings" element={<SettingsScreen />} />
+            </Route>
+
+            {/* Catch-all */}
+            <Route path="*" element={<Navigate to="/home" replace />} />
+          </Routes>
+        </ScopeProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

@@ -1,4 +1,4 @@
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY packages/shared ./packages/shared
 RUN npm run build -w @ticket-registrator/shared
 RUN npm run build -w backend
 
-FROM node:18-alpine AS production
+FROM node:22-alpine AS production
 
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
@@ -29,6 +29,7 @@ COPY packages/shared/package*.json ./packages/shared/
 RUN npm install --omit=dev
 
 COPY --from=builder /app/packages/backend/dist ./packages/backend/dist
+COPY --from=builder /app/packages/backend/drizzle ./packages/backend/drizzle
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 
 EXPOSE 8080

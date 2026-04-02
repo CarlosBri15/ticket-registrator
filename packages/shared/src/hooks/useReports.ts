@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CreateReportSchema } from '../index';
+import { CreateReportSchema, ReportPaginationParams } from '../index';
 import { api } from '../api/clientContainer';
 
 export const useReportsQuery = () => {
@@ -9,10 +9,18 @@ export const useReportsQuery = () => {
     });
 };
 
+export const useReportsPaginatedQuery = (params: ReportPaginationParams) => {
+    return useQuery({
+        queryKey: ['reports', 'paginated', params],
+        queryFn: () => api.reports().getPaginated(params),
+    });
+};
+
+
 export const useReportQuery = (id?: string) => {
     return useQuery({
         queryKey: ['reports', id],
-        queryFn: () => api.reports().getOne(id!),
+        queryFn: () => api.reports().getOne(id),
         enabled: !!id,
     });
 };
@@ -26,7 +34,7 @@ export const useCreateReportMutation = (options?: any) => {
             if (options?.onSuccess) options.onSuccess();
         },
         onError: (error: any) => {
-             if (options?.onError) options.onError(error);
+            if (options?.onError) options.onError(error);
         }
     });
 };
@@ -43,6 +51,22 @@ export const useSubmitReportMutation = (options?: any) => {
         onError: (error: any) => {
             if (options?.onError) options.onError(error);
         }
+    });
+};
+
+export const useUpdateReportStatusMutation = (options?: any) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, status }: { id: string; status: string }) =>
+            api.reports().updateStatus(id, status),
+        onSuccess: (data, { id }) => {
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
+            queryClient.invalidateQueries({ queryKey: ['reports', id] });
+            if (options?.onSuccess) options.onSuccess(data);
+        },
+        onError: (error: any) => {
+            if (options?.onError) options.onError(error);
+        },
     });
 };
 

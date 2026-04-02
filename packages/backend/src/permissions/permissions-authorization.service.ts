@@ -4,16 +4,19 @@ import { permissions } from '@ticket-registrator/shared';
 
 @Injectable()
 export class PermissionsAuthorizationService {
-
-    validateCanManageCatalog(requesterPermissions: string[]) {
-        if (!requesterPermissions.includes(permissions.MANAGE_PERMISSIONS)) {
-            throw new PermissionUnauthorizedException('You lack permissions to manage the global permission catalog');
-        }
+  validateCanManageCatalog(requesterPermissions: string[]) {
+    if (!requesterPermissions.includes(permissions.MANAGE_PERMISSIONS)) {
+      throw new PermissionUnauthorizedException(
+        'You lack permissions to manage the global permission catalog',
+      );
     }
+  }
 
-    validateCanAssignPermissions(requesterPermissions: string[]) {
-        if (!requesterPermissions.includes(permissions.MANAGE_PERMISSIONS)) {
-            throw new PermissionUnauthorizedException('You lack permissions to assign or override permissions');
-        }
+  validateCanAssignPermissions(requesterPermissions: string[]) {
+    if (!requesterPermissions.includes(permissions.MANAGE_PERMISSIONS)) {
+      throw new PermissionUnauthorizedException(
+        'You lack permissions to assign or override permissions',
+      );
     }
+  }
 }

@@ -2,84 +2,132 @@ import { Injectable, Inject } from '@nestjs/common';
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, and, SQL, desc } from 'drizzle-orm';
+import { eq, and, desc, isNull } from 'drizzle-orm';
 
 @Injectable()
 export class TicketsRepository {
-    constructor(
-        @Inject(DB_CONNECTION) private readonly db: PostgresJsDatabase<typeof schema>,
-    ) { }
+  constructor(
+    @Inject(DB_CONNECTION)
+    private readonly db: PostgresJsDatabase<typeof schema>,
+  ) { }
 
-    async findById(id: string) {
-        return this.db.query.tickets.findFirst({
-            where: and(eq(schema.tickets.id, id), eq(schema.tickets.isVisible, true)),
-            with: { items: true }
-        });
-    }
+  async findById(id: string) {
+    return this.db.query.tickets.findFirst({
+      where: and(eq(schema.tickets.id, id), isNull(schema.tickets.deletedAt)),
+      with: { items: true },
+    });
+  }
 
-    async findByReportId(reportId: string) {
-        return this.db.query.tickets.findMany({
-            where: and(eq(schema.tickets.reportId, reportId), eq(schema.tickets.isVisible, true)),
-            with: { items: true },
-            orderBy: [desc(schema.tickets.createdAt)]
-        });
-    }
+  async findByReportId(reportId: string) {
+    return this.db.query.tickets.findMany({
+      where: and(
+        eq(schema.tickets.reportId, reportId),
+        isNull(schema.tickets.deletedAt),
+      ),
+      with: { items: true },
+      orderBy: [desc(schema.tickets.createdAt)],
+    });
+  }
 
-    async create(data: typeof schema.tickets.$inferInsert, items?: (typeof schema.items.$inferInsert)[]) {
-        return this.db.transaction(async (tx) => {
-            const [ticket] = await tx.insert(schema.tickets).values(data).returning();
+  async findByImageId(imageId: string) {
+    return this.db.query.tickets.findFirst({
+      where: and(
+        eq(schema.tickets.imageId, imageId),
+        isNull(schema.tickets.deletedAt),
+      ),
+    });
+  }
 
-            if (items && items.length > 0) {
-                await tx.insert(schema.items).values(
-                    items.map(item => ({ ...item, ticketId: ticket.id }))
-                );
-            }
+  async findAllFingerprints() {
+    return this.db.query.tickets.findMany({
+      where: isNull(schema.tickets.deletedAt),
+      columns: {
+        id: true,
+        imageId: true,
+      },
+    });
+  }
 
-            return ticket;
-        });
-    }
+  async findSemanticDuplicate(
+    date: Date,
+    amount: number,
+    locationName: string,
+  ) {
+    return this.db.query.tickets.findFirst({
+      where: and(
+        eq(schema.tickets.date, date),
+        eq(schema.tickets.amount, amount),
+        eq(schema.tickets.locationName, locationName),
+        isNull(schema.tickets.deletedAt),
+      ),
+    });
+  }
 
-    async updateWithHistory(
-        ticketId: string,
-        updateData: Partial<typeof schema.tickets.$inferInsert>,
-        historyData: typeof schema.ticketHistories.$inferInsert,
-        itemsToUpdate?: (typeof schema.items.$inferInsert)[]
-    ) {
-        return this.db.transaction(async (tx) => {
-            // 1. Add history
-            await tx.insert(schema.ticketHistories).values(historyData);
+  async create(
+    data: typeof schema.tickets.$inferInsert,
+    items?: (typeof schema.items.$inferInsert)[],
+  ) {
+    return this.db.transaction(async (tx) => {
+      const [ticket] = await tx.insert(schema.tickets).values(data).returning();
 
-            // 2. Update ticket
-            const [updated] = await tx.update(schema.tickets)
-                .set({ ...updateData, updatedAt: new Date() })
-                .where(eq(schema.tickets.id, ticketId))
-                .returning();
+      if (items && items.length > 0) {
+        await tx
+          .insert(schema.items)
+          .values(items.map((item) => ({ ...item, ticketId: ticket.id })));
+      }
 
-            // 3. Optional items update (delete old, insert new)
-            if (itemsToUpdate !== undefined) {
-                await tx.delete(schema.items).where(eq(schema.items.ticketId, ticketId));
-                if (itemsToUpdate.length > 0) {
-                    await tx.insert(schema.items).values(
-                        itemsToUpdate.map(i => ({ ...i, ticketId }))
-                    );
-                }
-            }
+      return ticket;
+    });
+  }
 
-            return updated;
-        });
-    }
+  async updateWithHistory(
+    ticketId: string,
+    updateData: Partial<typeof schema.tickets.$inferInsert>,
+    historyData: typeof schema.ticketHistories.$inferInsert,
+    itemsToUpdate?: (typeof schema.items.$inferInsert)[],
+  ) {
+    return this.db.transaction(async (tx) => {
+      await tx.insert(schema.ticketHistories).values(historyData);
 
-    async softDelete(ticketId: string, historyData: typeof schema.ticketHistories.$inferInsert) {
-        return this.db.transaction(async (tx) => {
-            await tx.insert(schema.ticketHistories).values(historyData);
-            return tx.update(schema.tickets)
-                .set({ isVisible: false, updatedAt: new Date() })
-                .where(eq(schema.tickets.id, ticketId))
-                .returning();
-        });
-    }
+      const [updated] = await tx
+        .update(schema.tickets)
+        .set({ ...updateData, updatedAt: new Date() })
+        .where(eq(schema.tickets.id, ticketId))
+        .returning();
 
-    async transaction<T>(callback: (tx: PostgresJsDatabase<typeof schema>) => Promise<T>): Promise<T> {
-        return this.db.transaction(callback as any); // Drizzle transaction context is slightly different but compatible in this context
-    }
+      if (itemsToUpdate !== undefined) {
+        await tx
+          .delete(schema.items)
+          .where(eq(schema.items.ticketId, ticketId));
+        if (itemsToUpdate.length > 0) {
+          await tx
+            .insert(schema.items)
+            .values(itemsToUpdate.map((i) => ({ ...i, ticketId })));
+        }
+      }
+
+      return updated;
+    });
+  }
+
+  async softDelete(
+    ticketId: string,
+    historyData: typeof schema.ticketHistories.$inferInsert,
+  ) {
+    return this.db.transaction(async (tx) => {
+      await tx.insert(schema.ticketHistories).values(historyData);
+      return tx
+        .update(schema.tickets)
+        .set({ deletedAt: new Date(), updatedAt: new Date() })
+        .where(eq(schema.tickets.id, ticketId))
+        .returning();
+    });
+  }
+
+  async transaction<T>(
+    callback: (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
+  ): Promise<T> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return this.db.transaction(callback as any);
+  }
 }

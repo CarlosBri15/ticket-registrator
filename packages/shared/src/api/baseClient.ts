@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
 export interface TokenProvider {
     getToken: () => Promise<string | null> | string | null;
@@ -8,7 +8,7 @@ export interface TokenProvider {
 }
 
 export const createApiClient = (
-    baseURL: string, 
+    baseURL: string,
     tokenProvider: TokenProvider
 ): AxiosInstance => {
     const client = axios.create({
@@ -38,7 +38,7 @@ export const createApiClient = (
                     tokenProvider.onUnauthorized();
                 }
             }
-            return Promise.reject(error);
+            throw error;
         }
     );
 

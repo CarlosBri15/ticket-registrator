@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-// Single admin entry — just identifying info, no password/department needed
 const adminEntrySchema = z.object({
     name: z.string().min(2, "Name is too short"),
     surname: z.string().min(2, "Surname is too short"),
