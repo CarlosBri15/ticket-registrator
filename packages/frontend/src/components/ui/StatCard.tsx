@@ -19,7 +19,7 @@ export const StatCard = ({ title, value, icon, trend, trendUp, variant = "defaul
         <div className="flex flex-col h-full gap-3">
           <div className="flex items-start justify-between">
             <p className={tokens.statCardLabel + " !text-brand-light/70"}>{title}</p>
-            <div className={`w-8 h-8 bg-white/10 ${radius.base} flex items-center justify-center text-white/80 border border-white/10`}>
+            <div className={`w-8 h-8 bg-white/10 ${radius.sm} flex items-center justify-center text-white/80 border border-white/10`}>
               {icon}
             </div>
           </div>
@@ -45,7 +45,7 @@ export const StatCard = ({ title, value, icon, trend, trendUp, variant = "defaul
     <div className={tokens.statCard}>
       <div className="flex items-start justify-between">
         <p className={tokens.statCardLabel}>{title}</p>
-        <div className={`w-8 h-8 bg-brand/5 ${radius.base} flex items-center justify-center text-brand`}>
+        <div className={`w-8 h-8 bg-brand/5 ${radius.sm} flex items-center justify-center text-brand`}>
           {icon}
         </div>
       </div>

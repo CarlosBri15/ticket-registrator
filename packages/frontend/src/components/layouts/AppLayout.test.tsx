@@ -5,6 +5,9 @@ import { AppLayout } from './AppLayout';
 
 const mockNavigate = vi.fn();
 const mockCan = vi.fn().mockReturnValue(true);
+const mockQueryClient = {
+  clear: vi.fn(),
+};
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -12,6 +15,14 @@ vi.mock('react-router-dom', async () => {
     ...actual,
     useNavigate: () => mockNavigate,
     Outlet: () => <div data-testid="outlet">outlet-content</div>,
+  };
+});
+
+vi.mock('@tanstack/react-query', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-query')>();
+  return {
+    ...actual,
+    useQueryClient: () => mockQueryClient,
   };
 });
 
@@ -149,10 +160,11 @@ describe('AppLayout', () => {
     expect(screen.getByText('settings.logout')).toBeInTheDocument();
   });
 
-  it('logout calls removeToken and navigates to /login', () => {
+  it('logout calls removeToken, clears queries and navigates to /login', () => {
     renderLayout();
     fireEvent.click(screen.getByText('settings.logout'));
     expect(mockRemoveToken).toHaveBeenCalled();
+    expect(mockQueryClient.clear).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith('/login');
   });
 

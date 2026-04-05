@@ -1,5 +1,6 @@
 import type { IReport } from "@ticket-registrator/shared";
-import { CheckCircle, Calendar, ArrowRight } from "lucide-react";
+import { CheckCircle, Calendar, ArrowRight, Clock } from "lucide-react";
+import { SectionHeader } from "../../../components/ui/SectionHeader";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { format } from "date-fns";
 import type { Locale } from "date-fns";
@@ -27,31 +28,25 @@ export const PendingApprovalsList = ({
 
   return (
     <section className="space-y-3" data-testid="approval-queue">
-      {/* Section header */}
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-medium text-slate-500">{title}</h2>
-          {!isEmpty && (
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-100">
-              {reports.length}
-            </span>
-          )}
-        </div>
-      </div>
+      <SectionHeader
+        icon={<Clock />}
+        title={title}
+        count={!isEmpty ? reports.length : undefined}
+      />
 
       {isEmpty ? (
         <div
-          className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 flex flex-col items-center justify-center text-center min-h-[220px]"
+          className="rounded-lg border border-dashed border-slate-200 bg-white p-10 flex flex-col items-center justify-center text-center min-h-[220px]"
           data-testid="empty-queue"
         >
-          <div className="w-10 h-10 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center mb-3">
+          <div className="w-10 h-10 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-center mb-3">
             <CheckCircle className="w-5 h-5 text-emerald-500" />
           </div>
           <p className="text-sm text-slate-400">{t("home.noPendingApprovals")}</p>
         </div>
       ) : (
         <div
-          className="bg-white rounded-2xl"
+          className="bg-white rounded-lg"
           style={{ border: "1px solid #edf0f5", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 6px 20px rgba(0,0,0,0.05)" }}
         >
           <div>

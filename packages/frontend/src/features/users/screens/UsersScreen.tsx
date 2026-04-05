@@ -1,365 +1,221 @@
-import { useState, useEffect, useCallback } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Search, Plus, Trash2, UserCircle, Mail, AtSign, Pencil } from "lucide-react";
+import { Plus, Users2, Shield, UserCheck, Search } from "lucide-react";
 import {
   useUsersQuery,
-  useCreateUserMutation,
-  useDeleteUserMutation,
   useRolesQuery,
+  useSystemRolesQuery,
   usePermissions,
-  useScope,
-  AUTHORITY_LEVELS,
   type IUser,
-  type IRole,
 } from "@ticket-registrator/shared";
 import { Button } from "../../../components/ui/Button";
-import { Input } from "../../../components/ui/Input";
-import { AlertError, getApiErrorMessage } from "../../../components/ui/Alert";
-import { tokens, radius } from "../../../styles/theme";
-import { RoleSelect } from "../../roles/components/RoleSelect";
-import { OrgSelect } from "../../organizations/components/OrgSelect";
-import { DepartmentMultiSelect } from "../../departments/components/DepartmentMultiSelect";
-import { Modal } from "../../../components/ui/Modal";
+import { tokens } from "../../../styles/theme";
+import { PixelCard } from "../../../components/ui/PixelCard";
+import { SectionHeader } from "../../../components/ui/SectionHeader";
+import { useTranslation } from "react-i18next";
 import { Pagination } from "../../../components/ui/Pagination";
-import { useScopeContext } from "@ticket-registrator/shared";
 import { EditUserModal } from "../components/EditUserModal";
-
-const PAGE_SIZE = 10;
-
-const CreateUserModal = ({
-  isOpen,
-  onClose,
-  companyId,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  companyId: string | null;
-}) => {
-  const mutation = useCreateUserMutation({ onSuccess: onClose });
-
-  const [form, setForm] = useState({
-    name: "",
-    surname: "",
-    email: "",
-    username: "",
-    password: "",
-    confirmPassword: "",
-    roleId: "",
-    orgId: "",          // only used when creator is SuperAdmin
-    selectedRole: null as IRole | null,
-    departmentIds: [] as string[],
-  });
-
-  // Creator is SuperAdmin when companyId is null — they must pick an org
-  const isCreatorSuperAdmin = companyId === null;
-
-  // Is the role being assigned a SuperAdmin role? → no org needed
-  const isTargetSuperAdmin =
-    form.selectedRole !== null &&
-    form.selectedRole.hierarchy >= AUTHORITY_LEVELS.GLOBAL;
-
-  // Which companyId to use for the RoleSelect
-  const effectiveCompanyId = isCreatorSuperAdmin ? (form.orgId || null) : companyId;
-
-  const reset = () => mutation.reset();
-
-  const set = useCallback((k: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    reset();
-    setForm((p) => ({ ...p, [k]: e.target.value }));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const passwordMismatch = Boolean(
-    form.password && form.confirmPassword && form.password !== form.confirmPassword,
-  );
-
-  const orgMissing = isCreatorSuperAdmin && !!form.roleId && !isTargetSuperAdmin && !form.orgId;
-
-  const handleSubmit = (e: React.BaseSyntheticEvent) => {
-    e.preventDefault();
-    if (passwordMismatch || orgMissing) return;
-
-    const payload: any = {
-      name: form.name,
-      surname: form.surname,
-      email: form.email,
-      username: form.username,
-      password: form.password,
-      confirmPassword: form.confirmPassword,
-      roleId: form.roleId,
-      departmentIds: form.departmentIds,
-    };
-    if (isCreatorSuperAdmin && form.orgId) payload.companyId = form.orgId;
-
-    mutation.mutate(payload);
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Nuevo Usuario">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {mutation.error && (
-          <AlertError
-            message={getApiErrorMessage(mutation.error)}
-            onDismiss={() => mutation.reset()}
-          />
-        )}
-        <div className="grid grid-cols-2 gap-4">
-          <Input label="Nombre *" value={form.name} onChange={set("name")} placeholder="Carlos" required />
-          <Input label="Apellido *" value={form.surname} onChange={set("surname")} placeholder="García" required />
-        </div>
-        <Input label="Email *" type="email" value={form.email} onChange={set("email")} placeholder="carlos@empresa.com" required />
-        <Input label="Usuario *" value={form.username} onChange={set("username")} placeholder="cgarcia" required />
-        <div className="grid grid-cols-2 gap-4">
-          <Input label="Contraseña *" type="password" value={form.password} onChange={set("password")} placeholder="••••••••" required />
-          <Input label="Confirmar *" type="password" value={form.confirmPassword} onChange={set("confirmPassword")} placeholder="••••••••" required />
-        </div>
-
-        <RoleSelect
-          id="user-role"
-          companyId={effectiveCompanyId}
-          value={form.roleId}
-          onChange={(v: any, role: any) => {
-            reset();
-            setForm((p) => ({
-              ...p,
-              roleId: v,
-              selectedRole: role ?? null,
-              // Clear org when switching to SuperAdmin role (no org needed)
-              orgId: role && role.hierarchy >= AUTHORITY_LEVELS.GLOBAL ? "" : p.orgId,
-            }));
-          }}
-          required
-        />
-
-        {/* Org selector — appears after role is chosen, only when role is not SuperAdmin */}
-        {isCreatorSuperAdmin && form.roleId && !isTargetSuperAdmin && (
-          <OrgSelect
-            id="user-org"
-            value={form.orgId}
-            onChange={(v: any) => { reset(); setForm((p) => ({ ...p, orgId: v })); }}
-            required
-          />
-        )}
-
-        {/* Department multiselect — shown when role is not SuperAdmin and companyId is available */}
-        {!isTargetSuperAdmin && (isCreatorSuperAdmin ? form.orgId : companyId) && (
-          <DepartmentMultiSelect
-            id="user-departments"
-            companyId={isCreatorSuperAdmin ? form.orgId : companyId}
-            value={form.departmentIds}
-            onChange={(ids: any) => setForm((p) => ({ ...p, departmentIds: ids }))}
-          />
-        )}
-
-        {passwordMismatch && (
-          <AlertError message="Las contraseñas no coinciden" />
-        )}
-        <div className="flex gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            isLoading={mutation.isPending}
-            disabled={!form.name || !form.email || !form.roleId || passwordMismatch || orgMissing}
-            className="flex-1"
-          >
-            Crear Usuario
-          </Button>
-        </div>
-      </form>
-    </Modal>
-  );
-};
-
-const UserRow = ({
-  user,
-  roles,
-  canDelete,
-  onDelete,
-  onEdit,
-}: {
-  user: IUser;
-  roles?: { id: string; name: string }[];
-  canDelete: boolean;
-  onDelete: (id: string) => void;
-  onEdit: (user: IUser) => void;
-}) => {
-  const navigate = useNavigate();
-  const roleName = roles?.find((r) => r.id === user.roleId)?.name ?? "—";
-
-  return (
-    <div className={`bg-white p-4 ${radius.card} border border-slate-200 shadow-sm flex items-center justify-between gap-4`}>
-      <button
-        type="button"
-        className="flex items-center gap-3 min-w-0 text-left flex-1"
-        onClick={() => navigate(`/users/${user.id}`)}
-      >
-        <div className={`w-10 h-10 bg-brand/10 ${radius.base} flex items-center justify-center shrink-0`}>
-          <UserCircle className="w-5 h-5 text-brand" />
-        </div>
-        <div className="min-w-0">
-          <p className="font-semibold text-dark truncate">
-            {user.name} {user.surname}
-          </p>
-          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-            <span className="flex items-center gap-1 text-xs text-slate-400 font-medium">
-              <Mail className="w-3 h-3" />
-              {user.email}
-            </span>
-            <span className="flex items-center gap-1 text-xs text-slate-400 font-medium">
-              <AtSign className="w-3 h-3" />
-              {user.username}
-            </span>
-          </div>
-        </div>
-      </button>
-      <div className="flex items-center gap-3 shrink-0">
-        <span className={`${tokens.badgeSm} ${tokens.badgeBrand}`}>
-          {roleName}
-        </span>
-        <button
-          type="button"
-          onClick={() => onEdit(user)}
-          className={`p-2 text-slate-300 hover:text-brand hover:bg-brand/10 ${radius.base} transition-all`}
-          title="Editar usuario"
-          aria-label="Editar usuario"
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
-        {canDelete && (
-          <button
-            type="button"
-            onClick={() => onDelete(user.id)}
-            className={`p-2 text-slate-300 hover:text-danger hover:bg-danger/5 ${radius.base} transition-all`}
-            title="Eliminar usuario"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
+import { CreateUserModal } from "../components/CreateUserModal";
+import { UserRow } from "../components/UserRow";
+import { UserFilterBar } from "../components/UserFilterBar";
+import { UserSkeletonCard } from "../components/UserSkeletonCard";
+import { useCompanyScope, useListState, useModalState } from "@ticket-registrator/shared";
+import { DARK, BORDER } from "../constants";
 
 export const UsersScreen = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const { can } = usePermissions();
-  const { scope, isGlobal } = useScope();
-  const { activeCompanyId } = useScopeContext();
-
-  const getCompanyId = () => {
-    if (isGlobal) return activeCompanyId;
-    return (scope as any)?.companyId ?? null;
-  };
-
-  const companyId = getCompanyId();
+  const { companyId } = useCompanyScope();
 
   const { data: users, isLoading } = useUsersQuery();
-  const { data: roles } = useRolesQuery(companyId ?? undefined);
-  const deleteMutation = useDeleteUserMutation();
+  const { data: companyRoles } = useRolesQuery(companyId ?? undefined);
+  const { data: systemRoles } = useSystemRolesQuery();
+  const roles = useMemo(() => {
+    const combined = [...(systemRoles || [])];
+    (companyRoles || []).forEach(r => {
+      if (!combined.find(s => s.id === r.id)) combined.push(r);
+    });
+    return combined;
+  }, [systemRoles, companyRoles]);
 
-  const [search, setSearch] = useState("");
+  const { search, setSearch, page, setPage, paginate } = useListState();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<IUser | null>(null);
-  const [page, setPage] = useState(1);
+  const { isOpen: isEditOpen, item: editingUser, close: closeEdit } = useModalState<IUser>();
 
-  useEffect(() => { setPage(1); }, [search]);
-
-  const filtered = users?.filter((u) => {
-    if (!search) return true;
+  const filtered = useMemo(() => {
+    if (!users) return [];
+    if (!search) return users;
     const q = search.toLowerCase();
-    return (
+    return users.filter((u) =>
       u.name.toLowerCase().includes(q) ||
       u.surname.toLowerCase().includes(q) ||
       u.email.toLowerCase().includes(q) ||
       u.username.toLowerCase().includes(q)
     );
-  });
+  }, [users, search]);
 
-  const paginated = filtered?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const totalPages = Math.ceil((filtered?.length ?? 0) / PAGE_SIZE);
+  const { paginated, totalPages } = paginate(filtered);
+
+  const stats = useMemo(() => {
+    if (!users) return { total: 0, roles: {} };
+    const counts: Record<string, number> = {};
+    users.forEach(u => {
+      const roleName = roles?.find(r => r.id === u.roleId)?.name || "Other";
+      counts[roleName] = (counts[roleName] || 0) + 1;
+    });
+    return {
+      total: users.length,
+      roles: counts
+    };
+  }, [users, roles]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div>
-          <h1 className="text-2xl font-bold text-dark tracking-tight mb-1 flex items-center gap-3">
-            <Users className="w-6 h-6 text-brand" />
-            Usuarios
-          </h1>
-          <p className="text-slate-500 text-sm">Gestión de usuarios de tu organización.</p>
-        </div>
+    <div className="-mx-6 -mt-7 md:-mx-10 lg:-mt-9">
+      {/* Header Area */}
+      <div className={tokens.headerPage}>
+        <h1 className="font-space-bold text-dark" style={{ fontSize: 24, letterSpacing: "0.5px" }}>
+          {t("users.title")}
+        </h1>
         {can("create_users") && (
-          <Button onClick={() => setIsCreateOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Usuario
+          <Button
+            variant="primary"
+            className="w-[160px] whitespace-nowrap"
+            leftIcon={<Plus className="w-5 h-5" />}
+            onClick={() => setIsCreateOpen(true)}
+          >
+            {t("users.newUser")}
           </Button>
         )}
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Buscar por nombre, email o usuario..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className={tokens.searchInput}
-        />
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_380px]">
+        {/* ── Main List Column ── */}
+        <main className="min-w-0 px-10 md:px-16 pt-4 pb-7 lg:pb-9 space-y-6">
+          <UserFilterBar
+            search={search}
+            onSearch={setSearch}
+            hasFilters={!!search}
+            onClear={() => setSearch("")}
+          />
 
-      {/* Content */}
-      {(() => {
-        if (isLoading) {
-          return (
-            <div className="flex flex-col items-center justify-center py-32">
-              <div className="w-10 h-10 border-2 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-slate-500 font-medium text-sm">Cargando usuarios...</p>
-            </div>
-          );
-        }
+          <section className="space-y-4">
+            <SectionHeader
+              icon={<Users2 />}
+              title={t("users.title")}
+              count={filtered.length}
+            />
 
-        if (!filtered || filtered.length === 0) {
-          return (
-            <div className={tokens.emptyState}>
-              <div className={tokens.emptyStateIcon}>
-                <Users className="w-7 h-7 text-slate-300" />
+            {isLoading ? (
+              <div className="space-y-2.5">
+                <UserSkeletonCard />
+                <UserSkeletonCard />
+                <UserSkeletonCard />
               </div>
-              <h3 className="text-base font-semibold text-dark mb-1">
-                {search ? "Sin resultados" : "No hay usuarios"}
-              </h3>
-              <p className={tokens.emptyStateText}>
-                {search ? "Prueba con otra búsqueda." : "Crea el primer usuario de tu organización."}
+            ) : filtered.length === 0 ? (
+              <PixelCard className="w-full">
+                <div className="flex flex-col items-center py-12 gap-3 text-center">
+                  <Search className="w-8 h-8" style={{ color: `${DARK}20` }} />
+                  <p className="font-space-semibold text-dark/50" style={{ fontSize: 14 }}>
+                    {search ? t("common.noResults") : t("users.empty")}
+                  </p>
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={() => setSearch("")}
+                      className="font-space-bold text-brand hover:underline"
+                      style={{ fontSize: 13 }}
+                    >
+                      {t("trips.filterClearAll")}
+                    </button>
+                  )}
+                </div>
+              </PixelCard>
+            ) : (
+              <div className="space-y-2.5">
+                {paginated.map((user) => (
+                  <UserRow
+                    key={user.id}
+                    user={user}
+                    roleName={roles?.find((r) => r.id === user.roleId)?.name}
+                    onClick={() => navigate(`/users/${user.id}`)}
+                  />
+                ))}
+
+                <div className="pt-4">
+                  <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    totalItems={filtered.length}
+                    pageSize={10}
+                    onPageChange={setPage}
+                  />
+                </div>
+              </div>
+            )}
+          </section>
+        </main>
+
+        {/* ── Vertical Separator ── */}
+        <div className="hidden lg:block self-stretch" style={{ width: 2, backgroundColor: BORDER }} />
+
+        {/* ── Sidebar: Stats & Info ── */}
+        <aside className="px-8 md:px-10 py-7 lg:py-9 bg-surface/30">
+          <section className="space-y-6">
+            <SectionHeader icon={<Shield />} title={t("users.statsTitle", "Resumen")} />
+
+            <div className="grid grid-cols-1 gap-4">
+              <PixelCard>
+                <div className="p-5 flex items-center gap-4">
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center border-2"
+                    style={{ backgroundColor: `${DARK}05`, borderColor: `${DARK}08` }}
+                  >
+                    <UserCheck className="w-6 h-6 opacity-40" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-space-bold text-dark/30 uppercase tracking-widest leading-none mb-1">
+                      {t("users.totalUsers", "Total Usuarios")}
+                    </p>
+                    <p className="text-2xl font-space-bold text-dark leading-none">
+                      {stats.total}
+                    </p>
+                  </div>
+                </div>
+              </PixelCard>
+
+              {Object.entries(stats.roles).map(([role, count]) => (
+                <PixelCard key={role}>
+                  <div className="p-4 flex items-center justify-between">
+                    <span className="font-space-semibold text-dark/60" style={{ fontSize: 13 }}>
+                      {role}
+                    </span>
+                    <span
+                      className="font-space-bold px-3 py-1 rounded-lg border-2"
+                      style={{
+                        fontSize: 13,
+                        backgroundColor: role === "Admin" ? "rgba(239, 68, 68, 0.05)" : "rgba(59, 130, 246, 0.05)",
+                        borderColor: "rgba(0,0,0,0.05)",
+                        color: DARK
+                      }}
+                    >
+                      {count}
+                    </span>
+                  </div>
+                </PixelCard>
+              ))}
+            </div>
+
+            <div className="mt-8 p-6 rounded-2xl border-2 border-dashed border-dark/10">
+              <p className="font-space-semibold text-dark/30 text-center" style={{ fontSize: 11, lineHeight: 1.5 }}>
+                {t("users.sidebarInfo", "Administra los usuarios y sus permisos desde esta vista centralizada.")}
               </p>
             </div>
-          );
-        }
+          </section>
+        </aside>
+      </div>
 
-        return (
-          <div className="space-y-3">
-            {paginated?.map((user) => (
-              <UserRow
-                key={user.id}
-                user={user}
-                roles={roles}
-                canDelete={can("delete_users")}
-                onDelete={(id) => deleteMutation.mutate(id)}
-                onEdit={(u) => { setEditingUser(u); setIsEditOpen(true); }}
-              />
-            ))}
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              totalItems={filtered.length}
-              pageSize={PAGE_SIZE}
-              onPageChange={setPage}
-            />
-          </div>
-        );
-      })()}
-
+      {/* Modals */}
       <CreateUserModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
@@ -369,7 +225,7 @@ export const UsersScreen = () => {
       {isEditOpen && editingUser && (
         <EditUserModal
           isOpen={isEditOpen}
-          onClose={() => { setIsEditOpen(false); setEditingUser(null); }}
+          onClose={closeEdit}
           user={editingUser}
           companyId={companyId}
         />

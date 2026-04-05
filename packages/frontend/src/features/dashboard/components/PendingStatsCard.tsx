@@ -21,7 +21,7 @@ export const PendingStatsCard = ({ count, label, dataTestId }: PendingStatsCardP
         <p className={`text-xs font-medium uppercase tracking-wide ${hasPending ? "text-warning" : "text-slate-400"}`}>
           {label || (hasPending ? t("home.requiresReview") : t("home.allCaughtUp"))}
         </p>
-        <div className={`w-8 h-8 ${radius.base} flex items-center justify-center ${hasPending ? "bg-warning/10 text-warning" : "bg-success/10 text-success"}`}>
+        <div className={`w-8 h-8 ${radius.sm} flex items-center justify-center ${hasPending ? "bg-warning/10 text-warning" : "bg-success/10 text-success"}`}>
           {hasPending ? <AlertCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
         </div>
       </div>

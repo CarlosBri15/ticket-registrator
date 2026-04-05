@@ -5,10 +5,21 @@ import { SettingsScreen } from './SettingsScreen';
 
 const mockNavigate = vi.fn();
 const mockChangeLanguage = vi.fn();
+const mockQueryClient = {
+  clear: vi.fn(),
+};
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   return { ...actual, useNavigate: () => mockNavigate };
+});
+
+vi.mock('@tanstack/react-query', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-query')>();
+  return {
+    ...actual,
+    useQueryClient: () => mockQueryClient,
+  };
 });
 
 vi.mock('@ticket-registrator/shared', async (importOriginal) => {
@@ -120,10 +131,11 @@ describe('SettingsScreen', () => {
     expect(screen.getByRole('button', { name: /settings.logout/i })).toBeInTheDocument();
   });
 
-  it('logout button calls removeToken and navigates to /login', () => {
+  it('logout button calls removeToken, clears queries and navigates to /login', () => {
     renderSettings();
     fireEvent.click(screen.getByRole('button', { name: /settings.logout/i }));
     expect(mockRemoveToken).toHaveBeenCalled();
+    expect(mockQueryClient.clear).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith('/login');
   });
 

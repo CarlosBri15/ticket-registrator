@@ -7,7 +7,7 @@ import { CategoriesRepository } from '../categories/categories.repository';
 import { DB_CONNECTION } from '../db/db.module';
 import {
   Roles,
-  ROLE_HIERARCHY,
+  ROLE_NAME_TO_HIERARCHY,
   ROLE_DEFAULT_PERMISSIONS,
 } from '@ticket-registrator/shared';
 
@@ -157,12 +157,12 @@ describe('SeedService', () => {
     });
 
     it('should update existing roles with changed hierarchy or description', async () => {
-      const roleName = Object.values(Roles)[0] as keyof typeof ROLE_HIERARCHY;
-      const correctHierarchy = ROLE_HIERARCHY[roleName];
+      const roleName = Object.values(Roles)[0] as keyof typeof ROLE_NAME_TO_HIERARCHY;
+      const CORRECT_HIERARCHY = ROLE_NAME_TO_HIERARCHY[roleName];
       const existingRole = {
         id: 'r-1',
         name: roleName,
-        hierarchy: correctHierarchy + 99, // wrong hierarchy
+        hierarchy: CORRECT_HIERARCHY + 99, // wrong hierarchy
         description: 'old description',
       };
       rolesRepositoryMock.findAllSystemRoles.mockResolvedValue([existingRole]);
@@ -176,7 +176,7 @@ describe('SeedService', () => {
       const allExistingRoles = Object.values(Roles).map((roleName, idx) => ({
         id: `r-${idx}`,
         name: roleName,
-        hierarchy: ROLE_HIERARCHY[roleName as keyof typeof ROLE_HIERARCHY],
+        hierarchy: ROLE_NAME_TO_HIERARCHY[roleName as keyof typeof ROLE_NAME_TO_HIERARCHY],
         description: `System default role: ${roleName}`,
       }));
       rolesRepositoryMock.findAllSystemRoles.mockResolvedValue(

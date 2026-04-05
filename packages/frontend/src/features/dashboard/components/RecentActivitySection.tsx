@@ -1,64 +1,94 @@
-import { Clock, ChevronRight } from "lucide-react";
+import { Clock } from "lucide-react";
 import { format } from "date-fns";
+import type { Locale } from "date-fns";
+import type { TFunction } from "react-i18next";
+import { type IReport } from "@ticket-registrator/shared";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
-import { tokens, radius } from "../../../styles/theme";
+import { PixelCard } from "../../../components/ui/PixelCard";
+import { reportIcon } from "@ticket-registrator/shared/assets";
+import { SectionHeader } from "../../../components/ui/SectionHeader";
 
 interface RecentActivitySectionProps {
-  t: any;
-  recentCompleted: any[];
+  t: TFunction;
+  recentCompleted: IReport[];
   navigate: (path: string) => void;
-  dateLocale: any;
+  dateLocale: Locale;
 }
 
-export const RecentActivitySection = ({ t, recentCompleted, navigate, dateLocale }: RecentActivitySectionProps) => {
+export const RecentActivitySection = ({
+  t,
+  recentCompleted,
+  navigate,
+  dateLocale,
+}: RecentActivitySectionProps) => {
   return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-dark flex items-center gap-2.5">
-          <div className={`w-6 h-6 bg-slate-100 ${radius.base} flex items-center justify-center`}>
-            <Clock className="w-3.5 h-3.5 text-slate-400" />
-          </div>
-          {t("home.recentActivity")}
-        </h2>
-        <button
-          onClick={() => navigate("/reports")}
-          className="text-[10px] font-semibold text-brand uppercase tracking-wide hover:underline"
-        >
-          {t("common.viewAll")}
-        </button>
-      </div>
+    <section className="space-y-3.5">
+      <SectionHeader
+        icon={<Clock />}
+        title={t("home.recentActivity")}
+        action={
+          <button
+            onClick={() => navigate("/reports")}
+            className="text-xs font-space-bold text-brand hover:underline"
+          >
+            {t("common.viewAll")}
+          </button>
+        }
+      />
 
-      <div className={tokens.listSection}>
-        {recentCompleted.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-sm text-slate-400 font-medium">{t("trips.noCompletedTrips")}</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-50">
-            {recentCompleted.map((report: any) => (
-              <button
-                key={report.id}
-                type="button"
-                onClick={() => navigate(`/reports/${report.id}`)}
-                className="w-full text-left p-4 flex items-center justify-between hover:bg-slate-50 cursor-pointer transition-colors group"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <StatusBadge status={report.status} size="sm" />
-                  <div className="min-w-0">
-                    <p className="font-semibold text-dark text-sm truncate group-hover:text-brand transition-colors">
-                      {report.name}
-                    </p>
-                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide mt-0.5">
-                      {format(new Date(report.end_date), "dd MMM yyyy", { locale: dateLocale })}
-                    </p>
-                  </div>
+      {recentCompleted.length === 0 ? (
+        <p className="text-sm font-space text-dark/50 text-center py-6">
+          {t("trips.noCompletedTrips")}
+        </p>
+      ) : (
+        <div className="space-y-2.5">
+          {recentCompleted.map((report) => (
+            <PixelCard
+              key={report.id}
+              shadowOffset={3}
+              onClick={() => navigate(`/reports/${report.id}`)}
+              className="w-full"
+            >
+              <div className="flex items-center gap-2.5 px-3 py-2.5">
+                <img
+                  src={reportIcon}
+                  alt=""
+                  className="w-11 h-11 shrink-0 object-contain"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="font-space-bold text-[11px] text-dark truncate mb-0.5">
+                    {report.name}
+                  </p>
+                  <span
+                    className="font-space-semibold text-[8px]"
+                    style={{ color: "rgba(26,26,26,0.7)" }}
+                  >
+                    {format(new Date(report.end_date), "dd MMM yyyy", {
+                      locale: dateLocale,
+                    })}
+                  </span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-200 group-hover:text-brand group-hover:translate-x-0.5 transition-all shrink-0" />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="font-space-bold text-[13px] text-dark leading-none">
+                    {(
+                      report.approved_amount ??
+                      report.requested_amount ??
+                      0
+                    ).toLocaleString()}
+                    <span
+                      className="font-space-bold text-[8px] ml-0.5"
+                      style={{ color: "rgba(26,26,26,0.6)" }}
+                    >
+                      {report.currency}
+                    </span>
+                  </span>
+                  <StatusBadge status={report.status} size="sm" />
+                </div>
+              </div>
+            </PixelCard>
+          ))}
+        </div>
+      )}
     </section>
   );
 };

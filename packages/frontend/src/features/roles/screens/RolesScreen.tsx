@@ -1,109 +1,21 @@
-import { useState, useEffect } from "react";
+import { memo, useState, useEffect } from "react";
 import { Shield, Plus, Trash2, Building2 } from "lucide-react";
 import {
   useRolesQuery,
   useSystemRolesQuery,
-  useCreateRoleMutation,
   useDeleteRoleMutation,
   usePermissions,
-  useScope,
   type IRole,
 } from "@ticket-registrator/shared";
-import { useScopeContext } from "@ticket-registrator/shared";
 import { Button } from "../../../components/ui/Button";
-import { Input } from "../../../components/ui/Input";
-import { Select } from "../../../components/ui/Select";
-import { Modal } from "../../../components/ui/Modal";
 import { Pagination } from "../../../components/ui/Pagination";
 import { tokens, radius } from "../../../styles/theme";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { useTranslation } from "react-i18next";
+import { CreateRoleModal, getHierarchyMeta } from "../components/CreateRoleModal";
+import { PAGE_SIZE, useCompanyScope, useModalState } from "@ticket-registrator/shared";
 
-const PAGE_SIZE = 10;
-
-const HIERARCHY_LABELS: Record<number, string> = {
-  1: "Empleado",
-  2: "Manager",
-  3: "Controller",
-  4: "Admin",
-};
-
-const HIERARCHY_COLORS: Record<number, string> = {
-  1: "bg-slate-100 text-slate-600 border-slate-200",
-  2: "bg-info/10 text-info border-info/20",
-  3: "bg-warning/10 text-warning border-warning/20",
-  4: "bg-brand/10 text-brand border-brand/20",
-};
-
-const CreateRoleModal = ({
-  isOpen,
-  onClose,
-  companyId,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  companyId: string;
-}) => {
-  const mutation = useCreateRoleMutation(companyId, { onSuccess: onClose });
-  const [form, setForm] = useState({ name: "", hierarchy: 1, description: "" });
-
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((p) => ({ ...p, [k]: e.target.value }));
-
-  const handleSubmit = (e: React.BaseSyntheticEvent) => {
-    e.preventDefault();
-    mutation.mutate({ name: form.name, hierarchy: form.hierarchy, description: form.description || undefined });
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Nuevo Rol">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Nombre del rol *"
-          value={form.name}
-          onChange={set("name")}
-          placeholder="Ej: Supervisor de Ventas"
-          required
-        />
-        <Select
-          label="Nivel de jerarquía"
-          id="role-hierarchy"
-          options={Object.entries(HIERARCHY_LABELS).map(([val, lbl]) => ({
-            value: val,
-            label: `${lbl} (nivel ${val})`,
-          }))}
-          value={String(form.hierarchy)}
-          onChange={(v) => setForm((p) => ({ ...p, hierarchy: Number(v) }))}
-          required
-        />
-        <div>
-          <label
-            htmlFor="role-description"
-            className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
-          >
-            Descripción
-          </label>
-          <textarea
-            id="role-description"
-            className={`${tokens.input} resize-none`}
-            value={form.description}
-            onChange={set("description")}
-            placeholder="Descripción opcional del rol..."
-            rows={3}
-          />
-        </div>
-        <div className="flex gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
-            Cancelar
-          </Button>
-          <Button type="submit" isLoading={mutation.isPending} disabled={!form.name.trim()} className="flex-1">
-            Crear Rol
-          </Button>
-        </div>
-      </form>
-    </Modal>
-  );
-};
-
-const RoleCard = ({
+const RoleCard = memo(({
   role,
   canDelete,
   onDelete,
@@ -112,15 +24,13 @@ const RoleCard = ({
   canDelete: boolean;
   onDelete: (id: string) => void;
 }) => {
-  const level = Math.min(Math.max(role.hierarchy, 1), 4);
-  const colorClass = HIERARCHY_COLORS[level] ?? "bg-gray-100 text-gray-600";
-  const label = HIERARCHY_LABELS[level] ?? `Nivel ${role.hierarchy}`;
+  const { label, color: colorClass } = getHierarchyMeta(role.hierarchy);
 
   return (
-    <div className={`${tokens.card} ${tokens.cardHover}`}>
+    <div className={`${tokens.card} ${tokens.cardInteractive}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`w-9 h-9 bg-brand/10 ${radius.base} flex items-center justify-center shrink-0`}>
+          <div className={`w-9 h-9 bg-brand/10 ${radius.sm} flex items-center justify-center shrink-0`}>
             <Shield className="w-4 h-4 text-brand" />
           </div>
           <div className="min-w-0">
@@ -135,33 +45,30 @@ const RoleCard = ({
             {label}
           </span>
           {canDelete && (
-            <button
+            <Button
+              variant="ghost-danger"
+              size="icon"
               onClick={() => onDelete(role.id)}
-              className={`p-2 text-slate-300 hover:text-danger hover:bg-danger/5 ${radius.base} transition-all`}
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+              className="!p-2 !border-none !shadow-none"
+              leftIcon={<Trash2 className="w-4 h-4" />}
+            />
           )}
         </div>
       </div>
     </div>
   );
-};
+});
 
 export const RolesScreen = () => {
+  const { t } = useTranslation();
   const { can } = usePermissions();
-  const { scope, isGlobal } = useScope();
-  const { activeCompanyId } = useScopeContext();
-
-  const companyId = isGlobal
-    ? activeCompanyId
-    : (scope as any).companyId ?? null;
+  const { companyId, isGlobal } = useCompanyScope();
 
   const { data: companyRoles, isLoading: loadingCompany } = useRolesQuery(companyId ?? undefined);
   const { data: systemRoles, isLoading: loadingSystem } = useSystemRolesQuery();
   const deleteMutation = useDeleteRoleMutation(companyId ?? "");
 
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const { isOpen: isCreateOpen, open: openCreate, close: closeCreate } = useModalState();
   const [page, setPage] = useState(1);
 
   const isLoading = loadingCompany || loadingSystem;
@@ -175,11 +82,11 @@ export const RolesScreen = () => {
   if (!companyId && !isGlobal) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-center">
-        <Building2 className="w-12 h-12 text-slate-200 mb-4" />
-        <h3 className="text-xl font-semibold text-dark mb-2">Selecciona una organización</h3>
-        <p className="text-slate-400 max-w-sm text-sm">
-          Para ver los roles, selecciona primero una organización.
-        </p>
+        <EmptyState
+          icon={<Building2 className="w-7 h-7 text-white" />}
+          title={t("roles.selectOrg")}
+          description={t("roles.selectOrgDesc")}
+        />
       </div>
     );
   }
@@ -196,13 +103,11 @@ export const RolesScreen = () => {
 
     if (!roles || roles.length === 0) {
       return (
-        <div className={tokens.emptyState}>
-          <div className={tokens.emptyStateIcon}>
-            <Shield className="w-7 h-7 text-slate-300" />
-          </div>
-          <h3 className="text-base font-semibold text-dark mb-1">No hay roles</h3>
-          <p className={tokens.emptyStateText}>Crea el primer rol personalizado.</p>
-        </div>
+        <EmptyState
+          icon={<Shield className="w-7 h-7 text-white" />}
+          title={t("roles.empty")}
+          description={t("roles.emptyDesc")}
+        />
       );
     }
 
@@ -243,7 +148,7 @@ export const RolesScreen = () => {
           </p>
         </div>
         {companyId && can("create_roles") && (
-          <Button onClick={() => setIsCreateOpen(true)}>
+          <Button onClick={() => openCreate()}>
             <Plus className="w-4 h-4 mr-2" />
             Nuevo Rol
           </Button>
@@ -256,7 +161,7 @@ export const RolesScreen = () => {
       {companyId && (
         <CreateRoleModal
           isOpen={isCreateOpen}
-          onClose={() => setIsCreateOpen(false)}
+          onClose={closeCreate}
           companyId={companyId}
         />
       )}

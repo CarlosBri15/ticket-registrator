@@ -12,8 +12,12 @@
  */
 
 import { type ReactNode, type CSSProperties } from 'react';
+import { nbTokens } from '../../styles/theme';
 
-const SHADOW = 'rgba(26, 26, 26, 0.15)';
+// Border — uses global CSS variable for consistency.
+const BORDER = 'var(--color-border-main)';
+// Shadow — use global CSS variable so it's not hardcoded
+const SHADOW = 'var(--color-shadow-main, #D4D4D8)';
 
 interface PixelCardProps {
   children: ReactNode;
@@ -21,34 +25,37 @@ interface PixelCardProps {
   bg?: string;
   /** Hard shadow offset in px. 3=default, 6=hero, 2=badge. */
   shadowOffset?: number;
-  /** Border radius in px. Defaults to 8 (RADIUS). */
+  /** Border radius in px. */
   radius?: number;
   /** Click handler — renders as <button> when provided. */
   onClick?: () => void;
   /** Keep card in the "pressed" visual state (translated, no shadow). */
   active?: boolean;
   className?: string;
+  borderColor?: string;
+  shadowColor?: string;
 }
 
 export const PixelCard = ({
   children,
-  bg = '#FFFFFF',
-  shadowOffset = 3,
-  radius = 8,
+  bg = 'var(--color-surface-card, #FAFAF9)',
+  shadowOffset = nbTokens.shadowCard,
+  radius = nbTokens.radiusCard,
   onClick,
   active = false,
   className = '',
+  borderColor,
+  shadowColor,
 }: PixelCardProps) => {
   const Tag = onClick ? 'button' : 'div';
 
   const style: CSSProperties = {
     backgroundColor: bg,
-    borderRadius: radius,
-    border: `2px solid ${SHADOW}`,
-    boxShadow: active ? 'none' : `${shadowOffset}px ${shadowOffset}px 0px ${SHADOW}`,
+    borderRadius: radius ?? 'var(--radius-xl, 14px)',
+    border: `2px solid ${borderColor || BORDER}`,
+    boxShadow: active ? 'none' : `${shadowOffset}px ${shadowOffset}px 0px ${shadowColor || SHADOW}`,
     transform: active ? `translate(${shadowOffset}px, ${shadowOffset}px)` : undefined,
     transition: 'transform 80ms ease, box-shadow 80ms ease',
-    // width is NOT forced here — let callers control via className (e.g. "w-full")
     textAlign: 'left',
     cursor: onClick ? 'pointer' : 'default',
     outline: 'none',
@@ -68,7 +75,7 @@ export const PixelCard = ({
     ? (e: React.MouseEvent) => {
         const el = e.currentTarget as HTMLElement;
         if (!active) {
-          el.style.boxShadow = `${shadowOffset}px ${shadowOffset}px 0px ${SHADOW}`;
+          el.style.boxShadow = `${shadowOffset}px ${shadowOffset}px 0px ${shadowColor || SHADOW}`;
           el.style.transform = '';
         }
       }
@@ -78,7 +85,8 @@ export const PixelCard = ({
     ? (e: React.MouseEvent) => {
         const el = e.currentTarget as HTMLElement;
         if (!active) {
-          el.style.boxShadow = `${shadowOffset}px ${shadowOffset}px 0px ${SHADOW}`;
+          el.style.border = `2px solid ${borderColor || BORDER}`;
+          el.style.boxShadow = `${shadowOffset}px ${shadowOffset}px 0px ${shadowColor || SHADOW}`;
           el.style.transform = '';
         }
       }

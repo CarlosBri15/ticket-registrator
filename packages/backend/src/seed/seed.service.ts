@@ -13,7 +13,7 @@ import * as schema from '../db/schema';
 import { eq } from 'drizzle-orm';
 import {
   Roles,
-  ROLE_HIERARCHY,
+  ROLE_NAME_TO_HIERARCHY,
   ROLE_DEFAULT_PERMISSIONS,
   DEFAULT_CATEGORIES,
 } from '@ticket-registrator/shared';
@@ -88,7 +88,7 @@ export class SeedService implements OnApplicationBootstrap {
 
     for (const roleName of rolesToSeed) {
       const existing = existingMap.get(roleName);
-      const hierarchy = ROLE_HIERARCHY[roleName as keyof typeof ROLE_HIERARCHY];
+      const hierarchy = ROLE_NAME_TO_HIERARCHY[roleName as keyof typeof ROLE_NAME_TO_HIERARCHY];
       const description = `System default role: ${roleName}`;
 
       if (existing) {

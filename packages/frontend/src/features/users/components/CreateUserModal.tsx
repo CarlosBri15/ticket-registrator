@@ -1,26 +1,31 @@
-import { useState } from "react";
-import { useCreateUserMutation } from "@ticket-registrator/shared";
+import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  useCreateUserMutation,
+  AUTHORITY_LEVELS,
+  type IRole,
+} from "@ticket-registrator/shared";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Modal } from "../../../components/ui/Modal";
 import { AlertError, getApiErrorMessage } from "../../../components/ui/Alert";
 import { RoleSelect } from "../../roles/components/RoleSelect";
+import { OrgSelect } from "../../organizations/components/OrgSelect";
+import { DepartmentMultiSelect } from "../../departments/components/DepartmentMultiSelect";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface CreateUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  companyId: string;
+  /** null when the creator is a SuperAdmin (must pick an org). */
+  companyId: string | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const CreateUserModal = ({
-  isOpen,
-  onClose,
-  companyId,
-}: CreateUserModalProps) => {
+export const CreateUserModal = ({ isOpen, onClose, companyId }: CreateUserModalProps) => {
+  const { t } = useTranslation();
   const mutation = useCreateUserMutation({ onSuccess: onClose });
 
   const [form, setForm] = useState({
@@ -31,29 +36,43 @@ export const CreateUserModal = ({
     password: "",
     confirmPassword: "",
     roleId: "",
+    orgId: "",
+    selectedRole: null as IRole | null,
+    departmentIds: [] as string[],
   });
 
-  const set = (field: string, value: string) =>
-    setForm((prev) => ({ ...prev, [field]: value }));
+  // Creator is SuperAdmin when companyId is null — they must pick an org
+  const isCreatorSuperAdmin = companyId === null;
 
-  const passwordsFilledAndMismatch =
-    form.password.length > 0 &&
-    form.confirmPassword.length > 0 &&
-    form.password !== form.confirmPassword;
+  // Is the role being assigned a SuperAdmin role? → no org needed
+  const isTargetSuperAdmin =
+    form.selectedRole !== null &&
+    form.selectedRole.hierarchy >= AUTHORITY_LEVELS.GLOBAL;
 
-  const isValid =
-    form.name.trim().length >= 2 &&
-    form.surname.trim().length >= 2 &&
-    form.email.includes("@") &&
-    form.username.trim().length >= 3 &&
-    form.password.length >= 6 &&
-    form.password === form.confirmPassword &&
-    !!form.roleId;
+  // Which companyId to use for the RoleSelect
+  const effectiveCompanyId = isCreatorSuperAdmin ? (form.orgId || null) : companyId;
 
-  const handleSubmit = (e: React.SyntheticEvent) => {
+  const reset = () => mutation.reset();
+
+  const set = useCallback(
+    (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      reset();
+      setForm((p) => ({ ...p, [k]: e.target.value }));
+    },
+    [], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  const passwordMismatch = Boolean(
+    form.password && form.confirmPassword && form.password !== form.confirmPassword,
+  );
+
+  const orgMissing = isCreatorSuperAdmin && !!form.roleId && !isTargetSuperAdmin && !form.orgId;
+
+  const handleSubmit = (e: React.BaseSyntheticEvent) => {
     e.preventDefault();
-    if (!isValid) return;
-    mutation.mutate({
+    if (passwordMismatch || orgMissing) return;
+
+    const payload: Record<string, unknown> = {
       name: form.name,
       surname: form.surname,
       email: form.email,
@@ -61,105 +80,94 @@ export const CreateUserModal = ({
       password: form.password,
       confirmPassword: form.confirmPassword,
       roleId: form.roleId,
-      companyId,
-    });
+      departmentIds: form.departmentIds,
+    };
+    if (isCreatorSuperAdmin && form.orgId) payload.companyId = form.orgId;
+
+    mutation.mutate(payload as any);
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Nuevo Usuario"
-      subtitle="Crear usuario para esta organización"
-      size="lg"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={t("users.newUser")} subtitle={t("users.createUserSubtitle")}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {mutation.error && (
-          <AlertError message={getApiErrorMessage(mutation.error)} />
+          <AlertError
+            message={getApiErrorMessage(mutation.error)}
+            onDismiss={() => mutation.reset()}
+          />
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            label="Nombre *"
-            value={form.name}
-            onChange={(e: any) => set("name", e.target.value)}
-            placeholder="Carlos"
-            required
-          />
-          <Input
-            label="Apellido *"
-            value={form.surname}
-            onChange={(e: any) => set("surname", e.target.value)}
-            placeholder="García"
-            required
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <Input label={`${t("users.fieldName")} *`} value={form.name} onChange={set("name")}
+            placeholder="Carlos" required />
+          <Input label={`${t("users.fieldSurname")} *`} value={form.surname} onChange={set("surname")}
+            placeholder="García" required />
         </div>
 
-        <Input
-          label="Email *"
-          type="email"
-          value={form.email}
-          onChange={(e: any) => set("email", e.target.value)}
-          placeholder="carlos@empresa.com"
-          required
-        />
+        <Input label={`${t("users.fieldEmail")} *`} type="email" value={form.email}
+          onChange={set("email")} placeholder="carlos@empresa.com" required />
 
-        <Input
-          label="Username *"
-          value={form.username}
-          onChange={(e: any) => set("username", e.target.value)}
-          placeholder="cgarcia"
-          required
-        />
+        <Input label={`${t("users.fieldUsername")} *`} value={form.username}
+          onChange={set("username")} placeholder="cgarcia" required />
 
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            label="Contraseña *"
-            type="password"
-            value={form.password}
-            onChange={(e: any) => set("password", e.target.value)}
-            placeholder="••••••"
-            required
-          />
-          <Input
-            label="Confirmar contraseña *"
-            type="password"
-            value={form.confirmPassword}
-            onChange={(e: any) => set("confirmPassword", e.target.value)}
-            placeholder="••••••"
-            required
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <Input label={`${t("users.fieldPassword")} *`} type="password" value={form.password}
+            onChange={set("password")} placeholder="••••••••" required />
+          <Input label={`${t("users.fieldConfirmPassword")} *`} type="password"
+            value={form.confirmPassword} onChange={set("confirmPassword")} placeholder="••••••••" required />
         </div>
-
-        {passwordsFilledAndMismatch && (
-          <p className="text-xs text-red-500">Las contraseñas no coinciden.</p>
-        )}
 
         <RoleSelect
-          companyId={companyId}
-          label="Rol"
-          required
+          id="user-role"
+          companyId={effectiveCompanyId}
           value={form.roleId}
-          onChange={(v: any) => set("roleId", v)}
-          placeholder="Seleccionar rol…"
+          onChange={(v: string, role: IRole | undefined) => {
+            reset();
+            setForm((p) => ({
+              ...p,
+              roleId: v,
+              selectedRole: role ?? null,
+              orgId: role && role.hierarchy >= AUTHORITY_LEVELS.GLOBAL ? "" : p.orgId,
+            }));
+          }}
+          required
         />
 
+        {/* Org selector — appears after role is chosen, only when role is not SuperAdmin */}
+        {isCreatorSuperAdmin && form.roleId && !isTargetSuperAdmin && (
+          <OrgSelect
+            id="user-org"
+            value={form.orgId}
+            onChange={(v: string) => { reset(); setForm((p) => ({ ...p, orgId: v })); }}
+            required
+          />
+        )}
+
+        {/* Department multiselect — shown when role is not SuperAdmin and companyId is available */}
+        {!isTargetSuperAdmin && (isCreatorSuperAdmin ? form.orgId : companyId) && (
+          <DepartmentMultiSelect
+            id="user-departments"
+            companyId={isCreatorSuperAdmin ? form.orgId : companyId}
+            value={form.departmentIds}
+            onChange={(ids: string[]) => setForm((p) => ({ ...p, departmentIds: ids }))}
+          />
+        )}
+
+        {passwordMismatch && (
+          <AlertError message={t("users.passwordMismatch")} />
+        )}
+
         <div className="flex gap-3 pt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onClose}
-            className="flex-1"
-          >
-            Cancelar
+          <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
+            {t("common.cancel")}
           </Button>
           <Button
             type="submit"
             isLoading={mutation.isPending}
-            disabled={!isValid}
+            disabled={!form.name || !form.email || !form.roleId || passwordMismatch || orgMissing}
             className="flex-1"
           >
-            Crear Usuario
+            {t("users.createUserBtn")}
           </Button>
         </div>
       </form>

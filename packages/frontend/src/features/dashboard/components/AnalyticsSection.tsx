@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -16,13 +17,13 @@ export const LegendFormatter = (value: string) => (
   </span>
 );
 
-export const AnalyticsSection = ({ reports }: { reports: IReport[] }) => {
+export const AnalyticsSection = memo(({ reports }: { reports: IReport[] }) => {
   const { t } = useTranslation();
-  const monthly = getMonthlyExpenses(reports, 6);
-  const byType = getExpensesByType(reports).map((item, i) => ({
-    ...item,
-    fill: CHART_COLORS[i % CHART_COLORS.length],
-  }));
+  const monthly = useMemo(() => getMonthlyExpenses(reports, 6), [reports]);
+  const byType  = useMemo(
+    () => getExpensesByType(reports).map((item, i) => ({ ...item, fill: CHART_COLORS[i % CHART_COLORS.length] })),
+    [reports],
+  );
   const hasMonthly = monthly.length > 0;
   const hasType = byType.length > 0;
   if (!hasMonthly && !hasType) return null;
@@ -38,7 +39,7 @@ export const AnalyticsSection = ({ reports }: { reports: IReport[] }) => {
   return (
     <section className="space-y-4">
       <h2 className="text-base font-semibold text-dark flex items-center gap-2.5">
-        <div className={`w-6 h-6 bg-brand/10 ${radius.base} flex items-center justify-center`}>
+        <div className={`w-6 h-6 bg-brand/10 ${radius.sm} flex items-center justify-center`}>
           <BarChart2 className="w-3.5 h-3.5 text-brand" />
         </div>
         {t("analytics.title")}
@@ -87,4 +88,4 @@ export const AnalyticsSection = ({ reports }: { reports: IReport[] }) => {
       </div>
     </section>
   );
-};
+});

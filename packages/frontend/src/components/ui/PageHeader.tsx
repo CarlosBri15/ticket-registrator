@@ -14,7 +14,7 @@ export const PageHeader = ({ title, subtitle, icon, actions }: PageHeaderProps) 
       <div className="relative z-10 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           {icon && (
-            <div className={`w-9 h-9 bg-white/10 ${radius.base} flex items-center justify-center border border-white/10 shrink-0`}>
+            <div className={`w-9 h-9 bg-white/10 ${radius.sm} flex items-center justify-center border border-white/10 shrink-0`}>
               {icon}
             </div>
           )}

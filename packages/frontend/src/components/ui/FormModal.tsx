@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Modal } from "./Modal";
 import { Button } from "./Button";
 import { AlertError, getApiErrorMessage } from "./Alert";
@@ -13,7 +14,7 @@ interface FormModalProps {
   submitLabel: string;
   isPending?: boolean;
   isValid?: boolean;
-  error?: any;
+  error?: unknown;
   children: React.ReactNode;
 }
 
@@ -30,6 +31,8 @@ export const FormModal = ({
   error,
   children,
 }: FormModalProps) => {
+  const { t } = useTranslation();
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} subtitle={subtitle} size={size}>
       <form onSubmit={onSubmit} className="space-y-4">
@@ -39,7 +42,7 @@ export const FormModal = ({
 
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
-            Cancelar
+            {t("common.cancel")}
           </Button>
           <Button type="submit" isLoading={isPending} disabled={!isValid} className="flex-1">
             {submitLabel}

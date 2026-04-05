@@ -1,14 +1,20 @@
 import { type ReactNode, useEffect } from "react";
 import { X } from "lucide-react";
+import { tokens } from "../../styles/theme";
 
-type ModalSize = 'md' | 'lg' | 'xl' | '2xl';
+type ModalSize = 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 
-const SIZE_CLASSES: Record<ModalSize, string> = {
-  md:  'sm:max-w-xl',
-  lg:  'sm:max-w-2xl',
-  xl:  'sm:max-w-3xl',
-  '2xl': 'sm:max-w-4xl',
+// Pixel widths matching Tailwind's max-w-* breakpoints
+const MAIN_WIDTHS: Record<ModalSize, number> = {
+  md:    544,   // max-w-xl
+  lg:    640,   // max-w-2xl
+  xl:    768,   // max-w-3xl
+  '2xl': 896,   // max-w-4xl
+  '3xl': 960,   // slightly less than max-w-5xl to leave breathing room
 };
+
+const SIDE_PANEL_W = 380;
+const SIDE_GAP     = 16;
 
 interface ModalProps {
   isOpen: boolean;
@@ -18,9 +24,32 @@ interface ModalProps {
   subtitle?: string;
   icon?: ReactNode;
   size?: ModalSize;
+  /** Buttons rendered in the header, between the title and the close button */
+  actions?: ReactNode;
+  /** Hide the default X close button (use when passing a custom close via actions) */
+  hideDefaultClose?: boolean;
+  /**
+   * When provided, renders a second panel to the RIGHT of the main modal.
+   * Opening it smoothly shifts the main panel left (the container expands via CSS transition).
+   */
+  sidePanel?: ReactNode;
+  /** Background color of the side panel. Defaults to the app surface color. */
+  sidePanelBg?: string;
 }
 
-export const Modal = ({ isOpen, onClose, title, subtitle, icon, children, size = 'md' }: ModalProps) => {
+export const Modal = ({
+  isOpen,
+  onClose,
+  title,
+  subtitle,
+  icon,
+  children,
+  size = 'md',
+  actions,
+  hideDefaultClose = false,
+  sidePanel,
+  sidePanelBg = 'var(--color-surface)',
+}: ModalProps) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -39,49 +68,78 @@ export const Modal = ({ isOpen, onClose, title, subtitle, icon, children, size =
 
   if (!isOpen) return null;
 
+  const hasSidePanel = Boolean(sidePanel);
+  const mainW        = MAIN_WIDTHS[size];
+  const containerW   = hasSidePanel ? mainW + SIDE_GAP + SIDE_PANEL_W : mainW;
+
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6">
       {/* Backdrop */}
       <button
         type="button"
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200 w-full h-full border-none outline-none"
+        className="absolute inset-0 bg-dark/50 backdrop-blur-sm animate-in fade-in duration-200 w-full h-full border-none outline-none"
         onClick={onClose}
         aria-label="Cerrar modal"
       />
 
-      {/* Panel */}
+      {/*
+        Container: width transitions when sidePanel opens/closes.
+        Centered via parent flex justify-center → main panel shifts left automatically.
+      */}
       <div
-        className={`relative bg-white w-full rounded-t-2xl sm:rounded-2xl ${SIZE_CLASSES[size]} animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 overflow-hidden flex flex-col`}
+        className="relative flex items-stretch gap-4"
         style={{
-          border: "1px solid #edf0f5",
-          boxShadow: "0 4px 6px rgba(0,0,0,0.04), 0 24px 60px rgba(0,0,0,0.12)",
+          width: `min(${containerW}px, calc(100vw - 48px))`,
+          transition: 'width 300ms ease-in-out',
         }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-50 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            {icon && <div className="shrink-0">{icon}</div>}
-            <div className="min-w-0">
-              <h2 className="text-base font-bold text-slate-900 tracking-tight truncate">{title}</h2>
-              {subtitle && (
-                <p className="text-sm text-slate-400 font-medium mt-0.5">{subtitle}</p>
-              )}
+        {/* ── Main panel ──────────────────────────────────────────────── */}
+        <div
+          className={`${tokens.modalContainer} flex flex-col shrink-0`}
+          style={{ width: `min(${mainW}px, 100%)` }}
+        >
+          {/* Header */}
+          <div className={tokens.modalHeader}>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                {icon && <div className="shrink-0">{icon}</div>}
+                <div className="min-w-0">
+                  <h2 className={tokens.modalTitle}>{title}</h2>
+                  {subtitle && <p className={tokens.modalSubtitle}>{subtitle}</p>}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {actions}
+                {!hideDefaultClose && (
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className={tokens.modalClose}
+                    aria-label="Cerrar"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 flex items-center justify-center transition-colors border border-slate-100 shrink-0"
-            aria-label="Cerrar"
-          >
-            <X className="w-4 h-4" />
-          </button>
+
+          {/* Body */}
+          <div className={tokens.modalBody}>{children}</div>
         </div>
 
-        {/* Body */}
-        <div className="p-6 max-h-[calc(100vh-10rem)] overflow-y-auto custom-scrollbar">
-          {children}
-        </div>
+        {/* ── Side panel ──────────────────────────────────────────────── */}
+        {hasSidePanel && (
+          <div
+            className="hidden sm:flex flex-col shrink-0 rounded-lg border-2 border-border-main shadow-hard-lg overflow-hidden animate-in slide-in-from-right duration-300"
+            style={{
+              width: SIDE_PANEL_W,
+              backgroundColor: sidePanelBg,
+            }}
+          >
+            {sidePanel}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,14 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,300,400&display=swap');
 @import "tailwindcss";
 
 @theme {
   /* ── Typography ──────────────────────────────────────────────────────────── */
-  --font-sans: 'Space Grotesk', sans-serif;
+  --font-sans: var(--font-main, 'Satoshi'), sans-serif;
 
   /* ── Brand — Neobrutalista Electric Blue ─────────────────────────────────── */
-  --color-brand:       #4D4DFF;
-  --color-brand-hover: #3A3AC2;
-  --color-brand-light: #7575FF;
+  --color-brand:       #3B82F6;
+  --color-brand-hover: #2563EB;
+  --color-brand-light: #93C5FD;
+
+  /* ── Sidebar ── */
+  --color-sidebar:        #2C4A6E;
+  --color-sidebar-accent: #223D5A;
 
   /* ── Secondary ───────────────────────────────────────────────────────────── */
   --color-secondary:       #FFC83D;
@@ -21,36 +25,47 @@
   --color-success: #00C896;
   --color-warning: #E6B800;
   --color-danger:  #FF4B4B;
-  --color-info:    #4D4DFF;
+  --color-info:    #3B82F6;
 
-  /* ── Surface — neutral light gray (matches mobile SCREEN_BG #F5F5F5) ─────── */
-  --color-surface: #F5F5F5;
+  /* ── Surface — neutral light gray ─────── */
+  --color-surface: #EDEDF0;
+  --color-surface-card: #FAFAF9;
+  --color-surface-header: #FAFAF9;
 
   /* ── Borders ─────────────────────────────────────────────────────────────── */
-  --color-border-main: rgba(26, 26, 26, 0.15);
+  --color-border-main: #D4D4D8;
+  --color-shadow-main: #A1A1AA;
 
   /* ── Neobrutalista Hard Shadows ──────────────────────────────────────────── */
   /* shadow-hard    → regular cards (3px, matches most mobile PixelCards)       */
   /* shadow-hard-lg → hero card (6px, matches HeroReportCard shadowOffset=6)    */
   /* shadow-hard-sm → badges, inputs (2px)                                      */
-  --shadow-hard:    3px 3px 0px rgba(26, 26, 26, 0.15);
-  --shadow-hard-lg: 6px 6px 0px rgba(26, 26, 26, 0.15);
-  --shadow-hard-sm: 2px 2px 0px rgba(26, 26, 26, 0.15);
+  --shadow-hard:    4px 4px 0px #A1A1AA;
+  --shadow-hard-lg: 8px 8px 0px #A1A1AA;
+  --shadow-hard-sm: 3px 3px 0px #A1A1AA;
+
+  /* ── Radii ────────────────────────────────────────────────────────────────── */
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-2xl: 12px;
+  --radius-3xl: 16px;
+  --radius-card: 8px;
+  --radius-base: 6px;
 }
 
 @layer base {
   body {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Lexend', sans-serif;
     @apply antialiased text-dark bg-surface;
   }
 }
 
 @layer utilities {
-  /* ── Space Grotesk compound utilities (font-family + weight) ─────────────── */
-  .font-space          { font-family: 'Space Grotesk', sans-serif; font-weight: 400; }
-  .font-space-medium   { font-family: 'Space Grotesk', sans-serif; font-weight: 500; }
-  .font-space-semibold { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
-  .font-space-bold     { font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+  /* ── Satoshi compound utilities (font-family + weight) ───────────────────── */
+  .font-space          { font-family: var(--font-main, 'Satoshi'), sans-serif; font-weight: 400; }
+  .font-space-medium   { font-family: var(--font-main, 'Satoshi'), sans-serif; font-weight: 500; }
+  .font-space-semibold { font-family: var(--font-main, 'Satoshi'), sans-serif; font-weight: 600; }
+  .font-space-bold     { font-family: var(--font-main, 'Satoshi'), sans-serif; font-weight: 700; }
 
   /* ── Neobrutalista press animations ──────────────────────────────────────── */
   /* Used on cards/buttons; :active collapses shadow + translates               */
@@ -79,16 +94,16 @@
   /* ── Scrollbar ───────────────────────────────────────────────────────────── */
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(77, 77, 255, 0.25) transparent;
+    scrollbar-color: rgba(59, 130, 246, 0.25) transparent;
   }
   .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
   .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(77, 77, 255, 0.25);
+    background: rgba(59, 130, 246, 0.25);
     border-radius: 99px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(77, 77, 255, 0.5);
+    background: rgba(59, 130, 246, 0.5);
   }
 }
 

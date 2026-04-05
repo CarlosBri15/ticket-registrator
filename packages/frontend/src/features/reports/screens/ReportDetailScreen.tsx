@@ -1,118 +1,34 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, Camera, Send, Trash2,
-  FileText, Calendar, ThumbsUp, ThumbsDown, Clock, CheckCircle,
-  XCircle, AlertTriangle, ChevronRight,
+  Camera, Send, Trash2,
+  FileText, ThumbsUp, ThumbsDown, Clock,
+  AlertTriangle, ChevronRight,
 } from "lucide-react";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { PixelCard } from "../../../components/ui/PixelCard";
+import { DateGroupHeader } from "../../../components/ui/DateGroupHeader";
 import { TicketUploadModal } from "../../tickets/components/TicketUploadModal";
 import { TicketDetailModal } from "../../tickets/components/TicketDetailModal";
+import { SectionHeader } from "../../../components/ui/SectionHeader";
+import { Button } from "../../../components/ui/Button";
+import { FinancialSummary } from "../components/FinancialSummary";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import {
   useReportQuery,
   useTicketsQuery,
-  useSubmitReportMutation,
-  useDeleteTicketMutation,
-  useDeleteReportMutation,
-  useUpdateReportStatusMutation,
   usePermissions,
-  ReportStatus,
   type ITicket,
 } from "@ticket-registrator/shared";
+import { fonts } from "@ticket-registrator/shared";
 import { reportIcon, ticketIcon } from "@ticket-registrator/shared/assets";
 import { format } from "date-fns";
-import { es, enUS } from "date-fns/locale";
+import { useDateLocale } from "../../../hooks/useDateLocale";
+import { useGroupedByDate } from "../../../hooks/useGroupedByDate";
+import { useReportDetailActions } from "../hooks/useReportDetailActions";
 import { useTranslation } from "react-i18next";
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const DARK    = "#1A1A1A";
-const SHADOW  = "rgba(26, 26, 26, 0.15)";
-const SURFACE = "#F5F5F5";
-const BRAND   = "#4D4DFF";
-
-// ─── Financial Summary (port from mobile) ────────────────────────────────────
-
-const FinancialSummary = ({
-  status, currency, requestedAmount, approvedAmount, ticketsTotal,
-}: {
-  status: string; currency: string;
-  requestedAmount: number; approvedAmount: number; ticketsTotal: number;
-}) => {
-  const s = status.toUpperCase();
-
-  if (s === "CREATED" || s === "DRAFT") {
-    return (
-      <div style={{ textAlign: "center" }}>
-        <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 10, color: `${DARK}50`, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Total</p>
-        <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 42, letterSpacing: -1.5, lineHeight: 1, color: DARK }}>{ticketsTotal.toFixed(2)}</p>
-        <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 13, color: `${DARK}40`, marginTop: 4 }}>{currency}</p>
-      </div>
-    );
-  }
-
-  if (s === "SUBMITTED" || s === "PENDING") {
-    return (
-      <div style={{ textAlign: "center" }}>
-        <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 10, color: "#d97706", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Solicitado</p>
-        <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 42, letterSpacing: -1.5, lineHeight: 1, color: "#d97706" }}>{requestedAmount.toFixed(2)}</p>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 4 }}>
-          <Clock style={{ width: 12, height: 12, color: "#d97706" }} />
-          <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 13, color: "#d97706" }}>{currency}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (s === "APPROVED" || s === "PAID") {
-    const rejected = Math.max(0, requestedAmount - approvedAmount);
-    return (
-      <div style={{ display: "flex", alignItems: "center", gap: 0, width: "100%" }}>
-        <div style={{ flex: 1, textAlign: "center", paddingRight: 12 }}>
-          <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 10, color: "#059669", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Aprobado</p>
-          <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 30, letterSpacing: -1, color: "#059669" }}>{approvedAmount.toFixed(2)}</p>
-          <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 12, color: "#059669", opacity: 0.7, marginTop: 3 }}>{currency}</p>
-        </div>
-        <div style={{ width: 2, height: 60, backgroundColor: DARK, opacity: 0.1 }} />
-        <div style={{ flex: 1, textAlign: "center", paddingLeft: 12 }}>
-          <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 10, color: rejected > 0 ? "#dc2626" : `${DARK}40`, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Rechazado</p>
-          <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 30, letterSpacing: -1, color: rejected > 0 ? "#dc2626" : `${DARK}30` }}>{rejected.toFixed(2)}</p>
-          <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 12, color: rejected > 0 ? "#dc2626" : `${DARK}30`, marginTop: 3 }}>{currency}</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ textAlign: "center" }}>
-      <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 10, color: "#dc2626", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Declinado</p>
-      <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 42, letterSpacing: -1.5, lineHeight: 1, color: "#dc2626" }}>{requestedAmount.toFixed(2)}</p>
-      <p style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 13, color: "#dc2626", opacity: 0.6, marginTop: 4 }}>{currency}</p>
-    </div>
-  );
-};
-
-// ─── Section Header ───────────────────────────────────────────────────────────
-
-const SectionHeader = ({ icon, label, count, action }: {
-  icon: React.ReactNode; label: string; count?: number; action?: React.ReactNode;
-}) => (
-  <div className="flex items-center gap-2 mb-3.5">
-    <span style={{ color: `${DARK}50` }}>{icon}</span>
-    <p className="flex-1 font-space-bold text-dark" style={{ fontSize: 12, letterSpacing: "0.3px" }}>{label}</p>
-    {count != null && (
-      <span style={{
-        backgroundColor: "#fff", border: `2px solid ${SHADOW}`, borderRadius: 10,
-        paddingLeft: 10, paddingRight: 10, paddingTop: 3, paddingBottom: 3,
-        fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 10, color: DARK,
-      }}>
-        {count}
-      </span>
-    )}
-    {action}
-  </div>
-);
+import { tokens } from "../../../styles/theme";
+import { DARK, SHADOW, BRAND } from "../constants";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -123,57 +39,14 @@ const TicketSkeleton = () => (
       <div className="h-3 w-1/2 bg-dark/10 rounded" />
       <div className="h-2.5 w-1/3 bg-dark/10 rounded" />
     </div>
-    <div className="space-y-1.5 shrink-0">
-      <div className="h-4 w-16 bg-dark/10 rounded" />
-    </div>
-  </div>
-);
-
-// ─── Confirm Dialog ───────────────────────────────────────────────────────────
-
-const ConfirmDialog = ({
-  icon, title, description, onCancel, onConfirm,
-  confirmLabel, cancelLabel, confirmBg, isLoading,
-}: {
-  icon: React.ReactNode; title: string; description: string;
-  onCancel: () => void; onConfirm: () => void;
-  confirmLabel: string; cancelLabel: string;
-  confirmBg: string; isLoading?: boolean;
-}) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(26,26,26,0.5)" }}>
-    <PixelCard shadowOffset={6} className="w-full max-w-sm">
-      <div className="p-6 flex flex-col items-center text-center gap-3">
-        <div style={{
-          width: 52, height: 52, backgroundColor: "#fff",
-          border: `2px solid ${SHADOW}`, borderRadius: 16,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: `3px 3px 0px ${SHADOW}`,
-        }}>
-          {icon}
-        </div>
-        <p className="font-space-bold text-dark" style={{ fontSize: 16 }}>{title}</p>
-        <p className="font-space text-dark/50 max-w-xs leading-relaxed" style={{ fontSize: 12 }}>{description}</p>
-        <div className="flex gap-2.5 w-full mt-1">
-          <PixelCard shadowOffset={3} onClick={onCancel} className="flex-1">
-            <div className="flex items-center justify-center py-3">
-              <span className="font-space-bold" style={{ fontSize: 13, color: DARK }}>{cancelLabel}</span>
-            </div>
-          </PixelCard>
-          <PixelCard bg={confirmBg} shadowOffset={3} onClick={isLoading ? undefined : onConfirm} className="flex-1">
-            <div className="flex items-center justify-center py-3" style={{ opacity: isLoading ? 0.6 : 1 }}>
-              <span className="font-space-bold text-white" style={{ fontSize: 13 }}>{confirmLabel}</span>
-            </div>
-          </PixelCard>
-        </div>
-      </div>
-    </PixelCard>
+    <div className="h-4 w-16 bg-dark/10 rounded shrink-0" />
   </div>
 );
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export const ReportDetailScreen = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { can } = usePermissions();
@@ -181,25 +54,17 @@ export const ReportDetailScreen = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<ITicket | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [submitConfirm, setSubmitConfirm] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [approveConfirm, setApproveConfirm] = useState(false);
-  const [declineConfirm, setDeclineConfirm] = useState(false);
 
   const { data: report, isLoading, isError } = useReportQuery(id);
   const { data: tickets, isLoading: isLoadingTickets } = useTicketsQuery(id!);
 
-  const submitMutation     = useSubmitReportMutation({ onSuccess: () => setSubmitConfirm(false) });
-  const updateStatusMutation = useUpdateReportStatusMutation({
-    onSuccess: () => { setApproveConfirm(false); setDeclineConfirm(false); },
-  });
-  const deleteTicketMutation = useDeleteTicketMutation();
-  const deleteReportMutation = useDeleteReportMutation({ onSuccess: () => navigate("/reports") });
+  const actions = useReportDetailActions(id!);
+  const dateLocale = useDateLocale();
+  const groupedTickets = useGroupedByDate(tickets);
 
-  const dateLocale   = i18n.language.startsWith("es") ? es : enUS;
-  const isEditable   = report && ["CREATED", "DRAFT"].includes(report.status.toUpperCase());
-  const isSubmitted  = report?.status.toUpperCase() === "SUBMITTED";
-  const canApprove   = can("approve_reports") && isSubmitted;
+  const isEditable = report && ["CREATED", "DRAFT"].includes(report.status.toUpperCase());
+  const isSubmitted = report?.status.toUpperCase() === "SUBMITTED";
+  const canApprove = can("approve_reports") && isSubmitted;
   const ticketsTotal = tickets?.reduce((acc, tk) => acc + (tk.amount ?? 0), 0) ?? 0;
 
   // ── Loading ────────────────────────────────────────────────────────────────
@@ -207,12 +72,15 @@ export const ReportDetailScreen = () => {
   if (isLoading) {
     return (
       <div className="-mx-6 -mt-7 md:-mx-10 lg:-mt-9">
-        <div className="px-6 md:px-10 py-4" style={{ backgroundColor: SURFACE }}>
-          <div className="bg-white border-2 border-dark/20 rounded-lg animate-pulse h-14" />
+        <div className={tokens.headerPage}>
+          <div className="bg-surface border-2 border-dark/20 rounded-lg animate-pulse h-10 w-64" />
         </div>
-        <div className="px-6 md:px-10 py-7 space-y-4">
-          <div className="bg-white border-2 border-dark/20 rounded-lg animate-pulse h-36" />
-          <div className="space-y-2.5">
+        <div className="grid grid-cols-1 lg:grid-cols-[340px_auto_1fr]">
+          <div className="px-6 pt-7 pb-9 space-y-4">
+            <div className="bg-white border-2 border-dark/20 rounded-lg animate-pulse h-56" />
+          </div>
+          <div className="hidden lg:block self-stretch" style={{ width: 2, backgroundColor: SHADOW }} />
+          <div className="px-8 md:px-10 pt-7 pb-9 space-y-2.5">
             <TicketSkeleton /><TicketSkeleton /><TicketSkeleton />
           </div>
         </div>
@@ -225,7 +93,7 @@ export const ReportDetailScreen = () => {
   if (isError || !report) {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center gap-3">
-        <PixelCard bg="#FEF2F2" shadowOffset={4} className="w-full max-w-sm">
+        <PixelCard bg="#FEF2F2" className="w-full max-w-sm">
           <div className="flex flex-col items-center text-center p-8 gap-3">
             <AlertTriangle className="w-8 h-8 text-danger" />
             <p className="font-space-bold text-dark" style={{ fontSize: 15 }}>{t("reportDetail.errorLoading")}</p>
@@ -246,99 +114,99 @@ export const ReportDetailScreen = () => {
   return (
     <div className="-mx-6 -mt-7 md:-mx-10 lg:-mt-9">
 
-      {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div
-        className="flex items-center gap-3 px-6 md:px-10 py-3"
-        style={{ backgroundColor: "#FFFFFF", borderBottom: `4px solid ${SHADOW}` }}
-      >
-        {/* Back */}
-        <PixelCard shadowOffset={3} radius={8} onClick={() => navigate("/reports")}>
-          <div className="flex items-center justify-center" style={{ width: 34, height: 34 }}>
-            <ArrowLeft className="w-[18px] h-[18px]" style={{ color: DARK }} />
+      {/* ── Header ── */}
+      <div className={tokens.headerPage}>
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+          <button
+            onClick={() => navigate("/reports")}
+            className="font-space-bold text-dark/30 hover:text-dark transition-colors shrink-0"
+            style={{ fontSize: 24, letterSpacing: "0.5px" }}
+          >
+            {t("trips.title")}
+          </button>
+
+          <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-dark/20 shrink-0" />
+
+          <div className="flex items-center gap-3 min-w-0">
+            <img src={reportIcon} alt="" className="w-8 h-8 md:w-10 md:h-10 object-contain shrink-0 select-none hidden sm:block" />
+            <h1 className="font-space-bold text-dark truncate" style={{ fontSize: 24, letterSpacing: "0.5px" }}>
+              {report.name}
+            </h1>
           </div>
-        </PixelCard>
+        </div>
 
-        {/* Report icon */}
-        <img src={reportIcon} alt="" className="w-11 h-11 object-contain shrink-0 select-none" />
-
-        {/* Title */}
-        <p className="flex-1 min-w-0 font-space-bold text-dark truncate" style={{ fontSize: 18 }}>
-          {report.name}
-        </p>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           {isEditable && (
-            <PixelCard bg="#FEF2F2" shadowOffset={3} radius={8} onClick={() => setDeleteConfirm(true)}>
-              <div className="flex items-center justify-center" style={{ width: 34, height: 34 }}>
-                <Trash2 className="w-4 h-4 text-danger" />
-              </div>
-            </PixelCard>
+            <>
+              <Button
+                variant="primary"
+                className="w-[160px] whitespace-nowrap"
+                leftIcon={<Send className="w-4 h-4" />}
+                onClick={() => actions.setSubmitConfirm(true)}
+                isLoading={actions.isSubmitting}
+              >
+                {t("common.submit")}
+              </Button>
+              <Button
+                variant="danger"
+                className="w-[160px] whitespace-nowrap"
+                leftIcon={<Trash2 className="w-4 h-4" />}
+                onClick={() => actions.setDeleteConfirm(true)}
+              >
+                {t("common.delete")}
+              </Button>
+            </>
           )}
           {canApprove && (
             <>
-              <PixelCard bg="#F0FDF4" shadowOffset={3} radius={8} onClick={() => setApproveConfirm(true)}>
-                <div className="flex items-center gap-1.5 px-3" style={{ height: 34 }}>
-                  <ThumbsUp className="w-3.5 h-3.5 text-success" />
-                  <span className="font-space-bold text-success" style={{ fontSize: 11 }}>{t("reportDetail.approveReport")}</span>
-                </div>
-              </PixelCard>
-              <PixelCard bg="#FEF2F2" shadowOffset={3} radius={8} onClick={() => setDeclineConfirm(true)}>
-                <div className="flex items-center gap-1.5 px-3" style={{ height: 34 }}>
-                  <ThumbsDown className="w-3.5 h-3.5 text-danger" />
-                  <span className="font-space-bold text-danger" style={{ fontSize: 11 }}>{t("reportDetail.declineReport")}</span>
-                </div>
-              </PixelCard>
+              <Button
+                variant="success"
+                className="w-[160px] whitespace-nowrap"
+                leftIcon={<ThumbsUp className="w-4 h-4" />}
+                onClick={() => actions.setApproveConfirm(true)}
+                isLoading={actions.isUpdatingStatus}
+              >
+                {t("common.approve")}
+              </Button>
+              <Button
+                variant="danger"
+                className="w-[160px] whitespace-nowrap"
+                leftIcon={<ThumbsDown className="w-4 h-4" />}
+                onClick={() => actions.setDeclineConfirm(true)}
+                isLoading={actions.isUpdatingStatus}
+              >
+                {t("common.reject")}
+              </Button>
             </>
-          )}
-          {isEditable && (
-            <PixelCard bg={BRAND} shadowOffset={3} radius={8} onClick={submitMutation.isPending ? undefined : () => setSubmitConfirm(true)}>
-              <div className="flex items-center justify-center gap-1.5 px-3" style={{ height: 34, opacity: submitMutation.isPending ? 0.65 : 1 }}>
-                <Send className="w-3.5 h-3.5 text-white" />
-                <span className="font-space-bold text-white" style={{ fontSize: 11 }}>{t("reportDetail.submitReport")}</span>
-              </div>
-            </PixelCard>
           )}
         </div>
       </div>
 
-      {/* ── Body — two-column desktop layout ─────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-0">
+      {/* ── Body ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[340px_auto_1fr]">
 
-        {/* ── Left: report info ─────────────────────────────────────────── */}
-        <div
-          className="px-6 pt-6 pb-10 space-y-0"
-          style={{ borderRight: `2px solid ${SHADOW}` }}
-        >
-          <PixelCard shadowOffset={5} className="w-full">
-
-            {/* Date block */}
-            <div
-              className="flex items-center gap-2 px-5 py-4"
-              style={{ borderBottom: `2px solid rgba(26,26,26,0.07)` }}
-            >
-              <Calendar className="w-4 h-4 shrink-0" style={{ color: `${DARK}50` }} />
-              <div>
-                <p className="font-space-bold text-dark" style={{ fontSize: 13 }}>
-                  {format(new Date(report.start_date), "d MMM yyyy", { locale: dateLocale })}
+        {/* Left: report info */}
+        <div className="px-6 pt-7 pb-9">
+          <PixelCard className="w-full">
+            <div className="px-6 py-6 border-b-2 border-slate-100 flex flex-col gap-5 items-center text-center">
+              <StatusBadge status={report.status} size="md" />
+              <div className="flex flex-col gap-1 items-center">
+                <p className="text-[10px] font-space-bold text-dark/30 uppercase tracking-[0.2em] mb-1">
+                  {t("reportDetail.reportPeriod")}
                 </p>
-                <p className="font-space-medium" style={{ fontSize: 11, color: `${DARK}45` }}>
-                  → {format(new Date(report.end_date), "d MMM yyyy", { locale: dateLocale })}
-                </p>
+                <div className="flex items-center gap-3">
+                  <span className="text-15 font-space-bold leading-tight">
+                    {format(new Date(report.start_date), "d MMM yyyy", { locale: dateLocale })}
+                  </span>
+                  <div className="w-6 h-0.5 bg-dark/10 rounded-full shrink-0" />
+                  <span className="text-15 font-space-bold leading-tight">
+                    {format(new Date(report.end_date), "d MMM yyyy", { locale: dateLocale })}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Status block */}
-            <div
-              className="flex items-center justify-between px-5 py-4"
-              style={{ borderBottom: `2px solid rgba(26,26,26,0.07)` }}
-            >
-              <p className="font-space-bold uppercase" style={{ fontSize: 10, color: `${DARK}45`, letterSpacing: "0.8px" }}>Estado</p>
-              <StatusBadge status={report.status} size="md" />
-            </div>
-
-            {/* Amount block */}
-            <div className="flex flex-col items-center py-8 px-5">
+            <div className="px-6 py-10">
               <FinancialSummary
                 status={report.status}
                 currency={report.currency}
@@ -348,49 +216,49 @@ export const ReportDetailScreen = () => {
               />
             </div>
 
-            {/* Status banners */}
             {isSubmitted && !canApprove && (
-              <div className="px-5 pb-5">
-                <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
-                  style={{ backgroundColor: "#FFF3CD", border: `2px solid ${SHADOW}`, boxShadow: `2px 2px 0px ${SHADOW}` }}>
-                  <Clock className="w-3.5 h-3.5 text-warning shrink-0" />
-                  <span className="font-space-bold text-warning" style={{ fontSize: 11 }}>{t("reportDetail.submittedReview")}</span>
+              <div className="px-6 pb-6 pt-6 border-t-2 border-dashed border-slate-100">
+                <div className="flex items-center gap-3 px-4 py-3 bg-warning/5 border-2 border-warning/10 rounded-xl">
+                  <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
+                    <Clock className="w-4 h-4 text-warning" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-space-bold text-warning uppercase tracking-widest leading-none mb-1">
+                      {t("reportDetail.submittedReview")}
+                    </span>
+                    <p className="text-[11px] font-medium text-warning/70">
+                      {t("reportDetail.reviewTimeframe")}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
-            {report.status.toUpperCase() === "APPROVED" && (
-              <div className="px-5 pb-5">
-                <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
-                  style={{ backgroundColor: "#D1FAE5", border: `2px solid ${SHADOW}`, boxShadow: `2px 2px 0px ${SHADOW}` }}>
-                  <CheckCircle className="w-3.5 h-3.5 text-success shrink-0" />
-                  <span className="font-space-bold text-success" style={{ fontSize: 11 }}>{t("reportDetail.approved")}</span>
-                </div>
-              </div>
-            )}
-            {["REJECTED", "DECLINED"].includes(report.status.toUpperCase()) && (
-              <div className="px-5 pb-5">
-                <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
-                  style={{ backgroundColor: "#FEE2E2", border: `2px solid ${SHADOW}`, boxShadow: `2px 2px 0px ${SHADOW}` }}>
-                  <XCircle className="w-3.5 h-3.5 text-danger shrink-0" />
-                  <span className="font-space-bold text-danger" style={{ fontSize: 11 }}>{t("status.DECLINED")}</span>
-                </div>
-              </div>
-            )}
+
+            <div className="p-4 flex justify-between items-center opacity-30 text-[9px] font-space-bold tracking-widest uppercase">
+              <span>TR_{report.id?.substring(0, 8)}</span>
+              <span>REF: {new Date().getFullYear()}</span>
+            </div>
           </PixelCard>
         </div>
 
-        {/* ── Right: tickets list ────────────────────────────────────────── */}
-        <div className="px-6 md:px-8 pt-6 pb-10 min-w-0 max-w-2xl">
+        {/* Separator */}
+        <div className="hidden lg:block self-stretch" style={{ width: 2, backgroundColor: SHADOW }} />
+
+        {/* Right: tickets list */}
+        <div className="px-8 md:px-10 pt-7 pb-9 min-w-0">
           <SectionHeader
-            icon={<FileText className="w-3 h-3" />}
-            label={t("reportDetail.ticketsTitle")}
+            icon={<FileText />}
+            title={t("reportDetail.ticketsTitle")}
             count={tickets?.length ?? 0}
             action={isEditable && (tickets?.length ?? 0) > 0 ? (
-              <PixelCard bg={BRAND} shadowOffset={2} radius={6} onClick={() => setIsUploadModalOpen(true)}>
-                <div className="px-3 py-1.5">
-                  <span className="font-space-bold text-white" style={{ fontSize: 10 }}>+ {t("reportDetail.addTicket")}</span>
-                </div>
-              </PixelCard>
+              <Button
+                variant="primary"
+                leftIcon={<Camera className="w-4 h-4" />}
+                size="md"
+                onClick={() => setIsUploadModalOpen(true)}
+              >
+                {t("reportDetail.addTicket")}
+              </Button>
             ) : undefined}
           />
 
@@ -398,82 +266,65 @@ export const ReportDetailScreen = () => {
             <div className="space-y-2.5">
               <TicketSkeleton /><TicketSkeleton /><TicketSkeleton />
             </div>
-          ) : tickets && tickets.length > 0 ? (
-            <div className="space-y-2">
-              {tickets.map((ticket, idx) => (
-                <PixelCard
-                  key={ticket.id ?? `ticket-${idx}`}
-                  shadowOffset={3}
-                  onClick={() => { setSelectedTicket(ticket); setIsDetailModalOpen(true); }}
-                  className="w-full"
-                >
-                  {/* Grid: icon | name+date | amount+badge | actions */}
-                  <div
-                    className="items-center px-4 py-3.5"
-                    style={{ display: "grid", gridTemplateColumns: "44px 1fr 140px auto", gap: "12px" }}
-                  >
-                    {/* Icon */}
-                    <img src={ticketIcon} alt="" className="w-11 h-11 object-contain select-none" />
-
-                    {/* Name + date */}
-                    <div className="min-w-0">
-                      <p className="font-space-bold text-dark truncate" style={{ fontSize: 14 }}>
-                        {ticket.location_name ?? t("reportDetail.noTicketName")}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {ticket.date && (
-                          <span className="font-space-medium" style={{ fontSize: 11, color: `${DARK}55` }}>
-                            {format(new Date(ticket.date), "dd MMM yyyy", { locale: dateLocale })}
-                          </span>
-                        )}
-                        {ticket.expense_type && (
-                          <span style={{
-                            fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 9,
-                            color: BRAND, backgroundColor: `${BRAND}18`,
-                            paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2,
-                            borderRadius: 6, border: `1.5px solid ${BRAND}`,
-                          }}>
-                            {ticket.expense_type}
-                          </span>
-                        )}
+          ) : groupedTickets.length > 0 ? (
+            <div className="space-y-6">
+              {groupedTickets.map(({ date, items: groupTickets }) => (
+                <div key={date.toISOString()} className="space-y-2">
+                  <DateGroupHeader
+                    date={date}
+                    count={groupTickets.length}
+                    dateLocale={dateLocale}
+                    today={t("ticketsPage.today")}
+                    yesterday={t("ticketsPage.yesterday")}
+                  />
+                  {groupTickets.map((ticket, idx) => (
+                    <PixelCard
+                      key={ticket.id ?? `ticket-${idx}`}
+                      shadowOffset={3}
+                      onClick={() => { setSelectedTicket(ticket); setIsDetailModalOpen(true); }}
+                      className="w-full"
+                    >
+                      <div className="flex items-center px-4 py-3.5 gap-4">
+                        <img src={ticketIcon} alt="" className="w-11 h-11 object-contain select-none shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-space-bold text-dark truncate" style={{ fontSize: 14 }}>
+                            {ticket.location_name ?? t("reportDetail.noTicketName")}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {ticket.date && (
+                              <span className="font-space-medium" style={{ fontSize: 11, color: `${DARK}55` }}>
+                                {format(new Date(ticket.date), "dd MMM yyyy", { locale: dateLocale })}
+                              </span>
+                            )}
+                            {ticket.expense_type && (
+                              <span style={{
+                                fontFamily: `'${fonts.family}', sans-serif`, fontWeight: 700, fontSize: 9,
+                                color: BRAND, backgroundColor: `${BRAND}18`,
+                                paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2,
+                                borderRadius: 6, border: `1.5px solid ${BRAND}`,
+                              }}>
+                                {ticket.expense_type}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="font-space-bold text-dark tabular-nums" style={{ fontSize: 16 }}>
+                            {ticket.amount == null ? "—" : ticket.amount.toLocaleString()}
+                            <span style={{ fontSize: 10, color: `${DARK}50` }}> {ticket.currency}</span>
+                          </p>
+                        </div>
+                        <div className="shrink-0 flex items-center justify-center pl-2">
+                          <ChevronRight className="w-5 h-5" style={{ color: `${DARK}25` }} />
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Amount + badge — fixed 140px col, right-aligned */}
-                    <div className="text-right">
-                      <p className="font-space-bold text-dark tabular-nums" style={{ fontSize: 15 }}>
-                        {ticket.amount == null ? "—" : ticket.amount.toLocaleString()}
-                        <span style={{ fontSize: 10, color: `${DARK}50` }}> {ticket.currency}</span>
-                      </p>
-                      <div className="mt-1.5 flex justify-end">
-                        <StatusBadge status={ticket.status} size="sm" />
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                      {isEditable && (
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); if (id) deleteTicketMutation.mutate({ reportId: id, ticketId: ticket.id }); }}
-                          style={{
-                            width: 30, height: 30, borderRadius: 10,
-                            backgroundColor: "#FEF2F2", border: `2px solid ${SHADOW}`,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            boxShadow: `2px 2px 0px ${SHADOW}`,
-                          }}
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-danger" />
-                        </button>
-                      )}
-                      <ChevronRight className="w-4 h-4" style={{ color: `${DARK}25` }} />
-                    </div>
-                  </div>
-                </PixelCard>
+                    </PixelCard>
+                  ))}
+                </div>
               ))}
             </div>
           ) : (
-            <PixelCard shadowOffset={4} className="w-full">
+            <PixelCard className="w-full">
               <div className="flex flex-col items-center text-center py-12 px-6 gap-3">
                 <img src={ticketIcon} alt="" className="w-16 h-16 object-contain select-none" style={{ opacity: 0.6 }} />
                 <p className="font-space-bold text-dark" style={{ fontSize: 14 }}>{t("reportDetail.startDigitalizing")}</p>
@@ -481,72 +332,72 @@ export const ReportDetailScreen = () => {
                   {t("reportDetail.digitalizeDesc")}
                 </p>
                 {isEditable && (
-                  <PixelCard bg={BRAND} shadowOffset={3} radius={99} onClick={() => setIsUploadModalOpen(true)}>
-                    <div className="flex items-center gap-1.5 px-4 py-2.5">
-                      <Camera className="w-3.5 h-3.5 text-white" />
-                      <span className="font-space-bold text-white" style={{ fontSize: 12 }}>{t("reportDetail.scanFirstTicket")}</span>
-                    </div>
-                  </PixelCard>
+                  <Button
+                    variant="primary"
+                    leftIcon={<Camera className="w-4 h-4" />}
+                    onClick={() => setIsUploadModalOpen(true)}
+                  >
+                    {t("reportDetail.scanFirstTicket")}
+                  </Button>
                 )}
               </div>
             </PixelCard>
           )}
         </div>
-
       </div>
 
-      {/* ── Confirm dialogs ────────────────────────────────────────────────── */}
+      {/* ── Confirm dialogs ── */}
 
-      {submitConfirm && (
+      {actions.submitConfirm && (
         <ConfirmDialog
-          icon={<Send className="w-7 h-7 text-success" />}
+          icon={<Send />}
           title={t("reportDetail.submitReport")}
           description={t("reportDetail.confirmSubmit")}
-          onCancel={() => setSubmitConfirm(false)}
-          onConfirm={() => submitMutation.mutate(id!)}
+          onCancel={() => actions.setSubmitConfirm(false)}
+          onConfirm={actions.handleSubmit}
           confirmLabel={t("reportDetail.submitReport")}
           cancelLabel={t("common.cancel")}
-          confirmBg="#00C896"
-          isLoading={submitMutation.isPending}
+          confirmVariant="primary"
+          isLoading={actions.isSubmitting}
         />
       )}
-      {approveConfirm && (
+      {actions.approveConfirm && (
         <ConfirmDialog
-          icon={<ThumbsUp className="w-7 h-7 text-success" />}
+          icon={<ThumbsUp />}
           title={t("reportDetail.approveReport")}
           description={t("reportDetail.confirmApprove")}
-          onCancel={() => setApproveConfirm(false)}
-          onConfirm={() => updateStatusMutation.mutate({ id: id!, status: ReportStatus.APPROVED })}
+          onCancel={() => actions.setApproveConfirm(false)}
+          onConfirm={actions.handleApprove}
           confirmLabel={t("reportDetail.approveReport")}
           cancelLabel={t("common.cancel")}
-          confirmBg="#00C896"
-          isLoading={updateStatusMutation.isPending}
+          confirmVariant="success"
+          isLoading={actions.isUpdatingStatus}
         />
       )}
-      {declineConfirm && (
+      {actions.declineConfirm && (
         <ConfirmDialog
-          icon={<ThumbsDown className="w-7 h-7 text-danger" />}
+          icon={<ThumbsDown />}
           title={t("reportDetail.declineReport")}
           description={t("reportDetail.confirmDecline")}
-          onCancel={() => setDeclineConfirm(false)}
-          onConfirm={() => updateStatusMutation.mutate({ id: id!, status: ReportStatus.DECLINED })}
+          onCancel={() => actions.setDeclineConfirm(false)}
+          onConfirm={actions.handleDecline}
           confirmLabel={t("reportDetail.declineReport")}
           cancelLabel={t("common.cancel")}
-          confirmBg="#FF4B4B"
-          isLoading={updateStatusMutation.isPending}
+          confirmVariant="danger"
+          isLoading={actions.isUpdatingStatus}
         />
       )}
-      {deleteConfirm && (
+      {actions.deleteConfirm && (
         <ConfirmDialog
-          icon={<AlertTriangle className="w-7 h-7 text-danger" />}
+          icon={<AlertTriangle />}
           title={t("reportDetail.deleteReport")}
           description={t("reportDetail.confirmDelete")}
-          onCancel={() => setDeleteConfirm(false)}
-          onConfirm={() => deleteReportMutation.mutate(id!)}
+          onCancel={() => actions.setDeleteConfirm(false)}
+          onConfirm={actions.handleDelete}
           confirmLabel={t("common.delete")}
           cancelLabel={t("common.cancel")}
-          confirmBg="#FF4B4B"
-          isLoading={deleteReportMutation.isPending}
+          confirmVariant="danger"
+          isLoading={actions.isDeleting}
         />
       )}
 

@@ -25,7 +25,7 @@ export const WeeklyStatsCard = ({ title, count, icon, colorClass, subtitle }: We
     <div className={`${radius.card} p-5 flex flex-col gap-3 border shadow-sm ${containerCls}`}>
       <div className="flex items-start justify-between">
         <p className={`text-[10px] font-semibold uppercase tracking-widest ${labelCls}`}>{title}</p>
-        <div className={`w-8 h-8 ${radius.base} flex items-center justify-center ${iconBg}`}>
+        <div className={`w-8 h-8 ${radius.sm} flex items-center justify-center ${iconBg}`}>
           {icon}
         </div>
       </div>
@@ -43,7 +43,7 @@ export const PendingAmountCard = ({ amount }: { amount: number }) => (
       <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
         Importe pendiente
       </p>
-      <div className={`w-8 h-8 ${radius.base} flex items-center justify-center bg-brand/8 text-brand font-bold text-base`}>
+      <div className={`w-8 h-8 ${radius.sm} flex items-center justify-center bg-brand/8 text-brand font-bold text-base`}>
         €
       </div>
     </div>

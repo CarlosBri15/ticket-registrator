@@ -1,9 +1,11 @@
 import { Calendar } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { userIcon } from "@ticket-registrator/shared/assets";
+import type { ICurrentUser } from "@ticket-registrator/shared";
 
 interface DashboardHeroProps {
-  user: any;
-  t: (key: string, options?: any) => string;
+  user: ICurrentUser | undefined;
+  t: (key: string, options?: Record<string, unknown>) => string;
   greetingKey: string;
   firstName: string;
   subtitle: string;
@@ -22,13 +24,14 @@ export const DashboardHero = ({
   badgeContent,
   actions,
 }: DashboardHeroProps) => {
-  const today = new Date().toLocaleDateString("es-ES", {
+  const { i18n } = useTranslation();
+
+  const today = new Date().toLocaleDateString(i18n.language, {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   });
-
 
   const fullGreeting: string = t(greetingKey, { name: firstName });
   const nameIndex = fullGreeting.lastIndexOf(firstName);
@@ -39,10 +42,7 @@ export const DashboardHero = ({
     <div className="flex items-center justify-between gap-4 pb-6 mb-1">
       <div className="flex items-center gap-4">
         {/* Avatar */}
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-white overflow-hidden"
-          style={{ border: "1px solid #edf0f5", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}
-        >
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-white overflow-hidden border-2 border-border-main shadow-hard">
           <img src={userIcon} alt="avatar" className="w-10 h-10 object-contain" />
         </div>
 

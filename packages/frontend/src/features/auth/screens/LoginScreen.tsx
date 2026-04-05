@@ -9,11 +9,15 @@ import { tokenProvider } from "../../../api/client";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 
+import { useQueryClient } from "@tanstack/react-query";
+
 export const LoginForm = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const { mutate, isPending, isError, error } = useLoginMutation({
         onSuccess: (data: ILoginResponse) => {
+            queryClient.clear();
             tokenProvider.setToken(data.access_token);
             navigate('/home');
         }

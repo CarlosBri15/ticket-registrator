@@ -30,7 +30,7 @@ export const RegisterForm = () => {
     });
 
     const onSubmit = (data: RegisterSchema) => {
-        mutate(data as any);
+        mutate(data);
     };
 
     const serverErrorMessage = isError ? (error as AxiosError<{ message: string }>)?.response?.data?.message || t('common.error') : null;
@@ -111,13 +111,13 @@ export const RegisterForm = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <Input
                                 label={t('register.nameLabel')}
-                                placeholder="Ej: Ana"
+                                placeholder={t('register.namePlaceholder')}
                                 {...register("name")}
                                 error={errors.name?.message}
                             />
                             <Input
-                                label={t('register.surnameLabel') || "Apellidos"}
-                                placeholder="Ej: García"
+                                label={t('register.surnameLabel')}
+                                placeholder={t('register.surnamePlaceholder')}
                                 {...register("surname")}
                                 error={errors.surname?.message}
                             />
@@ -127,13 +127,13 @@ export const RegisterForm = () => {
                             <Input
                                 label={t('register.emailLabel')}
                                 type="email"
-                                placeholder="ana@empresa.com"
+                                placeholder={t('register.emailPlaceholder')}
                                 {...register("email")}
                                 error={errors.email?.message}
                             />
                             <Input
-                                label={t('register.usernameLabel') || "Usuario"}
-                                placeholder="ana.garcia"
+                                label={t('register.usernameLabel')}
+                                placeholder={t('register.usernamePlaceholder')}
                                 {...register("username")}
                                 error={errors.username?.message}
                             />
@@ -143,7 +143,7 @@ export const RegisterForm = () => {
                             <Input
                                 label={t('auth.passwordLabel')}
                                 type="password"
-                                placeholder="••••••••••"
+                                placeholder={t('register.passwordPlaceholder')}
                                 {...register("password")}
                                 error={errors.password?.message}
                             />
@@ -151,7 +151,7 @@ export const RegisterForm = () => {
                             <Input
                                 label={t('register.confirmPasswordLabel')}
                                 type="password"
-                                placeholder="••••••••••"
+                                placeholder={t('register.passwordPlaceholder')}
                                 {...register("confirmPassword")}
                                 error={errors.confirmPassword?.message}
                             />

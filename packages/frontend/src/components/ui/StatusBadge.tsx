@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LucideIcon } from 'lucide-react';
-import { statusColors } from '@ticket-registrator/shared';
+import { statusColors, statusBorderColors, fonts, nbTokens } from "@ticket-registrator/shared";
 
 type StatusKey = keyof typeof statusColors;
 
@@ -42,6 +42,7 @@ export const StatusBadge = ({ status, size = 'sm' }: StatusBadgeProps) => {
   const cfg = statusColors[key] ?? statusColors.DRAFT;
   const Icon = STATUS_ICONS[key] ?? FileText;
 
+  const theme = statusBorderColors[key] ?? statusBorderColors.DRAFT;
   const iconSize = size === 'sm' ? 10 : 12;
 
   return (
@@ -52,14 +53,14 @@ export const StatusBadge = ({ status, size = 'sm' }: StatusBadgeProps) => {
         gap: 4,
         backgroundColor: cfg.bg,
         color: cfg.text,
-        border: '2px solid rgba(26, 26, 26, 0.15)',
-        borderRadius: 8,
+        border: `2px solid ${theme.border}`,
+        borderRadius: nbTokens.radiusBadge,
         paddingLeft: 8,
         paddingRight: 8,
         paddingTop: 3,
         paddingBottom: 3,
-        boxShadow: '3px 3px 0px rgba(26, 26, 26, 0.15)',
-        fontFamily: "'Space Grotesk', sans-serif",
+        boxShadow: `${nbTokens.shadowBadge}px ${nbTokens.shadowBadge}px 0px ${theme.shadow}`,
+        fontFamily: `'${fonts.family}', sans-serif`,
         fontWeight: 700,
         fontSize: 9,
         letterSpacing: '0.2px',

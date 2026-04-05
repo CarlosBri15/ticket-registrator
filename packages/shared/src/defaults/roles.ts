@@ -15,10 +15,10 @@ export const AUTHORITY_LEVELS = {
   SELF: 0,
 } as const;
 
-export const ROLE_HIERARCHY: Record<RoleType, number> = {
-  Employee: 10,
+export const ROLE_NAME_TO_HIERARCHY: Record<RoleType, number> = {
+  Employee: 0,
   Manager: 50,
-  Controller: 55,
+  Controller: 40,
   Admin: 99,
   SuperAdmin: 100,
 };

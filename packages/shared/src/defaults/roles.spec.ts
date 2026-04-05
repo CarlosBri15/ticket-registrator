@@ -1,4 +1,4 @@
-import { Roles, AUTHORITY_LEVELS, ROLE_HIERARCHY, DEFAULT_DEPARTMENTS } from './roles';
+import { Roles, AUTHORITY_LEVELS, ROLE_NAME_TO_HIERARCHY, DEFAULT_DEPARTMENTS } from './roles';
 
 describe('Roles constants', () => {
     it('should define all role names', () => {
@@ -23,20 +23,20 @@ describe('AUTHORITY_LEVELS', () => {
     });
 });
 
-describe('ROLE_HIERARCHY', () => {
+describe('ROLE_NAME_TO_HIERARCHY', () => {
     it('should map each role to a numeric hierarchy value', () => {
-        expect(ROLE_HIERARCHY['Employee']).toBe(10);
-        expect(ROLE_HIERARCHY['Manager']).toBe(50);
-        expect(ROLE_HIERARCHY['Controller']).toBe(55);
-        expect(ROLE_HIERARCHY['Admin']).toBe(99);
-        expect(ROLE_HIERARCHY['SuperAdmin']).toBe(100);
+        expect(ROLE_NAME_TO_HIERARCHY['Employee']).toBe(0);
+        expect(ROLE_NAME_TO_HIERARCHY['Manager']).toBe(50);
+        expect(ROLE_NAME_TO_HIERARCHY['Controller']).toBe(40);
+        expect(ROLE_NAME_TO_HIERARCHY['Admin']).toBe(99);
+        expect(ROLE_NAME_TO_HIERARCHY['SuperAdmin']).toBe(100);
     });
 
-    it('should have hierarchy in ascending order: Employee < Manager < Controller < Admin < SuperAdmin', () => {
-        expect(ROLE_HIERARCHY['Employee']).toBeLessThan(ROLE_HIERARCHY['Manager']);
-        expect(ROLE_HIERARCHY['Manager']).toBeLessThan(ROLE_HIERARCHY['Controller']);
-        expect(ROLE_HIERARCHY['Controller']).toBeLessThan(ROLE_HIERARCHY['Admin']);
-        expect(ROLE_HIERARCHY['Admin']).toBeLessThan(ROLE_HIERARCHY['SuperAdmin']);
+    it('should have hierarchy in ascending order: Employee < Controller < Manager < Admin < SuperAdmin', () => {
+        expect(ROLE_NAME_TO_HIERARCHY['Employee']).toBeLessThan(ROLE_NAME_TO_HIERARCHY['Controller']);
+        expect(ROLE_NAME_TO_HIERARCHY['Controller']).toBeLessThan(ROLE_NAME_TO_HIERARCHY['Manager']);
+        expect(ROLE_NAME_TO_HIERARCHY['Manager']).toBeLessThan(ROLE_NAME_TO_HIERARCHY['Admin']);
+        expect(ROLE_NAME_TO_HIERARCHY['Admin']).toBeLessThan(ROLE_NAME_TO_HIERARCHY['SuperAdmin']);
     });
 });
 

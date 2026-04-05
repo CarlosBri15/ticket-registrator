@@ -62,7 +62,7 @@ export const AdminDashboard = () => {
 
   const isCompanyMode = isGlobal && !!activeCompanyId;
   const activeOrg = orgs?.find((o) => o.id === activeCompanyId);
-  const firstName = user?.name?.split(" ")[0] || "Usuario";
+  const firstName = user?.name?.split(" ")[0] || t("layout.defaultUser");
 
   if (reportsLoading || usersLoading || deptsLoading) {
     return <DashboardSkeleton />;
@@ -72,7 +72,7 @@ export const AdminDashboard = () => {
     <div className="space-y-8 animate-in fade-in duration-300 pb-10">
       {isCompanyMode && (
         <CompanyModeBanner
-          orgName={activeOrg?.name ?? "Empresa"}
+          orgName={activeOrg?.name ?? t("layout.defaultOrg")}
           onExit={() => setActiveCompanyId(null)}
           onDetail={() => navigate(`/organizations/${activeCompanyId}`)}
         />
@@ -83,30 +83,30 @@ export const AdminDashboard = () => {
         t={t}
         greetingKey={getGreetingKey()}
         firstName={firstName}
-        subtitle="Panel de Administración"
+        subtitle={t("dashboard.subtitleAdmin")}
         subtitleIcon={<Shield className="w-3.5 h-3.5" />}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="admin-stats">
         <StatCard
           variant="primary"
-          title="Usuarios"
+          title={t("layout.users")}
           value={String(users?.length ?? 0)}
           icon={<Users className="w-4 h-4" />}
-          subtitle="Miembros del equipo"
+          subtitle={t("home.teamMembers")}
         />
         <StatCard
-          title="Departamentos"
+          title={t("layout.departments")}
           value={String(departments?.length ?? 0)}
           icon={<Building2 className="w-4 h-4" />}
-          subtitle="Áreas de la empresa"
+          subtitle={t("home.companyAreas")}
         />
         <PendingStatsCard count={pendingReports.length} />
         <StatCard
-          title="Viajes activos"
+          title={t("home.activeTrips")}
           value={String(activeTripsCount)}
           icon={<TrendingUp className="w-4 h-4" />}
-          subtitle="En curso en el equipo"
+          subtitle={t("home.activeReportsTeam")}
         />
       </div>
 

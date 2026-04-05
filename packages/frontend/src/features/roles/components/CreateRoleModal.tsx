@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useRolesQuery,
   useCreateRoleMutation,
@@ -10,16 +11,17 @@ import { AlertError, getApiErrorMessage } from "../../../components/ui/Alert";
 
 // ─── Hierarchy helpers ────────────────────────────────────────────────────────
 
-const HIERARCHY_LABELS = [
-  { min: 100, label: "SuperAdmin", color: "bg-purple-100 text-purple-700" },
-  { min: 99, label: "Admin", color: "bg-brand/10 text-brand" },
-  { min: 50, label: "Manager", color: "bg-amber-100 text-amber-700" },
-  { min: 40, label: "Controller", color: "bg-blue-100 text-blue-700" },
-  { min: 1, label: "Empleado", color: "bg-gray-100 text-gray-600" },
-];
+// System role names are universal; only "Empleado" uses a translation key.
+const HIERARCHY_LEVELS = [
+  { min: 100, labelKey: "SuperAdmin",          color: "bg-purple-100 text-purple-700" },
+  { min: 99,  labelKey: "Admin",               color: "bg-brand/10 text-brand" },
+  { min: 50,  labelKey: "Manager",             color: "bg-amber-100 text-amber-700" },
+  { min: 40,  labelKey: "Controller",          color: "bg-blue-100 text-blue-700" },
+  { min: 1,   labelKey: "roles.levelEmployee", color: "bg-gray-100 text-gray-600" },
+] as const;
 
 export const getHierarchyMeta = (h: number) =>
-  HIERARCHY_LABELS.find((l) => h >= l.min) ?? HIERARCHY_LABELS[4];
+  HIERARCHY_LEVELS.find((l) => h >= l.min) ?? HIERARCHY_LEVELS[4];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,10 +41,11 @@ export const CreateRoleModal = ({
   companyId,
   onRoleCreated,
 }: CreateRoleModalProps) => {
+  const { t } = useTranslation();
   const { data: existingRoles } = useRolesQuery(companyId);
 
   const mutation = useCreateRoleMutation(companyId, {
-    onSuccess: (data: any) => {
+    onSuccess: (data: { id: string }) => {
       onRoleCreated?.(data.id);
       onClose();
     },
@@ -63,6 +66,10 @@ export const CreateRoleModal = ({
     ? [...existingRoles].sort((a, b) => b.hierarchy - a.hierarchy)
     : [];
 
+  // Resolve i18n label: system names stay as-is; "roles.*" keys are translated.
+  const resolveLabel = (labelKey: string) =>
+    labelKey.startsWith("roles.") ? t(labelKey as "roles.levelEmployee") : labelKey;
+
   const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!isValid) return;
@@ -77,8 +84,8 @@ export const CreateRoleModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Nuevo Rol"
-      subtitle="Crear rol para esta organización"
+      title={t("roles.newRole")}
+      subtitle={t("roles.createRoleSubtitle")}
       size="xl"
     >
       <div className="space-y-4">
@@ -90,10 +97,10 @@ export const CreateRoleModal = ({
           {/* ── Left: Existing roles reference ── */}
           <div>
             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-              Jerarquías actuales
+              {t("roles.currentHierarchies")}
             </p>
             {sortedRoles.length === 0 ? (
-              <p className="text-sm text-gray-400 italic">Sin roles aún</p>
+              <p className="text-sm text-gray-400 italic">{t("roles.empty")}</p>
             ) : (
               <div className="space-y-1.5">
                 {sortedRoles.map((role) => {
@@ -106,10 +113,8 @@ export const CreateRoleModal = ({
                       <span className="text-sm font-medium text-dark truncate">
                         {role.name}
                       </span>
-                      <span
-                        className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${meta.color}`}
-                      >
-                        {meta.label} ({role.hierarchy})
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${meta.color}`}>
+                        {resolveLabel(meta.labelKey)} ({role.hierarchy})
                       </span>
                     </div>
                   );
@@ -117,62 +122,52 @@ export const CreateRoleModal = ({
               </div>
             )}
             <p className="text-xs text-gray-400 mt-3 leading-relaxed">
-              El nuevo rol debe tener jerarquía menor que la tuya.
+              {t("roles.hierarchyHint")}
             </p>
           </div>
 
           {/* ── Right: Form ── */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="Nombre del rol *"
+              label={`${t("roles.nameLabel")} *`}
               value={name}
-              onChange={(e: any) => setName(e.target.value)}
-              placeholder="Ej: Supervisor"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+              placeholder={t("roles.namePlaceholder")}
               required
               autoFocus
             />
 
             <div>
               <Input
-                label="Jerarquía (1–99) *"
+                label={`${t("roles.hierarchyLabel")} *`}
                 type="number"
                 min={1}
                 max={99}
                 step={1}
                 value={hierarchyStr}
-                onChange={(e: any) => setHierarchyStr(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHierarchyStr(e.target.value)}
                 required
               />
               {hierarchyMeta && (
                 <p className="text-xs text-gray-400 -mt-1 ml-1">
-                  → {hierarchyMeta.label}
+                  → {resolveLabel(hierarchyMeta.labelKey)}
                 </p>
               )}
             </div>
 
             <Input
-              label="Descripción"
+              label={t("common.description")}
               value={description}
-              onChange={(e: any) => setDescription(e.target.value)}
-              placeholder="Descripción opcional del rol"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDescription(e.target.value)}
+              placeholder={t("roles.descriptionPlaceholder")}
             />
 
             <div className="flex gap-3 pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={onClose}
-                className="flex-1"
-              >
-                Cancelar
+              <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
+                {t("common.cancel")}
               </Button>
-              <Button
-                type="submit"
-                isLoading={mutation.isPending}
-                disabled={!isValid}
-                className="flex-1"
-              >
-                Crear Rol
+              <Button type="submit" isLoading={mutation.isPending} disabled={!isValid} className="flex-1">
+                {t("roles.createRole")}
               </Button>
             </div>
           </form>

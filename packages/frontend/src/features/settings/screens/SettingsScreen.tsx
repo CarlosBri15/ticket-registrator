@@ -3,6 +3,7 @@ import { Globe, User, LogOut, Check, Mail, Pencil, X, Shield, Key } from "lucide
 import {
   useUserQuery,
   useUpdateUserMutation,
+  type ICurrentUser,
 } from "@ticket-registrator/shared";
 import { tokenProvider } from "../../../api/client";
 import { useNavigate } from "react-router-dom";
@@ -10,15 +11,14 @@ import { useTranslation } from "react-i18next";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { tokens, radius } from "../../../styles/theme";
+import { LANGUAGES } from "../../../constants/config";
 
-const LANGUAGES = [
-  { code: "es", label: "Español", flag: "🇪🇸" },
-  { code: "en", label: "English", flag: "🇬🇧" },
-];
+import { useQueryClient } from "@tanstack/react-query";
 
 export const SettingsScreen = () => {
   const { t, i18n } = useTranslation();
-  const { data: user } = useUserQuery();
+  const queryClient = useQueryClient();
+  const { data: user } = useUserQuery() as { data: ICurrentUser | undefined };
   const navigate = useNavigate();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -36,7 +36,7 @@ export const SettingsScreen = () => {
   const startEdit = () => {
     setForm({
       name: user?.name ?? "",
-      surname: (user as any)?.surname ?? "",
+      surname: user?.surname ?? "",
       email: user?.email ?? "",
     });
     setIsEditing(true);
@@ -57,6 +57,7 @@ export const SettingsScreen = () => {
 
   const handleLogout = () => {
     tokenProvider.removeToken();
+    queryClient.clear();
     navigate("/login");
   };
 
@@ -64,7 +65,7 @@ export const SettingsScreen = () => {
     ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().substring(0, 2)
     : "?";
 
-  const permissionsCount = (user as any)?.permissions?.length ?? 0;
+  const permissionsCount = user?.permissions?.length ?? 0;
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
@@ -95,7 +96,7 @@ export const SettingsScreen = () => {
         {isEditing ? (
           <form onSubmit={handleSave} className="p-6 space-y-4">
             <div className="flex items-center gap-5 mb-2">
-              <div className={`w-12 h-12 bg-brand text-white ${radius.base} flex items-center justify-center font-bold text-lg shadow-sm shrink-0`}>
+              <div className={`w-12 h-12 bg-brand text-white ${radius.sm} flex items-center justify-center font-bold text-lg shadow-sm shrink-0`}>
                 {userInitials}
               </div>
               <p className="text-sm text-slate-400 font-medium">{t("settings.profileInfo")}</p>
@@ -146,12 +147,12 @@ export const SettingsScreen = () => {
         ) : (
           <div className="p-6">
             <div className="flex items-center gap-5 mb-5">
-              <div className={`w-12 h-12 bg-brand text-white ${radius.base} flex items-center justify-center font-bold text-lg shadow-sm shrink-0`}>
+              <div className={`w-12 h-12 bg-brand text-white ${radius.sm} flex items-center justify-center font-bold text-lg shadow-sm shrink-0`}>
                 {userInitials}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-dark truncate">
-                  {user?.name ?? "—"} {(user as any)?.surname ?? ""}
+                  {user?.name ?? "—"} {user?.surname ?? ""}
                 </p>
                 <p className="text-sm text-slate-400 flex items-center gap-2 mt-1 truncate">
                   <Mail className="w-3.5 h-3.5 shrink-0" />
@@ -167,9 +168,9 @@ export const SettingsScreen = () => {
             </div>
 
             {/* Role + Permissions info */}
-            {((user as any)?.roleName || permissionsCount > 0) && (
+            {(user?.roleName || permissionsCount > 0) && (
               <div className="space-y-3 pt-4 border-t border-slate-100">
-                {(user as any)?.roleName && (
+                {user?.roleName && (
                   <div className="flex items-center justify-between">
                     <div className={`flex items-center gap-2 ${tokens.listSectionTitle}`}>
                       <Shield className="w-3.5 h-3.5" />
@@ -177,11 +178,11 @@ export const SettingsScreen = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`${tokens.badgeSm} ${tokens.badgeBrand}`}>
-                        {(user as any).roleName}
+                        {user.roleName}
                       </span>
-                      {(user as any)?.hierarchy !== undefined && (
+                      {user?.hierarchy !== undefined && (
                         <span className="text-[10px] font-semibold text-slate-400">
-                          {t("settings.hierarchyLevel", { level: (user as any).hierarchy })}
+                          {t("settings.hierarchyLevel", { level: user.hierarchy })}
                         </span>
                       )}
                     </div>
@@ -220,7 +221,7 @@ export const SettingsScreen = () => {
               <button
                 key={lang.code}
                 onClick={() => i18n.changeLanguage(lang.code)}
-                className={`w-full flex items-center justify-between p-4 ${radius.base} border-2 transition-all duration-200 ${
+                className={`w-full flex items-center justify-between p-4 ${radius.sm} border-2 transition-all duration-200 ${
                   isActive
                     ? "border-brand bg-brand/5 text-brand"
                     : "border-slate-100 hover:border-brand/30 hover:bg-slate-50 text-slate-600"
@@ -250,7 +251,7 @@ export const SettingsScreen = () => {
           onClick={handleLogout}
           className="w-full flex items-center gap-4 px-6 py-5 text-danger hover:bg-danger/5 transition-colors group"
         >
-          <div className={`w-9 h-9 bg-danger/10 ${radius.base} flex items-center justify-center group-hover:bg-danger/15 transition-colors`}>
+          <div className={`w-9 h-9 bg-danger/10 ${radius.sm} flex items-center justify-center group-hover:bg-danger/15 transition-colors`}>
             <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           </div>
           <div className="text-left">

@@ -117,9 +117,9 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
               onDragLeave={onDragLeave}
               onDrop={onDrop}
               className={`
-                relative border-2 border-dashed ${radius.card} p-8 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer
-                ${isDragging ? 'border-brand bg-brand/5' : 'border-slate-200 bg-slate-50/50 hover:bg-white hover:border-brand/30'}
-                ${file ? 'border-success/50 bg-success/5' : ''}
+                relative border-2 border-dashed ${radius.card} p-10 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer
+                ${isDragging ? 'border-brand bg-brand/5' : 'border-dark/10 bg-surface-header/30 hover:bg-white hover:border-brand/30'}
+                ${file ? 'border-success/30 bg-success/5' : ''}
               `}
             >
               <input
@@ -132,28 +132,30 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
 
               {file ? (
                 <div className="flex flex-col items-center animate-in zoom-in-95 duration-300">
-                  <div className={`w-14 h-14 bg-success/10 text-success ${radius.base} flex items-center justify-center mb-4`}>
-                    <File className="w-7 h-7" />
+                  <div className="w-16 h-16 bg-success/10 text-success border-2 border-success/30 rounded-2xl flex items-center justify-center mb-5 shadow-hard-sm">
+                    <File className="w-8 h-8" />
                   </div>
-                  <p className="text-dark font-semibold mb-1">{file.name}</p>
-                  <p className="text-slate-400 text-sm">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  <p className="text-dark font-space-bold mb-1" style={{ fontSize: 16 }}>{file.name}</p>
+                  <p className="text-dark/40 font-space text-xs">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                   {!uploadMutation.isPending && (
-                    <button
+                    <Button 
+                      variant="ghost-danger" 
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setFile(null); }}
-                      className="mt-4 text-xs font-semibold text-danger hover:text-red-700 uppercase tracking-wide"
+                      className="mt-5"
+                      size="sm"
                     >
                       Quitar archivo
-                    </button>
+                    </Button>
                   )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center text-center">
-                  <div className={`w-14 h-14 bg-brand/10 text-brand ${radius.base} flex items-center justify-center mb-4`}>
-                    <Upload className="w-7 h-7" />
+                  <div className="w-16 h-16 bg-brand/10 text-brand border-2 border-brand/20 rounded-2xl flex items-center justify-center mb-5 shadow-hard-sm">
+                    <Upload className="w-8 h-8" />
                   </div>
-                  <h4 className="text-base font-semibold text-dark mb-1">Arrastra tu ticket aquí</h4>
-                  <p className="text-slate-500 text-sm max-w-[200px]">Soporta imágenes (JPG, PNG) y documentos PDF</p>
-                  <div className={`mt-5 px-4 py-2 bg-white border border-slate-200 ${radius.base} text-xs font-semibold text-slate-500 shadow-sm`}>
+                  <h4 className="text-lg font-space-bold text-dark mb-2">Arrastra tu ticket aquí</h4>
+                  <p className="text-dark/50 font-space text-sm max-w-[220px]">Soporta imágenes (JPG, PNG) y documentos PDF</p>
+                  <div className="mt-6 px-5 py-2.5 bg-[var(--color-surface-card)] border-2 border-border-main rounded-xl text-xs font-space-bold text-dark/40 shadow-hard-sm">
                     O haz clic para explorar
                   </div>
                 </div>
@@ -162,13 +164,13 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
 
             <div className={`${tokens.alert} ${tokens.alertWarning}`}>
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <p className="text-xs leading-relaxed font-medium">
+              <p className="text-xs leading-relaxed font-space-medium">
                 Asegúrate de que el ticket sea legible y contenga claramente la fecha, el importe total y el comercio. Nuestra IA se encargará del resto.
               </p>
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button variant="ghost" onClick={handleClose} disabled={uploadMutation.isPending} className="flex-1">
+              <Button variant="secondary" onClick={handleClose} disabled={uploadMutation.isPending} className="flex-1">
                 Cancelar
               </Button>
               <Button

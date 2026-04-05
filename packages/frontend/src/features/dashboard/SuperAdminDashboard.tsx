@@ -12,6 +12,7 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
+import { useTranslation } from "react-i18next";
 import { Button } from "../../components/ui/Button";
 import { StatCard } from "../../components/ui/StatCard";
 import {
@@ -22,89 +23,97 @@ import {
 } from "@ticket-registrator/shared";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import type { Locale } from "date-fns";
 import { countCreatedThisMonth, buildMonthlyGrowth } from "./utils";
 import { DashboardHero } from "./components/DashboardHero";
 import { useDashboardHelpers } from "./hooks/useDashboardHelpers";
+import { tokens } from "../../styles/theme";
+import { userIcon } from "@ticket-registrator/shared/assets";
 
-const EmptyOrgsCard = ({ count }: { count: number }) => (
-  <div
-    className={`relative overflow-hidden rounded-[2rem] p-6 flex flex-col gap-4 border shadow-sm transition-all duration-300 ${count > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-gray-100"}`}
-    data-testid="empty-orgs-card"
-  >
-    {count > 0 && (
-      <div className="absolute top-0 right-0 w-36 h-36 bg-amber-100/50 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-    )}
-    <div className="relative z-10 flex items-start justify-between">
-      <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${count > 0 ? "text-amber-600" : "text-gray-400"}`}>
-        Orgs sin usuarios
-      </p>
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${count > 0 ? "bg-amber-100 text-amber-600" : "bg-gray-50 text-gray-300"}`}>
-        <AlertCircle className="w-5 h-5" />
+const EmptyOrgsCard = ({ count }: { count: number }) => {
+  const { t } = useTranslation();
+  return (
+    <div
+      className={`relative overflow-hidden rounded-[2rem] p-6 flex flex-col gap-4 border shadow-sm transition-all duration-300 ${count > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-gray-100"}`}
+      data-testid="empty-orgs-card"
+    >
+      {count > 0 && (
+        <div className="absolute top-0 right-0 w-36 h-36 bg-amber-100/50 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      )}
+      <div className="relative z-10 flex items-start justify-between">
+        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${count > 0 ? "text-amber-600" : "text-gray-400"}`}>
+          {t("dashboard.orgsWithoutUsers")}
+        </p>
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${count > 0 ? "bg-amber-100 text-amber-600" : "bg-gray-50 text-gray-300"}`}>
+          <AlertCircle className="w-5 h-5" />
+        </div>
       </div>
+      <h3 className={`relative z-10 text-3xl font-black tracking-tighter ${count > 0 ? "text-amber-700" : "text-dark"}`}>
+        {count}
+      </h3>
+      <p className={`relative z-10 text-xs font-bold ${count > 0 ? "text-amber-600/70" : "text-gray-400"}`}>
+        {count > 0 ? t("dashboard.orgsRequireAttention") : t("dashboard.orgsAllHaveUsers")}
+      </p>
     </div>
-    <h3 className={`relative z-10 text-3xl font-black tracking-tighter ${count > 0 ? "text-amber-700" : "text-dark"}`}>
-      {count}
-    </h3>
-    <p className={`relative z-10 text-xs font-bold ${count > 0 ? "text-amber-600/70" : "text-gray-400"}`}>
-      {count > 0 ? "Requieren atención" : "Todas tienen usuarios"}
-    </p>
-  </div>
-);
-
-const getOrgUserCountLabel = (count: number = 0) => {
-  const suffix = count === 1 ? "" : "s";
-  return `${count} usuario${suffix}`;
+  );
 };
 
-const LargestOrgCard = ({ largestOrg, userCount = 0 }: any) => (
-  <div className="relative overflow-hidden bg-white rounded-[2rem] p-6 flex flex-col gap-4 border border-gray-100 shadow-sm">
-    <div className="absolute top-0 right-0 w-24 h-24 bg-brand/3 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-    <div className="relative z-10 flex items-start justify-between">
-      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Más grande</p>
-      <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-brand/5 text-brand">
-        <TrendingUp className="w-5 h-5" />
+const LargestOrgCard = ({ largestOrg, userCount = 0 }: { largestOrg: { name: string } | null; userCount?: number }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="relative overflow-hidden bg-white rounded-[2rem] p-6 flex flex-col gap-4 border border-gray-100 shadow-sm">
+      <div className="absolute top-0 right-0 w-24 h-24 bg-brand/3 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      <div className="relative z-10 flex items-start justify-between">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t("dashboard.orgLargest")}</p>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-brand/5 text-brand">
+          <TrendingUp className="w-5 h-5" />
+        </div>
       </div>
+      <h3 className="relative z-10 text-xl font-black tracking-tight text-dark truncate" data-testid="largest-org-name">
+        {largestOrg?.name ?? "—"}
+      </h3>
+      <p className="relative z-10 text-xs font-bold text-gray-400">
+        {largestOrg ? t("dashboard.userCount", { count: userCount }) : t("dashboard.orgNoData")}
+      </p>
     </div>
-    <h3 className="relative z-10 text-xl font-black tracking-tight text-dark truncate" data-testid="largest-org-name">
-      {largestOrg?.name ?? "—"}
-    </h3>
-    <p className="relative z-10 text-xs font-bold text-gray-400">
-      {largestOrg ? getOrgUserCountLabel(userCount) : "Sin datos"}
-    </p>
-  </div>
-);
+  );
+};
 
-const GrowthChart = ({ data }: any) => (
-  <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 space-y-4">
-    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-      Altas de organizaciones (últimos 6 meses)
-    </p>
-    <ResponsiveContainer width="100%" height={180}>
-      <BarChart data={data} barSize={24} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-        <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 700, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
-        <YAxis allowDecimals={false} tick={{ fontSize: 10, fontWeight: 700, fill: "#D1D5DB" }} axisLine={false} tickLine={false} />
-        <Tooltip
-          contentStyle={{ borderRadius: "1rem", border: "1px solid #F3F4F6", boxShadow: "0 4px 16px rgba(0,0,0,0.06)", fontSize: 12, fontWeight: 700 }}
-          formatter={(value: any) => [value, "Nuevas orgs"]}
-          cursor={{ fill: "#F9FAFB" }}
-        />
-        <Bar dataKey="count" radius={[8, 8, 0, 0]} fill="#6366F1" />
-      </BarChart>
-    </ResponsiveContainer>
-  </div>
-);
+const GrowthChart = ({ data }: { data: { month: string; count: number }[] }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 space-y-4">
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+        {t("dashboard.orgGrowthChart")}
+      </p>
+      <ResponsiveContainer width="100%" height={180}>
+        <BarChart data={data} barSize={24} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+          <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 700, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 10, fontWeight: 700, fill: "#D1D5DB" }} axisLine={false} tickLine={false} />
+          <Tooltip
+            contentStyle={{ borderRadius: "1rem", border: "1px solid #F3F4F6", boxShadow: "0 4px 16px rgba(0,0,0,0.06)", fontSize: 12, fontWeight: 700 }}
+            formatter={(value: number) => [value, t("dashboard.newOrgsTooltip")]}
+            cursor={{ fill: "#F9FAFB" }}
+          />
+          <Bar dataKey="count" radius={[8, 8, 0, 0]} fill="#6366F1" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
 
-const DistributionChart = ({ data }: any) => {
-  const hasNoData = data.every((d: any) => d.usuarios === 0);
+const DistributionChart = ({ data }: { data: { name: string; usuarios: number }[] }) => {
+  const { t } = useTranslation();
+  const hasNoData = data.every((d) => d.usuarios === 0);
 
   return (
     <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 space-y-4">
       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-        Usuarios por organización (top 8)
+        {t("dashboard.orgDistributionChart")}
       </p>
       {hasNoData ? (
         <div className="h-[180px] flex items-center justify-center">
-          <p className="text-sm text-gray-400 font-medium text-center max-w-[180px] leading-relaxed">Sin usuarios registrados aún</p>
+          <p className="text-sm text-gray-400 font-medium text-center max-w-[180px] leading-relaxed">{t("dashboard.orgNoUsersYet")}</p>
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={180}>
@@ -113,7 +122,7 @@ const DistributionChart = ({ data }: any) => {
             <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 11, fontWeight: 700, fill: "#6B7280" }} axisLine={false} tickLine={false} />
             <Tooltip
               contentStyle={{ borderRadius: "1rem", border: "1px solid #F3F4F6", boxShadow: "0 4px 16px rgba(0,0,0,0.06)", fontSize: 12, fontWeight: 700 }}
-              formatter={(value: any) => [value, "Usuarios"]}
+              formatter={(value: number) => [value, t("layout.users")]}
               cursor={{ fill: "#F9FAFB" }}
             />
             <Bar dataKey="usuarios" radius={[0, 6, 6, 0]} fill="#8B5CF6" />
@@ -124,9 +133,21 @@ const DistributionChart = ({ data }: any) => {
   );
 };
 
-const OrganizationsSection = ({ 
-  filteredOrgs, usersPerOrg, dateLocale, setActiveCompanyId, navigate, t, totalOrgs, search, setSearch 
-}: any) => {
+interface OrganizationsSectionProps {
+  filteredOrgs: { id: string; name: string; createdAt: string }[] | undefined;
+  usersPerOrg: Record<string, number>;
+  dateLocale: Locale;
+  setActiveCompanyId: (id: string | null) => void;
+  navigate: (path: string) => void;
+  t: (key: string, opts?: Record<string, unknown>) => string;
+  totalOrgs: number;
+  search: string;
+  setSearch: (v: string) => void;
+}
+
+const OrganizationsSection = ({
+  filteredOrgs, usersPerOrg, dateLocale, setActiveCompanyId, navigate, t, totalOrgs, search, setSearch
+}: OrganizationsSectionProps) => {
   const hasResults = (filteredOrgs?.length ?? 0) > 0;
 
   return (
@@ -136,14 +157,16 @@ const OrganizationsSection = ({
           <div className="w-7 h-7 bg-brand/10 rounded-xl flex items-center justify-center">
             <Globe className="w-4 h-4 text-brand" />
           </div>
-          Organizaciones
+          {t("layout.organizations")}
         </h2>
-        <button
+        <Button
+          variant="ghost-brand"
+          size="sm"
           onClick={() => navigate("/organizations")}
-          className="text-[10px] font-black text-brand uppercase tracking-widest hover:underline underline-offset-2"
+          className="!text-[10px] !font-black !uppercase !tracking-widest"
         >
           {t("common.viewAll")}
-        </button>
+        </Button>
       </div>
 
       <div className="relative">
@@ -152,25 +175,25 @@ const OrganizationsSection = ({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar organización..."
+          placeholder={t("dashboard.orgSearchPlaceholder")}
           className="w-full pl-11 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-medium text-dark placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-brand/20 shadow-sm transition-all"
         />
         {search && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setSearch("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-300 hover:text-gray-500 rounded-lg"
+            className="absolute right-2 top-1/2 -translate-y-1/2 !p-1 !border-none !shadow-none"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         )}
       </div>
 
       {hasResults ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {filteredOrgs.map((org: any) => {
+          {filteredOrgs?.map((org) => {
             const userCount = usersPerOrg[org.id] ?? 0;
-            const userLabel = userCount === 1 ? "usuario" : "usuarios";
             return (
               <div
                 key={org.id}
@@ -184,32 +207,34 @@ const OrganizationsSection = ({
                   <div className="flex items-center gap-3 mt-1">
                     <span className={`text-xs flex items-center gap-1 font-semibold ${userCount === 0 ? "text-amber-500" : "text-gray-400"}`}>
                       <Users className="w-3 h-3" />
-                      {userCount} {userLabel}
+                      {t("dashboard.userCount", { count: userCount })}
                     </span>
                     <span className="text-xs text-gray-300 font-mono truncate">
                       {org.id.substring(0, 8)}…
                     </span>
                   </div>
                   <p className="text-[10px] text-gray-300 mt-0.5">
-                    Desde {format(new Date(org.createdAt), "dd MMM yyyy", { locale: dateLocale })}
+                    {t("dashboard.orgSince", { date: format(new Date(org.createdAt), "dd MMM yyyy", { locale: dateLocale }) })}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
+                  <Button
+                    size="sm"
+                    variant="primary"
                     onClick={() => setActiveCompanyId(org.id)}
-                    className="text-xs font-bold px-3 py-1.5 bg-brand text-white rounded-xl hover:bg-brand/90 shadow-sm shadow-brand/20 transition-all"
+                    className="!px-3 !py-1.5 shadow-sm shadow-brand/20"
                   >
-                    Ver
-                  </button>
-                  <button
-                    type="button"
+                    {t("common.view")}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => navigate(`/organizations/${org.id}`)}
-                    className="p-2 text-gray-300 hover:text-brand hover:bg-brand/5 rounded-xl transition-all"
-                    title="Detalle completo"
+                    className="!p-2 !border-none !shadow-none"
+                    title={t("dashboard.orgFullDetail")}
                   >
-                    <ArrowUpRight className="w-4 h-4" />
-                  </button>
+                    <ArrowUpRight className="w-4 h-4 text-gray-300 hover:text-brand" />
+                  </Button>
                 </div>
               </div>
             );
@@ -219,14 +244,14 @@ const OrganizationsSection = ({
         <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
           <Globe className="w-10 h-10 text-gray-200 mx-auto mb-3" />
           <p className="text-sm font-bold text-gray-400">
-            {search ? "Sin resultados para la búsqueda" : "No hay organizaciones"}
+            {search ? t("dashboard.orgNoResults") : t("dashboard.orgNone")}
           </p>
         </div>
       )}
 
       {totalOrgs > 0 && (
         <p className="text-xs text-gray-400 font-medium text-center">
-          {filteredOrgs?.length ?? 0} de {totalOrgs} organizaciones
+          {t("dashboard.orgCounter", { filtered: filteredOrgs?.length ?? 0, total: totalOrgs })}
         </p>
       )}
     </section>
@@ -245,7 +270,7 @@ export const SuperAdminGlobalDashboard = () => {
 
   const usersPerOrg = useMemo(
     () =>
-      (users ?? []).reduce<Record<string, number>>((acc, u: any) => {
+      (users ?? []).reduce<Record<string, number>>((acc, u) => {
         if (u.companyId) acc[u.companyId] = (acc[u.companyId] ?? 0) + 1;
         return acc;
       }, {}),
@@ -273,9 +298,9 @@ export const SuperAdminGlobalDashboard = () => {
   const distributionData = useMemo(
     () =>
       (orgs ?? [])
-        .map((o) => ({ 
-          name: o.name.length > 14 ? o.name.substring(0, 12) + "…" : o.name, 
-          usuarios: usersPerOrg[o.id] ?? 0 
+        .map((o) => ({
+          name: o.name.length > 14 ? o.name.substring(0, 12) + "…" : o.name,
+          usuarios: usersPerOrg[o.id] ?? 0,
         }))
         .sort((a, b) => b.usuarios - a.usuarios)
         .slice(0, 8),
@@ -292,93 +317,107 @@ export const SuperAdminGlobalDashboard = () => {
     [orgs, search],
   );
 
-  const firstName = user?.name?.split(" ")[0] || "Usuario";
+  const firstName = user?.name?.split(" ")[0] || t("layout.defaultUser");
   const loading = loadingOrgs || loadingUsers;
 
   const orgsCount = loading ? "—" : String(orgs?.length ?? 0);
   const usersCount = loading ? "—" : String(users?.length ?? 0);
 
-  const getNewOrgsLabel = () => {
-    if (loading) return "—";
-    return newOrgsThisMonth > 0 ? `+${newOrgsThisMonth} este mes` : "Sin altas este mes";
-  };
-  const newOrgsLabel = getNewOrgsLabel();
+  const newOrgsLabel = loading
+    ? "—"
+    : newOrgsThisMonth > 0
+      ? t("dashboard.newOrgsLabel", { count: newOrgsThisMonth })
+      : t("dashboard.noNewOrgs");
 
   return (
-    <div className={`space-y-10 animate-in fade-in duration-500 pb-10 ${loading ? "animate-pulse" : ""}`}>
-      <DashboardHero 
-        user={user} 
-        t={t} 
-        greetingKey={getGreetingKey()} 
-        firstName={firstName} 
-        subtitle="Vista Global · SuperAdmin"
-        subtitleIcon={<Globe className="w-3.5 h-3.5" />}
-        actions={
-          <>
-            <Button
-              variant="secondary"
-              className="w-auto px-5 bg-white/5 border-white/10 text-white hover:bg-white/10"
-              onClick={() => navigate("/organizations")}
-            >
-              <Globe className="w-4 h-4 mr-2" />
-              Organizaciones
-            </Button>
-            <Button
-              className="w-auto px-5 shadow-xl shadow-brand/30"
-              onClick={() => navigate("/organizations")}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nueva org
-            </Button>
-          </>
-        }
-      />
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5" data-testid="global-stats">
-        <StatCard
-          variant="primary"
-          title="Organizaciones"
-          value={orgsCount}
-          icon={<Globe className="w-5 h-5" />}
-          subtitle={newOrgsLabel}
-        />
-
-        <StatCard
-          title="Usuarios totales"
-          value={usersCount}
-          icon={<Users className="w-5 h-5" />}
-          subtitle="En toda la plataforma"
-        />
-
-        <EmptyOrgsCard count={loading ? 0 : emptyOrgCount} />
-        <LargestOrgCard largestOrg={largestOrg} userCount={largestOrg ? usersPerOrg[largestOrg.id] : 0} />
+    <div className={`space-y-10 animate-in fade-in duration-500 pb-10 -mx-6 -mt-5 md:-mx-10 lg:-mt-6 ${loading ? "animate-pulse" : ""}`}>
+      <div className={tokens.headerPage}>
+        <span className="font-space-bold text-dark" style={{ fontSize: 24, letterSpacing: "0.5px" }}>
+          {firstName}
+        </span>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="secondary"
+            className="hidden md:inline-flex w-auto px-5 bg-white/5 border-white/10 text-white hover:bg-white/10"
+            onClick={() => navigate("/organizations")}
+            leftIcon={<Globe className="w-4 h-4" />}
+          >
+            {t("layout.organizations")}
+          </Button>
+          <Button
+            className="hidden md:inline-flex w-auto px-5 shadow-xl shadow-brand/30"
+            onClick={() => navigate("/organizations")}
+            leftIcon={<Plus className="w-4 h-4" />}
+          >
+            {t("dashboard.newOrg")}
+          </Button>
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={() => navigate("/settings")}
+            className="!bg-[#E8E8FF]"
+          >
+            <img src={userIcon} alt="avatar" className="w-10 h-10 object-contain" />
+          </Button>
+        </div>
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-48 bg-white rounded-[2rem] border border-gray-100 animate-pulse" />
-          <div className="h-48 bg-white rounded-[2rem] border border-gray-100 animate-pulse" />
-        </div>
-      ) : (
-        orgs && orgs.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-testid="global-charts">
-            <GrowthChart data={orgGrowthData} />
-            <DistributionChart data={distributionData} />
-          </div>
-        )
-      )}
+      <div className="px-6 md:px-10 space-y-10">
+        <DashboardHero
+          user={user}
+          t={t}
+          greetingKey={getGreetingKey()}
+          firstName={firstName}
+          subtitle={t("dashboard.subtitleGlobal")}
+          subtitleIcon={<Globe className="w-3.5 h-3.5" />}
+        />
 
-      <OrganizationsSection 
-        filteredOrgs={loading ? [] : filteredOrgs} 
-        usersPerOrg={usersPerOrg} 
-        dateLocale={dateLocale} 
-        setActiveCompanyId={setActiveCompanyId} 
-        navigate={navigate} 
-        t={t} 
-        totalOrgs={loading ? 0 : (orgs?.length ?? 0)}
-        search={search}
-        setSearch={setSearch}
-      />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5" data-testid="global-stats">
+          <StatCard
+            variant="primary"
+            title={t("layout.organizations")}
+            value={orgsCount}
+            icon={<Globe className="w-5 h-5" />}
+            subtitle={newOrgsLabel}
+          />
+
+          <StatCard
+            title={t("dashboard.totalUsers")}
+            value={usersCount}
+            icon={<Users className="w-5 h-5" />}
+            subtitle={t("dashboard.platformWide")}
+          />
+
+          <EmptyOrgsCard count={loading ? 0 : emptyOrgCount} />
+          <LargestOrgCard largestOrg={largestOrg} userCount={largestOrg ? usersPerOrg[largestOrg.id] : 0} />
+        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="h-48 bg-white rounded-[2rem] border border-gray-100 animate-pulse" />
+            <div className="h-48 bg-white rounded-[2rem] border border-gray-100 animate-pulse" />
+          </div>
+        ) : (
+          orgs && orgs.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-testid="global-charts">
+              <GrowthChart data={orgGrowthData} />
+              <DistributionChart data={distributionData} />
+            </div>
+          )
+        )}
+
+        <OrganizationsSection
+          filteredOrgs={loading ? [] : filteredOrgs}
+          usersPerOrg={usersPerOrg}
+          dateLocale={dateLocale}
+          setActiveCompanyId={setActiveCompanyId}
+          navigate={navigate}
+          t={t}
+          totalOrgs={loading ? 0 : (orgs?.length ?? 0)}
+          search={search}
+          setSearch={setSearch}
+        />
+      </div>
     </div>
   );
 };

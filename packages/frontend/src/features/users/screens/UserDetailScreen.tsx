@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ChevronLeft,
-  UserCircle,
+  User,
   Pencil,
   Plane,
-  ArrowRight,
+  ChevronRight,
+  Clock,
+  ArrowLeft,
+  FileText
 } from "lucide-react";
 import {
   useUsersQuery,
@@ -15,18 +17,42 @@ import {
   useScope,
   useScopeContext,
   useUserQuery,
+  useSystemRolesQuery,
   ReportStatus,
+  useReportFilterState,
 } from "@ticket-registrator/shared";
-import { StatusBadge } from "../../../components/ui/StatusBadge";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import { EditUserModal } from "../components/EditUserModal";
-import { tokens, radius } from "../../../styles/theme";
+import { PixelCard } from "../../../components/ui/PixelCard";
+import { SectionHeader } from "../../../components/ui/SectionHeader";
+import { Button } from "../../../components/ui/Button";
+import { ReportRow } from "../../reports/components/ReportRow";
+import { ReportCard } from "../../reports/components/ReportCard";
+import { ReportFilterBar } from "../../reports/components/ReportFilterBar";
+import { UserDetailIdentity } from "../components/UserDetailIdentity";
+import { UserDetailRating } from "../components/UserDetailRating";
+import { UserDetailSidebar } from "../components/UserDetailSidebar";
+import {
+  filterBySearch,
+  filterByStatus,
+  filterByDateRange,
+} from "../../../utils/reportAnalytics";
+import { BORDER } from "../constants";
+import { useDateLocale } from "../../../hooks/useDateLocale";
+import { useTranslation } from "react-i18next";
 
 export const UserDetailScreen = () => {
+  const { t } = useTranslation();
+  const dateLocale = useDateLocale();
   const { id: userId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isEditOpen, setIsEditOpen] = useState(false);
+
+  const {
+    search, setSearch,
+    statusFilter, setStatusFilter,
+    dateRange, setDateRange,
+    hasActiveFilters, clearFilters,
+  } = useReportFilterState();
 
   const { isGlobal } = useScope();
   const { activeCompanyId } = useScopeContext();
@@ -35,7 +61,15 @@ export const UserDetailScreen = () => {
 
   const { data: users, isLoading: loadingUsers } = useUsersQuery();
   const { data: allReports, isLoading: loadingReports } = useReportsQuery();
-  const { data: roles } = useRolesQuery(companyId ?? undefined);
+  const { data: companyRoles } = useRolesQuery(companyId ?? undefined);
+  const { data: systemRoles } = useSystemRolesQuery();
+  const roles = useMemo(() => {
+    const combined = [...(systemRoles || [])];
+    (companyRoles || []).forEach(r => {
+      if (!combined.find(s => s.id === r.id)) combined.push(r);
+    });
+    return combined;
+  }, [systemRoles, companyRoles]);
   const { data: departments } = useDepartmentsQuery(companyId ?? undefined);
 
   const user = users?.find((u) => u.id === userId);
@@ -43,45 +77,58 @@ export const UserDetailScreen = () => {
 
   const isLoading = loadingUsers || loadingReports;
 
+  // ── Active vs History Logic ───────
+  const activeReport = useMemo(() => {
+    const today = new Date();
+    return userReports.find(r => {
+      const start = new Date(r.start_date);
+      const end = new Date(r.end_date);
+      return today >= start && today <= end;
+    });
+  }, [userReports]);
+
+  const historyReports = useMemo(() => {
+    let list = [...userReports]
+      .filter(r => r.id !== activeReport?.id)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    list = filterBySearch(list, search);
+    if (statusFilter !== "ALL") list = filterByStatus(list, statusFilter);
+    list = filterByDateRange(
+      list,
+      dateRange?.start ? dateRange.start.toISOString().split('T')[0] : null,
+      dateRange?.end ? dateRange.end.toISOString().split('T')[0] : null
+    );
+    return list;
+  }, [userReports, activeReport, search, statusFilter, dateRange]);
+
+  // ── Loading ────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="space-y-5 pb-16 animate-pulse">
-        <div className={`h-7 w-24 ${tokens.skeleton} ${radius.base}`} />
-        <div className={`bg-white ${radius.card} border border-slate-200 shadow-sm p-6 space-y-4`}>
-          <div className="flex gap-4">
-            <div className={`w-16 h-16 ${tokens.skeleton} ${radius.base} shrink-0`} />
-            <div className="flex-1 space-y-2.5">
-              <div className={`h-5 w-1/2 ${tokens.skeleton} ${radius.base}`} />
-              <div className={`h-4 w-1/3 ${tokens.skeleton} ${radius.sm}`} />
-              <div className={`h-4 w-1/4 ${tokens.skeleton} ${radius.sm}`} />
-            </div>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className={`bg-white ${radius.card} border border-slate-200 p-5 space-y-2`}>
-              <div className={`h-3 w-1/2 ${tokens.skeleton} ${radius.sm}`} />
-              <div className={`h-7 w-3/4 ${tokens.skeleton} ${radius.base}`} />
-            </div>
-          ))}
+      <div className="space-y-6 animate-pulse">
+        <div className="h-4 w-32 bg-dark/5 rounded-full" />
+        <div className="h-[200px] w-full bg-dark/5 rounded-[20px]" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[1, 2, 3].map(i => <div key={i} className="h-32 bg-dark/5 rounded-[20px]" />)}
         </div>
       </div>
     );
   }
 
+  // ── Not Found ─────────────────────────────────────────────────────────────
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <UserCircle className="w-14 h-14 text-slate-200 mb-4" />
-        <h2 className="text-xl font-semibold text-dark mb-2">Usuario no encontrado</h2>
-        <p className="text-slate-400 text-sm mb-5">El usuario que buscas no existe o fue eliminado.</p>
-        <button
-          type="button"
+        <User className="w-14 h-14 text-slate-200 mb-4" />
+        <h2 className="text-xl font-space-bold text-dark mb-2">Usuario no encontrado</h2>
+        <p className="text-dark/40 font-space mb-6">El usuario que buscas no existe o fue eliminado.</p>
+        <Button
+          variant="secondary"
           onClick={() => navigate("/users")}
-          className="flex items-center gap-1 text-sm font-semibold text-brand hover:underline"
+          leftIcon={<ArrowLeft className="w-4 h-4" />}
         >
-          <ChevronLeft className="w-4 h-4" /> Volver a Usuarios
-        </button>
+          Volver a Usuarios
+        </Button>
       </div>
     );
   }
@@ -89,160 +136,136 @@ export const UserDetailScreen = () => {
   const roleName = roles?.find((r) => r.id === user.roleId)?.name ?? "—";
   const userDepts = departments?.filter((d) => user.departmentIds?.includes(d.id)) ?? [];
 
-  const totalTrips = userReports.length;
-  const totalRequested = userReports.reduce((acc, r) => acc + (r.requested_amount ?? 0), 0);
+  const totalReports = userReports.length;
   const totalApproved = userReports
     .filter((r) => r.status.toUpperCase() === ReportStatus.APPROVED.toUpperCase())
     .reduce((acc, r) => acc + (r.approved_amount ?? 0), 0);
 
-  const latestReports = [...userReports]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 10);
 
-  const initial = user.name.charAt(0).toUpperCase();
+  // ── Stats Calculation ─────────────
+  const avgApproved = totalReports > 0 ? (totalApproved / totalReports).toLocaleString(undefined, { maximumFractionDigits: 0 }) : "0";
+  
+  // Rating logic (MOCK)
+  const ratingValue = 92; // 0 - 100
+  const ratingColor = ratingValue >= 80 ? "var(--color-success, #22C55E)" : ratingValue >= 50 ? "#EAB308" : "#EF4444";
+  const ratingLabel = ratingValue >= 80 ? "Excelente" : ratingValue >= 50 ? "Aceptable" : "Bajo";
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-300 pb-16">
-      {/* Back button */}
-      <button
-        type="button"
-        onClick={() => navigate("/users")}
-        className="flex items-center gap-1.5 text-slate-400 hover:text-dark transition-colors group"
-      >
-        <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-        <span className="text-sm font-semibold">Usuarios</span>
-      </button>
+    <div className="-mx-6 -mt-7 md:-mx-10 lg:-mt-9 space-y-0 animate-in fade-in duration-500 pb-20">
 
-      {/* Profile hero card */}
-      <div className={`relative bg-brand ${radius.card} p-6 overflow-hidden shadow-md`}>
-        <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+      {/* ── Header Area ── */}
+      <div className="bg-[var(--color-surface-header)] border-b-4 border-[var(--color-shadow-main)] px-10 md:px-16 h-20 flex items-center justify-between">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+          <button
+            onClick={() => navigate("/users")}
+            className="font-space-bold text-dark/30 hover:text-dark transition-colors shrink-0"
+            style={{ fontSize: 24, letterSpacing: "0.5px" }}
+          >
+            {t("users.title")}
+          </button>
 
-        <div className="relative z-10 flex items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
-            {/* Avatar */}
-            <div className={`w-16 h-16 bg-white/20 ${radius.base} flex items-center justify-center shrink-0 border border-white/30`}>
-              <span className="text-2xl font-bold text-white">{initial}</span>
-            </div>
+          <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-dark/20 shrink-0" />
 
-            {/* Info */}
-            <div className="space-y-1.5">
-              <h1 className="text-xl font-semibold text-white tracking-tight">
-                {user.name} {user.surname}
-              </h1>
-              <p className="text-white/60 text-sm font-medium">{user.email}</p>
-              <p className="text-white/50 text-sm font-medium">@{user.username}</p>
+          <div className="flex items-center gap-3 min-w-0">
+            <h1 className="font-space-bold text-dark truncate" style={{ fontSize: 24, letterSpacing: "0.5px" }}>
+              {user!.name} {user!.surname}
+            </h1>
+          </div>
+        </div>
+        <Button
+          variant="primary"
+          onClick={() => setIsEditOpen(true)}
+          leftIcon={<Pencil className="w-4 h-4" />}
+          className="w-[140px]"
+        >
+          {t("common.edit")}
+        </Button>
+      </div>
 
-              {/* Role badge */}
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <span className={`text-xs bg-white/20 text-white px-2.5 py-0.5 ${radius.full} font-semibold border border-white/20`}>
-                  {roleName}
-                </span>
-                {userDepts.map((dept) => (
-                  <span
-                    key={dept.id}
-                    className={`text-xs bg-white/10 text-white/80 px-2 py-0.5 ${radius.full} font-medium border border-white/10`}
-                  >
-                    {dept.name}
-                  </span>
-                ))}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_420px]">
+          
+          {/* ────── MAIN COLUMN ────── */}
+          <div className="min-w-0 px-10 md:px-16 pt-7 space-y-8">
+            
+            <UserDetailIdentity 
+              user={user!} 
+              roleName={roleName} 
+              userDepts={userDepts} 
+            />
+
+            {/* ── Active Report (If Exists) ── */}
+            {activeReport && (
+              <section className="space-y-4">
+                <SectionHeader icon={<FileText />} title={t("home.activeTrip")} />
+                <ReportCard
+                  report={activeReport!}
+                  onClick={() => navigate(`/reports/${activeReport!.id}`)}
+                  dateLocale={dateLocale}
+                />
+              </section>
+            )}
+
+            <section className="space-y-4 pb-12">
+              <SectionHeader
+                icon={<Clock />}
+                title={t("users.reportsHistory", "Historial de Reportes")}
+                count={historyReports.length}
+              />
+              
+              <div className="pb-2">
+                <ReportFilterBar
+                  search={search}           onSearch={setSearch}
+                  statusFilter={statusFilter} onStatus={setStatusFilter}
+                  dateRange={dateRange}     onDateRange={(val) => setDateRange(val)}
+                  hasFilters={hasActiveFilters} onClear={clearFilters}
+                />
               </div>
-            </div>
+
+              <div className="space-y-2.5">
+                {historyReports.length === 0 ? (
+                  <PixelCard className="w-full opacity-60">
+                    <div className="flex flex-col items-center py-12 gap-3 text-center">
+                      <Plane className="w-10 h-10 opacity-10" />
+                      <p className="font-space-semibold text-dark/30 text-sm">Sin historial registrado</p>
+                    </div>
+                  </PixelCard>
+                ) : (
+                  historyReports.map((report) => (
+                    <ReportRow 
+                      key={report.id} 
+                      report={report} 
+                      onClick={() => navigate(`/reports/${report.id}`)} 
+                      dateLocale={dateLocale}
+                    />
+                  ))
+                )}
+              </div>
+            </section>
           </div>
 
-          {/* Edit button */}
-          <button
-            type="button"
-            data-testid="edit-button"
-            onClick={() => setIsEditOpen(true)}
-            className={`p-2 bg-white/20 hover:bg-white/30 ${radius.base} transition-all border border-white/20 shrink-0`}
-            title="Editar usuario"
-          >
-            <Pencil className="w-4 h-4 text-white" />
-          </button>
-        </div>
-      </div>
+          {/* ── Separator ── */}
+          <div className="hidden lg:block self-stretch" style={{ width: 2, backgroundColor: BORDER }} />
 
-      {/* Stats row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className={tokens.statCard}>
-          <p className={tokens.statCardLabel}>Total viajes</p>
-          <p className={tokens.statCardValue}>{totalTrips}</p>
+          {/* ────── SIDEBAR COLUMN ────── */}
+          <aside className="px-8 md:px-10 py-7 space-y-6">
+            <UserDetailRating 
+              ratingValue={ratingValue} 
+              ratingColor={ratingColor} 
+              ratingLabel={ratingLabel} 
+            />
+            <UserDetailSidebar 
+              totalReports={totalReports} 
+              avgApproved={avgApproved} 
+              userId={userId!} 
+            />
+          </aside>
         </div>
-        <div className={tokens.statCard}>
-          <p className={tokens.statCardLabel}>Importe solicitado</p>
-          <p className={tokens.statCardValue}>{totalRequested.toLocaleString()}</p>
-        </div>
-        <div className={tokens.statCard}>
-          <p className={tokens.statCardLabel}>Importe aprobado</p>
-          <p className={`${tokens.statCardValue} !text-success`}>{totalApproved.toLocaleString()}</p>
-        </div>
-      </div>
-
-      {/* Reports list */}
-      <div className={tokens.listSection}>
-        <div className={tokens.listSectionHeader}>
-          <Plane className="w-4 h-4 text-slate-400" />
-          <h2 className={tokens.listSectionTitle}>
-            Historial de viajes
-          </h2>
-          <span className={`${tokens.badgeSm} ${tokens.badgeNeutral}`}>
-            {totalTrips}
-          </span>
-        </div>
-
-        <div className="p-5">
-          {latestReports.length === 0 ? (
-            <div className="text-center py-12">
-              <div className={`w-14 h-14 bg-slate-50 ${radius.card} flex items-center justify-center mx-auto mb-3`}>
-                <Plane className="w-7 h-7 text-slate-200" />
-              </div>
-              <p className="text-sm font-medium text-slate-400">Sin viajes registrados</p>
-              <p className="text-xs text-slate-300 mt-0.5">Este usuario no tiene viajes todavía.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {latestReports.map((report) => (
-                <button
-                  key={report.id}
-                  type="button"
-                  onClick={() => navigate(`/reports/${report.id}`)}
-                  className={`w-full text-left group bg-slate-50 hover:bg-white ${radius.base} border border-slate-200 hover:border-brand/20 hover:shadow-sm transition-all p-3.5 flex items-center justify-between`}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div>
-                      <StatusBadge status={report.status} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-dark text-sm truncate group-hover:text-brand transition-colors">
-                        {report.name}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        {format(new Date(report.start_date), "dd MMM", { locale: es })} —{" "}
-                        {format(new Date(report.end_date), "dd MMM yyyy", { locale: es })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2.5 shrink-0">
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-dark">
-                        {(report.requested_amount ?? 0).toLocaleString()}
-                        <span className="text-xs text-slate-400 font-medium ml-1">{report.currency}</span>
-                      </p>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-slate-200 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
 
       {isEditOpen && (
         <EditUserModal
           isOpen={isEditOpen}
           onClose={() => setIsEditOpen(false)}
-          user={user}
+          user={user!}
           companyId={companyId}
         />
       )}
