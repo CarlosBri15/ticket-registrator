@@ -31,7 +31,7 @@ export const ConfirmDialog = ({
   const isDestructive = confirmVariant === 'danger';
   const isPrimary = confirmVariant === 'primary';
   const iconBgClass = isDestructive ? 'bg-danger' : isPrimary ? 'bg-brand' : 'bg-success';
-  const iconBorderColor = isDestructive ? 'border-[#DC2626]' : isPrimary ? 'border-[#2563EB]' : 'border-[#059669]';
+  const iconBorderColor = isDestructive ? 'border-[#DC2626]' : isPrimary ? 'border-[#1E3A8A]' : 'border-[#059669]';
 
   return (
     <div className={tokens.modalOverlay}>

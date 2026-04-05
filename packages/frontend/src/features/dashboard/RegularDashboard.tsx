@@ -126,11 +126,11 @@ const UserDashboard = ({
                 <div
                   style={{
                     width: 52, height: 52,
-                    backgroundColor: "#3B82F6",
-                    border: "2px solid #2563EB",
+                    backgroundColor: "#1E3A8A",
+                    border: "2px solid #1E3A8A",
                     borderRadius: 16,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    boxShadow: `${nbTokens.shadowBadge}px ${nbTokens.shadowBadge}px 0px #1E40AF`,
+                    boxShadow: `${nbTokens.shadowBadge}px ${nbTokens.shadowBadge}px 0px #172554`,
                   }}
                 >
                   <Plane className="w-5 h-5 text-white" />

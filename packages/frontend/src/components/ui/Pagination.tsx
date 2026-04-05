@@ -1,6 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { tokens } from "../../styles/theme";
 
 interface PaginationProps {
   page: number;
@@ -38,49 +37,68 @@ export const Pagination = ({
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
-      {/* Summary */}
-      <p className="text-xs font-medium text-slate-400">
-        {t("pagination.showing")} <span className="text-dark">{from}</span>{" "}
-        {t("pagination.to")} <span className="text-dark">{to}</span>{" "}
-        {t("pagination.of")} <span className="text-dark">{totalItems}</span>{" "}
-        {t("pagination.results")}
+
+      {/* Resumen */}
+      <p className="font-space text-dark/40" style={{ fontSize: 12 }}>
+        <span className="font-space-semibold text-dark/60">{from}–{to}</span>
+        {" "}de{" "}
+        <span className="font-space-semibold text-dark/60">{totalItems}</span>
+        {" "}resultados
       </p>
 
-      {/* Controls */}
-      <div className="flex items-center gap-1.5">
+      {/* Controles */}
+      <div className="flex items-center gap-1">
+
+        {/* Anterior */}
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          className={tokens.paginationBtn}
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full font-space-bold text-dark/50 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-dark/5 hover:text-dark transition-colors duration-100"
+          style={{ fontSize: 12 }}
         >
           <ChevronLeft className="w-3.5 h-3.5" />
           {t("pagination.previous")}
         </button>
 
-        {getPages().map((p) =>
-          typeof p === "string" ? (
-            <span key={p} className="px-2 text-slate-300 text-xs font-medium select-none">
-              …
-            </span>
-          ) : (
-            <button
-              key={p}
-              onClick={() => onPageChange(p)}
-              className={`${tokens.paginationPage} ${p === page ? tokens.paginationPageActive : tokens.paginationPageIdle}`}
-            >
-              {p}
-            </button>
-          )
-        )}
+        {/* Páginas */}
+        <div className="flex items-center gap-1">
+          {getPages().map((p) =>
+            typeof p === "string" ? (
+              <span
+                key={p}
+                className="w-8 text-center font-space-bold text-dark/25 select-none"
+                style={{ fontSize: 12 }}
+              >
+                …
+              </span>
+            ) : (
+              <button
+                key={p}
+                onClick={() => onPageChange(p)}
+                className="w-8 h-8 rounded-full font-space-bold transition-colors duration-100"
+                style={{
+                  fontSize: 12,
+                  backgroundColor: p === page ? 'var(--color-brand)' : 'transparent',
+                  color: p === page ? '#fff' : 'rgba(26,26,26,0.45)',
+                }}
+              >
+                {p}
+              </button>
+            )
+          )}
+        </div>
 
+        {/* Siguiente */}
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages}
-          className={tokens.paginationBtn}
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full font-space-bold text-dark/50 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-dark/5 hover:text-dark transition-colors duration-100"
+          style={{ fontSize: 12 }}
         >
           {t("pagination.next")}
           <ChevronRight className="w-3.5 h-3.5" />
         </button>
+
       </div>
     </div>
   );

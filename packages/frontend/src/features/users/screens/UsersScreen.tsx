@@ -194,7 +194,7 @@ export const UsersScreen = () => {
                       className="font-space-bold px-3 py-1 rounded-lg border-2"
                       style={{
                         fontSize: 13,
-                        backgroundColor: role === "Admin" ? "rgba(239, 68, 68, 0.05)" : "rgba(59, 130, 246, 0.05)",
+                        backgroundColor: role === "Admin" ? "rgba(239, 68, 68, 0.05)" : "rgba(30, 58, 138, 0.05)",
                         borderColor: "rgba(0,0,0,0.05)",
                         color: DARK
                       }}

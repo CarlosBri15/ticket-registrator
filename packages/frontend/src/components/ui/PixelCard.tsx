@@ -16,20 +16,27 @@ import { nbTokens } from '../../styles/theme';
 
 // Border — uses global CSS variable for consistency.
 const BORDER = 'var(--color-border-main)';
-// Shadow — use global CSS variable so it's not hardcoded
-const SHADOW = 'var(--color-shadow-main, #D4D4D8)';
+
+/** Maps the legacy shadowOffset levels to modern soft shadows. */
+const softShadow = (offset: number): string => {
+  if (offset <= 2) return '0px 1px 5px rgba(0,0,0,0.07), 0px 1px 2px rgba(0,0,0,0.04)';
+  if (offset <= 4) return '0px 2px 12px rgba(0,0,0,0.09), 0px 1px 3px rgba(0,0,0,0.05)';
+  return '0px 6px 28px rgba(0,0,0,0.13), 0px 2px 6px rgba(0,0,0,0.06)';
+};
+
+const PRESSED_SHADOW = '0px 1px 3px rgba(0,0,0,0.04)';
 
 interface PixelCardProps {
   children: ReactNode;
-  /** Card background color. Defaults to white (#FFFFFF). */
+  /** Card background color. Defaults to surface-card. */
   bg?: string;
-  /** Hard shadow offset in px. 3=default, 6=hero, 2=badge. */
+  /** Shadow level: 2=sm, 3-4=default, 6=hero. */
   shadowOffset?: number;
   /** Border radius in px. */
   radius?: number;
   /** Click handler — renders as <button> when provided. */
   onClick?: () => void;
-  /** Keep card in the "pressed" visual state (translated, no shadow). */
+  /** Keep card in the "active/selected" visual state. */
   active?: boolean;
   className?: string;
   borderColor?: string;
@@ -40,34 +47,32 @@ export const PixelCard = ({
   children,
   bg = 'var(--color-surface-card, #FAFAF9)',
   shadowOffset = nbTokens.shadowCard,
-  radius = nbTokens.radiusCard,
+  radius = 14,
   onClick,
   active = false,
   className = '',
   borderColor,
-  shadowColor,
 }: PixelCardProps) => {
   const Tag = onClick ? 'button' : 'div';
 
+  const shadow = softShadow(shadowOffset);
+
   const style: CSSProperties = {
     backgroundColor: bg,
-    borderRadius: radius ?? 'var(--radius-xl, 14px)',
-    border: `2px solid ${borderColor || BORDER}`,
-    boxShadow: active ? 'none' : `${shadowOffset}px ${shadowOffset}px 0px ${shadowColor || SHADOW}`,
-    transform: active ? `translate(${shadowOffset}px, ${shadowOffset}px)` : undefined,
-    transition: 'transform 80ms ease, box-shadow 80ms ease',
+    borderRadius: radius,
+    border: `1.5px solid ${borderColor || BORDER}`,
+    boxShadow: active ? PRESSED_SHADOW : shadow,
+    transition: 'transform 100ms ease, box-shadow 100ms ease',
     textAlign: 'left',
     cursor: onClick ? 'pointer' : 'default',
     outline: 'none',
   };
 
-  // On :active pseudo (transient press during mouse hold), collapse shadow + translate.
-  // This uses a data attribute trick so CSS can target it without overriding inline style.
   const handleMouseDown = onClick
     ? (e: React.MouseEvent) => {
         const el = e.currentTarget as HTMLElement;
-        el.style.boxShadow = 'none';
-        el.style.transform = `translate(${shadowOffset}px, ${shadowOffset}px)`;
+        el.style.boxShadow = PRESSED_SHADOW;
+        el.style.transform = 'translateY(1px) scale(0.99)';
       }
     : undefined;
 
@@ -75,7 +80,7 @@ export const PixelCard = ({
     ? (e: React.MouseEvent) => {
         const el = e.currentTarget as HTMLElement;
         if (!active) {
-          el.style.boxShadow = `${shadowOffset}px ${shadowOffset}px 0px ${shadowColor || SHADOW}`;
+          el.style.boxShadow = shadow;
           el.style.transform = '';
         }
       }
@@ -85,8 +90,7 @@ export const PixelCard = ({
     ? (e: React.MouseEvent) => {
         const el = e.currentTarget as HTMLElement;
         if (!active) {
-          el.style.border = `2px solid ${borderColor || BORDER}`;
-          el.style.boxShadow = `${shadowOffset}px ${shadowOffset}px 0px ${shadowColor || SHADOW}`;
+          el.style.boxShadow = shadow;
           el.style.transform = '';
         }
       }

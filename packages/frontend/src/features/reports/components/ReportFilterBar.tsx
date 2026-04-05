@@ -75,7 +75,7 @@ export const ReportFilterBar = ({
       {/* Status dropdown */}
       <div className="relative">
         <PixelCard
-          bg={statusActive ? "#3B82F6" : "var(--color-surface-card)"}
+          bg={statusActive ? "#1E3A8A" : "var(--color-surface-card)"}
           shadowOffset={3}
           active={statusActive || statusOpen}
           onClick={() => setStatusOpen((o) => !o)}
@@ -121,7 +121,7 @@ export const ReportFilterBar = ({
                       fontFamily: `'${fonts.family}', sans-serif`,
                       fontWeight: active ? 700 : 500,
                       fontSize: 13,
-                      color: active ? "#3B82F6" : DARK,
+                      color: active ? "#1E3A8A" : DARK,
                       borderBottom: idx < STATUS_OPTIONS.length - 1 ? `1px solid rgba(26, 26, 26, 0.15)` : "none",
                     }}
                   >
@@ -130,7 +130,7 @@ export const ReportFilterBar = ({
                       <span
                         style={{
                           width: 18, height: 18, borderRadius: 6,
-                          backgroundColor: "#3B82F6", border: `2px solid ${BORDER}`,
+                          backgroundColor: "#1E3A8A", border: `2px solid ${BORDER}`,
                           display: "flex", alignItems: "center", justifyContent: "center",
                         }}
                       >

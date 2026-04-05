@@ -116,7 +116,7 @@ export const shadows = {
 
 export const statusColors = {
   DRAFT:     { bg: '#1A1A1A', text: '#FFFFFF' },
-  CREATED:   { bg: '#FF7F50', text: '#FFFFFF' },
+  CREATED:   { bg: '#3B82F6', text: '#FFFFFF' },
   PENDING:   { bg: '#E6B800', text: '#FFFFFF' },
   SUBMITTED: { bg: '#E6B800', text: '#FFFFFF' },
   APPROVED:  { bg: '#00C896', text: '#FFFFFF' },

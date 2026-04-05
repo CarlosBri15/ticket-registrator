@@ -34,28 +34,25 @@ export const Button = ({
     "ghost-brand": tokens.buttonGhostBrand,
   };
 
-  // Color-matched shadows for Neobrutalista look
-  const shadowColors: Record<string, string> = {
-    primary: '#1E40AF',      // Darker blue
-    success: '#059669',      // Darker green
-    secondary: '#A1A1AA',    // Zinc-400
-    danger: '#991B1B',       // Darker red
-    outline: '#3B82F6',      // Brand
-    ghost: 'transparent',
-    'ghost-white': 'transparent',
-    'ghost-danger': 'transparent',
-    'ghost-brand': 'transparent',
+  const softShadows: Record<string, string> = {
+    primary:       '0 1px 4px rgba(0,0,0,0.15)',
+    success:       '0 1px 4px rgba(0,0,0,0.15)',
+    secondary:     '0 1px 3px rgba(0,0,0,0.08)',
+    danger:        '0 1px 4px rgba(0,0,0,0.15)',
+    outline:       'none',
+    ghost:         'none',
+    'ghost-white': 'none',
+    'ghost-danger':'none',
+    'ghost-brand': 'none',
   };
 
   const sizes: Record<string, string> = {
-    sm: 'px-3 py-1.5 text-[11px] gap-2 rounded-lg',
-    md: 'px-5 py-2.5 text-sm gap-3 rounded-xl',
-    lg: 'px-8 py-4 text-base gap-4 rounded-2xl',
-    icon: 'w-12 h-12 flex items-center justify-center rounded-xl p-0', 
+    sm: 'px-3.5 py-1.5 text-[11px] gap-1.5 rounded-full',
+    md: 'px-5 py-2.5 text-sm gap-2 rounded-full',
+    lg: 'px-8 py-3.5 text-base gap-3 rounded-full',
+    icon: 'w-10 h-10 flex items-center justify-center rounded-full p-0',
   };
 
-  const shadowColor = shadowColors[variant] || 'var(--color-shadow-main)';
-  const hasShadow = !variant.startsWith('ghost');
   const gapClass = sizes[size].split(' ').find(c => c.startsWith('gap-')) || 'gap-2';
 
   return (
@@ -63,7 +60,7 @@ export const Button = ({
       disabled={isLoading || disabled}
       className={`${tokens.buttonBase} ${variants[variant]} ${sizes[size]} ${className ?? ''}`}
       style={{
-        boxShadow: hasShadow ? `3px 3px 0px ${shadowColor}` : 'none',
+        boxShadow: softShadows[variant] ?? 'none',
         ...props.style,
       }}
       {...props}

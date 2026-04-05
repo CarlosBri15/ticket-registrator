@@ -85,9 +85,9 @@ export const TicketDetailModal = ({
       </PixelCard>
       {isEditable && (
         <PixelCard
-          bg="#3B82F6"
-          borderColor="#2563EB"
-          shadowColor="#1E40AF"
+          bg="#1E3A8A"
+          borderColor="#1E3A8A"
+          shadowColor="#172554"
           shadowOffset={3}
           radius={8}
           onClick={() => ticketForm.startEdit(ticket)}

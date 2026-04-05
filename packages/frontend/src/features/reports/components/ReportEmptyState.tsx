@@ -33,8 +33,8 @@ export const ReportEmptyState = ({
         style={{
           width: 52,
           height: 52,
-          backgroundColor: "#3B82F6",
-          border: "2px solid #2563EB",
+          backgroundColor: "#1E3A8A",
+          border: "2px solid #1E3A8A",
           borderRadius: 16,
           display: "flex",
           alignItems: "center",
@@ -64,8 +64,8 @@ export const ReportEmptyState = ({
           onClick={onAction}
           className="neo-press inline-flex items-center gap-1.5 mt-1"
           style={{
-            backgroundColor: "#3B82F6",
-            border: "2px solid #2563EB",
+            backgroundColor: "#1E3A8A",
+            border: "2px solid #1E3A8A",
             borderRadius: 99,
             paddingLeft: 16,
             paddingRight: 16,

@@ -6,9 +6,7 @@
 
 import { User, Users, Shield, ShieldAlert, ClipboardList } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { roleColors, roleBorderColors, fonts, nbTokens } from "@ticket-registrator/shared";
-
-type RoleKey = keyof typeof roleColors;
+import { roleColors, fonts } from "@ticket-registrator/shared";
 
 const ROLE_ICONS: Record<string, LucideIcon> = {
   EMPLOYEE:   User,
@@ -20,20 +18,15 @@ const ROLE_ICONS: Record<string, LucideIcon> = {
 
 interface RoleBadgeProps {
   roleName: string | undefined;
-  /** size="sm" is the default; size="md" is larger */
   size?: 'sm' | 'md';
   className?: string;
 }
 
 export const RoleBadge = ({ roleName, size = 'sm', className }: RoleBadgeProps) => {
-  
-  // Map display name to key (Admin -> ADMIN, SuperAdmin -> SUPERADMIN)
-  const key = (roleName?.toUpperCase() || 'EMPLOYEE') as RoleKey;
+  const key = roleName?.toUpperCase() || 'EMPLOYEE';
   const cfg = (roleColors as any)[key] ?? roleColors.EMPLOYEE;
   const Icon = ROLE_ICONS[key] ?? User;
-
-  const theme = (roleBorderColors as any)[key] ?? roleBorderColors.EMPLOYEE;
-  const iconSize = size === 'sm' ? 10 : 12;
+  const iconSize = size === 'sm' ? 12 : 14;
 
   return (
     <span
@@ -43,17 +36,17 @@ export const RoleBadge = ({ roleName, size = 'sm', className }: RoleBadgeProps) 
         alignItems: 'center',
         gap: 4,
         backgroundColor: cfg.bg,
-        color: cfg.text,
-        border: `2px solid ${theme.border}`,
-        borderRadius: nbTokens.radiusBadge,
-        paddingLeft: 8,
-        paddingRight: 8,
-        paddingTop: 3,
-        paddingBottom: 3,
-        boxShadow: `${nbTokens.shadowBadge}px ${nbTokens.shadowBadge}px 0px ${theme.shadow}`,
+        color: '#FFFFFF',
+        border: 'none',
+        borderRadius: 10,
+        paddingLeft: 10,
+        paddingRight: 10,
+        paddingTop: 5,
+        paddingBottom: 5,
+        boxShadow: 'none',
         fontFamily: `'${fonts.family}', sans-serif`,
         fontWeight: 700,
-        fontSize: 9,
+        fontSize: 11,
         letterSpacing: '0.2px',
         whiteSpace: 'nowrap',
         lineHeight: 1,

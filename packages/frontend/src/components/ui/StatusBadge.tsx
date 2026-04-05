@@ -15,9 +15,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LucideIcon } from 'lucide-react';
-import { statusColors, statusBorderColors, fonts, nbTokens } from "@ticket-registrator/shared";
-
-type StatusKey = keyof typeof statusColors;
+import { statusColors, fonts } from "@ticket-registrator/shared";
 
 const STATUS_ICONS: Record<string, LucideIcon> = {
   DRAFT:     Edit2,
@@ -32,37 +30,34 @@ const STATUS_ICONS: Record<string, LucideIcon> = {
 
 interface StatusBadgeProps {
   status: string;
-  /** size="sm" is the default (matches mobile StatusBadge); size="md" is larger */
   size?: 'sm' | 'md';
 }
 
 export const StatusBadge = ({ status, size = 'sm' }: StatusBadgeProps) => {
   const { t } = useTranslation();
-  const key = status.toUpperCase() as StatusKey;
-  const cfg = statusColors[key] ?? statusColors.DRAFT;
+  const key = status.toUpperCase();
+  const cfg = (statusColors as any)[key] ?? statusColors.DRAFT;
   const Icon = STATUS_ICONS[key] ?? FileText;
-
-  const theme = statusBorderColors[key] ?? statusBorderColors.DRAFT;
-  const iconSize = size === 'sm' ? 10 : 12;
+  const iconSize = size === 'sm' ? 12 : 14;
 
   return (
     <span
       style={{
         display: 'inline-flex',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: 4,
+        width: 100,
         backgroundColor: cfg.bg,
-        color: cfg.text,
-        border: `2px solid ${theme.border}`,
-        borderRadius: nbTokens.radiusBadge,
-        paddingLeft: 8,
-        paddingRight: 8,
-        paddingTop: 3,
-        paddingBottom: 3,
-        boxShadow: `${nbTokens.shadowBadge}px ${nbTokens.shadowBadge}px 0px ${theme.shadow}`,
+        color: '#FFFFFF',
+        border: 'none',
+        borderRadius: 10,
+        paddingTop: 5,
+        paddingBottom: 5,
+        boxShadow: 'none',
         fontFamily: `'${fonts.family}', sans-serif`,
         fontWeight: 700,
-        fontSize: 9,
+        fontSize: 11,
         letterSpacing: '0.2px',
         whiteSpace: 'nowrap',
         lineHeight: 1,

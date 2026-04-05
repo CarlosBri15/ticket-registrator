@@ -15,6 +15,7 @@
 
 export { colors, radius, text, spacing, shadows, statusColors, nbTokens } from '@ticket-registrator/shared';
 
+
 // ─── Transitions (web only) ───────────────────────────────────────────────────
 
 export const transition = {
@@ -61,20 +62,20 @@ export const tokens = {
   // Buttons use rounded-full (matches mt.btnPrimary)
   buttonBase: [
     'relative inline-flex items-center justify-center px-5 py-2.5',
-    'rounded-xl border-2',
+    'rounded-full',
     'font-space-bold text-sm',
     'neo-press',
     'disabled:opacity-60 disabled:cursor-not-allowed',
   ].join(' '),
-  buttonPrimary:    'bg-brand text-surface-card border-[#2563EB] shadow-hard',
-  buttonSuccess:    'bg-success text-surface-card border-[#059669] shadow-hard',
-  buttonSecondary:  'bg-[var(--color-surface)] text-dark/60 border-border-main shadow-hard',
-  buttonDanger:     'bg-danger text-surface-card border-[#DC2626] shadow-hard',
-  buttonOutline:    'bg-transparent border-2 border-brand text-brand shadow-hard-sm hover:bg-brand/5',
-  buttonGhost:      'bg-transparent border-2 border-border-main/20 text-dark shadow-none hover:border-border-main/50',
-  buttonGhostWhite: 'bg-white/10 text-white border-2 border-white/40 shadow-none hover:bg-white/20',
-  buttonGhostDanger: 'bg-transparent border-2 border-danger/10 text-danger shadow-none hover:border-danger/30',
-  buttonGhostBrand: 'bg-transparent border-2 border-brand/10 text-brand shadow-none hover:border-brand/30',
+  buttonPrimary:    'bg-brand text-white',
+  buttonSuccess:    'bg-success text-white',
+  buttonSecondary:  'bg-[var(--color-surface)] text-dark/60',
+  buttonDanger:     'bg-danger text-white',
+  buttonOutline:    'bg-transparent border border-brand text-brand hover:bg-brand/5',
+  buttonGhost:      'bg-transparent text-dark/50 hover:text-dark hover:bg-dark/5',
+  buttonGhostWhite: 'bg-white/10 text-white hover:bg-white/20',
+  buttonGhostDanger: 'bg-transparent text-danger hover:bg-danger/5',
+  buttonGhostBrand: 'bg-transparent text-brand hover:bg-brand/5',
 
   // ── Select ────────────────────────────────────────────────────────────────
   selectTrigger: [
@@ -100,16 +101,14 @@ export const tokens = {
   modalClose:     'w-10 h-10 flex items-center justify-center bg-danger text-surface-card border-2 border-[#DC2626] rounded-xl shadow-[3px_3px_0px_#991B1B] neo-press transition-all duration-100 shrink-0',
 
   // ── Badge / Status ─────────────────────────────────────────────────────────
-  // Matches mobile StatusBadge: solid bg, 2px border, rounded-xl (radius=8), 3px shadow
-  badge:        'inline-flex items-center gap-1.5 font-space-bold border-2 border-border-main rounded-xl px-2.5 py-1 text-[9px] shadow-hard-sm',
-  badgeSm:      'inline-flex items-center gap-1 font-space-bold border-2 border-border-main rounded-xl px-2 py-0.5 text-[9px] shadow-hard-sm',
+  badge:        'inline-flex items-center gap-1.5 font-space-bold rounded-lg px-2.5 py-1 text-[9px]',
+  badgeSm:      'inline-flex items-center gap-1 font-space-bold rounded-lg px-2 py-0.5 text-[9px]',
   badgeSuccess: 'bg-success text-white',
   badgeWarning: 'bg-warning text-white',
   badgeDanger:  'bg-danger text-white',
   badgeInfo:    'bg-brand text-white',
   badgeNeutral: 'bg-dark text-white',
   badgeBrand:   'bg-brand text-white',
-  // Coral for CREATED status
   badgeCreated: 'bg-[#FF7F50] text-white',
 
   // ── Alert ─────────────────────────────────────────────────────────────────

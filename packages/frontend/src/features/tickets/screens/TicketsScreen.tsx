@@ -47,7 +47,7 @@ const TicketCard = ({
             <span
               className="font-space-bold text-[8px] uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0"
               style={{
-                color: "#3B82F6",
+                color: "#1E3A8A",
                 background: "rgba(59,130,246,0.10)",
                 border: "1px solid rgba(59,130,246,0.25)",
               }}
