@@ -1,11 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
   GoogleGenerativeAI,
+  GenerativeModel,
   type GenerationConfig,
 } from '@google/generative-ai';
 import { ConfigService } from '@nestjs/config';
 import { IReceiptExtraction } from '@ticket-registrator/shared';
-import { getReceiptPrompt, receiptSchema } from './prompts';
+import { RECEIPT_SYSTEM_INSTRUCTION, getReceiptUserContext, receiptSchema } from './prompts';
 import { GeminiExtractionException } from './exceptions/gemini.exceptions';
 import { CategoriesRepository } from '../categories/categories.repository';
 
@@ -13,6 +14,12 @@ import { CategoriesRepository } from '../categories/categories.repository';
 export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
   private readonly genAI: GoogleGenerativeAI;
+  /**
+   * The model is initialised ONCE with the fully static system instruction.
+   * Keeping it stable across every request is what allows Google's automatic
+   * context caching to fingerprint and reuse the prefix (90 % input discount).
+   */
+  private readonly model: GenerativeModel;
 
   constructor(
     private readonly configService: ConfigService,
@@ -23,6 +30,18 @@ export class GeminiService {
       throw new Error('GEMINI_API_KEY is not defined');
     }
     this.genAI = new GoogleGenerativeAI(apiKey);
+
+    this.model = this.genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      systemInstruction: RECEIPT_SYSTEM_INSTRUCTION,
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: receiptSchema,
+        temperature: 0,
+        thinkingConfig: { thinkingBudget: 128 },
+      } as unknown as GenerationConfig,
+    });
+
     this.logger.log('GeminiService initialized');
   }
 
@@ -36,7 +55,7 @@ export class GeminiService {
       `Extracting receipt data. Org: ${organizationId}, Lang: ${languageCode}`,
     );
 
-    // Fetch categories for this organization
+    // Fetch categories for this organisation
     const categories =
       await this.categoriesRepository.findByOrganization(organizationId);
     const categoryPairs = categories.map((c) => ({
@@ -44,19 +63,14 @@ export class GeminiService {
       description: c.description,
     }));
 
-    const model = this.genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-      systemInstruction: getReceiptPrompt(languageCode, categoryPairs),
-      generationConfig: {
-        responseMimeType: 'application/json',
-        responseSchema: receiptSchema,
-        temperature: 0,
-        thinkingConfig: { thinkingBudget: 128 },
-      } as unknown as GenerationConfig,
-    });
+    // Dynamic context injected as the first text Part of the user turn.
+    // This is the ONLY content that varies between requests; the system
+    // instruction above stays identical, keeping the cache fingerprint stable.
+    const userContext = getReceiptUserContext(languageCode, categoryPairs);
 
     try {
-      const result = await model.generateContent([
+      const result = await this.model.generateContent([
+        { text: userContext },
         { inlineData: { data: imageBase64, mimeType } },
       ]);
 

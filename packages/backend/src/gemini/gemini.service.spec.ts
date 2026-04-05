@@ -38,11 +38,9 @@ describe('GeminiService', () => {
           categoriesRepository: CategoriesRepository,
         ) => {
           const svc = new GeminiService(configService, categoriesRepository);
-          (svc as any).genAI = {
-            getGenerativeModel: () => ({
-              generateContent: mockGenerateContent,
-            }),
-          };
+          // The model is now a property initialised in the constructor.
+          // We mock it directly so tests don't require a real API key.
+          (svc as any).model = { generateContent: mockGenerateContent };
           return svc;
         },
         inject: [ConfigService, CategoriesRepository],
@@ -108,11 +106,7 @@ describe('GeminiService', () => {
         { get: () => 'fake-api-key' } as any,
         categoriesRepoMock as any,
       );
-      (testService as any).genAI = {
-        getGenerativeModel: () => ({
-          generateContent: mockGenerateContent,
-        }),
-      };
+      (testService as any).model = { generateContent: mockGenerateContent };
 
       const result = await testService.extractReceipt('base64-data', 'org-1');
 
