@@ -21,7 +21,7 @@ export const Pagination = ({
   if (totalPages <= 1) return null;
 
   const from = (page - 1) * pageSize + 1;
-  const to = Math.min(page * pageSize, totalItems);
+  const to   = Math.min(page * pageSize, totalItems);
 
   const getPages = (): (number | "ellipsis-start" | "ellipsis-end")[] => {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -39,35 +39,31 @@ export const Pagination = ({
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
 
       {/* Resumen */}
-      <p className="font-space text-dark/40" style={{ fontSize: 12 }}>
-        <span className="font-space-semibold text-dark/60">{from}–{to}</span>
+      <p className="text-[12px] font-sans-medium text-dark/45">
+        <span className="font-sans-semibold text-dark/65">{from}–{to}</span>
         {" "}de{" "}
-        <span className="font-space-semibold text-dark/60">{totalItems}</span>
+        <span className="font-sans-semibold text-dark/65">{totalItems}</span>
         {" "}resultados
       </p>
 
       {/* Controles */}
       <div className="flex items-center gap-1">
 
-        {/* Anterior */}
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full font-space-bold text-dark/50 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-dark/5 hover:text-dark transition-colors duration-100"
-          style={{ fontSize: 12 }}
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-sans-medium text-dark/50 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-dark/5 hover:text-dark transition-colors duration-100"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
           {t("pagination.previous")}
         </button>
 
-        {/* Páginas */}
         <div className="flex items-center gap-1">
           {getPages().map((p) =>
             typeof p === "string" ? (
               <span
                 key={p}
-                className="w-8 text-center font-space-bold text-dark/25 select-none"
-                style={{ fontSize: 12 }}
+                className="w-8 text-center text-[12px] font-sans-medium text-dark/25 select-none"
               >
                 …
               </span>
@@ -75,12 +71,11 @@ export const Pagination = ({
               <button
                 key={p}
                 onClick={() => onPageChange(p)}
-                className="w-8 h-8 rounded-full font-space-bold transition-colors duration-100"
-                style={{
-                  fontSize: 12,
-                  backgroundColor: p === page ? 'var(--color-brand)' : 'transparent',
-                  color: p === page ? '#fff' : 'rgba(26,26,26,0.45)',
-                }}
+                className={`w-8 h-8 rounded-full text-[12px] font-sans-semibold transition-colors duration-100 ${
+                  p === page
+                    ? "bg-[var(--color-dark)] text-white"
+                    : "text-dark/45 hover:bg-dark/5 hover:text-dark"
+                }`}
               >
                 {p}
               </button>
@@ -88,12 +83,10 @@ export const Pagination = ({
           )}
         </div>
 
-        {/* Siguiente */}
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full font-space-bold text-dark/50 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-dark/5 hover:text-dark transition-colors duration-100"
-          style={{ fontSize: 12 }}
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-sans-medium text-dark/50 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-dark/5 hover:text-dark transition-colors duration-100"
         >
           {t("pagination.next")}
           <ChevronRight className="w-3.5 h-3.5" />

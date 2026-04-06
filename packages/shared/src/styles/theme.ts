@@ -11,23 +11,29 @@
 // chart colors, StyleSheet values in React Native).
 
 export const colors = {
-  brand:          '#3B82F6',
-  brandHover:     '#2563EB',
-  brandLight:     '#93C5FD',
-  sidebar:        '#FFFFFF',
-  sidebarAccent:  '#F4F4F5',
-  sidebarText:    '#1A1A1A',
-  sidebarHover:   '#FAFAFA',
-  secondary:      '#F2EBDC',
-  secondaryLight: '#F8F4EC',
-  dark:           '#1A1A1A',
-  surface:        '#EDEDF0',
+  // Brand — Grafito (near-black warm)
+  brand:          '#1C1917',
+  brandHover:     '#2A2724',
+  brandLight:     '#F5F4F0',
+
+  // Sidebar — warm cream
+  sidebar:        '#F5F4F0',
+  sidebarAccent:  '#ECEAE7',
+  sidebarText:    '#1C1917',
+  sidebarHover:   '#F7F6F3',
+
+  // Warm neutral surfaces (cream-forward)
+  secondary:      '#F5F4F0',
+  secondaryLight: '#F7F6F3',
+
+  dark:    '#1C1917',   // stone-950, warm near-black
+  surface: '#FFFFFF',  // pure white body background
 
   // Semantic
-  success: '#00C896',
-  warning: '#FFD700',
-  danger:  '#FF4B4B',
-  info:    '#3B82F6',
+  success: '#16A34A',   // green-600
+  warning: '#D97706',   // amber-600
+  danger:  '#DC2626',   // red-600
+  info:    '#2563EB',
 } as const;
 
 export const fonts = {
@@ -39,74 +45,53 @@ export const fonts = {
 } as const;
 
 // ─── Border Radius ────────────────────────────────────────────────────────────
-// Tailwind class names — work in both TailwindCSS and NativeWind v2.
 
 export const radius = {
-  /** 4px — badges, small items */
   sm:   'rounded-[4px]',
-  /** 4px — legacy base, unified to sm */
   base: 'rounded-[4px]',
-  /** 8px — cards, modals */
   card: 'rounded-[8px]',
-  /** Full pill */
   full: 'rounded-full',
 } as const;
 
 // ─── Typography scale ─────────────────────────────────────────────────────────
 
 export const text = {
-  /** Page titles - Bold Pixel-esque */
   heading:    'text-2xl font-space-bold text-dark tracking-tight',
-  /** Card / section titles */
   subheading: 'text-base font-space-bold text-dark',
-  /** Body text */
   body:       'text-sm font-space-medium text-dark/80',
-  /** Form labels */
   label:      'text-xs font-space-bold text-dark uppercase tracking-widest',
-  /** Captions, hints */
   caption:    'text-[10px] font-space-bold text-dark/40 uppercase tracking-widest',
-  /** Large stat numbers */
   stat:       'text-3xl font-space-bold text-dark',
-  /** Small stat numbers */
   statSm:     'text-2xl font-space-bold text-dark',
 } as const;
 
 // ─── Spacing scale ────────────────────────────────────────────────────────────
 
 export const spacing = {
-  /** Card padding */
-  card:  'p-5',
-  /** Card padding horizontal only */
-  cardX: 'px-5',
-  /** Card padding vertical only */
-  cardY: 'py-5',
-  /** Section gap between cards */
+  card:    'p-5',
+  cardX:   'px-5',
+  cardY:   'py-5',
   section: 'gap-6',
-  /** Form fields gap */
   form:    'gap-4',
-  /** Input internal padding */
   input:   'px-4 py-3',
 } as const;
 
 // ─── Borders ──────────────────────────────────────────────────────────────────
 
 export const borders = {
-  base:  'border-2 border-zinc-300',
-  thick: 'border-4 border-zinc-300',
-  thin:  'border border-zinc-300',
+  base:  'border border-zinc-200',
+  thick: 'border-2 border-zinc-200',
+  thin:  'border border-zinc-200/50',
   none:  'border-0',
 } as const;
 
-// ─── Neobrutalista Shadows ────────────────────────────────────────────────────
-// Raw CSS box-shadow values for use in tailwind.config (mobile) or @theme (web).
-// Both platforms reference these constants so shadow look stays in sync.
+// ─── Shadows (mobile / neobrutalista) ────────────────────────────────────────
+// Raw CSS box-shadow values consumed by mobile's tailwind.config.
+// Web uses its own soft-shadow CSS variables in index.css instead.
 
 export const shadows = {
-  /** 4px hard grey shadow — standard card/button */
   hard:   '4px 4px 0px #A1A1AA',
-  /** 3px hard grey shadow — badges, small elements */
   hardSm: '3px 3px 0px #A1A1AA',
-  /** 2px hard grey shadow — micro elements (counters) */
   micro:  '2px 2px 0px #A1A1AA',
 } as const;
 
@@ -115,34 +100,17 @@ export const shadows = {
 // Both web StatusBadge and mobile StatusBadge read from here.
 
 export const statusColors = {
-  DRAFT:     { bg: '#1A1A1A', text: '#FFFFFF' },
-  CREATED:   { bg: '#3B82F6', text: '#FFFFFF' },
-  PENDING:   { bg: '#E6B800', text: '#FFFFFF' },
-  SUBMITTED: { bg: '#E6B800', text: '#FFFFFF' },
-  APPROVED:  { bg: '#00C896', text: '#FFFFFF' },
-  PAID:      { bg: '#00C896', text: '#FFFFFF' },
-  REJECTED:  { bg: '#FF4B4B', text: '#FFFFFF' },
-  DECLINED:  { bg: '#FF4B4B', text: '#FFFFFF' },
-} as const;
-
-// ─── Status Border & Shadow Colors ────────────────────────────────────────────
-// Neobrutalista border and drop-shadow colors per status.
-// Used by StatusBadge on both web and mobile for the hard-shadow effect.
-
-export const statusBorderColors = {
-  DRAFT:     { border: '#000000', shadow: '#000000' },
-  CREATED:   { border: '#E66B40', shadow: '#B35333' },
-  PENDING:   { border: '#B38F00', shadow: '#806600' },
-  SUBMITTED: { border: '#B38F00', shadow: '#806600' },
-  APPROVED:  { border: '#009B74', shadow: '#006E52' },
-  PAID:      { border: '#009B74', shadow: '#006E52' },
-  REJECTED:  { border: '#DC2626', shadow: '#991B1B' },
-  DECLINED:  { border: '#DC2626', shadow: '#991B1B' },
+  DRAFT:     { bg: '#F5F4F0', text: '#78716C', dot: '#A8A29E' },   // warm stone
+  CREATED:   { bg: '#EFF6FF', text: '#1D4ED8', dot: '#60A5FA' },   // soft blue
+  PENDING:   { bg: '#FFFBEB', text: '#92400E', dot: '#FBBF24' },   // warm amber
+  SUBMITTED: { bg: '#FFF7ED', text: '#9A3412', dot: '#FB923C' },   // soft orange
+  APPROVED:  { bg: '#F0FDF4', text: '#15803D', dot: '#4ADE80' },   // soft green
+  PAID:      { bg: '#ECFDF5', text: '#047857', dot: '#34D399' },   // soft emerald
+  REJECTED:  { bg: '#FFF1F2', text: '#BE123C', dot: '#FB7185' },   // soft rose
+  DECLINED:  { bg: '#FFF1F2', text: '#BE123C', dot: '#FB7185' },   // soft rose
 } as const;
 
 // ─── Role Colors ──────────────────────────────────────────────────────────────
-// Platform-agnostic hex values for each user role.
-// Used by RoleBadge on web and mobile.
 
 export const roleColors = {
   EMPLOYEE:   { bg: '#475569', text: '#FFFFFF' },
@@ -152,21 +120,14 @@ export const roleColors = {
   SUPERADMIN: { bg: '#6D28D9', text: '#FFFFFF' },
 } as const;
 
-export const roleBorderColors = {
-  EMPLOYEE:   { border: '#334155', shadow: '#1E293B' },
-  MANAGER:    { border: '#0369A1', shadow: '#075985' },
-  CONTROLLER: { border: '#047857', shadow: '#064E3B' },
-  ADMIN:      { border: '#B91C1C', shadow: '#7F1D1D' },
-  SUPERADMIN: { border: '#5B21B6', shadow: '#4C1D95' },
-} as const;
-
-// ─── Neobrutalist Design System (Specific Tokens) ──────────────────────────────
-// Raw numeric values for use in component props (shadowOffset, borderRadius)
+// ─── Design System Numeric Tokens ─────────────────────────────────────────────
+// Raw numeric values for component props (shadowOffset, borderRadius).
+// Consumed by both web PixelCard and mobile PixelCard.
 
 export const nbTokens = {
-  radiusCard: 8,
+  radiusCard:  12,
   radiusBadge: 4,
-  shadowCard: 4,
-  shadowBadge: 3,
-  shadowMicro: 2,
+  shadowCard:  0,
+  shadowBadge: 0,
+  shadowMicro: 0,
 } as const;

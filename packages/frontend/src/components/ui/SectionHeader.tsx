@@ -27,16 +27,13 @@ export const SectionHeader = ({
     </span>
 
     {/* Title */}
-    <h2 className="font-space-bold text-dark/50 shrink-0" style={{ fontSize: 11 }}>
+    <h2 className="font-sans-semibold text-dark/40 text-[11px] uppercase tracking-widest shrink-0">
       {title}
     </h2>
 
     {/* Count */}
     {count !== undefined && (
-      <span
-        className="font-space-bold text-dark/40 shrink-0"
-        style={{ fontSize: 10 }}
-      >
+      <span className="font-sans-medium text-dark/30 text-[11px] shrink-0">
         {count}
       </span>
     )}

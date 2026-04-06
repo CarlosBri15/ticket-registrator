@@ -1,105 +1,110 @@
-@import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,300,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   /* ── Typography ──────────────────────────────────────────────────────────── */
-  --font-sans: var(--font-main, 'Satoshi'), sans-serif;
+  --font-sans: 'Manrope', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 
-  /* ── Brand — Deep Ocean Blue (Option D) ───────────────────────────────────── */
-  --color-brand:       #1E3A8A;
-  --color-brand-hover: #172554;
-  --color-brand-light: #3B82F6;
+  /* ── Brand — Grafito (near-black warm) ──────────────────────────────── */
+  --color-brand:       #1C1917;
+  --color-brand-hover: #2A2724;
+  --color-brand-light: #F5F4F0;
 
-  /* ── Sidebar ── */
-  --color-sidebar:        #2C4A6E;
-  --color-sidebar-accent: #223D5A;
+  /* ── Sidebar — Warm cream ───────────────────────────────────────────────── */
+  --color-sidebar:        #F5F4F0;
+  --color-sidebar-accent: #ECEAE7;
 
-  /* ── Secondary ───────────────────────────────────────────────────────────── */
-  --color-secondary:       #FFC83D;
-  --color-secondary-light: #FFE08A;
+  /* ── Secondary — Warm stone neutrals ────────────────────────────────────── */
+  --color-secondary:       #F5F4F0;
+  --color-secondary-light: #F7F6F3;
 
-  /* ── Dark — Near Black ───────────────────────────────────────────────────── */
-  --color-dark: #1A1A1A;
+  /* ── Dark — Warm near-black ──────────────────────────────────────────────── */
+  --color-dark: #1C1917;
 
   /* ── Semantic ────────────────────────────────────────────────────────────── */
-  --color-success: #00C896;
-  --color-warning: #E6B800;
-  --color-danger:  #FF4B4B;
-  --color-info:    #1E3A8A; /* Antes #1E3A8A */
+  --color-success: #16A34A;
+  --color-warning: #D97706;
+  --color-danger:  #DC2626;
+  --color-info:    #2563EB;
 
-  /* ── Surface — neutral light gray ─────── */
-  --color-surface: #EDEDF0;
-  --color-surface-card: #FAFAF9;
-  --color-surface-header: #FAFAF9;
+  /* ── Surface — White content area ───────────────────────────────────────── */
+  --color-surface:        #FFFFFF; /* Pure white body background */
+  --color-surface-card:   #FFFFFF; /* Pure white cards */
+  --color-surface-header: #FFFFFF; /* Pure white headers */
 
-  /* ── Borders ─────────────────────────────────────────────────────────────── */
-  --color-border-main: #E4E4E7;
-  --color-shadow-main: #E4E4E7;
+  /* ── Borders — Warm stone ─────────────────────────────────────────────── */
+  --color-border-main: #E5E4E0; /* Warm stone-200 */
+  --color-shadow-main: #E5E4E0;
 
-  /* ── Soft Shadows ────────────────────────────────────────────────────────── */
-  --shadow-hard:    0px 2px 12px rgba(0,0,0,0.09), 0px 1px 3px rgba(0,0,0,0.05);
-  --shadow-hard-lg: 0px 6px 28px rgba(0,0,0,0.13), 0px 2px 6px rgba(0,0,0,0.06);
-  --shadow-hard-sm: 0px 1px 5px rgba(0,0,0,0.07), 0px 1px 2px rgba(0,0,0,0.04);
+  /* ── Shadows ─────────────────────────────────────────────────────────────── */
+  --shadow-hard:    none;
+  --shadow-hard-lg: 0px 4px 16px rgba(28,25,23,0.06), 0px 1px 3px rgba(28,25,23,0.04);
+  --shadow-hard-sm: none;
 
   /* ── Radii ────────────────────────────────────────────────────────────────── */
-  --radius-lg: 12px;
-  --radius-xl: 14px;
-  --radius-2xl: 18px;
-  --radius-3xl: 22px;
-  --radius-card: 14px;
-  --radius-base: 10px;
+  --radius-lg:   8px;
+  --radius-xl:   10px;
+  --radius-2xl:  12px;
+  --radius-3xl:  16px;
+  --radius-card: 8px;
+  --radius-base: 6px;
 }
 
 @layer base {
   body {
-    font-family: 'Lexend', sans-serif;
+    font-family: 'Manrope', sans-serif;
     @apply antialiased text-dark bg-surface;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
 @layer utilities {
-  /* ── Satoshi compound utilities (font-family + weight) ───────────────────── */
-  .font-space          { font-family: var(--font-main, 'Satoshi'), sans-serif; font-weight: 400; }
-  .font-space-medium   { font-family: var(--font-main, 'Satoshi'), sans-serif; font-weight: 500; }
-  .font-space-semibold { font-family: var(--font-main, 'Satoshi'), sans-serif; font-weight: 600; }
-  .font-space-bold     { font-family: var(--font-main, 'Satoshi'), sans-serif; font-weight: 700; }
+  /* ── Typography utility overrides ──────────────────────────────────────── */
+  .font-space          { font-family: 'IBM Plex Mono', monospace; font-weight: 400; }
+  .font-space-medium   { font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
+  .font-space-semibold { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .font-space-bold     { font-family: 'IBM Plex Mono', monospace; font-weight: 700; }
+
+  .font-sans-normal    { font-family: 'Manrope', sans-serif; font-weight: 400; }
+  .font-sans-medium    { font-family: 'Manrope', sans-serif; font-weight: 500; }
+  .font-sans-semibold  { font-family: 'Manrope', sans-serif; font-weight: 600; }
+  .font-sans-bold      { font-family: 'Manrope', sans-serif; font-weight: 700; }
 
   /* ── Press animations ────────────────────────────────────────────────────── */
-  .neo-press {
-    transition: transform 100ms ease, box-shadow 100ms ease;
+  .btn-press {
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .neo-press:active {
-    transform: translateY(1px) scale(0.99) !important;
-    box-shadow: 0px 1px 3px rgba(0,0,0,0.04) !important;
+  .btn-press:active {
+    transform: scale(0.985);
   }
-  .neo-press-lg {
-    transition: transform 100ms ease, box-shadow 100ms ease;
+  .btn-press-lg {
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .neo-press-lg:active {
-    transform: translateY(1px) scale(0.99) !important;
-    box-shadow: 0px 1px 4px rgba(0,0,0,0.05) !important;
+  .btn-press-lg:active {
+    transform: scale(0.98);
   }
-  .neo-press-sm {
-    transition: transform 100ms ease, box-shadow 100ms ease;
+  .btn-press-sm {
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .neo-press-sm:active {
-    transform: translateY(1px) scale(0.995) !important;
-    box-shadow: 0px 1px 2px rgba(0,0,0,0.03) !important;
+  .btn-press-sm:active {
+    transform: scale(0.99);
   }
 
   /* ── Scrollbar ───────────────────────────────────────────────────────────── */
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(30, 58, 138, 0.25) transparent;
+    scrollbar-color: rgba(37, 99, 235, 0.2) transparent;
   }
   .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
   .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(30, 58, 138, 0.25);
+    background: rgba(37, 99, 235, 0.2);
     border-radius: 99px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(30, 58, 138, 0.5);
+    background: rgba(37, 99, 235, 0.4);
   }
 }
 

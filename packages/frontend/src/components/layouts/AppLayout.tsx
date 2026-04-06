@@ -49,9 +49,10 @@ export const AppLayout = () => {
       {/* ─── SIDEBAR ─────────────────────────────────────────────────────── */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50 bg-[var(--color-sidebar)] text-white transition-all duration-300 ease-in-out border-r-2 border-[var(--color-shadow-main)]
-          ${isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
-          ${isCollapsed ? "lg:w-20" : "lg:w-72"}
+          fixed inset-y-0 left-0 z-50 bg-[var(--color-sidebar)] border-r border-[var(--color-border-main)] text-dark transition-all duration-300 ease-in-out
+
+          ${isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"}
+          ${isCollapsed ? "lg:w-[68px]" : "lg:w-64"}
         `}
       >
         <div className="flex flex-col h-full w-full relative">
@@ -98,15 +99,15 @@ export const AppLayout = () => {
 
       {/* Main content */}
       <main
-        className={`flex-1 flex flex-col relative min-w-0 h-screen overflow-hidden ${transition.base} ${isCollapsed ? "lg:ml-20" : "lg:ml-72"}`}
+        className={`flex-1 flex flex-col relative min-w-0 h-screen overflow-hidden ${transition.base} ${isCollapsed ? "lg:ml-[68px]" : "lg:ml-64"}`}
       >
         {/* Mobile top bar */}
-        <header className="lg:hidden h-16 bg-white border-b-4 border-[var(--color-shadow-main)] flex items-center justify-between px-5 z-40 shrink-0">
+        <header className="lg:hidden h-16 bg-[var(--color-sidebar)] border-b border-[var(--color-border-main)] flex items-center justify-between px-5 z-40 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className={`w-8 h-8 bg-brand ${radius.sm} flex items-center justify-center shadow-sm`}>
+            <div className={`w-8 h-8 bg-brand ${radius.sm} flex items-center justify-center`}>
               <Sparkles className="text-white w-4 h-4" />
             </div>
-            <span className="font-bold text-dark tracking-tight">{t("layout.appName")}</span>
+            <span className="font-sans-bold text-dark tracking-tight">{t("layout.appName")}</span>
           </div>
           <button
             onClick={() => setIsMobileOpen(true)}

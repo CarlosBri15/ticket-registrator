@@ -16,10 +16,10 @@ import {
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { tokens } from '../../styles/theme';
-import type { DateRange } from '@ticket-registrator/shared';
-
-
-
+export interface DateRange {
+  start: Date | null;
+  end: Date | null;
+}
 interface CalendarProps {
   mode?: 'single' | 'range';
   value?: Date | DateRange | null;

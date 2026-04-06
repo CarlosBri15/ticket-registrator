@@ -1,5 +1,4 @@
 import { NavLink } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
 import {
   LayoutDashboard, FileText, Receipt,
   Users, Building2, Globe, Shield, Lock,
@@ -8,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { usePermissions, useScope } from "@ticket-registrator/shared";
 import type { PermissionType } from "@ticket-registrator/shared";
-import { transition } from "../../styles/theme";
+import { transition, tokens } from "../../styles/theme";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -124,35 +123,24 @@ const NavItem = ({
       {({ isActive }) => (
         <div
           className={`
-            flex items-center rounded-[8px] ${transition.base} group relative neo-press
-            ${isCollapsed ? "justify-center p-3 mx-auto w-11" : "px-3.5 py-2.5 gap-3.5"}
-            ${isActive
-              /* Active: white card que "emerge" del fondo navy — mismo look que las cards del app */
-              ? "bg-white text-dark border-2 border-[var(--color-border-main)] shadow-[4px_4px_0px_var(--color-shadow-main)]"
-              /* Idle: texto blanco semitransparente, hover con borde sutil y fondo blanco/10 */
-              : "text-white/60 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/15"
-            }
+            ${tokens.sidebarNavItem}
+            ${isCollapsed ? "justify-center p-2 mx-auto w-10" : "px-3 py-2 gap-3"}
+            ${isActive ? tokens.sidebarNavActive : tokens.sidebarNavIdle}
           `}
         >
           <Icon
-            className={`shrink-0 transition-transform duration-100 group-hover:scale-105
-              ${isCollapsed ? "w-5 h-5" : "w-[18px] h-[18px]"}
-              ${isActive ? "text-brand" : ""}`}
+            className={`shrink-0 ${isCollapsed ? "w-[18px] h-[18px]" : "w-[16px] h-[16px]"} ${isActive ? "text-dark" : "text-dark/40"}`}
           />
 
           {!isCollapsed && (
-            <span className="font-space-bold text-sm truncate min-w-0" style={{ letterSpacing: "0.2px" }}>
+            <span className="truncate min-w-0 text-[13px]">
               {item.label}
             </span>
           )}
 
-          {!isCollapsed && (
-            <ChevronRight className="ml-auto w-4 h-4 transition-transform duration-100 opacity-0 group-hover:opacity-50 group-hover:translate-x-0.5" />
-          )}
-
           {/* Tooltip collapsed */}
           {isCollapsed && (
-            <div className={`absolute left-full ml-3 px-2.5 py-1.5 rounded-[8px] bg-white text-dark text-[10px] font-space-bold uppercase tracking-wider border-2 border-[var(--color-border-main)] shadow-[3px_3px_0px_var(--color-shadow-main)] opacity-0 group-hover:opacity-100 pointer-events-none translate-x-1 group-hover:translate-x-0 ${transition.base} z-[100] whitespace-nowrap`}>
+            <div className={`absolute left-full ml-2.5 px-2.5 py-1.5 rounded-md bg-dark text-white text-[11px] font-sans-medium shadow-[0px_4px_14px_rgba(0,0,0,0.18)] opacity-0 group-hover:opacity-100 pointer-events-none translate-x-1 group-hover:translate-x-0 ${transition.base} z-[100] whitespace-nowrap`}>
               {item.label}
             </div>
           )}
@@ -188,9 +176,9 @@ export const SidebarNav = ({ isCollapsed, isGlobalMode, onNavClick }: SidebarNav
     .filter((section) => section.items.length > 0);
 
   return (
-    <nav className="flex-1 px-3 py-5 space-y-1.5 overflow-y-auto overflow-x-hidden custom-scrollbar">
+    <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto overflow-x-hidden custom-scrollbar">
       {visibleSections.map((section) => (
-        <div key={section.title} className="space-y-1.5">
+        <div key={section.title} className="space-y-0.5">
           {section.items.map((item) => (
             <NavItem
               key={item.path}

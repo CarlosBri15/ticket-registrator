@@ -110,6 +110,7 @@ export * from './defaults/default-categories';
 // Utilities
 export * from './utils/hierarchy';
 export * from './utils/errorUtils';
+export * from './utils/avatarColor';
 
 // Constants
 export * from './constants/hierarchy';

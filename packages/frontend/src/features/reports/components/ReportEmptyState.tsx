@@ -3,10 +3,8 @@
  * Shows an icon, title, description, optional CTA, and optional "clear filters" link.
  */
 import { Plus, FileText } from "lucide-react";
-import { fonts, nbTokens } from "@ticket-registrator/shared";
-import { PixelCard } from "../../../components/ui/PixelCard";
-import { SHADOW } from "../constants";
 import { useTranslation } from "react-i18next";
+import { tokens } from "../../../styles/theme";
 
 interface ReportEmptyStateProps {
   title: string;
@@ -27,33 +25,17 @@ export const ReportEmptyState = ({
 }: ReportEmptyStateProps) => {
   const { t } = useTranslation();
   return (
-  <PixelCard className="w-full">
-    <div className="flex flex-col items-center text-center py-10 px-6 gap-3">
-      <div
-        style={{
-          width: 52,
-          height: 52,
-          backgroundColor: "#1E3A8A",
-          border: "2px solid #1E3A8A",
-          borderRadius: 16,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: `3px 3px 0px ${SHADOW}`,
-        }}
-      >
-        <FileText className="w-5 h-5 text-white" />
+    <div className={tokens.emptyState}>
+      <div className={`${tokens.emptyStateIcon} mb-4`}>
+        <FileText className="w-5 h-5 text-dark/35" />
       </div>
-      <p className="font-space-bold text-dark" style={{ fontSize: 14 }}>{title}</p>
-      <p className="font-space text-dark/40 max-w-xs leading-relaxed" style={{ fontSize: 12 }}>
-        {description}
-      </p>
+      <p className="font-sans-semibold text-dark text-[14px]">{title}</p>
+      <p className={`${tokens.emptyStateText} mt-1`}>{description}</p>
       {filtered && onClear && (
         <button
           type="button"
           onClick={onClear}
-          className="font-space-bold text-brand underline underline-offset-2"
-          style={{ fontSize: 12 }}
+          className="font-sans-medium text-[12px] text-dark/50 underline underline-offset-2 mt-2 hover:text-dark transition-colors"
         >
           {t("trips.filterClearAll")}
         </button>
@@ -62,27 +44,12 @@ export const ReportEmptyState = ({
         <button
           type="button"
           onClick={onAction}
-          className="neo-press inline-flex items-center gap-1.5 mt-1"
-          style={{
-            backgroundColor: "#1E3A8A",
-            border: "2px solid #1E3A8A",
-            borderRadius: 99,
-            paddingLeft: 16,
-            paddingRight: 16,
-            paddingTop: 10,
-            paddingBottom: 10,
-            fontFamily: `'${fonts.family}', sans-serif`,
-            fontWeight: 700,
-            fontSize: 12,
-            color: "#fff",
-            boxShadow: `${nbTokens.shadowBadge}px ${nbTokens.shadowBadge}px 0px ${SHADOW}`,
-          }}
+          className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 bg-brand hover:bg-brand-hover text-dark rounded-md font-sans-medium text-[13px] transition-colors border border-brand/20"
         >
           <Plus className="w-3.5 h-3.5" />
           {actionLabel}
         </button>
       )}
     </div>
-  </PixelCard>
   );
 };

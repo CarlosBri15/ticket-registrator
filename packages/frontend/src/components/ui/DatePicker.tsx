@@ -16,6 +16,7 @@ interface DatePickerProps {
   onChange?: (date: Date | DateRange | null) => void;
   error?: string;
   disabled?: boolean;
+  triggerClassName?: string;
 }
 
 export const DatePicker = ({
@@ -25,7 +26,8 @@ export const DatePicker = ({
   value,
   onChange,
   error,
-  disabled
+  disabled,
+  triggerClassName,
 }: DatePickerProps) => {
   const { t } = useTranslation();
   const {
@@ -71,15 +73,14 @@ export const DatePicker = ({
           disabled={disabled}
           onClick={() => setOpen(!open)}
           onKeyDown={handleKeyDown}
-          className={`
-            ${tokens.selectTrigger}
-            ${error ? tokens.inputError : ''}
-            ${open ? tokens.selectTriggerFocus : ''}
-            flex items-center gap-3
-          `}
+          className={
+            triggerClassName
+              ? `${triggerClassName} ${error ? tokens.inputError : ''}`
+              : `${tokens.selectTrigger} ${error ? tokens.inputError : ''} ${open ? tokens.selectTriggerFocus : ''} flex items-center gap-3`
+          }
         >
           <CalendarIcon className="w-4 h-4 text-dark/40" />
-          <span className={`flex-1 truncate ${!displayValue ? 'text-dark/40 font-space' : 'text-dark font-space-semibold'}`}>
+          <span className={`flex-1 truncate text-[13px] ${!displayValue ? 'text-dark/40 font-sans-normal' : 'text-dark font-sans-medium'}`}>
             {displayValue || placeholder || (mode === 'range' ? t('ui.selectDateRange') : t('ui.selectDate'))}
           </span>
           <div className="flex items-center gap-2">

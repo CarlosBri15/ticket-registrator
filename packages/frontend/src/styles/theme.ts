@@ -35,141 +35,132 @@ export const shadow = {
 
 export const tokens = {
 
-  // ── Card — exact match to PixelCard (BORDER_WIDTH=2, RADIUS=8) ───────────
-  // shadow-hard = 3px offset (matches PendingReportCard/HistoryRow shadowOffset=3)
-  card:    'bg-[var(--color-surface-card)] border-2 border-border-main rounded-2xl',
-  // Interactive card with press animation (add to card for clickable cards)
-  cardInteractive: 'neo-press cursor-pointer',
-  // Static padded variant (no shadow, used for active/selected state)
-  cardFlat: 'bg-[var(--color-surface-card)] border-2 border-border-main rounded-xl p-4',
+  // ── Card — clean white surfaces ─────────────────────────────────────────
+  card:            'bg-[var(--color-surface-card)] border border-[var(--color-border-main)] rounded-lg',
+  cardInteractive: 'hover:bg-[#FAFAF8] cursor-pointer transition-colors duration-100',
+  cardFlat:        'bg-[var(--color-surface-card)] border border-[var(--color-border-main)] rounded-lg p-4',
 
   // ── Input ─────────────────────────────────────────────────────────────────
   input: [
-    'w-full px-4 py-3 rounded-xl border-2 border-border-main bg-[var(--color-surface-card)]',
-    'text-dark text-sm font-space-semibold',
-    'placeholder:text-dark/40 placeholder:font-space',
-    'shadow-hard-sm',
+    'w-full px-3 py-2 rounded-md border border-[var(--color-border-main)] bg-[var(--color-surface-card)]',
+    'text-dark text-sm font-sans-medium',
+    'placeholder:text-dark/35 placeholder:font-sans-normal',
     'transition-all duration-100',
-    'focus:outline-none focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px]',
-    'disabled:opacity-60 disabled:bg-surface disabled:cursor-not-allowed',
+    'focus:outline-none focus:border-dark/40 focus:ring-2 focus:ring-dark/8 focus:shadow-none',
+    'disabled:opacity-50 disabled:bg-[var(--color-surface)] disabled:cursor-not-allowed',
   ].join(' '),
-  inputError:    'border-danger',
-  inputLabel:    'block text-[10px] font-space-bold text-dark/50 uppercase tracking-widest mb-2',
-  inputHint:     'text-[10px] font-space text-dark/40 mt-1',
-  inputErrorMsg: 'text-xs text-danger font-space-bold mt-1',
+  inputError:    'border-danger focus:border-danger focus:ring-danger/10',
+  inputLabel:    'block text-[11px] font-sans-semibold text-dark/50 mb-1.5 uppercase tracking-wide',
+  inputHint:     'text-[11px] font-sans-normal text-dark/40 mt-1',
+  inputErrorMsg: 'text-[11px] text-danger font-sans-medium mt-1',
 
   // ── Button ─────────────────────────────────────────────────────────────────
-  // Buttons use rounded-full (matches mt.btnPrimary)
   buttonBase: [
-    'relative inline-flex items-center justify-center px-5 py-2.5',
-    'rounded-full',
-    'font-space-bold text-sm',
-    'neo-press',
-    'disabled:opacity-60 disabled:cursor-not-allowed',
+    'relative inline-flex items-center justify-center px-3.5 py-2',
+    'rounded-md',
+    'font-sans-medium text-[13px]',
+    'transition-all duration-150',
+    'disabled:opacity-50 disabled:cursor-not-allowed',
   ].join(' '),
-  buttonPrimary:    'bg-brand text-white',
-  buttonSuccess:    'bg-success text-white',
-  buttonSecondary:  'bg-[var(--color-surface)] text-dark/60',
-  buttonDanger:     'bg-danger text-white',
-  buttonOutline:    'bg-transparent border border-brand text-brand hover:bg-brand/5',
-  buttonGhost:      'bg-transparent text-dark/50 hover:text-dark hover:bg-dark/5',
-  buttonGhostWhite: 'bg-white/10 text-white hover:bg-white/20',
+  buttonPrimary:     'bg-brand text-white hover:bg-brand-hover border border-brand/20',
+  buttonSuccess:     'bg-success text-white hover:opacity-90',
+  buttonSecondary:   'bg-white text-dark border border-[var(--color-border-main)] hover:bg-[#FAFAF8]',
+  buttonDanger:      'bg-danger text-white hover:opacity-90',
+  buttonOutline:     'bg-transparent border border-[var(--color-border-main)] text-dark hover:bg-[#FAFAF8]',
+  buttonGhost:       'bg-transparent text-dark/50 hover:text-dark hover:bg-dark/5',
+  buttonGhostWhite:  'bg-white/10 text-white hover:bg-white/20',
   buttonGhostDanger: 'bg-transparent text-danger hover:bg-danger/5',
-  buttonGhostBrand: 'bg-transparent text-brand hover:bg-brand/5',
+  buttonGhostBrand:  'bg-transparent text-dark/60 hover:bg-dark/5',
 
   // ── Select ────────────────────────────────────────────────────────────────
   selectTrigger: [
-    'w-full flex items-center justify-between px-4 py-3 rounded-xl',
-    'border-2 border-border-main bg-[var(--color-surface-card)] text-sm font-space-semibold text-left',
-    'shadow-hard-sm neo-press',
-    'disabled:opacity-60 disabled:bg-surface disabled:cursor-not-allowed',
+    'w-full flex items-center justify-between px-3 py-2 rounded-md',
+    'border border-[var(--color-border-main)] bg-[var(--color-surface-card)] text-sm font-sans-medium text-left',
+    'transition-all duration-100',
+    'disabled:opacity-50 disabled:cursor-not-allowed',
   ].join(' '),
-  selectTriggerFocus: 'shadow-none translate-x-[2px] translate-y-[2px]',
-  selectDropdown:     'bg-[var(--color-surface-card)] border-2 border-border-main rounded-xl py-2 max-h-60 overflow-y-auto',
-  selectOption:       'w-full flex items-center justify-between px-4 py-3 text-sm font-space-semibold text-left',
-  selectOptionActive: 'bg-brand/10 text-brand font-space-bold',
-  selectOptionIdle:   'text-dark hover:bg-surface',
+  selectTriggerFocus: 'border-dark/40 ring-2 ring-dark/8',
+  selectDropdown:     'bg-[var(--color-surface-card)] border border-[var(--color-border-main)] rounded-md py-1 max-h-60 overflow-y-auto shadow-[0px_8px_24px_rgba(28,25,23,0.08)]',
+  selectOption:       'w-full flex items-center justify-between px-3 py-2 text-sm font-sans-medium text-left',
+  selectOptionActive: 'bg-brand/10 text-dark font-sans-semibold',
+  selectOptionIdle:   'text-dark hover:bg-[var(--color-surface)]',
 
   // ── Modal ─────────────────────────────────────────────────────────────────
   modalOverlay:   'fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6',
-  modalBackdrop:  'absolute inset-0 bg-dark/50 backdrop-blur-sm animate-in fade-in duration-200 w-full h-full border-none outline-none',
-  modalContainer: 'relative bg-surface w-full rounded-t-3xl sm:rounded-xl border-2 border-border-main shadow-hard-lg animate-in fade-in duration-200 overflow-hidden',
-  modalHeader:    'bg-[var(--color-surface-header)] border-b-4 border-[var(--color-shadow-main)] px-6 pt-6 pb-5',
-  modalTitle:     'text-xl font-space-bold text-dark tracking-tight',
-  modalSubtitle:  'text-sm font-space text-dark/50 mt-0.5',
-  modalBody:      'p-6 max-h-[calc(100vh-10rem)] overflow-y-auto custom-scrollbar',
-  modalClose:     'w-10 h-10 flex items-center justify-center bg-danger text-surface-card border-2 border-[#DC2626] rounded-xl shadow-[3px_3px_0px_#991B1B] neo-press transition-all duration-100 shrink-0',
+  modalBackdrop:  'absolute inset-0 bg-dark/30 backdrop-blur-[2px] animate-in fade-in duration-200 w-full h-full border-none outline-none',
+  modalContainer: 'relative bg-[var(--color-surface-card)] w-full rounded-t-2xl sm:rounded-xl border border-[var(--color-border-main)] shadow-[0px_20px_60px_rgba(28,25,23,0.12)] animate-in fade-in slide-in-from-bottom-4 duration-200 overflow-hidden',
+  modalHeader:    'bg-[var(--color-surface-header)] border-b border-[var(--color-border-main)] px-6 pt-6 pb-5',
+  modalTitle:     'text-[17px] font-sans-semibold text-dark tracking-tight',
+  modalSubtitle:  'text-sm font-sans-normal text-dark/50 mt-0.5',
+  modalClose:     'w-8 h-8 flex items-center justify-center text-dark/40 hover:text-dark hover:bg-dark/5 rounded-md transition-colors duration-100 shrink-0',
 
   // ── Badge / Status ─────────────────────────────────────────────────────────
-  badge:        'inline-flex items-center gap-1.5 font-space-bold rounded-lg px-2.5 py-1 text-[9px]',
-  badgeSm:      'inline-flex items-center gap-1 font-space-bold rounded-lg px-2 py-0.5 text-[9px]',
-  badgeSuccess: 'bg-success text-white',
-  badgeWarning: 'bg-warning text-white',
-  badgeDanger:  'bg-danger text-white',
-  badgeInfo:    'bg-brand text-white',
-  badgeNeutral: 'bg-dark text-white',
-  badgeBrand:   'bg-brand text-white',
-  badgeCreated: 'bg-[#FF7F50] text-white',
+  badge:        'inline-flex items-center gap-1.5 font-sans-medium rounded-md px-2 py-0.5 text-[11px]',
+  badgeSm:      'inline-flex items-center gap-1 font-sans-medium rounded px-1.5 py-0.5 text-[10px]',
+  badgeSuccess: 'bg-green-50 text-green-700',
+  badgeWarning: 'bg-amber-50 text-amber-700',
+  badgeDanger:  'bg-red-50 text-red-700',
+  badgeInfo:    'bg-blue-50 text-blue-700',
+  badgeNeutral: 'bg-[var(--color-secondary)] text-dark/60',
+  badgeBrand:   'bg-brand/15 text-dark',
+  badgeCreated: 'bg-blue-50 text-blue-700',
 
   // ── Alert ─────────────────────────────────────────────────────────────────
-  alert:        'flex items-start gap-3 px-4 py-3 border-2 border-border-main rounded-xl animate-in slide-in-from-top-2 fade-in duration-200 shadow-hard-sm',
-  alertError:   'bg-danger/10 border-danger text-danger',
-  alertSuccess: 'bg-success/10 border-success text-success',
-  alertWarning: 'bg-warning/10 border-warning text-dark',
-  alertInfo:    'bg-brand/10 border-brand text-brand',
+  alert:        'flex items-start gap-3 px-4 py-3 border rounded-lg animate-in slide-in-from-top-2 fade-in duration-200',
+  alertError:   'bg-red-50 border-red-100 text-red-700',
+  alertSuccess: 'bg-green-50 border-green-100 text-green-700',
+  alertWarning: 'bg-amber-50 border-amber-100 text-amber-700',
+  alertInfo:    'bg-blue-50 border-blue-100 text-blue-700',
 
   // ── PageHeader ─────────────────────────────────────────────────────────────
-  // Standardized height (h-20 = 80px) and padding
-  headerPage:         'bg-[var(--color-surface-header)] border-b-4 border-[var(--color-shadow-main)] px-10 md:px-16 h-20 flex items-center justify-between',
-  pageHeader:         'bg-[var(--color-surface-header)] border-b-4 border-[var(--color-shadow-main)] px-6 h-20 flex items-center justify-between',
-  pageHeaderTitle:    'text-2xl font-space-bold text-dark tracking-tight',
-  pageHeaderSubtitle: 'text-dark/50 text-xs font-space-medium mt-0.5',
+  headerPage:         'bg-[var(--color-surface-header)] px-8 md:px-12 h-[68px] flex items-center justify-between border-b border-[var(--color-border-main)]',
+  pageHeader:         'bg-[var(--color-surface-header)] px-6 h-[68px] flex items-center justify-between border-b border-[var(--color-border-main)]',
+  pageHeaderTitle:    'text-[20px] font-sans-semibold text-dark tracking-tight leading-none',
+  pageHeaderSubtitle: 'text-dark/50 text-[13px] font-sans-normal mt-1',
 
   // ── StatCard ───────────────────────────────────────────────────────────────
-  statCard:        'bg-[var(--color-surface-card)] border-2 border-border-main rounded-2xl flex flex-col gap-2',
-  statCardPrimary: 'bg-brand border-2 border-border-main rounded-2xl flex flex-col gap-2',
-  statCardLabel:   'text-[10px] font-space-bold text-dark/50 uppercase tracking-widest',
-  statCardValue:   'text-3xl font-space-bold text-dark leading-none tracking-tight',
+  statCard:        'bg-[var(--color-surface-card)] border border-[var(--color-border-main)] rounded-lg flex flex-col gap-1.5 p-5',
+  statCardPrimary: 'bg-brand/10 border border-brand/20 rounded-lg flex flex-col gap-1.5 p-5',
+  statCardLabel:   'text-[11px] font-sans-medium text-dark/50 uppercase tracking-wide',
+  statCardValue:   'text-[26px] font-sans-semibold text-dark leading-none tracking-tight',
 
-  // ── List ──────────────────────────────────────────────────────────────────
-  listItem:          'bg-[var(--color-surface-card)] border-2 border-border-main rounded-2xl neo-press cursor-pointer',
-  listSection:       'bg-[var(--color-surface-card)] border-2 border-border-main rounded-xl overflow-hidden shadow-hard',
-  listSectionHeader: 'px-5 py-3.5 border-b-2 border-border-main flex items-center gap-2',
-  listSectionTitle:  'text-xs font-space-bold text-dark',
+  // ── List / Data Table ─────────────────────────────────────────────────────
+  listItem:          'bg-[var(--color-surface-card)] hover:bg-[#FAFAF8] cursor-pointer border-b border-[var(--color-border-main)] last:border-b-0 transition-colors duration-100',
+  listSection:       'bg-[var(--color-surface-card)] w-full overflow-hidden border border-[var(--color-border-main)] rounded-lg',
+  listSectionHeader: 'px-5 py-2.5 border-b border-[var(--color-border-main)] flex items-center gap-2 bg-[var(--color-surface)]',
+  listSectionTitle:  'text-[10px] font-sans-semibold text-dark/40 uppercase tracking-widest',
 
   // ── Empty state ───────────────────────────────────────────────────────────
-  emptyState:     'border-2 border-border-main border-dashed rounded-xl bg-[var(--color-surface-card)] p-12 flex flex-col items-center justify-center text-center shadow-hard-sm',
-  emptyStateIcon: 'w-14 h-14 bg-brand border-2 border-border-main rounded-xl flex items-center justify-center mb-4 shadow-hard',
-  emptyStateText: 'text-sm font-space text-dark/50 max-w-xs leading-relaxed',
+  emptyState:     'border border-dashed border-[var(--color-border-main)] rounded-lg bg-[var(--color-surface-card)] p-12 flex flex-col items-center justify-center text-center',
+  emptyStateIcon: 'w-11 h-11 bg-[var(--color-surface)] border border-[var(--color-border-main)] rounded-lg flex items-center justify-center mb-4',
+  emptyStateText: 'text-[13px] font-sans-normal text-dark/50 max-w-sm leading-relaxed',
 
   // ── Skeleton ──────────────────────────────────────────────────────────────
-  skeleton:     'bg-dark/10 animate-pulse rounded-xl',
-  skeletonCard: 'bg-[var(--color-surface-card)] border-2 border-border-main/20 rounded-xl p-4 animate-pulse',
+  skeleton:     'bg-dark/6 animate-pulse rounded-md',
+  skeletonCard: 'bg-[var(--color-surface-card)] border border-[var(--color-border-main)]/60 rounded-lg p-4 animate-pulse',
 
   // ── Chip / Filter pill ─────────────────────────────────────────────────────
-  // Matches filter pills: equal width, PixelCard with radius=6, shadowOffset=3
-  chip:         'inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border-2 border-border-main text-xs font-space-bold neo-press shadow-hard',
-  chipActive:   'bg-brand text-white',
-  chipInactive: 'bg-[var(--color-surface-card)] text-dark',
+  chip:         'inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--color-border-main)] text-[12px] font-sans-medium transition-colors duration-100',
+  chipActive:   'bg-dark text-white border-dark',
+  chipInactive: 'bg-[var(--color-surface-card)] text-dark/70 hover:bg-[var(--color-surface)]',
 
   // ── Search bar ─────────────────────────────────────────────────────────────
-  // Matches mobile searchRow: plain row, search icon + input + clear, white bg
   searchInput: [
-    'flex-1 bg-transparent text-sm font-space-semibold text-dark',
-    'placeholder:text-dark/40 placeholder:font-space',
+    'flex-1 bg-transparent text-[13px] font-sans-normal text-dark',
+    'placeholder:text-dark/35',
     'focus:outline-none',
   ].join(' '),
 
   // ── Sidebar nav ───────────────────────────────────────────────────────────
-  sidebarNavItem:   'flex items-center rounded-xl transition-all duration-100 group relative',
-  sidebarNavActive: 'bg-brand text-white border-2 border-border-main shadow-hard',
-  sidebarNavIdle:   'text-dark/40 hover:text-dark hover:bg-white/20',
+  sidebarNavItem:   'flex items-center rounded-md transition-all duration-100 group relative',
+  sidebarNavActive: 'bg-white text-dark font-sans-semibold shadow-[0px_1px_3px_rgba(28,25,23,0.07)]',
+  sidebarNavIdle:   'text-dark/55 font-sans-normal hover:text-dark hover:bg-dark/5',
 
   // ── Pagination ────────────────────────────────────────────────────────────
-  paginationBtn:        'flex items-center gap-1 px-3 py-2 rounded-xl border-2 border-border-main text-xs font-space-bold text-dark disabled:opacity-40 disabled:cursor-not-allowed neo-press-sm shadow-hard-sm',
-  paginationPage:       'w-8 h-8 rounded-xl border-2 border-border-main text-xs font-space-bold neo-press-sm',
-  paginationPageActive: 'bg-brand text-white shadow-hard-sm',
-  paginationPageIdle:   'bg-[var(--color-surface-card)] text-dark shadow-hard-sm',
+  paginationBtn:        'flex items-center gap-1 px-3 py-1.5 rounded-md border border-[var(--color-border-main)] text-[12px] font-sans-medium text-dark disabled:opacity-35 disabled:cursor-not-allowed transition-colors hover:bg-[var(--color-surface)]',
+  paginationPage:       'w-7 h-7 rounded-md border border-[var(--color-border-main)] text-[12px] font-sans-medium transition-colors',
+  paginationPageActive: 'bg-dark text-white border-dark',
+  paginationPageIdle:   'bg-[var(--color-surface-card)] text-dark hover:bg-[var(--color-surface)]',
 
 } as const;
 

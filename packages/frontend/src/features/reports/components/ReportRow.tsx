@@ -1,14 +1,19 @@
 /**
- * ReportRow — Compact report card used in lists (history, dashboards).
+ * ReportRow — Fila de reporte minimalista.
+ *
+ * Sin avatar: el nombre arranca directo en px-4 y coincide exactamente
+ * con la cabecera "Nombre" de TableHeader.
+ *
+ * Exports:
+ *  - ReportRow     → standalone con wrapper propio.
+ *  - ReportRowItem → fila pura, para el listado paginado.
  */
 import { memo } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, FileText } from "lucide-react";
 import { format, type Locale } from "date-fns";
-import { type IReport, fonts } from "@ticket-registrator/shared";
-import { reportIcon } from "@ticket-registrator/shared/assets";
-import { PixelCard } from "../../../components/ui/PixelCard";
+import { type IReport } from "@ticket-registrator/shared";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
-import { DARK, BRAND } from "../constants";
+import { tokens } from "../../../styles/theme";
 
 interface ReportRowProps {
   report: IReport;
@@ -16,72 +21,85 @@ interface ReportRowProps {
   dateLocale: Locale;
 }
 
-export const ReportRow = memo(({ report, onClick, dateLocale }: ReportRowProps) => (
-  <PixelCard onClick={onClick} className="w-full">
-    <div className="flex items-center gap-4 px-4 py-3">
+const ReportRowContent = ({
+  report,
+  dateLocale,
+}: Pick<ReportRowProps, "report" | "dateLocale">) => {
+  const amount = (report.approved_amount ?? report.requested_amount ?? 0).toLocaleString();
 
-      {/* Icon */}
-      <img
-        src={reportIcon}
-        alt=""
-        className="w-9 h-9 object-contain shrink-0 select-none"
-      />
+  const dateStart = format(
+    new Date(report.start_date ?? report.end_date),
+    "dd MMM",
+    { locale: dateLocale },
+  );
+  const dateEnd =
+    report.end_date && report.end_date !== report.start_date
+      ? ` – ${format(new Date(report.end_date), "dd MMM yy", { locale: dateLocale })}`
+      : "";
 
-      {/* Nombre */}
-      <div className="flex-[2] min-w-0">
-        <p className="font-space-bold text-dark truncate" style={{ fontSize: 13 }}>
+  return (
+    <div className="w-full grid items-center gap-4 px-4 py-3.5" style={{ gridTemplateColumns: "32px 1fr 120px 148px 100px 16px" }}>
+
+      {/* Icono */}
+      <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center">
+        <FileText className="w-3.5 h-3.5 text-dark/40" />
+      </div>
+
+      {/* Nombre + Tipo */}
+      <div className="min-w-0">
+        <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
           {report.name}
         </p>
+        {report.type && (
+          <p className="font-sans-medium text-dark/50 text-[12px] mt-0.5 truncate leading-none">
+            {report.type}
+          </p>
+        )}
       </div>
 
       {/* Estado */}
-      <div className="shrink-0 w-32 flex justify-center">
+      <div className="flex items-center justify-center">
         <StatusBadge status={report.status} size="sm" />
       </div>
 
       {/* Fecha */}
-      <div className="shrink-0 w-40 flex justify-center">
-        <p className="font-space-semibold tabular-nums whitespace-nowrap" style={{ fontSize: 12, color: `${DARK}70` }}>
-          {format(new Date(report.start_date ?? report.end_date), "dd MMM", { locale: dateLocale })}
-          {report.end_date && report.end_date !== report.start_date &&
-            ` – ${format(new Date(report.end_date), "dd MMM yy", { locale: dateLocale })}`}
-        </p>
-      </div>
+      <p className="font-sans-medium text-[12px] text-dark/60 text-center whitespace-nowrap">
+        {dateStart}{dateEnd}
+      </p>
 
-      {/* Dinero + moneda */}
-      <div className="shrink-0 w-28 flex justify-end">
-        <p className="font-space-bold text-dark tabular-nums leading-none" style={{ fontSize: 15 }}>
-          {(report.approved_amount ?? report.requested_amount ?? 0).toLocaleString()}
-          {report.currency && (
-            <span className="font-space-semibold ml-1" style={{ fontSize: 11, color: `${DARK}50` }}>
-              {report.currency}
-            </span>
-          )}
-        </p>
-      </div>
-
-      {/* Categoría */}
-      <div className="shrink-0 w-28 flex justify-center">
-        {report.type ? (
-          <span
-            className="inline-flex items-center font-space-bold whitespace-nowrap"
-            style={{
-              fontFamily: `'${fonts.family}', sans-serif`, fontWeight: 700, fontSize: 10,
-              color: BRAND, backgroundColor: `${BRAND}12`,
-              paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4,
-              borderRadius: 6, border: `1.5px solid ${BRAND}25`,
-            }}
-          >
-            {report.type}
+      {/* Importe */}
+      <p className="font-sans-bold text-dark tabular-nums text-right text-[14px]">
+        {amount}
+        {report.currency && (
+          <span className="font-sans-medium ml-1 text-dark/50 text-[11px]">
+            {report.currency}
           </span>
-        ) : (
-          <span style={{ fontSize: 12, color: `${DARK}25` }}>—</span>
         )}
-      </div>
+      </p>
 
-      {/* Chevron */}
-      <ChevronRight className="w-4 h-4 shrink-0" style={{ color: `${DARK}25` }} />
+      {/* Chevron — solo en hover */}
+      <ChevronRight className="w-4 h-4 text-dark/30 opacity-0 group-hover:opacity-100 transition-opacity duration-100" />
 
     </div>
-  </PixelCard>
+  );
+};
+
+export const ReportRow = memo(({ report, onClick, dateLocale }: ReportRowProps) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`group w-full text-left ${tokens.card} overflow-hidden cursor-pointer hover:bg-[var(--color-secondary)] transition-colors duration-100`}
+  >
+    <ReportRowContent report={report} dateLocale={dateLocale} />
+  </button>
+));
+
+export const ReportRowItem = memo(({ report, onClick, dateLocale }: ReportRowProps) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="group w-full text-left border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] cursor-pointer transition-colors duration-100"
+  >
+    <ReportRowContent report={report} dateLocale={dateLocale} />
+  </button>
 ));

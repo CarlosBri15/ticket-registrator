@@ -13,7 +13,7 @@ export const HISTORY_LIMIT = 5;
 // ─── Design tokens (report screens only) ─────────────────────────────────────
 // These are web-only inline-style values — they stay in the frontend.
 
-export const DARK   = "#1A1A1A";
-export const BORDER = "var(--color-border-main, #E4E4E7)";
-export const SHADOW = "var(--color-shadow-main, #D4D4D8)";
-export const BRAND  = "#1E3A8A";
+export const DARK   = "#1C1917";
+export const BORDER = "var(--color-border-main, #E5E4E0)";
+export const SHADOW = "var(--color-shadow-main, #E5E4E0)";
+export const BRAND  = "#FACC15";

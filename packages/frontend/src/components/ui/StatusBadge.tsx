@@ -1,69 +1,46 @@
 /**
- * StatusBadge — Web version of the mobile StatusBadge.
+ * StatusBadge — Web version.
  *
- * Matches mobile exactly:
- *   - Solid colored background (no translucency)
- *   - Lucide icon (matches Feather icon names)
- *   - 9px bold Space Grotesk text, all white
- *   - 2px solid dark border (BORDER_WIDTH = 2)
- *   - borderRadius: 8 (RADIUS = 8) → rounded-lg
- *   - Hard shadow: 3px offset (shadowOffset = 3)
+ * Pill sin dot. Colores cálidos/muted que encajan con el estilo
+ * blanco-crema-grafito. Las definiciones de color son web-only;
+ * mobile mantiene su propio sistema en shared/statusColors.
  */
-
-import {
-  FileText, Clock, Send, CheckCircle, DollarSign, XCircle, Slash, Edit2,
-} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { LucideIcon } from 'lucide-react';
-import { statusColors, fonts } from "@ticket-registrator/shared";
-
-const STATUS_ICONS: Record<string, LucideIcon> = {
-  DRAFT:     Edit2,
-  CREATED:   FileText,
-  PENDING:   Clock,
-  SUBMITTED: Send,
-  APPROVED:  CheckCircle,
-  PAID:      DollarSign,
-  REJECTED:  XCircle,
-  DECLINED:  Slash,
-};
 
 interface StatusBadgeProps {
   status: string;
   size?: 'sm' | 'md';
 }
 
+// Paleta warm-muted para el web. No tocar shared/statusColors (mobile).
+const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
+  DRAFT:     { bg: '#F2F0ED', color: '#6B6560' },
+  CREATED:   { bg: '#EEEDF8', color: '#4A47A0' },
+  PENDING:   { bg: '#FEF9EC', color: '#8A5C0A' },
+  SUBMITTED: { bg: '#FEF3E8', color: '#8A4810' },
+  APPROVED:  { bg: '#EDFAF3', color: '#1A6A40' },
+  PAID:      { bg: '#E8FAF0', color: '#1A6040' },
+  REJECTED:  { bg: '#FDF0EF', color: '#A03A3A' },
+  DECLINED:  { bg: '#FDF0EF', color: '#A03A3A' },
+};
+
+const FALLBACK = STATUS_STYLES.DRAFT;
+
 export const StatusBadge = ({ status, size = 'sm' }: StatusBadgeProps) => {
   const { t } = useTranslation();
-  const key = status.toUpperCase();
-  const cfg = (statusColors as any)[key] ?? statusColors.DRAFT;
-  const Icon = STATUS_ICONS[key] ?? FileText;
-  const iconSize = size === 'sm' ? 12 : 14;
+  const key    = status.toUpperCase();
+  const style  = STATUS_STYLES[key] ?? FALLBACK;
 
   return (
     <span
+      className="inline-flex items-center font-sans-medium whitespace-nowrap rounded-md"
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 4,
-        width: 100,
-        backgroundColor: cfg.bg,
-        color: '#FFFFFF',
-        border: 'none',
-        borderRadius: 10,
-        paddingTop: 5,
-        paddingBottom: 5,
-        boxShadow: 'none',
-        fontFamily: `'${fonts.family}', sans-serif`,
-        fontWeight: 700,
-        fontSize: 11,
-        letterSpacing: '0.2px',
-        whiteSpace: 'nowrap',
-        lineHeight: 1,
+        backgroundColor: style.bg,
+        color:           style.color,
+        fontSize:        size === 'sm' ? 11 : 12,
+        padding:         size === 'sm' ? '2px 7px' : '3px 8px',
       }}
     >
-      <Icon size={iconSize} strokeWidth={2.5} style={{ flexShrink: 0 }} />
       {t(`status.${key}`, { defaultValue: key })}
     </span>
   );
