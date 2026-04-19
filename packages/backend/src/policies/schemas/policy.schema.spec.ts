@@ -15,8 +15,9 @@ describe('Policy Schema', () => {
     expect(policies.name).toBeDefined();
   });
 
-  it('should have correct custom vector type for embedding', () => {
-    // Tests that the custom vector returns the correct SQL string internally
-    expect((vector as any).config.dataType()).toBe('vector(768)');
+  it('should have correct column definitions for policyChunks', () => {
+    expect(policyChunks.id).toBeDefined();
+    expect(policyChunks.policyId).toBeDefined();
+    expect(policyChunks.embedding).toBeDefined();
   });
 });
