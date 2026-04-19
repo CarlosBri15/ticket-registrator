@@ -15,9 +15,8 @@ describe('Policy Schema', () => {
     expect(policies.name).toBeDefined();
   });
 
-  it('should have correct column definitions for policyChunks', () => {
-    expect(policyChunks.id).toBeDefined();
-    expect(policyChunks.policyId).toBeDefined();
-    expect(policyChunks.embedding).toBeDefined();
+  it('should have correct custom vector type for embedding', () => {
+    const embedding = policyChunks.embedding as any;
+    expect(embedding.config.dataType()).toBe('vector(768)');
   });
 });

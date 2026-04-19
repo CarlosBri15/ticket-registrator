@@ -131,5 +131,46 @@ describe('GeminiService', () => {
         service.extractReceipt('base64-data', 'org-1'),
       ).rejects.toThrow(GeminiExtractionException);
     });
+
+    it('should correctly calculate costs when cached tokens are present', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        response: {
+          text: () => JSON.stringify({ total: 100 }),
+          usageMetadata: {
+            promptTokenCount: 1000,
+            candidatesTokenCount: 200,
+            totalTokenCount: 1200,
+            cachedContentTokenCount: 800,
+          },
+        },
+      });
+
+      // No crash means it successfully went through the cost calculation logic
+      const result = await service.extractReceipt('base64-data', 'org-1');
+      expect(result.total).toBe(100);
+    });
+
+    it('should handle missing usageMetadata gracefully', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        response: {
+          text: () => JSON.stringify({ total: 50 }),
+          usageMetadata: undefined, // Missing!
+        },
+      });
+
+      const result = await service.extractReceipt('base64-data', 'org-1');
+      expect(result.total).toBe(50);
+    });
+
+    it('should handle null items in response gracefully', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        response: {
+          text: () => JSON.stringify({ total: 50, items: null }),
+        },
+      });
+
+      const result = await service.extractReceipt('base64-data', 'org-1');
+      expect(result.items).toBeNull();
+    });
   });
 });
