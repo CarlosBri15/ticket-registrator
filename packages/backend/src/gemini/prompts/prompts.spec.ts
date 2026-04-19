@@ -21,6 +21,12 @@ describe('Gemini Prompts', () => {
       expect(result).not.toContain('CLASSIFICATION RULE');
     });
 
+    it('should return context without categories (explicit undefined)', () => {
+      const result = getReceiptUserContext('en', undefined); // Also triggers the default
+      expect(result).toContain('Output language: en');
+      expect(result).not.toContain('CLASSIFICATION RULE');
+    });
+
     it('should return context with categories', () => {
       const categories = [
         { name: 'Food', description: 'Office meals' },

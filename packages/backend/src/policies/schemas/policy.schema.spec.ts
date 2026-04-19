@@ -29,4 +29,15 @@ describe('Policy Schema', () => {
     expect(indexes.embeddingIndex).toBeDefined();
     expect(indexes.companyIndex).toBeDefined();
   });
+
+  it('should resolve table references in foreign keys', () => {
+    // This forces the execution of the () => policies.id and () => companies.id functions
+    const policyIdRef = (policyChunks.policyId as any).foreignKeyConfigs[0].foreignKey().reference().table();
+    const companyIdRef = (policyChunks.companyId as any).foreignKeyConfigs[0].foreignKey().reference().table();
+    const policyChunksCompRef = (policyChunks.companyId as any).foreignKeyConfigs[0].foreignKey().reference().table();
+    
+    expect(policyIdRef).toBeDefined();
+    expect(companyIdRef).toBeDefined();
+    expect(policyChunksCompRef).toBeDefined();
+  });
 });
