@@ -1,9 +1,8 @@
 import { pgTable, uuid, text, timestamp, index, integer, customType } from 'drizzle-orm/pg-core';
 import { companies } from '../../organization/schema/organization.schema';
 
-// Helper for Drizzle to understand the 'vector' type from pgvector
-// We will use 768 dimensions for now (Standard for modern embeddings)
-const vector = customType<{ data: number[] }>({
+// Exported for testing coverage
+export const vector = customType<{ data: number[] }>({
   dataType() {
     return 'vector(768)';
   },

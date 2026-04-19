@@ -15,14 +15,16 @@ describe('Gemini Prompts', () => {
       expect(result).not.toContain('CLASSIFICATION RULE');
     });
 
-    it('should return context without categories (default value branch)', () => {
-      const result = getReceiptUserContext('en'); // Trigger the default []
+    it('should return context without categories (default value branch via missing)', () => {
+      // @ts-ignore
+      const result = getReceiptUserContext('en'); 
       expect(result).toContain('Output language: en');
       expect(result).not.toContain('CLASSIFICATION RULE');
     });
 
-    it('should return context without categories (explicit undefined)', () => {
-      const result = getReceiptUserContext('en', undefined); // Also triggers the default
+    it('should return context without categories (default value branch via undefined)', () => {
+      // @ts-ignore
+      const result = getReceiptUserContext('en', undefined); 
       expect(result).toContain('Output language: en');
       expect(result).not.toContain('CLASSIFICATION RULE');
     });
