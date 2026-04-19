@@ -11,3 +11,4 @@ export * from '../tickets/schemas/ticket.schema';
 export * from '../history/history.schema';
 export * from '../items/schemas/item.schema';
 export * from '../roles/schemas/role.schema';
+export * from '../policies/schemas/policy.schema';
