@@ -9,8 +9,14 @@ describe('Gemini Prompts', () => {
   });
 
   describe('getReceiptUserContext', () => {
-    it('should return context without categories', () => {
+    it('should return context without categories (explicit empty array)', () => {
       const result = getReceiptUserContext('en', []);
+      expect(result).toContain('Output language: en');
+      expect(result).not.toContain('CLASSIFICATION RULE');
+    });
+
+    it('should return context without categories (default value branch)', () => {
+      const result = getReceiptUserContext('en'); // Trigger the default []
       expect(result).toContain('Output language: en');
       expect(result).not.toContain('CLASSIFICATION RULE');
     });

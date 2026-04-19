@@ -17,6 +17,16 @@ describe('Policy Schema', () => {
 
   it('should have correct custom vector type for embedding', () => {
     const embedding = policyChunks.embedding as any;
-    expect(embedding.config.dataType()).toBe('vector(768)');
+    // Trigger the dataType function execution
+    expect(embedding.dataType()).toBe('vector(768)');
+  });
+
+  it('should have indexes defined', () => {
+    // Triggers the execution of the (table) => ({ ... }) block
+    const extraConfig = (policyChunks as any).extraConfig;
+    expect(extraConfig).toBeDefined();
+    const indexes = extraConfig(policyChunks);
+    expect(indexes.embeddingIndex).toBeDefined();
+    expect(indexes.companyIndex).toBeDefined();
   });
 });
