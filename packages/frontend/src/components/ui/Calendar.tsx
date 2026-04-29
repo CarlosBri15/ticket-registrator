@@ -34,9 +34,10 @@ export const Calendar = ({
   className 
 }: CalendarProps) => {
   const [currentMonth, setCurrentMonth] = useState(() => {
-    const dateValue = mode === 'single' 
-      ? (value instanceof Date ? value : (value ? new Date(value as any) : new Date()))
-      : ((value as DateRange)?.start ? new Date((value as DateRange).start!) : new Date());
+    const isDateRange = (v: unknown): v is DateRange => v !== null && typeof v === 'object' && 'start' in v && 'end' in v;
+    const dateValue = mode === 'single'
+      ? (value instanceof Date ? value : (value && isDateRange(value) ? new Date() : new Date()))
+      : (isDateRange(value) && value.start ? new Date(value.start) : new Date());
     return isNaN(dateValue.getTime()) ? new Date() : dateValue;
   });
 
@@ -106,7 +107,7 @@ export const Calendar = ({
 
     calendarDays.forEach((day, i) => {
       const dateValue = mode === 'single'
-        ? (value instanceof Date ? value : (value ? new Date(value as any) : null))
+        ? (value instanceof Date ? value : null)
         : null;
 
       const isSelected = mode === 'single'

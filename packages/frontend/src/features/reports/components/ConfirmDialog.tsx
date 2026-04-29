@@ -43,11 +43,11 @@ export const ConfirmDialog = ({
             <div
               className={`w-16 h-16 ${iconBgClass} border-2 ${iconBorderColor} rounded-2xl flex items-center justify-center shadow-hard-sm`}
             >
-              {icon && cloneElement(icon as ReactElement, { 
+              {icon && cloneElement(icon as ReactElement<{ className?: string; style?: React.CSSProperties }>, {
                 className: "w-8 h-8 text-surface-card text-[var(--color-surface-card)]",
                 // Using the broken white from cards instead of pure white
-                style: { color: 'var(--color-surface-card)' } 
-              } as any)}
+                style: { color: 'var(--color-surface-card)' }
+              })}
             </div>
             
             <div className="space-y-1">

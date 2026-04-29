@@ -308,7 +308,7 @@ export const OrganizationDetailScreen = () => {
           isOpen={isCreateRoleOpen}
           onClose={() => setIsCreateRoleOpen(false)}
           companyId={id}
-          onRoleCreated={(roleId: any) => setAssignPermissionsRoleId(roleId)}
+          onRoleCreated={(roleId: string) => setAssignPermissionsRoleId(roleId)}
         />
       )}
 

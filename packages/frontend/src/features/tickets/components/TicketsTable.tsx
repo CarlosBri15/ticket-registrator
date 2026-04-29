@@ -15,7 +15,7 @@ const TicketRowContent = ({
 }: {
   ticket: ITicket;
   dateLocale: Locale;
-  t: any;
+  t: (key: string, defaultValue?: string) => string;
 }) => {
   const isCard = ticket.payment_type?.toLowerCase().includes('card') || ticket.payment_type?.toLowerCase().includes('tarjeta');
   const PaymentIcon = isCard ? CreditCard : Banknote;

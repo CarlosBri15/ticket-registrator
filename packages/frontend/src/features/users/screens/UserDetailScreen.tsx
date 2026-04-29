@@ -19,6 +19,7 @@ import {
   ReportStatus,
   useReportFilterState,
 } from "@ticket-registrator/shared";
+import type { DateRange } from "../../../components/ui/Calendar";
 import { EditUserModal } from "../components/EditUserModal";
 import { Button } from "../../../components/ui/Button";
 import { ReportRow } from "../../reports/components/ReportRow";
@@ -217,7 +218,7 @@ export const UserDetailScreen = () => {
                 <ReportFilterBar
                   search={search}           onSearch={setSearch}
                   statusFilter={statusFilter} onStatus={setStatusFilter}
-                  dateRange={dateRange as any}     onDateRange={setDateRange as any}
+                  dateRange={dateRange as DateRange | null}     onDateRange={setDateRange}
                   hasFilters={hasActiveFilters} onClear={clearFilters}
                 />
               </div>

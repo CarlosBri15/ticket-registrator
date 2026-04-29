@@ -150,7 +150,7 @@ export const PermissionsScreen = () => {
 
   const companyId = isGlobal
     ? activeCompanyId
-    : (scope as any).companyId ?? null;
+    : ((scope && typeof scope === 'object' && 'companyId' in scope) ? (scope as { companyId?: string | null }).companyId : null) ?? null;
 
   const canManage = can("manage_permissions");
 

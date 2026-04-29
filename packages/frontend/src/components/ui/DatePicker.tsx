@@ -43,7 +43,7 @@ export const DatePicker = ({
     if (!value) return null;
 
     if (mode === 'single') {
-      const dateValue = value instanceof Date ? value : (value ? new Date(value as any) : null);
+      const dateValue = value instanceof Date ? value : null;
       if (dateValue && !isNaN(dateValue.getTime())) {
         return format(dateValue, "d 'de' MMMM, yyyy", { locale: es });
       }

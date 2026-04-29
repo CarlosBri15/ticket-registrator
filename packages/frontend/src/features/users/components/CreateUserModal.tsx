@@ -72,7 +72,7 @@ export const CreateUserModal = ({ isOpen, onClose, companyId }: CreateUserModalP
     e.preventDefault();
     if (passwordMismatch || orgMissing) return;
 
-    const payload: Record<string, unknown> = {
+    const payload = {
       name: form.name,
       surname: form.surname,
       email: form.email,
@@ -81,10 +81,10 @@ export const CreateUserModal = ({ isOpen, onClose, companyId }: CreateUserModalP
       confirmPassword: form.confirmPassword,
       roleId: form.roleId,
       departmentIds: form.departmentIds,
+      ...(isCreatorSuperAdmin && form.orgId ? { companyId: form.orgId } : {}),
     };
-    if (isCreatorSuperAdmin && form.orgId) payload.companyId = form.orgId;
 
-    mutation.mutate(payload as any);
+    mutation.mutate(payload);
   };
 
   return (

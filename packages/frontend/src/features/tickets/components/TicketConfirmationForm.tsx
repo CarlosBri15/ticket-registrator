@@ -19,7 +19,7 @@ type FieldKey =
   | "currency"
   | "payment_type";
 
-const isExtracted = (value: any): boolean =>
+const isExtracted = (value: unknown): boolean =>
   value !== null && value !== undefined && value !== "";
 
 const FIELD_META: Record<

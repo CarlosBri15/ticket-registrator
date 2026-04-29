@@ -42,11 +42,11 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
     control,
     formState: { errors },
   } = useForm<CreateReportSchema>({
-    resolver: zodResolver(createReportSchema) as any,
+    resolver: zodResolver(createReportSchema),
     defaultValues: {
       name: "",
-      start_date: undefined as any,
-      end_date: undefined as any,
+      start_date: undefined,
+      end_date: undefined,
       currency: "EUR",
       type: "",
     },
@@ -58,7 +58,7 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-8">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {apiError && (
         <div className={`${tokens.alert} ${tokens.alertError}`}>
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />

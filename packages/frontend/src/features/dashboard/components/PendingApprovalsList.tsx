@@ -8,7 +8,7 @@ export interface PendingApprovalsListProps {
   reports: IReport[];
   navigate: (path: string) => void;
   dateLocale: Locale;
-  t: (key: string, opts?: any) => string;
+  t: (key: string, opts?: Record<string, unknown>) => string;
   title?: string;
   maxItems?: number;
   viewAllPath?: string;
