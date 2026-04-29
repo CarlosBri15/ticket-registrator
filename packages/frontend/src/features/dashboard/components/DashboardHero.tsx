@@ -1,18 +1,16 @@
-import { Sparkles } from "lucide-react";
-import { radius } from "../../../styles/theme";
+import { Calendar } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import type { ICurrentUser } from "@ticket-registrator/shared";
 
 interface DashboardHeroProps {
-  user: any;
-  t: (key: string, options?: any) => string;
+  user: ICurrentUser | undefined;
+  t: (key: string, options?: Record<string, unknown>) => string;
   greetingKey: string;
   firstName: string;
   subtitle: string;
   subtitleIcon: React.ReactNode;
   actions?: React.ReactNode;
-  avatarBgColor?: string;
-  avatarIcon?: React.ReactNode;
   badgeContent?: React.ReactNode;
-  badgeColorClass?: string;
 }
 
 export const DashboardHero = ({
@@ -22,45 +20,50 @@ export const DashboardHero = ({
   firstName,
   subtitle,
   subtitleIcon,
-  actions,
-  avatarBgColor = "bg-brand",
-  avatarIcon = <Sparkles className="w-5 h-5" />,
   badgeContent,
-  badgeColorClass = "text-brand/70 bg-brand/10",
+  actions,
 }: DashboardHeroProps) => {
-  return (
-    <div className={`relative bg-dark ${radius.card} p-6 overflow-hidden shadow-lg`}>
-      {/* Subtle decorative bg */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-brand/8 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-40 h-40 bg-secondary/5 rounded-full translate-y-1/2 pointer-events-none" />
+  const { i18n } = useTranslation();
 
-      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
-        <div className="flex items-center gap-4">
-          <div className="relative shrink-0">
-            <div className={`w-12 h-12 ${avatarBgColor} ${radius.base} flex items-center justify-center shadow-md text-white font-bold text-lg select-none`}>
-              {user?.name?.charAt(0).toUpperCase() ?? avatarIcon}
-            </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success border-2 border-dark rounded-full" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-brand/60">{subtitleIcon}</span>
-              <p className="text-[10px] font-medium text-brand/60 uppercase tracking-widest">
-                {subtitle}
-              </p>
-            </div>
-            <h1 className="text-xl font-semibold text-white tracking-tight">
-              {t(greetingKey, { name: firstName })}
-            </h1>
-            {(badgeContent || user?.roleName) && (
-              <span className={`inline-block mt-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 ${radius.full} ${badgeColorClass}`}>
-                {badgeContent || user?.roleName}
-              </span>
-            )}
-          </div>
+  const today = new Date().toLocaleDateString(i18n.language, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const fullGreeting: string = t(greetingKey, { name: firstName });
+  const nameIndex = fullGreeting.lastIndexOf(firstName);
+  const greetingPrefix = nameIndex > 0 ? fullGreeting.slice(0, nameIndex) : "";
+  const greetingName = nameIndex > 0 ? fullGreeting.slice(nameIndex) : fullGreeting;
+
+  return (
+    <div className="flex items-end justify-between gap-4 pt-1">
+      <div className="flex flex-col gap-2 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          {subtitleIcon && <span className="shrink-0 text-dark/40">{subtitleIcon}</span>}
+          <p className="text-[11px] font-sans-semibold text-dark/45 uppercase tracking-wide">
+            {subtitle}
+          </p>
+          {(badgeContent || user?.roleName) && (
+            <span className="text-[10px] font-sans-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-[var(--color-secondary)] text-dark/60">
+              {badgeContent || user?.roleName}
+            </span>
+          )}
         </div>
-        {actions && <div className="flex gap-2.5 shrink-0">{actions}</div>}
+
+        <h1 className="text-[36px] font-sans-bold text-dark leading-none tracking-tight">
+          <span className="text-dark/40 font-sans-medium">{greetingPrefix}</span>
+          {greetingName}
+        </h1>
+
+        <p className="text-[12px] font-sans-medium text-dark/45 flex items-center gap-1.5 capitalize mt-0.5">
+          <Calendar className="w-3 h-3 text-dark/35" aria-hidden={true} />
+          {today}
+        </p>
       </div>
+
+      {actions && <div className="shrink-0 flex items-center gap-2">{actions}</div>}
     </div>
   );
 };

@@ -14,11 +14,16 @@ export * from './schemas/users/createUser.schema';
 
 // Reports
 export * from './interfaces/reports/report.interface';
+export * from './interfaces/reports/reportPagination.interface';
 export * from './schemas/reports/createReport.schema';
 export * from './schemas/reports/updateReport.schema';
 
+
 // Tickets
 export * from './interfaces/tickets/ticket.interface';
+export * from './interfaces/categories/category.interface';
+export * from './schemas/categories/createCategory.schema';
+export * from './schemas/categories/updateCategory.schema';
 export * from './interfaces/categories/category.interface';
 export * from './schemas/categories/createCategory.schema';
 export * from './schemas/categories/updateCategory.schema';
@@ -47,7 +52,11 @@ export * from './hooks/useOrganizations';
 export * from './hooks/usePermissions';
 export * from './hooks/usePermissionsManagement';
 export * from './hooks/useScope';
-export * from './hooks/useCategories';
+export * from './hooks/useModalState';
+export * from './hooks/createCrudMutationHook';
+export * from './hooks/useListState';
+export * from './hooks/useCompanyScope';
+export * from './hooks/useReportFilterState';
 
 // Shared components (React.Fragment only — compatible with web and mobile)
 export * from './components/PermissionGuard';
@@ -100,3 +109,15 @@ export * from './schemas/permissions/userPermissionOverride.schema';
 
 // Categories
 export * from './defaults/default-categories';
+
+// Utilities
+export * from './utils/hierarchy';
+export * from './utils/errorUtils';
+export * from './utils/avatarColor';
+
+// Constants
+export * from './constants/hierarchy';
+export * from './constants/cache';
+export * from './constants/pagination';
+export * from './constants/i18n';
+export * from './constants/statuses';

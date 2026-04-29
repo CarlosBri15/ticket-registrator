@@ -1,24 +1,23 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Globe,
-  Plus,
-  Building,
-  Search,
-  ChevronRight,
-} from "lucide-react";
+import { Plus, Building, ChevronRight } from "lucide-react";
 import {
   useOrganizationsQuery,
   useOnboardOrganizationMutation,
   usePermissions,
   type IOrganization,
 } from "@ticket-registrator/shared";
+import { PageHeader } from "../../../components/ui/PageHeader";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Modal } from "../../../components/ui/Modal";
+import { SearchInput } from "../../../components/ui/SearchInput";
+import { TableHeader } from "../../../components/ui/TableHeader";
 import { AlertError, getApiErrorMessage } from "../../../components/ui/Alert";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+
+const ORG_GRID = "32px 1fr 140px 16px";
 
 // ─── Onboard Modal ────────────────────────────────────────────────────────────
 
@@ -60,7 +59,7 @@ const OnboardModal = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Nueva Organización" subtitle="Onboarding de empresa">
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         {mutation.error && (
           <AlertError message={getApiErrorMessage(mutation.error)} onDismiss={() => mutation.reset()} />
         )}
@@ -72,31 +71,37 @@ const OnboardModal = ({
           required
         />
 
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-sans-semibold text-dark/50 uppercase tracking-wide">
               Administradores iniciales *
             </span>
             {admins.length < 3 && (
               <button
                 type="button"
                 onClick={addAdmin}
-                className="text-xs font-bold text-brand hover:text-brand flex items-center gap-1"
+                className="text-[12px] font-sans-medium text-dark/60 hover:text-dark flex items-center gap-1"
               >
                 <Plus className="w-3 h-3" /> Añadir
               </button>
             )}
           </div>
-          <div className="space-y-4">
+
+          <div className="flex flex-col gap-3">
             {admins.map((admin, i) => (
-              <div key={admin.id} className="p-4 bg-gray-50 rounded-2xl space-y-3">
+              <div
+                key={admin.id}
+                className="rounded-lg border border-[var(--color-border-main)] bg-[var(--color-secondary)] p-4 flex flex-col gap-3"
+              >
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Admin {i + 1}</p>
+                  <p className="text-[11px] font-sans-semibold text-dark/55 uppercase tracking-wide">
+                    Admin {i + 1}
+                  </p>
                   {admins.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeAdmin(admin.id)}
-                      className="text-xs text-red-400 hover:text-red-600 font-bold"
+                      className="text-[12px] font-sans-medium text-danger hover:opacity-80"
                     >
                       Quitar
                     </button>
@@ -110,13 +115,14 @@ const OnboardModal = ({
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-400 mt-2">
+
+          <p className="text-[12px] font-sans-normal text-dark/45">
             Se generarán contraseñas temporales para cada administrador.
           </p>
         </div>
 
         <div className="flex gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose} className="flex-1">Cancelar</Button>
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancelar</Button>
           <Button type="submit" isLoading={mutation.isPending} disabled={!isValid} className="flex-1">
             Crear Organización
           </Button>
@@ -126,24 +132,29 @@ const OnboardModal = ({
   );
 };
 
-// ─── Org Card ─────────────────────────────────────────────────────────────────
+// ─── Org Row ──────────────────────────────────────────────────────────────────
 
-const OrgCard = ({ org, onClick }: { org: IOrganization; onClick: () => void }) => (
+const OrgRow = ({ org, onClick }: { org: IOrganization; onClick: () => void }) => (
   <button
     type="button"
     onClick={onClick}
-    className="w-full text-left bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-brand/20 transition-all group flex items-center gap-4"
+    className="group w-full text-left border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] transition-colors duration-100"
   >
-    <div className="w-11 h-11 bg-brand/10 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-brand/20 transition-colors">
-      <Building className="w-5 h-5 text-brand" />
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className="font-bold text-dark text-sm truncate">{org.name}</p>
-      <p className="text-xs text-gray-400 mt-0.5">
+    <div
+      className="grid items-center gap-4 px-4 py-3.5"
+      style={{ gridTemplateColumns: ORG_GRID }}
+    >
+      <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white">
+        <Building className="w-3.5 h-3.5" aria-hidden={true} />
+      </div>
+      <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
+        {org.name}
+      </p>
+      <p className="text-right font-sans-medium text-[12px] text-dark/55 whitespace-nowrap">
         {format(new Date(org.createdAt), "dd MMM yyyy", { locale: es })}
       </p>
+      <ChevronRight className="w-4 h-4 text-dark/30 opacity-0 group-hover:opacity-100 transition-opacity" />
     </div>
-    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-brand transition-colors shrink-0" />
   </button>
 );
 
@@ -162,80 +173,98 @@ export const OrganizationsScreen = () => {
     o.name.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex justify-center py-32">
-          <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-        </div>
-      );
-    }
-
-    if (!filtered || filtered.length === 0) {
-      return (
-        <div className="text-center py-32 bg-white rounded-[2rem] border border-dashed border-gray-200">
-          <Globe className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-          <h3 className="text-xl font-black text-gray-300 mb-2">
-            {search ? "Sin resultados" : "No hay organizaciones"}
-          </h3>
-          <p className="text-sm text-gray-300">
-            {search ? "Prueba con otra búsqueda." : "Crea la primera organización usando el botón superior."}
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {filtered.map((org) => (
-            <OrgCard
-              key={org.id}
-              org={org}
-              onClick={() => navigate(`/organizations/${org.id}`)}
-            />
-          ))}
-        </div>
-        <p className="text-xs text-gray-400 text-center mt-4">
-          {filtered.length} de {organizations?.length ?? 0} organizaciones
-        </p>
-      </>
-    );
-  };
+  const totalOrgs = organizations?.length ?? 0;
+  const hasAny = totalOrgs > 0;
+  const hasFilteredResults = (filtered?.length ?? 0) > 0;
 
   return (
-    <div className="animate-in fade-in duration-500 pb-20">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
-        <div>
-          <h1 className="text-4xl font-extrabold text-dark tracking-tight mb-2 flex items-center gap-3">
-            <Globe className="w-8 h-8 text-brand" />
-            Organizaciones
-          </h1>
-          <p className="text-gray-500 font-medium">Gestión global de todas las organizaciones.</p>
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        title="Organizaciones"
+        subtitle="Gestión global de todas las organizaciones."
+        stats={hasAny ? [{ label: "Total", value: totalOrgs }] : undefined}
+        actions={
+          can("create_company") && (
+            <Button
+              variant="primary"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              onClick={() => setIsOnboardOpen(true)}
+            >
+              Nueva Organización
+            </Button>
+          )
+        }
+      />
+
+      <div className="flex flex-col gap-3">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar organización..."
+        />
+
+        <div className="w-full">
+          <TableHeader
+            gridTemplate={ORG_GRID}
+            columns={[
+              { label: "Nombre" },
+              { label: "Creada", align: "right" },
+            ]}
+          />
+
+          {(() => {
+            if (isLoading) {
+              return (
+                <div className="flex flex-col items-center justify-center py-14 gap-2">
+                  <div className="w-4 h-4 border-2 border-dark/20 border-t-dark/60 rounded-full animate-spin" />
+                </div>
+              );
+            }
+
+            if (!hasAny) {
+              return (
+                <div className="flex flex-col items-center py-14 gap-2 text-center border-b border-[var(--color-border-main)]">
+                  <p className="font-sans-medium text-[13px] text-dark/55">
+                    No hay organizaciones
+                  </p>
+                  <p className="font-sans-normal text-[12px] text-dark/40 max-w-sm">
+                    Crea la primera organización usando el botón superior.
+                  </p>
+                </div>
+              );
+            }
+
+            if (!hasFilteredResults) {
+              return (
+                <div className="flex flex-col items-center py-14 gap-2 text-center border-b border-[var(--color-border-main)]">
+                  <p className="font-sans-medium text-[13px] text-dark/55">Sin resultados</p>
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="font-sans-medium text-dark/50 text-[12px] underline underline-offset-2 hover:text-dark transition-colors mt-1"
+                  >
+                    Limpiar búsqueda
+                  </button>
+                </div>
+              );
+            }
+
+            return filtered!.map((org) => (
+              <OrgRow
+                key={org.id}
+                org={org}
+                onClick={() => navigate(`/organizations/${org.id}`)}
+              />
+            ));
+          })()}
         </div>
-        {can("create_company") && (
-          <Button onClick={() => setIsOnboardOpen(true)} className="shadow-xl shadow-brand/20">
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Organización
-          </Button>
+
+        {hasFilteredResults && (
+          <p className="text-[12px] font-sans-medium text-dark/45 text-center mt-2">
+            {filtered!.length} de {totalOrgs} organizaciones
+          </p>
         )}
       </div>
-
-      {/* Search */}
-      <div className="relative mb-6">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-        <input
-          type="text"
-          placeholder="Buscar organización..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-medium text-dark placeholder-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30 transition-all"
-        />
-      </div>
-
-      {/* Content */}
-      {renderContent()}
 
       <OnboardModal isOpen={isOnboardOpen} onClose={() => setIsOnboardOpen(false)} />
     </div>

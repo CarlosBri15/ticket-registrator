@@ -1,159 +1,94 @@
 /**
- * Design Tokens — Web-specific extensions of the shared design system.
- *
- * Platform-agnostic tokens (colors, radius, text, spacing) come from shared.
- * This file adds web-only tokens: shadows, transitions, hover/focus states,
- * animations, and composite component class strings.
+ * Web Design Tokens — Minimalist system.
  *
  * Usage:
- *   import { tokens, radius } from '@/styles/theme';
+ *   import { tokens } from '@/styles/theme';
  *   <div className={tokens.card}>...</div>
  */
 
-export { colors, radius, text, spacing } from '@ticket-registrator/shared';
-import { radius, spacing, text } from '@ticket-registrator/shared';
+export { colors, radius, text, spacing, shadows, statusColors, nbTokens } from '@ticket-registrator/shared';
 
-// ─── Shadows (web only) ───────────────────────────────────────────────────────
-
-export const shadow = {
-  sm:   'shadow-sm',
-  base: 'shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]',
-  md:   'shadow-md',
-  lg:   'shadow-lg',
-} as const;
 
 // ─── Transitions (web only) ───────────────────────────────────────────────────
 
 export const transition = {
-  base: 'transition-all duration-200',
-  slow: 'transition-all duration-300',
+  base: 'transition-all duration-100',
+  slow: 'transition-all duration-200',
 } as const;
 
-// ─── Composite Component Tokens (web only) ────────────────────────────────────
+// ─── Composite Component Tokens ───────────────────────────────────────────────
 
 export const tokens = {
-  // ── Card ──────────────────────────────────────────────────────────────────
-  card:     `bg-white ${radius.card} border border-slate-200 ${shadow.sm} ${spacing.card}`,
-  cardHover:`hover:${shadow.md} hover:border-brand/20 ${transition.base}`,
-  cardFlat: `bg-white ${radius.card} border border-slate-200 ${spacing.card}`,
+
+  // ── Card — clean white surfaces ─────────────────────────────────────────
+  card: 'bg-[var(--color-surface-card)] border border-[var(--color-border-main)] rounded-lg',
 
   // ── Input ─────────────────────────────────────────────────────────────────
   input: [
-    `w-full ${spacing.input} ${radius.base} border border-slate-200 bg-white text-dark text-sm font-medium`,
-    'placeholder:text-slate-400 placeholder:font-normal',
-    `${transition.base}`,
-    'hover:border-slate-300',
-    'focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10',
-    'disabled:opacity-60 disabled:bg-slate-50 disabled:cursor-not-allowed',
+    'w-full px-3 py-2 rounded-md border border-[var(--color-border-main)] bg-[var(--color-surface-card)]',
+    'text-dark text-sm font-sans-medium',
+    'placeholder:text-dark/35 placeholder:font-sans-normal',
+    'transition-all duration-100',
+    'focus:outline-none focus:border-dark/40 focus:ring-2 focus:ring-dark/8 focus:shadow-none',
+    'disabled:opacity-50 disabled:bg-[var(--color-surface)] disabled:cursor-not-allowed',
   ].join(' '),
-  inputError:    'border-danger/50 focus:border-danger focus:ring-danger/10 bg-danger/[0.02]',
-  inputLabel:    `${text.label} mb-1.5 block`,
-  inputHint:     `${text.caption} mt-1`,
-  inputErrorMsg: 'text-xs text-danger font-medium mt-1',
+  inputError:    'border-danger focus:border-danger focus:ring-danger/10',
+  inputLabel:    'block text-[11px] font-sans-semibold text-dark/50 mb-1.5 uppercase tracking-wide',
+  inputErrorMsg: 'text-[11px] text-danger font-sans-medium mt-1',
 
-  // ── Button ────────────────────────────────────────────────────────────────
+  // ── Button ─────────────────────────────────────────────────────────────────
   buttonBase: [
-    `relative inline-flex items-center justify-center ${spacing.input} ${radius.base}`,
-    'font-semibold text-sm',
-    `${transition.base}`,
-    'active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none',
+    'relative inline-flex items-center justify-center px-3.5 py-2',
+    'rounded-md',
+    'font-sans-medium text-[13px]',
+    'transition-all duration-150',
+    'disabled:opacity-50 disabled:cursor-not-allowed',
   ].join(' '),
-  buttonPrimary:   'bg-brand hover:bg-brand-hover text-white shadow-sm',
-  buttonSecondary: 'bg-white text-dark hover:bg-slate-50 border border-slate-200 shadow-sm',
-  buttonDanger:    'bg-danger hover:bg-red-700 text-white shadow-sm',
-  buttonOutline:   'bg-transparent border border-brand text-brand hover:bg-brand/5',
-  buttonGhost:     'bg-transparent text-slate-500 hover:text-brand hover:bg-brand/5',
-  buttonGhostWhite:'bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm',
+  buttonPrimary:     'bg-brand text-white hover:bg-brand-hover border border-brand/20',
+  buttonSuccess:     'bg-success text-white hover:opacity-90',
+  buttonSecondary:   'bg-white text-dark border border-[var(--color-border-main)] hover:bg-[#FAFAF8]',
+  buttonDanger:      'bg-danger text-white hover:opacity-90',
+  buttonOutline:     'bg-transparent border border-[var(--color-border-main)] text-dark hover:bg-[#FAFAF8]',
+  buttonGhost:       'bg-transparent text-dark/50 hover:text-dark hover:bg-dark/5',
+  buttonGhostWhite:  'bg-white/10 text-white hover:bg-white/20',
+  buttonGhostDanger: 'bg-transparent text-danger hover:bg-danger/5',
+  buttonGhostBrand:  'bg-transparent text-dark/60 hover:bg-dark/5',
 
   // ── Select ────────────────────────────────────────────────────────────────
   selectTrigger: [
-    `w-full flex items-center justify-between ${spacing.input} ${radius.base}`,
-    'border border-slate-200 bg-white text-sm font-medium text-left',
-    `${transition.base}`,
-    'hover:border-slate-300',
-    'disabled:opacity-60 disabled:bg-slate-50 disabled:cursor-not-allowed',
+    'w-full flex items-center justify-between px-3 py-2 rounded-md',
+    'border border-[var(--color-border-main)] bg-[var(--color-surface-card)] text-sm font-sans-medium text-left',
+    'transition-all duration-100',
+    'disabled:opacity-50 disabled:cursor-not-allowed',
   ].join(' '),
-  selectTriggerFocus: 'border-brand ring-2 ring-brand/10',
-  selectDropdown:     `bg-white border border-slate-200 ${radius.base} ${shadow.lg} py-1 max-h-60 overflow-y-auto`,
-  selectOption:       `w-full flex items-center justify-between px-3.5 py-2 text-sm font-medium text-left ${transition.base}`,
-  selectOptionActive: 'bg-brand/10 text-brand',
-  selectOptionIdle:   'text-dark hover:bg-slate-50 hover:text-brand',
+  selectTriggerFocus: 'border-dark/40 ring-2 ring-dark/8',
+  selectDropdown:     'bg-[var(--color-surface-card)] border border-[var(--color-border-main)] rounded-md py-1 max-h-60 overflow-y-auto shadow-[0px_8px_24px_rgba(28,25,23,0.08)]',
+  selectOption:       'w-full flex items-center justify-between px-3 py-2 text-sm font-sans-medium text-left',
+  selectOptionActive: 'bg-brand/10 text-dark font-sans-semibold',
+  selectOptionIdle:   'text-dark hover:bg-[var(--color-surface)]',
 
   // ── Modal ─────────────────────────────────────────────────────────────────
-  modalOverlay:    'fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6',
-  modalBackdrop:   'absolute inset-0 bg-dark/40 backdrop-blur-sm animate-in fade-in duration-200 w-full h-full border-none outline-none',
-  modalContainer:  `relative bg-white w-full rounded-t-xl sm:${radius.card} ${shadow.lg} animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 overflow-hidden`,
-  modalHeader:     'bg-brand px-6 pt-6 pb-4 relative overflow-hidden',
-  modalTitle:      'text-lg font-semibold text-white tracking-tight',
-  modalSubtitle:   'text-sm text-white/60 font-medium mt-0.5',
-  modalBody:       'p-6 max-h-[calc(100vh-10rem)] overflow-y-auto custom-scrollbar',
-  modalClose:      `p-2 text-white/60 hover:text-white hover:bg-white/10 ${radius.base} ${transition.base} shrink-0`,
-
-  // ── Badge / Status ────────────────────────────────────────────────────────
-  badge:         `inline-flex items-center gap-1.5 font-semibold border ${radius.full} px-2.5 py-1 text-xs`,
-  badgeSm:       `inline-flex items-center gap-1 font-semibold border ${radius.full} px-2 py-0.5 text-[10px]`,
-  badgeSuccess:  'bg-success/10 text-success border-success/20',
-  badgeWarning:  'bg-warning/10 text-warning border-warning/20',
-  badgeDanger:   'bg-danger/10 text-danger border-danger/20',
-  badgeInfo:     'bg-info/10 text-info border-info/20',
-  badgeNeutral:  'bg-slate-100 text-slate-600 border-slate-200',
-  badgeBrand:    'bg-brand/10 text-brand border-brand/20',
+  modalOverlay:   'fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6',
+  modalBackdrop:  'absolute inset-0 bg-dark/30 backdrop-blur-[2px] animate-in fade-in duration-200 w-full h-full border-none outline-none',
+  modalContainer: 'relative bg-[var(--color-surface-card)] w-full rounded-t-2xl sm:rounded-2xl border border-[var(--color-border-main)] shadow-[0px_20px_48px_rgba(28,25,23,0.08)] animate-in fade-in slide-in-from-bottom-4 duration-200 overflow-hidden',
+  modalHeader:    'px-8 pt-8 pb-4',
+  modalTitle:     'text-[24px] font-sans-bold text-dark tracking-tight leading-none',
+  modalSubtitle:  'text-sm font-sans-normal text-dark/40 mt-2',
+  modalClose:     'w-10 h-10 flex items-center justify-center text-dark/30 hover:text-dark hover:bg-dark/5 rounded-full transition-colors duration-200 shrink-0',
+  modalBody:      'px-10 pb-10',
 
   // ── Alert ─────────────────────────────────────────────────────────────────
-  alert:        `flex items-start gap-3 px-4 py-3 border ${radius.base} animate-in slide-in-from-top-2 fade-in duration-200`,
-  alertError:   'bg-danger/5 border-danger/20 text-danger',
-  alertSuccess: 'bg-success/5 border-success/20 text-success',
-  alertWarning: 'bg-warning/5 border-warning/20 text-warning',
-  alertInfo:    'bg-brand/5 border-brand/20 text-brand',
+  alert:        'flex items-start gap-3 px-4 py-3 border rounded-lg animate-in slide-in-from-top-2 fade-in duration-200',
+  alertError:   'bg-red-50 border-red-100 text-red-700',
+  alertSuccess: 'bg-green-50 border-green-100 text-green-700',
+  alertWarning: 'bg-amber-50 border-amber-100 text-amber-700',
+  alertInfo:    'bg-blue-50 border-blue-100 text-blue-700',
 
-  // ── PageHeader ────────────────────────────────────────────────────────────
-  pageHeader:         `bg-brand ${radius.card} px-6 py-5 overflow-hidden ${shadow.sm} relative`,
-  pageHeaderTitle:    'text-lg font-semibold text-white tracking-tight',
-  pageHeaderSubtitle: 'text-white/50 text-xs font-medium mt-0.5',
+  // ── Sidebar nav ───────────────────────────────────────────────────────────
+  sidebarNavItem:   'flex items-center rounded-md transition-all duration-100 group relative',
+  sidebarNavActive: 'bg-white text-dark font-sans-semibold shadow-[0px_1px_3px_rgba(28,25,23,0.07)]',
+  sidebarNavIdle:   'text-dark/55 font-sans-normal hover:text-dark hover:bg-dark/5',
 
-  // ── StatCard ──────────────────────────────────────────────────────────────
-  statCard:        `bg-white ${radius.card} border border-slate-200 ${shadow.sm} ${spacing.card} flex flex-col gap-3`,
-  statCardPrimary: `bg-brand ${radius.card} ${spacing.card} overflow-hidden shadow-md relative`,
-  statCardLabel:   'text-xs font-medium text-slate-400 uppercase tracking-wide',
-  statCardValue:   'text-2xl font-bold text-dark tracking-tight leading-none',
-
-  // ── Table / List ──────────────────────────────────────────────────────────
-  listItem:          `bg-white ${radius.card} border border-slate-200 ${shadow.sm} p-4 flex items-center justify-between ${transition.base} hover:border-brand/20 hover:shadow-md cursor-pointer`,
-  listSection:       `bg-white ${radius.card} border border-slate-200 ${shadow.sm} overflow-hidden`,
-  listSectionHeader: 'px-5 py-3.5 border-b border-slate-100 flex items-center gap-2.5',
-  listSectionTitle:  'text-xs font-semibold text-slate-500 uppercase tracking-wide',
-
-  // ── Empty state ───────────────────────────────────────────────────────────
-  emptyState:     `${radius.card} border border-dashed border-slate-200 bg-slate-50/50 p-12 flex flex-col items-center justify-center text-center`,
-  emptyStateIcon: `w-14 h-14 bg-white ${radius.card} ${shadow.sm} flex items-center justify-center mb-4 border border-slate-200`,
-  emptyStateText: 'text-sm text-slate-400 font-medium max-w-xs leading-relaxed',
-
-  // ── Skeleton ──────────────────────────────────────────────────────────────
-  skeleton:     'bg-slate-100 animate-pulse',
-  skeletonCard: `bg-white ${radius.card} border border-slate-200 p-5 animate-pulse`,
-
-  // ── Filter / Chip ─────────────────────────────────────────────────────────
-  chip:         `px-3 py-1.5 ${radius.base} text-xs font-semibold ${transition.base}`,
-  chipActive:   'bg-brand text-white shadow-sm',
-  chipInactive: 'bg-slate-50 text-slate-400 border border-slate-200 hover:border-brand/30 hover:text-brand',
-
-  // ── Search input ──────────────────────────────────────────────────────────
-  searchInput: [
-    `w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 ${radius.base}`,
-    'text-sm font-medium text-dark placeholder:text-slate-400',
-    `focus:outline-none focus:ring-2 focus:ring-brand/10 focus:border-brand ${transition.base}`,
-  ].join(' '),
-
-  // ── Sidebar ───────────────────────────────────────────────────────────────
-  sidebarNavItem:   `flex items-center ${radius.base} ${transition.base} group relative`,
-  sidebarNavActive: 'bg-brand text-white shadow-md',
-  sidebarNavIdle:   'text-gray-400 hover:bg-white/5 hover:text-white',
-
-  // ── Pagination ────────────────────────────────────────────────────────────
-  paginationBtn:        `flex items-center gap-1 px-3 py-2 ${radius.base} border border-slate-200 text-xs font-semibold text-slate-400 disabled:opacity-40 disabled:cursor-not-allowed hover:border-brand/30 hover:text-brand hover:bg-brand/5 ${transition.base}`,
-  paginationPage:       `w-8 h-8 ${radius.base} text-xs font-semibold ${transition.base}`,
-  paginationPageActive: 'bg-brand text-white shadow-sm',
-  paginationPageIdle:   'border border-slate-200 text-slate-400 hover:border-brand/30 hover:text-brand hover:bg-brand/5',
 } as const;
 
 export default tokens;

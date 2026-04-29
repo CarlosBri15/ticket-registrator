@@ -27,8 +27,8 @@ import {
   UpdateTicketStatusDto,
 } from './dto/update-ticket-user.dto';
 import * as schema from '../db/schema';
-import { Ticket, InsertTicket } from './schemas/ticket.schema';
-import { InsertItem, Item } from '../items/schemas/item.schema';
+import { Ticket, InsertTicket, TicketWithItems } from './schemas/ticket.schema';
+import { InsertItem } from '../items/schemas/item.schema';
 import { Report as ReportEntity } from '../reports/schemas/report.schema';
 
 @Injectable()
@@ -89,7 +89,7 @@ export class TicketsService {
         if (oldRatioStr && newRatioStr) {
           // New format: Check aspect ratio first (tolerance 5%)
           if (
-            Math.abs(parseFloat(oldRatioStr) - parseFloat(newRatioStr)) > 0.05
+            Math.abs(Number.parseFloat(oldRatioStr) - Number.parseFloat(newRatioStr)) > 0.05
           )
             continue;
 
@@ -231,7 +231,7 @@ export class TicketsService {
     );
 
     const fullTicket = (await this.ticketsRepository.findById(ticket.id)) as
-      | (Ticket & { items: Item[] })
+      | TicketWithItems
       | undefined;
     if (fullTicket?.reportId !== reportId) throw new TicketNotFoundException(ticket.id);
     return mapTicketToITicket(fullTicket);
@@ -264,7 +264,7 @@ export class TicketsService {
     }
 
     const ticket = (await this.ticketsRepository.findById(ticketId)) as
-      | (Ticket & { items: Item[] })
+      | TicketWithItems
       | undefined;
     if (ticket?.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);

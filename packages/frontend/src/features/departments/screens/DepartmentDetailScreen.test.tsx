@@ -10,6 +10,13 @@ vi.mock('react-router-dom', async () => {
   return { ...(actual as object), useNavigate: () => mockNavigate };
 });
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, fallback?: string) => fallback ?? key,
+    i18n: { language: 'es' },
+  }),
+}));
+
 vi.mock('@ticket-registrator/shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
   return {
@@ -25,21 +32,6 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
   };
 });
 
-vi.mock('lucide-react', () => ({
-  ChevronLeft: () => null,
-  Layers: () => null,
-  UserCircle: () => null,
-  Pencil: () => null,
-  Trash2: () => null,
-  ArrowRight: () => null,
-  Plane: () => null,
-  XCircle: () => null,
-  CheckCircle: () => null,
-  CheckCircle2: () => null,
-  AlertTriangle: () => null,
-  Info: () => null,
-  X: () => null,
-}));
 
 vi.mock('../../../components/ui/StatusBadge', () => ({
   StatusBadge: ({ status }: any) => <span data-testid="status-badge">{status}</span>,
@@ -51,8 +43,8 @@ vi.mock('../../../components/ui/Modal', () => ({
 }));
 
 vi.mock('../../../components/ui/Button', () => ({
-  Button: ({ children, onClick, disabled }: any) => (
-    <button onClick={onClick} disabled={disabled}>{children}</button>
+  Button: ({ children, onClick, disabled, leftIcon, ...rest }: any) => (
+    <button onClick={onClick} disabled={disabled} {...rest}>{leftIcon}{children}</button>
   ),
 }));
 

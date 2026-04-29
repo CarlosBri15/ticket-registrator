@@ -58,8 +58,8 @@ export class ReportsService {
 
     const overlapping = await this.reportsRepository.findOverlapping(
       requester.id,
-      new Date(dto.start_date!),
-      new Date(dto.end_date!),
+      new Date(dto.start_date),
+      new Date(dto.end_date),
     );
 
     if (overlapping) {
@@ -71,10 +71,10 @@ export class ReportsService {
       requestedAmount: 0,
       approvedAmount: 0,
       status: ReportStatus.CREATED,
-      name: dto.name as string,
-      startDate: new Date(dto.start_date!),
-      endDate: new Date(dto.end_date!),
-      currency: dto.currency as string,
+      name: dto.name,
+      startDate: new Date(dto.start_date),
+      endDate: new Date(dto.end_date),
+      currency: dto.currency,
       type: dto.type ?? '',
     });
 
@@ -155,6 +155,8 @@ export class ReportsService {
       report,
     );
     if (!allowed) throw new ReportUnauthorizedException();
+
+    console.log(report);
 
     return mapReportToIReport(report);
   }

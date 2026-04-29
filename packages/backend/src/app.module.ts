@@ -38,4 +38,4 @@ import { CategoriesModule } from './categories/categories.module';
     CategoriesModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

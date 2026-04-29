@@ -1,22 +1,37 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  StyleSheet,
+  StatusBar,
+} from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createReportSchema, CreateReportSchema, useCreateReportMutation } from '@ticket-registrator/shared';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
+import { IconX, IconPlus } from '@tabler/icons-react-native';
 import { useTranslation } from 'react-i18next';
-import { mt } from '../../../src/styles/theme';
+import {
+  PixelCard,
+  DARK,
+  CARD_BG,
+  SCREEN_BG,
+  colors,
+} from '../../../src/components/ui/PixelCard';
+import { CurrencySelect } from '../../../src/components/features/CurrencySelect';
+import { ReportTypeSelect } from '../../../src/components/features/ReportTypeSelect';
+import { DateRangePicker } from '../../../src/components/features/DateRangePicker';
+import { PixelField } from '../../../src/components/ui/PixelField';
+import { PixelInput } from '../../../src/components/ui/PixelInput';
 
 export default function CreateReportScreen() {
   const { t } = useTranslation();
   const router = useRouter();
 
   const { mutate: createReport, isPending } = useCreateReportMutation({
-    onSuccess: () => {
-      Alert.alert(t('common.success'), t('trips.saveButton'));
-      router.back();
-    },
+    onSuccess: () => router.back(),
     onError: (error: any) => {
       Alert.alert(t('common.error'), error?.response?.data?.message ?? t('trips.createError'));
     },
@@ -24,138 +39,202 @@ export default function CreateReportScreen() {
 
   const { control, handleSubmit, formState: { errors } } = useForm<CreateReportSchema>({
     resolver: zodResolver(createReportSchema) as any,
-    defaultValues: { name: '', currency: 'EUR', type: t('trips.typeBusinessTrip') },
+    defaultValues: {
+      name: '',
+      currency: '',
+      type: '',
+    },
   });
 
   const onSubmit = (data: CreateReportSchema) => createReport(data);
 
   return (
-    <SafeAreaView className={mt.screen}>
-      <View className={`${mt.pageHeader} flex-row items-center justify-between`}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="x" size={24} color="#2a3132" />
-        </TouchableOpacity>
-        <Text className="text-xl font-bold text-dark text-center flex-1 mr-6">
-          {t('trips.newTripTitle')}
-        </Text>
+    <View style={s.sheet}>
+      <StatusBar barStyle="dark-content" />
+
+      {/* Handle */}
+      <View style={s.handle} />
+
+      {/* Header */}
+      <View style={s.header}>
+        <Text style={s.headerTitle}>{t('trips.newTripTitle')}</Text>
+        <PixelCard bg={colors.danger} shadowOffset={3} onPress={() => router.back()} radius={8}>
+          <View style={s.closeBtnInner}>
+            <IconX size={16} color="white" />
+          </View>
+        </PixelCard>
       </View>
 
-      <ScrollView className="flex-1 px-6 pt-8">
-        <View className="space-y-6">
-          <Controller
-            control={control}
-            name="name"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View className="mb-5">
-                <Text className={`${mt.inputLabel} ml-2`}>
-                  {t('trips.nameLabel')}
-                </Text>
-                <TextInput
-                  className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-4 text-dark font-medium shadow-sm"
-                  placeholder={t('trips.namePlaceholder')}
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                />
-                {errors.name && (
-                  <Text className="text-red-500 text-xs mt-2 ml-2">{errors.name.message}</Text>
-                )}
-              </View>
-            )}
-          />
-
-          <View className="flex-row gap-4">
-            <Controller
-              control={control}
-              name="start_date"
-              render={({ field: { onChange, value } }) => (
-                <View className="flex-1 mb-5">
-                  <Text className={`${mt.inputLabel} ml-2`}>
-                    {t('trips.startLabel')}
-                  </Text>
-                  <TextInput
-                    className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-4 text-dark font-medium shadow-sm"
-                    placeholder="YYYY-MM-DD"
-                    onChangeText={onChange}
-                    value={value ? new Date(value).toISOString().split('T')[0] : ''}
-                  />
-                  {errors.start_date && (
-                    <Text className="text-red-500 text-xs mt-2 ml-2">{t('common.error')}</Text>
-                  )}
-                </View>
+      <ScrollView
+        style={s.scrollArea}
+        contentContainerStyle={s.form}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Nombre */}
+        <Controller
+          control={control}
+          name="name"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <PixelField label="Nombre">
+              <PixelInput
+                placeholder={t('trips.namePlaceholder')}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+                error={!!errors.name}
+              />
+              {errors.name && (
+                <Text style={s.errorText}>{errors.name.message}</Text>
               )}
-            />
+            </PixelField>
+          )}
+        />
+
+        {/* Fechas */}
+        <Controller
+          control={control}
+          name="start_date"
+          render={({ field: { onChange: onStartChange, value: startVal } }) => (
             <Controller
               control={control}
               name="end_date"
-              render={({ field: { onChange, value } }) => (
-                <View className="flex-1 mb-5">
-                  <Text className={`${mt.inputLabel} ml-2`}>
-                    {t('trips.endLabel')}
-                  </Text>
-                  <TextInput
-                    className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-4 text-dark font-medium shadow-sm"
-                    placeholder="YYYY-MM-DD"
-                    onChangeText={onChange}
-                    value={value ? new Date(value).toISOString().split('T')[0] : ''}
+              render={({ field: { onChange: onEndChange, value: endVal } }) => (
+                <PixelField label={`${t('trips.startLabel')} — ${t('trips.endLabel')}`}>
+                  <DateRangePicker
+                    startDate={startVal ? new Date(startVal) : null}
+                    endDate={endVal ? new Date(endVal) : null}
+                    onStartChange={(d) => onStartChange(d.toISOString())}
+                    onEndChange={(d) => onEndChange(d ? d.toISOString() : '')}
+                    startLabel={t('trips.startLabel')}
+                    endLabel={t('trips.endLabel')}
+                    error={errors.start_date?.message ?? errors.end_date?.message}
                   />
-                  {errors.end_date && (
-                    <Text className="text-red-500 text-xs mt-2 ml-2">{t('common.error')}</Text>
-                  )}
-                </View>
+                </PixelField>
               )}
             />
-          </View>
+          )}
+        />
 
-          <Controller
-            control={control}
-            name="currency"
-            render={({ field: { onChange, value } }) => (
-              <View className="mb-5">
-                <Text className={`${mt.inputLabel} ml-2`}>
-                  {t('trips.currencyLabel')}
-                </Text>
-                <TextInput
-                  className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-4 text-dark font-medium shadow-sm"
-                  placeholder="EUR"
-                  onChangeText={onChange}
-                  value={value}
-                />
-              </View>
-            )}
-          />
+        {/* Moneda — Select ya renderiza su propio label */}
+        <Controller
+          control={control}
+          name="currency"
+          render={({ field: { onChange, value } }) => (
+            <CurrencySelect value={value} onChange={onChange} error={undefined} />
+          )}
+        />
 
-          <Controller
-            control={control}
-            name="type"
-            render={({ field: { onChange, value } }) => (
-              <View className="mb-8">
-                <Text className={`${mt.inputLabel} ml-2`}>
-                  {t('trips.categoryLabel')}
-                </Text>
-                <TextInput
-                  className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-4 text-dark font-medium shadow-sm"
-                  placeholder={t('trips.categoryPlaceholder')}
-                  onChangeText={onChange}
-                  value={value}
-                />
-              </View>
-            )}
-          />
+        {/* Tipo — Select ya renderiza su propio label */}
+        <Controller
+          control={control}
+          name="type"
+          render={({ field: { onChange, value } }) => (
+            <ReportTypeSelect value={value ?? ''} onChange={onChange} error={undefined} />
+          )}
+        />
 
-          <TouchableOpacity
-            onPress={handleSubmit(onSubmit)}
-            disabled={isPending}
-            className={`w-full py-5 rounded-[2rem] items-center justify-center shadow-xl shadow-brand/20 ${isPending ? 'bg-brand/70' : 'bg-brand'}`}
+        {/* Submit */}
+        <View style={[s.submitWrapper, isPending && s.submitDisabled]}>
+          <PixelCard
+            bg={colors.brand}
+            shadowOffset={4}
+            onPress={isPending ? undefined : handleSubmit(onSubmit)}
           >
-            {isPending ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text className="text-white font-bold text-lg">{t('trips.saveButton')}</Text>
-            )}
-          </TouchableOpacity>
+            <View style={s.submitInner}>
+              {isPending ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <>
+                  <IconPlus size={18} color="white" />
+                  <Text style={s.submitText}>{t('trips.saveButton')}</Text>
+                </>
+              )}
+            </View>
+          </PixelCard>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
+
+const s = StyleSheet.create({
+  sheet: {
+    flex: 1,
+    backgroundColor: CARD_BG,
+  },
+
+  handle: {
+    width: 48,
+    height: 6,
+    backgroundColor: DARK,
+    alignSelf: 'center',
+    marginTop: 14,
+    marginBottom: 4,
+  },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 12,
+    backgroundColor: CARD_BG,
+    borderBottomWidth: 4,
+    borderBottomColor: DARK,
+  },
+  headerTitle: {
+    flex: 1,
+    fontFamily: 'SpaceGrotesk-Bold',
+    fontSize: 20,
+    color: DARK,
+    letterSpacing: 0.3,
+  },
+  closeBtnInner: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  scrollArea: {
+    flex: 1,
+    backgroundColor: SCREEN_BG,
+  },
+  form: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 4,
+  },
+  errorText: {
+    fontFamily: 'SpaceGrotesk-Bold',
+    fontSize: 10,
+    color: colors.danger,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: 6,
+    marginLeft: 4,
+  },
+
+  submitWrapper: {
+    marginTop: 12,
+  },
+  submitDisabled: {
+    opacity: 0.65,
+  },
+  submitInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+  },
+  submitText: {
+    color: 'white',
+    fontSize: 15,
+    fontFamily: 'SpaceGrotesk-Bold',
+    letterSpacing: 0.3,
+  },
+});

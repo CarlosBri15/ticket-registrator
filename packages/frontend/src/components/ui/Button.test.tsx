@@ -48,7 +48,7 @@ describe('Button', () => {
 
   it('renders with outline variant', () => {
     const { container } = render(<Button variant="outline">Outline</Button>);
-    expect(container.querySelector('button')?.className).toContain('border-brand');
+    expect(container.querySelector('button')?.className).toContain('bg-transparent');
   });
 
   it('renders with ghost variant', () => {

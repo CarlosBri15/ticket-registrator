@@ -1,15 +1,11 @@
-import { Ticket } from '../schemas/ticket.schema';
+import { TicketWithItems } from '../schemas/ticket.schema';
 import {
   ITicket,
   TicketStatusType,
   TicketLifecycleType,
 } from '@ticket-registrator/shared';
-import { Item } from '../../items/schemas/item.schema';
-import { Category } from '../../categories/schemas/category.schema';
 
-export const mapTicketToITicket = (
-  ticketDoc: Ticket & { items?: (Item & { category?: Category })[] },
-): ITicket => ({
+export const mapTicketToITicket = (ticketDoc: TicketWithItems,): ITicket => ({
   id: ticketDoc.id,
   report_id: ticketDoc.reportId,
   status: ticketDoc.status as TicketStatusType,
@@ -37,7 +33,7 @@ export const mapTicketToITicket = (
       currency: item.currency,
       status: item.status,
       categoryId: item.categoryId,
-      categoryName: item.category?.name,
+      categoryName: item.category?.name
     })) ?? [],
   createdAt: ticketDoc.createdAt?.toISOString() ?? new Date().toISOString(),
   updatedAt: ticketDoc.updatedAt?.toISOString() ?? new Date().toISOString(),

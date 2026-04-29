@@ -1,11 +1,5 @@
-import React, { useMemo } from "react";
-import {
-  FileText,
-  TrendingUp,
-  Users,
-  Building2,
-  Shield,
-} from "lucide-react";
+import { useMemo } from "react";
+import { TrendingUp, Users, Building2, Shield } from "lucide-react";
 import { StatCard } from "../../components/ui/StatCard";
 import {
   useReportsQuery,
@@ -26,7 +20,6 @@ import { PendingStatsCard } from "./components/PendingStatsCard";
 import { PendingApprovalsList } from "./components/PendingApprovalsList";
 import { RecentActivitySection } from "./components/RecentActivitySection.tsx";
 import { useDashboardHelpers } from "./hooks/useDashboardHelpers";
-import { Button } from "../../components/ui/Button";
 
 export const AdminDashboard = () => {
   const { t, getGreetingKey, dateLocale } = useDashboardHelpers();
@@ -50,7 +43,10 @@ export const AdminDashboard = () => {
   );
 
   const activeTripsCount = useMemo(
-    () => filteredReports.filter((r) => ["CREATED", "DRAFT", "PENDING"].includes(r.status.toUpperCase())).length,
+    () =>
+      filteredReports.filter((r) =>
+        ["CREATED", "DRAFT", "PENDING"].includes(r.status.toUpperCase()),
+      ).length,
     [filteredReports],
   );
 
@@ -64,17 +60,17 @@ export const AdminDashboard = () => {
 
   const isCompanyMode = isGlobal && !!activeCompanyId;
   const activeOrg = orgs?.find((o) => o.id === activeCompanyId);
-  const firstName = user?.name?.split(" ")[0] || "Usuario";
+  const firstName = user?.name?.split(" ")[0] || t("layout.defaultUser");
 
   if (reportsLoading || usersLoading || deptsLoading) {
     return <DashboardSkeleton />;
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300 pb-10">
+    <div className="flex flex-col gap-8">
       {isCompanyMode && (
         <CompanyModeBanner
-          orgName={activeOrg?.name ?? "Empresa"}
+          orgName={activeOrg?.name ?? t("layout.defaultOrg")}
           onExit={() => setActiveCompanyId(null)}
           onDetail={() => navigate(`/organizations/${activeCompanyId}`)}
         />
@@ -85,56 +81,34 @@ export const AdminDashboard = () => {
         t={t}
         greetingKey={getGreetingKey()}
         firstName={firstName}
-        subtitle="Panel de Administración"
-        subtitleIcon={<Shield className="w-3.5 h-3.5" />}
-        actions={
-          <React.Fragment>
-            {can("view_users") && (
-              <Button
-                variant="ghost-white"
-                className="w-auto"
-                onClick={() => navigate("/users")}
-              >
-                <Users className="w-4 h-4 mr-1.5" />
-                Equipo
-              </Button>
-            )}
-            <Button
-              variant="ghost-white"
-              className="w-auto"
-              onClick={() => navigate("/reports")}
-            >
-              <FileText className="w-4 h-4 mr-1.5" />
-              Ver viajes
-            </Button>
-          </React.Fragment>
-        }
+        subtitle={t("dashboard.subtitleAdmin")}
+        subtitleIcon={<Shield className="w-3.5 h-3.5" aria-hidden={true} />}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="admin-stats">
         <StatCard
           variant="primary"
-          title="Usuarios"
+          title={t("layout.users")}
           value={String(users?.length ?? 0)}
-          icon={<Users className="w-4 h-4" />}
-          subtitle="Miembros del equipo"
+          icon={<Users className="w-4 h-4" aria-hidden={true} />}
+          subtitle={t("home.teamMembers")}
         />
         <StatCard
-          title="Departamentos"
+          title={t("layout.departments")}
           value={String(departments?.length ?? 0)}
-          icon={<Building2 className="w-4 h-4" />}
-          subtitle="Áreas de la empresa"
+          icon={<Building2 className="w-4 h-4" aria-hidden={true} />}
+          subtitle={t("home.companyAreas")}
         />
         <PendingStatsCard count={pendingReports.length} />
         <StatCard
-          title="Viajes activos"
+          title={t("home.activeTrips")}
           value={String(activeTripsCount)}
-          icon={<TrendingUp className="w-4 h-4" />}
-          subtitle="En curso en el equipo"
+          icon={<TrendingUp className="w-4 h-4" aria-hidden={true} />}
+          subtitle={t("home.activeReportsTeam")}
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2">
           <PendingApprovalsList
             reports={pendingReports}

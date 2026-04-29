@@ -8,6 +8,18 @@ vi.mock('lucide-react', () => ({
   Loader2: () => <svg data-testid="loader-icon" />,
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      if (key === 'ui.loading') return 'Cargando...';
+      if (key === 'ui.noOptions') return 'Sin opciones disponibles';
+      if (key === 'ui.selectOption') return 'Seleccionar opción';
+      return key;
+    },
+    i18n: { language: 'es' },
+  }),
+}));
+
 const defaultOptions = [
   { value: 'admin', label: 'Admin' },
   { value: 'employee', label: 'Employee' },
@@ -192,7 +204,7 @@ describe('Select', () => {
 
   it('applies normal border class when no error', () => {
     render(<Select label="Rol" options={defaultOptions} />);
-    expect(screen.getByTestId('select-trigger').className).toContain('border-slate-200');
+    expect(screen.getByTestId('select-trigger').className).not.toContain('border-danger');
   });
 
   // ── Required ───────────────────────────────────────────────────────────────

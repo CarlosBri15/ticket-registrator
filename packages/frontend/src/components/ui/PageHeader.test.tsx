@@ -1,58 +1,83 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { PageHeader } from './PageHeader';
 
 describe('PageHeader', () => {
-  it('renders the title', () => {
-    render(<PageHeader title="Dashboard" />);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Dashboard');
+  it('renders the title as h1', () => {
+    render(<PageHeader title="Reports" />);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Reports');
   });
 
   it('renders subtitle when provided', () => {
-    render(<PageHeader title="Dashboard" subtitle="Overview of activity" />);
-    expect(screen.getByText('Overview of activity')).toBeInTheDocument();
+    render(<PageHeader title="Reports" subtitle="All trips" />);
+    expect(screen.getByText('All trips')).toBeInTheDocument();
   });
 
   it('does not render subtitle element when absent', () => {
-    render(<PageHeader title="Dashboard" />);
-    // No <p> for subtitle should exist
-    const heading = screen.getByRole('heading', { level: 1 });
-    expect(heading.nextSibling).toBeNull();
+    render(<PageHeader title="Reports" />);
+    expect(screen.queryByText(/all trips/i)).not.toBeInTheDocument();
   });
 
-  it('renders icon container when icon is provided', () => {
-    render(<PageHeader title="Dashboard" icon={<span data-testid="header-icon">🏠</span>} />);
-    expect(screen.getByTestId('header-icon')).toBeInTheDocument();
+  it('renders back button when back is provided and triggers onClick', async () => {
+    const onClick = vi.fn();
+    render(<PageHeader title="Detail" back={{ label: 'Back to list', onClick }} />);
+
+    const backBtn = screen.getByRole('button', { name: /back to list/i });
+    await userEvent.click(backBtn);
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  it('does not render icon container when icon is absent', () => {
-    const { container } = render(<PageHeader title="Dashboard" />);
-    // No w-9 h-9 icon wrapper
-    expect(container.querySelector('.w-9.h-9')).not.toBeInTheDocument();
+  it('does not render back button when absent', () => {
+    render(<PageHeader title="Detail" />);
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('renders inline stats when provided', () => {
+    render(
+      <PageHeader
+        title="Reports"
+        stats={[
+          { label: 'Total', value: 12 },
+          { label: 'Active', value: 3 },
+        ]}
+      />,
+    );
+    expect(screen.getByText('Total')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
+    expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
   });
 
   it('renders actions when provided', () => {
-    render(<PageHeader title="Dashboard" actions={<button>New</button>} />);
+    render(<PageHeader title="Reports" actions={<button>New</button>} />);
     expect(screen.getByRole('button', { name: 'New' })).toBeInTheDocument();
   });
 
   it('does not render actions wrapper when absent', () => {
-    render(<PageHeader title="Dashboard" />);
+    render(<PageHeader title="Reports" />);
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('renders all optional props together', () => {
+  it('renders title, subtitle, back, stats and actions together', async () => {
+    const onClick = vi.fn();
     render(
       <PageHeader
-        title="Reports"
-        subtitle="All trips"
-        icon={<span data-testid="icon">📊</span>}
-        actions={<button>Export</button>}
+        title="Trip 42"
+        subtitle="Madrid → Lisbon"
+        back={{ label: 'Back', onClick }}
+        stats={[{ label: 'Tickets', value: 8 }]}
+        actions={<button>Submit</button>}
       />,
     );
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Reports');
-    expect(screen.getByText('All trips')).toBeInTheDocument();
-    expect(screen.getByTestId('icon')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Trip 42');
+    expect(screen.getByText('Madrid → Lisbon')).toBeInTheDocument();
+    expect(screen.getByText('Tickets')).toBeInTheDocument();
+    expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Submit' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /^back$/i }));
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 });

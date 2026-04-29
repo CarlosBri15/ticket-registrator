@@ -10,7 +10,7 @@ export class CategoriesRepository {
   constructor(
     @Inject(DB_CONNECTION)
     private readonly db: PostgresJsDatabase<typeof schema>,
-  ) {}
+  ) { }
 
   async create(data: InsertCategory): Promise<Category> {
     const [result] = await this.db

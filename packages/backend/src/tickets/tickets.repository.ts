@@ -9,12 +9,12 @@ export class TicketsRepository {
   constructor(
     @Inject(DB_CONNECTION)
     private readonly db: PostgresJsDatabase<typeof schema>,
-  ) {}
+  ) { }
 
   async findById(id: string) {
     return this.db.query.tickets.findFirst({
       where: and(eq(schema.tickets.id, id), isNull(schema.tickets.deletedAt)),
-      with: { items: true },
+      with: { items: { with: { category: true } } },
     });
   }
 
@@ -24,7 +24,7 @@ export class TicketsRepository {
         eq(schema.tickets.reportId, reportId),
         isNull(schema.tickets.deletedAt),
       ),
-      with: { items: true },
+      with: { items: { with: { category: true } } },
       orderBy: [desc(schema.tickets.createdAt)],
     });
   }

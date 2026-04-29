@@ -1,13 +1,13 @@
-import { Roles, AUTHORITY_LEVELS, ROLE_HIERARCHY } from './roles';
+import { Roles, AUTHORITY_LEVELS, ROLE_NAME_TO_HIERARCHY } from './roles';
 import { permissions } from './permissions';
 import { ROLE_DEFAULT_PERMISSIONS } from './role-default-permissions';
 
 describe('Shared Package - Identity & Access', () => {
     describe('Roles', () => {
         it('should have correct hierarchy values', () => {
-            expect(ROLE_HIERARCHY[Roles.SUPERADMIN]).toBe(100);
-            expect(ROLE_HIERARCHY[Roles.EMPLOYEE]).toBe(10);
-            expect(ROLE_HIERARCHY[Roles.SUPERADMIN]).toBeGreaterThan(ROLE_HIERARCHY[Roles.ADMIN]);
+            expect(ROLE_NAME_TO_HIERARCHY[Roles.SUPERADMIN]).toBe(100);
+            expect(ROLE_NAME_TO_HIERARCHY[Roles.EMPLOYEE]).toBe(0);
+            expect(ROLE_NAME_TO_HIERARCHY[Roles.SUPERADMIN]).toBeGreaterThan(ROLE_NAME_TO_HIERARCHY[Roles.ADMIN]);
         });
 
         it('should have correct authority levels', () => {

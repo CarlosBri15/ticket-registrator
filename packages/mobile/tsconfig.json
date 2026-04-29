@@ -16,6 +16,12 @@
     "paths": {
       "@ticket-registrator/shared": [
         "../shared/src/index.ts"
+      ],
+      "@ticket-registrator/shared/assets": [
+        "../shared/src/assets.ts"
+      ],
+      "@ticket-registrator/shared/*": [
+        "../shared/src/*"
       ]
     }
   },

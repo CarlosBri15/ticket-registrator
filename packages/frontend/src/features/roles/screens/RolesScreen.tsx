@@ -1,264 +1,215 @@
-import { useState, useEffect } from "react";
-import { Shield, Plus, Trash2, Building2 } from "lucide-react";
+import { memo, useState, useEffect } from "react";
+import { Shield, Plus, Trash2, ChevronRight } from "lucide-react";
 import {
   useRolesQuery,
   useSystemRolesQuery,
-  useCreateRoleMutation,
   useDeleteRoleMutation,
   usePermissions,
-  useScope,
+  PAGE_SIZE,
+  useCompanyScope,
+  useModalState,
   type IRole,
 } from "@ticket-registrator/shared";
-import { useScopeContext } from "@ticket-registrator/shared";
+import { useTranslation } from "react-i18next";
+import { PageHeader } from "../../../components/ui/PageHeader";
 import { Button } from "../../../components/ui/Button";
-import { Input } from "../../../components/ui/Input";
-import { Select } from "../../../components/ui/Select";
-import { Modal } from "../../../components/ui/Modal";
 import { Pagination } from "../../../components/ui/Pagination";
-import { tokens, radius } from "../../../styles/theme";
+import { TableHeader } from "../../../components/ui/TableHeader";
+import { CreateRoleModal, getHierarchyMeta } from "../components/CreateRoleModal";
 
-const PAGE_SIZE = 10;
+const ROLE_GRID = "32px 1fr 120px 16px";
 
-const HIERARCHY_LABELS: Record<number, string> = {
-  1: "Empleado",
-  2: "Manager",
-  3: "Controller",
-  4: "Admin",
-};
-
-const HIERARCHY_COLORS: Record<number, string> = {
-  1: "bg-slate-100 text-slate-600 border-slate-200",
-  2: "bg-info/10 text-info border-info/20",
-  3: "bg-warning/10 text-warning border-warning/20",
-  4: "bg-brand/10 text-brand border-brand/20",
-};
-
-const CreateRoleModal = ({
-  isOpen,
-  onClose,
-  companyId,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  companyId: string;
-}) => {
-  const mutation = useCreateRoleMutation(companyId, { onSuccess: onClose });
-  const [form, setForm] = useState({ name: "", hierarchy: 1, description: "" });
-
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((p) => ({ ...p, [k]: e.target.value }));
-
-  const handleSubmit = (e: React.BaseSyntheticEvent) => {
-    e.preventDefault();
-    mutation.mutate({ name: form.name, hierarchy: form.hierarchy, description: form.description || undefined });
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Nuevo Rol">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Nombre del rol *"
-          value={form.name}
-          onChange={set("name")}
-          placeholder="Ej: Supervisor de Ventas"
-          required
-        />
-        <Select
-          label="Nivel de jerarquía"
-          id="role-hierarchy"
-          options={Object.entries(HIERARCHY_LABELS).map(([val, lbl]) => ({
-            value: val,
-            label: `${lbl} (nivel ${val})`,
-          }))}
-          value={String(form.hierarchy)}
-          onChange={(v) => setForm((p) => ({ ...p, hierarchy: Number(v) }))}
-          required
-        />
-        <div>
-          <label
-            htmlFor="role-description"
-            className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5"
-          >
-            Descripción
-          </label>
-          <textarea
-            id="role-description"
-            className={`${tokens.input} resize-none`}
-            value={form.description}
-            onChange={set("description")}
-            placeholder="Descripción opcional del rol..."
-            rows={3}
-          />
-        </div>
-        <div className="flex gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
-            Cancelar
-          </Button>
-          <Button type="submit" isLoading={mutation.isPending} disabled={!form.name.trim()} className="flex-1">
-            Crear Rol
-          </Button>
-        </div>
-      </form>
-    </Modal>
-  );
-};
-
-const RoleCard = ({
+const RoleRow = memo(({
   role,
   canDelete,
   onDelete,
+  deleteLabel,
+  resolveLabel,
 }: {
   role: IRole;
   canDelete: boolean;
   onDelete: (id: string) => void;
+  deleteLabel: string;
+  resolveLabel: (labelKey: string) => string;
 }) => {
-  const level = Math.min(Math.max(role.hierarchy, 1), 4);
-  const colorClass = HIERARCHY_COLORS[level] ?? "bg-gray-100 text-gray-600";
-  const label = HIERARCHY_LABELS[level] ?? `Nivel ${role.hierarchy}`;
+  const meta = getHierarchyMeta(role.hierarchy);
 
   return (
-    <div className={`${tokens.card} ${tokens.cardHover}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className={`w-9 h-9 bg-brand/10 ${radius.base} flex items-center justify-center shrink-0`}>
-            <Shield className="w-4 h-4 text-brand" />
-          </div>
-          <div className="min-w-0">
-            <p className="font-semibold text-dark truncate">{role.name}</p>
-            {role.description && (
-              <p className="text-xs text-slate-400 mt-0.5 truncate">{role.description}</p>
-            )}
-          </div>
+    <div className="group relative border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] transition-colors duration-100">
+      <div
+        className="grid items-center gap-4 px-4 py-3.5"
+        style={{ gridTemplateColumns: ROLE_GRID }}
+      >
+        <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white">
+          <Shield className="w-3.5 h-3.5" aria-hidden={true} />
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className={`${tokens.badgeSm} ${colorClass}`}>
-            {label}
+
+        <div className="min-w-0">
+          <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
+            {role.name}
+          </p>
+          {role.description && (
+            <p className="font-sans-medium text-dark/50 text-[12px] mt-0.5 truncate leading-none">
+              {role.description}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--color-secondary)] text-dark/70 text-[11px] font-sans-semibold whitespace-nowrap group-hover:bg-white">
+            {resolveLabel(meta.labelKey)}
           </span>
-          {canDelete && (
+        </div>
+
+        <div className="flex items-center justify-end">
+          {canDelete ? (
             <button
+              type="button"
+              title={deleteLabel}
               onClick={() => onDelete(role.id)}
-              className={`p-2 text-slate-300 hover:text-danger hover:bg-danger/5 ${radius.base} transition-all`}
+              className="text-dark/40 hover:text-danger transition-colors p-1 opacity-0 group-hover:opacity-100"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3.5 h-3.5" aria-hidden={true} />
             </button>
+          ) : (
+            <ChevronRight className="w-4 h-4 text-dark/30 opacity-0 group-hover:opacity-100 transition-opacity" />
           )}
         </div>
       </div>
     </div>
   );
-};
+});
 
 export const RolesScreen = () => {
+  const { t } = useTranslation();
   const { can } = usePermissions();
-  const { scope, isGlobal } = useScope();
-  const { activeCompanyId } = useScopeContext();
-
-  const companyId = isGlobal
-    ? activeCompanyId
-    : (scope as any).companyId ?? null;
+  const { companyId, isGlobal } = useCompanyScope();
 
   const { data: companyRoles, isLoading: loadingCompany } = useRolesQuery(companyId ?? undefined);
   const { data: systemRoles, isLoading: loadingSystem } = useSystemRolesQuery();
   const deleteMutation = useDeleteRoleMutation(companyId ?? "");
 
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const { isOpen: isCreateOpen, open: openCreate, close: closeCreate } = useModalState();
   const [page, setPage] = useState(1);
 
   const isLoading = loadingCompany || loadingSystem;
   const roles = companyId ? companyRoles : systemRoles;
 
-  useEffect(() => { setPage(1); }, [companyId]);
+  useEffect(() => {
+    setPage(1);
+  }, [companyId]);
 
   const paginated = roles?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalPages = Math.ceil((roles?.length ?? 0) / PAGE_SIZE);
 
+  const resolveLabel = (labelKey: string) =>
+    labelKey.startsWith("roles.") ? t(labelKey as "roles.levelEmployee") : labelKey;
+
   if (!companyId && !isGlobal) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 text-center">
-        <Building2 className="w-12 h-12 text-slate-200 mb-4" />
-        <h3 className="text-xl font-semibold text-dark mb-2">Selecciona una organización</h3>
-        <p className="text-slate-400 max-w-sm text-sm">
-          Para ver los roles, selecciona primero una organización.
-        </p>
+      <div className="flex flex-col gap-8">
+        <PageHeader title={t("roles.title", "Roles")} />
+        <div className="flex flex-col items-center py-14 gap-2 text-center">
+          <p className="font-sans-medium text-[13px] text-dark/55">
+            {t("roles.selectOrg", "Selecciona una organización")}
+          </p>
+          <p className="font-sans-normal text-[12px] text-dark/40 max-w-sm">
+            {t("roles.selectOrgDesc")}
+          </p>
+        </div>
       </div>
     );
   }
 
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex flex-col items-center justify-center py-32">
-          <div className="w-10 h-10 border-2 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-slate-500 font-medium text-sm">Cargando roles...</p>
-        </div>
-      );
-    }
-
-    if (!roles || roles.length === 0) {
-      return (
-        <div className={tokens.emptyState}>
-          <div className={tokens.emptyStateIcon}>
-            <Shield className="w-7 h-7 text-slate-300" />
-          </div>
-          <h3 className="text-base font-semibold text-dark mb-1">No hay roles</h3>
-          <p className={tokens.emptyStateText}>Crea el primer rol personalizado.</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {paginated!.map((role) => (
-            <RoleCard
-              key={role.id}
-              role={role}
-              canDelete={can("delete_roles")}
-              onDelete={(id) => deleteMutation.mutate(id)}
-            />
-          ))}
-        </div>
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          totalItems={roles.length}
-          pageSize={PAGE_SIZE}
-          onPageChange={setPage}
-        />
-      </div>
-    );
-  };
+  const totalRoles = roles?.length ?? 0;
+  const hasAny = totalRoles > 0;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div>
-          <h1 className="text-2xl font-bold text-dark tracking-tight mb-1 flex items-center gap-3">
-            <Shield className="w-6 h-6 text-brand" />
-            Roles
-          </h1>
-          <p className="text-slate-500 text-sm">
-            {companyId ? "Roles personalizados de tu organización." : "Roles de sistema."}
-          </p>
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        title={t("roles.title", "Roles")}
+        subtitle={
+          companyId
+            ? t("roles.companySubtitle", "Roles personalizados de tu organización.")
+            : t("roles.systemSubtitle", "Roles de sistema.")
+        }
+        stats={
+          hasAny ? [{ label: t("roles.total", "Total"), value: totalRoles }] : undefined
+        }
+        actions={
+          companyId && can("create_roles") ? (
+            <Button
+              variant="primary"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              onClick={() => openCreate()}
+            >
+              {t("roles.newRole", "Nuevo Rol")}
+            </Button>
+          ) : undefined
+        }
+      />
+
+      <div className="flex flex-col gap-3">
+        <div className="w-full">
+          <TableHeader
+            gridTemplate={ROLE_GRID}
+            columns={[
+              { label: t("roles.tableName", "Nombre") },
+              { label: t("roles.tableLevel", "Nivel"), align: "right" },
+            ]}
+          />
+
+          {(() => {
+            if (isLoading) {
+              return (
+                <div className="flex flex-col items-center justify-center py-14 gap-2">
+                  <div className="w-4 h-4 border-2 border-dark/20 border-t-dark/60 rounded-full animate-spin" />
+                  <p className="font-sans-medium text-[13px] text-dark/55">
+                    {t("roles.loading", "Cargando roles...")}
+                  </p>
+                </div>
+              );
+            }
+
+            if (!hasAny) {
+              return (
+                <div className="flex flex-col items-center py-14 gap-2 text-center border-b border-[var(--color-border-main)]">
+                  <p className="font-sans-medium text-[13px] text-dark/55">
+                    {t("roles.empty")}
+                  </p>
+                  <p className="font-sans-normal text-[12px] text-dark/40 max-w-sm">
+                    {t("roles.emptyDesc")}
+                  </p>
+                </div>
+              );
+            }
+
+            return paginated!.map((role) => (
+              <RoleRow
+                key={role.id}
+                role={role}
+                canDelete={can("delete_roles")}
+                onDelete={(id) => deleteMutation.mutate(id)}
+                deleteLabel={t("common.delete", "Eliminar")}
+                resolveLabel={resolveLabel}
+              />
+            ));
+          })()}
         </div>
-        {companyId && can("create_roles") && (
-          <Button onClick={() => setIsCreateOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Rol
-          </Button>
+
+        {hasAny && (
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalRoles}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
         )}
       </div>
 
-      {/* Content */}
-      {renderContent()}
-
       {companyId && (
-        <CreateRoleModal
-          isOpen={isCreateOpen}
-          onClose={() => setIsCreateOpen(false)}
-          companyId={companyId}
-        />
+        <CreateRoleModal isOpen={isCreateOpen} onClose={closeCreate} companyId={companyId} />
       )}
     </div>
   );

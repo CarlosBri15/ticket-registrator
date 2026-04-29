@@ -14,8 +14,16 @@ jest.mock('../api/clientContainer', () => ({
             update: jest.fn().mockResolvedValue({ id: 'org-1', name: 'Updated' }),
             delete: jest.fn().mockResolvedValue(undefined),
         }),
+        auth: jest.fn().mockReturnValue({
+            getMe: jest.fn().mockResolvedValue(null),
+        }),
     },
 }));
+
+const findOrgQueryCall = () =>
+    (useQuery as jest.Mock).mock.calls
+        .map((c) => c[0])
+        .find((opts) => Array.isArray(opts.queryKey) && opts.queryKey[0] === 'organizations');
 import {
     useOrganizationsQuery,
     useOnboardOrganizationMutation,
@@ -42,7 +50,7 @@ describe('useOrganizations hooks', () => {
 
         it('queryFn should call api.organizations().getAll', async () => {
             useOrganizationsQuery();
-            const call = (useQuery as jest.Mock).mock.calls[0][0];
+            const call = findOrgQueryCall();
             await call.queryFn();
             expect(api.organizations().getAll).toHaveBeenCalled();
         });
@@ -146,27 +154,36 @@ describe('useOrganizations hooks', () => {
     });
 
     describe('useOrganizationQuery', () => {
-        it('should call useQuery with correct options', () => {
+        it('should call useQuery with the org-scoped queryKey', () => {
             useOrganizationQuery('org-1');
             expect(useQuery).toHaveBeenCalledWith(expect.objectContaining({
-                queryKey: ['organizations'],
-                enabled: true,
+                queryKey: ['organizations', 'org-1'],
             }));
         });
 
         it('queryFn should call api.organizations().getAll', async () => {
             useOrganizationQuery('org-1');
-            const call = (useQuery as jest.Mock).mock.calls[0][0];
+            const call = findOrgQueryCall();
             await call.queryFn();
             expect(api.organizations().getAll).toHaveBeenCalled();
         });
 
-        it('select should filter organizations by id', () => {
+        it('queryFn returns the org matching the id', async () => {
+            (api.organizations().getAll as jest.Mock).mockResolvedValueOnce([
+                { id: 'org-1' },
+                { id: 'org-2' },
+            ]);
             useOrganizationQuery('org-2');
-            const call = (useQuery as jest.Mock).mock.calls[0][0];
-            const orgs = [{ id: 'org-1' }, { id: 'org-2' }] as any[];
-            const selected = call.select(orgs);
-            expect(selected).toEqual({ id: 'org-2' });
+            const call = findOrgQueryCall();
+            const result = await call.queryFn();
+            expect(result).toEqual({ id: 'org-2' });
+        });
+
+        it('queryFn returns null when no id is provided', async () => {
+            useOrganizationQuery(undefined);
+            const call = findOrgQueryCall();
+            const result = await call.queryFn();
+            expect(result).toBeNull();
         });
     });
 });

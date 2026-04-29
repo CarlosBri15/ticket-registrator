@@ -34,14 +34,6 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
   };
 });
 
-vi.mock('lucide-react', () => ({
-  Wallet: () => null, Plane: () => null, AlertCircle: () => null, Plus: () => null,
-  FileText: () => null, ArrowUpRight: () => null, ChevronRight: () => null,
-  TrendingUp: () => null, TrendingDown: () => null, Clock: () => null, Calendar: () => null,
-  Receipt: () => null, Sparkles: () => null, Users: () => null, CheckCircle: () => null,
-  Building2: () => null, Shield: () => null, Layers: () => null, Lock: () => null,
-  BarChart2: () => null, Globe: () => null, Search: () => null, X: () => null,
-}));
 
 vi.mock('recharts', () => ({
   BarChart: ({ children }: any) => <div data-testid="bar-chart">{children}</div>,
@@ -207,18 +199,6 @@ describe('Admin dashboard', () => {
     renderScreen();
     fireEvent.click(screen.getByText('Viaje NY'));
     expect(mockNavigate).toHaveBeenCalledWith('/reports/r1');
-  });
-
-  it('navigates to /users when Equipo button is clicked', () => {
-    renderScreen();
-    fireEvent.click(screen.getByText('Equipo'));
-    expect(mockNavigate).toHaveBeenCalledWith('/users');
-  });
-
-  it('navigates to /reports when "Ver viajes" is clicked', () => {
-    renderScreen();
-    fireEvent.click(screen.getByText('Ver viajes'));
-    expect(mockNavigate).toHaveBeenCalledWith('/reports');
   });
 
   it('shows loading skeleton while data loads', () => {

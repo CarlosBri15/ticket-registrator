@@ -1,44 +1,47 @@
-import { useTranslation } from "react-i18next";
-import { tokens } from '../../styles/theme';
+/**
+ * StatusBadge — Web version.
+ *
+ * Pill sin dot. Colores cálidos/muted que encajan con el estilo
+ * blanco-crema-grafito. Las definiciones de color son web-only;
+ * mobile mantiene su propio sistema en shared/statusColors.
+ */
+import { useTranslation } from 'react-i18next';
 
 interface StatusBadgeProps {
   status: string;
-  size?: "sm" | "md";
+  size?: 'sm' | 'md';
 }
 
-type StatusConfig = {
-  classes: string;
-  dot: string;
-  pulse?: boolean;
+// Paleta warm-muted para el web. No tocar shared/statusColors (mobile).
+const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
+  DRAFT:     { bg: '#F2F0ED', color: '#6B6560' },
+  CREATED:   { bg: '#EEEDF8', color: '#4A47A0' },
+  PENDING:   { bg: '#FEF9EC', color: '#8A5C0A' },
+  SUBMITTED: { bg: '#FEF3E8', color: '#8A4810' },
+  APPROVED:  { bg: '#EDFAF3', color: '#1A6A40' },
+  PAID:      { bg: '#E8FAF0', color: '#1A6040' },
+  REJECTED:  { bg: '#FDF0EF', color: '#A03A3A' },
+  DECLINED:  { bg: '#FDF0EF', color: '#A03A3A' },
 };
 
-const STATUS_CONFIG: Record<string, StatusConfig> = {
-  CREATED:   { classes: tokens.badgeNeutral,  dot: "bg-slate-400",  pulse: true  },
-  DRAFT:     { classes: tokens.badgeNeutral,  dot: "bg-slate-400",  pulse: true  },
-  PENDING:   { classes: tokens.badgeWarning,  dot: "bg-warning",    pulse: true  },
-  SUBMITTED: { classes: tokens.badgeBrand,    dot: "bg-brand",      pulse: true  },
-  APPROVED:  { classes: tokens.badgeSuccess,  dot: "bg-success"                  },
-  REJECTED:  { classes: tokens.badgeDanger,   dot: "bg-danger"                   },
-  PAID:      { classes: tokens.badgeSuccess,  dot: "bg-success"                  },
-  DECLINED:  { classes: tokens.badgeDanger,   dot: "bg-danger"                   },
-};
+const FALLBACK = STATUS_STYLES.DRAFT;
 
-export const StatusBadge = ({ status, size = "sm" }: StatusBadgeProps) => {
+export const StatusBadge = ({ status, size = 'sm' }: StatusBadgeProps) => {
   const { t } = useTranslation();
-  const key = status.toUpperCase();
-  const cfg = STATUS_CONFIG[key] ?? STATUS_CONFIG.DRAFT;
-
-  const sizeClass = size === "sm" ? tokens.badgeSm : tokens.badge;
+  const key    = status.toUpperCase();
+  const style  = STATUS_STYLES[key] ?? FALLBACK;
 
   return (
-    <span className={`${sizeClass} ${cfg.classes}`}>
-      <span className="relative flex w-1.5 h-1.5 shrink-0">
-        {cfg.pulse && (
-          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 ${cfg.dot}`} />
-        )}
-        <span className={`relative inline-flex rounded-full w-1.5 h-1.5 ${cfg.dot}`} />
-      </span>
-      {t(`status.${key}`)}
+    <span
+      className="inline-flex items-center font-sans-medium whitespace-nowrap rounded-md"
+      style={{
+        backgroundColor: style.bg,
+        color:           style.color,
+        fontSize:        size === 'sm' ? 11 : 12,
+        padding:         size === 'sm' ? '2px 7px' : '3px 8px',
+      }}
+    >
+      {t(`status.${key}`, { defaultValue: key })}
     </span>
   );
 };

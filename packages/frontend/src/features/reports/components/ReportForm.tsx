@@ -1,19 +1,21 @@
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   createReportSchema,
   type CreateReportSchema,
   useCreateReportMutation,
 } from "@ticket-registrator/shared";
 import { Button } from "../../../components/ui/Button";
-import { Input } from "../../../components/ui/Input";
-import { ReportTypeSelect } from "./ReportTypeSelect";
-import { CurrencySelect } from "../../settings/components/CurrencySelect";
 import { AlertCircle } from "lucide-react";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { tokens } from "../../../styles/theme";
+import { DatePicker } from "../../../components/ui/DatePicker";
+import { Input } from "../../../components/ui/Input";
+import { ReportTypeSelect } from "./ReportTypeSelect";
+import { CurrencySelect } from "../../settings/components/CurrencySelect";
 
 interface ReportFormProps {
   onSuccess: () => void;
@@ -40,12 +42,12 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm<CreateReportSchema>({
+  } = useForm<z.input<typeof createReportSchema>, unknown, CreateReportSchema>({
     resolver: zodResolver(createReportSchema),
     defaultValues: {
       name: "",
-      start_date: new Date(),
-      end_date: new Date(),
+      start_date: undefined,
+      end_date: undefined,
       currency: "EUR",
       type: "",
     },
@@ -74,17 +76,29 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Input
-            type="date"
-            label={t("trips.startLabel")}
-            {...register("start_date", { valueAsDate: true })}
-            error={errors.start_date?.message}
+          <Controller
+            name="start_date"
+            control={control}
+            render={({ field }) => (
+              <DatePicker
+                label={t("trips.startLabel")}
+                value={field.value as Date | undefined}
+                onChange={field.onChange}
+                error={errors.start_date?.message}
+              />
+            )}
           />
-          <Input
-            type="date"
-            label={t("trips.endLabel")}
-            {...register("end_date", { valueAsDate: true })}
-            error={errors.end_date?.message}
+          <Controller
+            name="end_date"
+            control={control}
+            render={({ field }) => (
+              <DatePicker
+                label={t("trips.endLabel")}
+                value={field.value as Date | undefined}
+                onChange={field.onChange}
+                error={errors.end_date?.message}
+              />
+            )}
           />
         </div>
 
@@ -121,7 +135,7 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
       <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-slate-100">
         <Button
           type="button"
-          variant="ghost"
+          variant="secondary"
           onClick={onCancel}
           className="w-full sm:w-auto"
         >

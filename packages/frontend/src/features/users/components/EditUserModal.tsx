@@ -102,7 +102,7 @@ export const EditUserModal = ({
           id="edit-user-role"
           companyId={companyId}
           value={form.roleId}
-          onChange={(v: any) => {
+          onChange={(v: string) => {
             reset();
             setForm((p) => ({ ...p, roleId: v }));
           }}
@@ -114,7 +114,7 @@ export const EditUserModal = ({
             id="edit-user-departments"
             companyId={companyId}
             value={form.departmentIds}
-            onChange={(ids: any) => {
+            onChange={(ids: string[]) => {
               reset();
               setForm((p) => ({ ...p, departmentIds: ids }));
             }}

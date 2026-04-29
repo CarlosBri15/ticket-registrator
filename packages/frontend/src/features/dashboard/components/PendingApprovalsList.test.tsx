@@ -1,15 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { es } from 'date-fns/locale';
+import type { TFunction } from 'i18next';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-vi.mock('lucide-react', () => ({
-  CheckCircle: () => <svg data-testid="icon-check-circle" />,
-  Calendar: () => <svg data-testid="icon-calendar" />,
-  ChevronRight: () => <svg data-testid="icon-chevron-right" />,
-  Clock: () => <svg data-testid="icon-clock" />,
-}));
 
 vi.mock('../../../components/ui/StatusBadge', () => ({
   StatusBadge: ({ status }: any) => <span data-testid="status-badge">{status}</span>,
@@ -23,7 +18,7 @@ import { PendingApprovalsList } from './PendingApprovalsList';
 
 const setupMocks = () => {};
 
-const t = (key: string) => key;
+const t = ((key: string) => key) as unknown as TFunction;
 
 const makeReport = (i: number) => ({
   id: `report-${i}`,

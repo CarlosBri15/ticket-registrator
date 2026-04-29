@@ -1,8 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { es, enUS } from "date-fns/locale";
+import { useDateLocale } from "../../../hooks/useDateLocale";
 
 export const useDashboardHelpers = () => {
   const { t, i18n } = useTranslation();
+  const dateLocale = useDateLocale();
 
   const getGreetingKey = () => {
     const hour = new Date().getHours();
@@ -10,8 +11,6 @@ export const useDashboardHelpers = () => {
     if (hour < 19) return "home.greetingAfternoon";
     return "home.greetingEvening";
   };
-
-  const dateLocale = i18n.language.startsWith("es") ? es : enUS;
 
   return {
     t,

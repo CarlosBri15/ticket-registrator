@@ -14,41 +14,35 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
     usePermissions: vi.fn(),
     useScope: vi.fn(),
     useScopeContext: vi.fn(),
+    useCompanyScope: vi.fn(),
   };
 });
 
-vi.mock('lucide-react', () => ({
-  Shield: () => null,
-  Plus: () => null,
-  Trash2: () => null,
-  Building2: () => null,
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, fallback?: string) => fallback ?? key,
+    i18n: { language: 'es' },
+  }),
 }));
 
-vi.mock('../../../components/ui/Button', () => ({
-  Button: ({ children, onClick, disabled }: any) => (
-    <button onClick={onClick} disabled={disabled}>{children}</button>
-  ),
-}));
-vi.mock('../../../components/ui/Input', () => ({
-  Input: ({ label, ...props }: any) => <input aria-label={label} {...props} />,
-}));
-vi.mock('../../../components/ui/Select', () => ({
-  Select: ({ label, options, value, onChange, required, id }: any) => (
-    <select
-      aria-label={label}
-      id={id}
-      value={value}
-      onChange={(e) => onChange?.(e.target.value)}
-      required={required}
-    >
-      {options?.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
-  ),
-}));
 vi.mock('../../../components/ui/Modal', () => ({
   Modal: ({ isOpen, children, title }: any) =>
     isOpen ? <div role="dialog"><h2>{title}</h2>{children}</div> : null,
 }));
+
+vi.mock('../components/CreateRoleModal', async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    CreateRoleModal: ({ isOpen, onClose }: any) =>
+      isOpen ? (
+        <div role="dialog">
+          <h2>Crear Rol</h2>
+          <button onClick={onClose}>Cerrar</button>
+        </div>
+      ) : null,
+  };
+});
 
 import {
   useRolesQuery,
@@ -58,16 +52,18 @@ import {
   usePermissions,
   useScope,
   useScopeContext,
+  useCompanyScope,
 } from '@ticket-registrator/shared';
 
 const setupMocks = () => {
   (useRolesQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false });
-  (useSystemRolesQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [] });
+  (useSystemRolesQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false });
   (useCreateRoleMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: vi.fn(), isPending: false });
   (useDeleteRoleMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: vi.fn() });
   (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => true });
   (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: true, scope: {} });
   (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: 'company-1' });
+  (useCompanyScope as ReturnType<typeof vi.fn>).mockReturnValue({ companyId: 'company-1', isGlobal: false });
 };
 
 const renderScreen = () =>
@@ -90,23 +86,23 @@ describe('RolesScreen', () => {
 
   it('renders Roles heading', () => {
     renderScreen();
-    expect(screen.getByText('Roles')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/roles/i);
   });
 
   it('renders create role button when user has permission', () => {
     renderScreen();
-    expect(screen.getByText(/nuevo rol/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /nuevo rol/i })).toBeInTheDocument();
   });
 
   it('does not show create button when user lacks permission', () => {
     (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => false });
     renderScreen();
-    expect(screen.queryByText(/nuevo rol/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /nuevo rol/i })).not.toBeInTheDocument();
   });
 
   it('shows empty state when no roles', () => {
     renderScreen();
-    expect(screen.getByText(/no hay roles/i)).toBeInTheDocument();
+    expect(screen.getByText('roles.empty')).toBeInTheDocument();
   });
 
   it('renders role list when roles exist', () => {
@@ -118,11 +114,10 @@ describe('RolesScreen', () => {
     expect(screen.getByText('Supervisor')).toBeInTheDocument();
   });
 
-  it('shows "Selecciona una organización" when companyId is null and not global', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: false, scope: {} });
-    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
+  it('shows org-selection placeholder when companyId is null and not global', () => {
+    (useCompanyScope as ReturnType<typeof vi.fn>).mockReturnValue({ companyId: null, isGlobal: false });
     renderScreen();
-    expect(screen.getByText('Selecciona una organización')).toBeInTheDocument();
+    expect(screen.getByText(/selecciona una organización/i)).toBeInTheDocument();
   });
 
   it('shows loading state when isLoading is true', () => {
@@ -133,7 +128,7 @@ describe('RolesScreen', () => {
 
   it('opens create modal when Nuevo Rol button is clicked', () => {
     renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo rol/i)[0]);
+    fireEvent.click(screen.getByRole('button', { name: /nuevo rol/i }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
@@ -145,9 +140,7 @@ describe('RolesScreen', () => {
       isLoading: false,
     });
     renderScreen();
-    const buttons = screen.getAllByRole('button');
-    // last button should be delete for the role
-    fireEvent.click(buttons[buttons.length - 1]);
+    fireEvent.click(screen.getByTitle('Eliminar'));
     expect(mockDelete).toHaveBeenCalledWith('r1');
   });
 });

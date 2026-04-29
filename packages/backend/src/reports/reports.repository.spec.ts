@@ -48,9 +48,11 @@ describe('ReportsRepository', () => {
   describe('findById', () => {
     it('should call db.query.reports.findFirst', async () => {
       await repository.findById('report-1');
-      expect(dbMock.query.reports.findFirst).toHaveBeenCalledWith({
-        where: expect.anything(),
-      });
+      expect(dbMock.query.reports.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.anything(),
+        }),
+      );
     });
   });
 

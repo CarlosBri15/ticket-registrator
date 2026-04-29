@@ -10,6 +10,20 @@ vi.mock('lucide-react', () => ({
   Square: () => <span data-testid="square" />,
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, opts?: any) => {
+      if (key === 'ui.selected') return `${opts?.count ?? 0} seleccionados`;
+      if (key === 'ui.loading') return 'Cargando...';
+      if (key === 'ui.noOptions') return 'Sin opciones disponibles';
+      if (key === 'ui.selectAll') return 'Seleccionar todo';
+      if (key === 'ui.clear') return 'Limpiar';
+      return key;
+    },
+    i18n: { language: 'es' },
+  }),
+}));
+
 const OPTIONS = [
   { value: 'opt1', label: 'Option 1' },
   { value: 'opt2', label: 'Option 2' },

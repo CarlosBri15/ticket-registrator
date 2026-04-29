@@ -170,7 +170,9 @@ describe('AssignPermissionsModal', () => {
 
   it('shows count "1 de 3 permisos seleccionados"', () => {
     render(<AssignPermissionsModal {...defaultProps} />);
-    expect(screen.getByText('1 de 3 permisos seleccionados')).toBeInTheDocument();
+    expect(
+      screen.getByText((_, el) => el?.textContent === '1 de 3 permisos seleccionados'),
+    ).toBeInTheDocument();
   });
 
   it('toggling an unchecked permission marks it as checked locally (no mutation yet)', () => {

@@ -21,12 +21,6 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
   };
 });
 
-vi.mock('lucide-react', () => ({
-  FileText: () => null, AlertCircle: () => null, CheckCircle: () => null,
-  XCircle: () => null, Wallet: () => null, Clock: () => null,
-  ChevronRight: () => null, Calendar: () => null, Sparkles: () => null,
-  Shield: () => null, TrendingDown: () => null,
-}));
 
 vi.mock('./components/DashboardHero', () => ({
   DashboardHero: ({ firstName, user, actions }: any) => (
@@ -196,23 +190,6 @@ describe('ControllerDashboard', () => {
     expect(screen.getByTestId('controller-stats')).toBeInTheDocument();
   });
 
-  it('shows pending count of 0 when no SUBMITTED reports', () => {
-    setupMocks([makeReport({ status: 'APPROVED' })]);
-    renderScreen();
-    const pendingCount = screen.getByTestId('pending-count');
-    expect(pendingCount.textContent).toBe('0');
-  });
-
-  it('shows pending count when SUBMITTED reports exist', () => {
-    setupMocks([
-      makeReport({ id: 'r1', status: 'SUBMITTED' }),
-      makeReport({ id: 'r2', status: 'SUBMITTED', name: 'Viaje 2' }),
-    ]);
-    renderScreen();
-    const pendingCount = screen.getByTestId('pending-count');
-    expect(pendingCount.textContent).toBe('2');
-  });
-
   it('shows empty-queue empty state when no pending reports', () => {
     setupMocks([]);
     renderScreen();
@@ -257,17 +234,6 @@ describe('ControllerDashboard', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/reports?status=SUBMITTED');
   });
 
-  it('shows pendingAmount formatted with € in stats', () => {
-    setupMocks([
-      makeReport({ id: 'r1', status: 'SUBMITTED', requested_amount: 250.5 }),
-      makeReport({ id: 'r2', status: 'SUBMITTED', name: 'Viaje 2', requested_amount: 100 }),
-    ]);
-    renderScreen();
-    // 250.50 + 100.00 = 350.50
-    expect(screen.getByText('350.50')).toBeInTheDocument();
-    expect(screen.getByText('€')).toBeInTheDocument();
-  });
-
   it('shows approved this week count', () => {
     // Year 2099 → isThisWeek mock returns true
     setupMocks([
@@ -308,9 +274,4 @@ describe('ControllerDashboard', () => {
     expect(screen.getByTestId('approval-queue')).toBeInTheDocument();
   });
 
-  it('navigates to /reports when "Ver todos los viajes" button is clicked', () => {
-    renderScreen();
-    fireEvent.click(screen.getByText(/Ver todos los viajes/));
-    expect(mockNavigate).toHaveBeenCalledWith('/reports');
-  });
 });

@@ -26,13 +26,6 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
   };
 });
 
-vi.mock('lucide-react', () => ({
-  Globe: () => null,
-  Plus: () => null,
-  Building: () => null,
-  Search: () => null,
-  ChevronRight: () => null,
-}));
 
 vi.mock('../../../components/ui/Button', () => ({
   Button: ({ children, onClick, disabled }: any) => (

@@ -1,5 +1,9 @@
 import { XCircle, CheckCircle2, AlertTriangle, Info, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { tokens } from '../../styles/theme';
+
+// Re-exported so existing callers (CreateUserModal, FormModal, etc.) keep working.
+export { getApiErrorMessage } from '@ticket-registrator/shared';
 
 export type AlertVariant = 'error' | 'success' | 'warning' | 'info';
 
@@ -33,6 +37,7 @@ const VARIANT_STYLES: Record<AlertVariant, {
 };
 
 export const Alert = ({ variant = 'error', message, onDismiss, className = '' }: AlertProps) => {
+  const { t } = useTranslation();
   const styles = VARIANT_STYLES[variant];
   const { Icon } = styles;
 
@@ -48,7 +53,7 @@ export const Alert = ({ variant = 'error', message, onDismiss, className = '' }:
         <button
           type="button"
           onClick={onDismiss}
-          aria-label="Cerrar"
+          aria-label={t("common.close")}
           className="shrink-0 opacity-60 hover:opacity-100 transition-opacity"
         >
           <X className="w-4 h-4" />
@@ -63,11 +68,3 @@ export const AlertError = (props: Omit<AlertProps, 'variant'>) => (
   <Alert variant="error" {...props} />
 );
 
-/** Extracts a human-readable message from an Axios/API error. */
-export const getApiErrorMessage = (error: unknown): string => {
-  const data = (error as any)?.response?.data;
-  if (!data) return 'Error inesperado. Inténtalo de nuevo.';
-  if (typeof data.message === 'string') return data.message;
-  if (Array.isArray(data.message)) return data.message.join('. ');
-  return 'Error inesperado. Inténtalo de nuevo.';
-};

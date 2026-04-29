@@ -1,3 +1,4 @@
+import type { ITicket } from '../tickets/ticket.interface';
 import type { ReportStatusType } from '../../statuses/report-status';
 
 export interface IReport {
@@ -11,6 +12,8 @@ export interface IReport {
     requested_amount: number;
     approved_amount: number;
     status: ReportStatusType;
+    tickets?: ITicket[];
     createdAt: string;
     updatedAt: string;
 }
+

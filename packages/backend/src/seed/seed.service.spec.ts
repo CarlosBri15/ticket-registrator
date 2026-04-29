@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SeedService, UNASSIGNED_DEPARTMENT_NAME } from './seed.service';
+import { SeedService } from './seed.service';
 import { CryptoService } from '../crypto/crypto.service';
 import { RolesRepository } from '../roles/roles.repository';
 import { PermissionsService } from '../permissions/permissions.service';
@@ -73,9 +73,9 @@ describe('SeedService', () => {
   describe('seedDefaultRoles', () => {
     it('should create new roles if they do not exist', async () => {
       mockRolesRepository.findAllSystemRoles.mockResolvedValue([]);
-      
+
       const result = await service.seedDefaultRoles();
-      
+
       expect(mockRolesRepository.create).toHaveBeenCalled();
       expect(result.message).toContain('Processed');
     });
@@ -84,9 +84,9 @@ describe('SeedService', () => {
       mockRolesRepository.findAllSystemRoles.mockResolvedValue([
         { id: '1', name: Roles.SUPERADMIN, hierarchy: 999, description: 'Old' },
       ]);
-      
+
       await service.seedDefaultRoles();
-      
+
       expect(mockRolesRepository.update).toHaveBeenCalled();
     });
   });
@@ -105,17 +105,17 @@ describe('SeedService', () => {
   describe('seedUnassignedDepartment', () => {
     it('should create department if it does not exist', async () => {
       mockDb.query.departments.findFirst.mockResolvedValue(null);
-      
+
       await service.seedUnassignedDepartment();
-      
+
       expect(mockDb.insert).toHaveBeenCalled();
     });
 
     it('should skip if department exists', async () => {
       mockDb.query.departments.findFirst.mockResolvedValue({ id: '1' });
-      
+
       await service.seedUnassignedDepartment();
-      
+
       expect(mockDb.insert).not.toHaveBeenCalled();
     });
   });
@@ -124,27 +124,27 @@ describe('SeedService', () => {
     it('should create superadmin if it does not exist', async () => {
       mockDb.query.roles.findFirst.mockResolvedValue({ id: 'role-id' });
       mockDb.query.users.findFirst.mockResolvedValue(null);
-      
+
       await (service as any).seedSuperAdmin();
-      
+
       expect(mockDb.insert).toHaveBeenCalled();
     });
 
     it('should skip if superadmin exists', async () => {
       mockDb.query.roles.findFirst.mockResolvedValue({ id: 'role-id' });
       mockDb.query.users.findFirst.mockResolvedValue({ id: 'user-id' });
-      
+
       await (service as any).seedSuperAdmin();
-      
+
       expect(mockDb.insert).not.toHaveBeenCalled();
     });
 
     it('should log error if SuperAdmin role is missing', async () => {
       mockDb.query.roles.findFirst.mockResolvedValue(null);
       const loggerSpy = jest.spyOn((service as any).logger, 'error');
-      
+
       await (service as any).seedSuperAdmin();
-      
+
       expect(loggerSpy).toHaveBeenCalledWith('SuperAdmin role not found in database!');
     });
   });

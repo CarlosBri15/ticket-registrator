@@ -1,306 +1,362 @@
-import React, { useMemo, useState, useCallback } from 'react';
 import {
+  Image,
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   RefreshControl,
   StatusBar,
+  StyleSheet,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Wallet, Briefcase, AlertCircle, FileText, ChevronRight, Plus, Receipt } from 'lucide-react-native';
-import {
-  useUserQuery,
-  useReportsQuery,
-  useTicketsQuery,
-  ReportStatus,
-  type IReport,
-} from '@ticket-registrator/shared';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { format } from 'date-fns';
-import { es, enUS } from 'date-fns/locale';
-import { StatusBadge } from '../../src/components/StatusBadge';
-import { mt, colors } from '../../src/styles/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { IconChevronRight, IconClock, IconX, IconCamera, IconPhoto } from '@tabler/icons-react-native';
 
-// ── Active Trip Card — matches web's ActiveTripCard ───────────────────────────
+import {
+  PixelCard,
+  DARK,
+  CARD_BG,
+  SCREEN_BG,
+  BORDER_WIDTH,
+  colors,
+} from '../../src/components/ui/PixelCard';
+import { HeroReportCard, HistoryRow } from '../../src/components/features/ReportListItem';
+import { EmptyState } from '../../src/components/ui/EmptyState';
+import { ScanningOverlay } from '../../src/components/features/ScanningOverlay';
+import { TicketConfirmationForm } from '../../src/components/features/TicketConfirmationForm';
 
-const ActiveTripCard = ({
-  report,
-  onPress,
-  t,
-  dateLocale,
-}: {
-  report: IReport;
-  onPress: () => void;
-  t: (key: string, opts?: any) => string;
-  dateLocale: any;
-}) => {
-  const { data: tickets } = useTicketsQuery(report.id);
-  const ticketCount = tickets?.length ?? 0;
-  const totalAmount = tickets?.reduce((acc: number, tk: any) => acc + (tk.amount || 0), 0) ?? 0;
+import { useHomeScreen } from '../../src/hooks/useHomeScreen';
+import { reportIcon, userIcon, cameraIcon } from '@ticket-registrator/shared/assets';
 
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.8}
-      className={`${mt.card} p-5 border-brand/20`}
-    >
-      {/* Status + ID */}
-      <View className="flex-row items-center justify-between mb-4">
-        <View className="flex-row items-center gap-2">
-          <StatusBadge status={report.status} />
-          <Text className="text-[10px] font-mono text-gray-300 uppercase tracking-wider">
-            #{report.id.substring(0, 8)}
-          </Text>
-        </View>
-        <View className={`${mt.iconBoxSm} bg-brand/5`}>
-          <ChevronRight size={16} color={colors.brand} />
-        </View>
-      </View>
-
-      {/* Name */}
-      <Text className="text-xl font-bold text-dark mb-2 leading-tight" numberOfLines={2}>
-        {report.name}
-      </Text>
-
-      {/* Dates */}
-      <View className="flex-row items-center gap-1.5 mb-4">
-        <FileText size={12} color="#94a3b8" />
-        <Text className="text-xs text-gray-400 font-medium">
-          {format(new Date(report.start_date), 'dd MMM', { locale: dateLocale })}
-          {' — '}
-          {format(new Date(report.end_date), 'dd MMM yyyy', { locale: dateLocale })}
-        </Text>
-      </View>
-
-      {/* Footer: tickets + amount */}
-      <View className="flex-row items-end justify-between pt-4 border-t border-gray-50">
-        <View className="flex-row items-center gap-2 bg-gray-50 rounded-xl px-3 py-2 border border-gray-100">
-          <Receipt size={13} color={colors.brand} />
-          <Text className="font-bold text-dark text-sm">{ticketCount}</Text>
-          <Text className="text-xs text-gray-400">{t('home.processedTickets')}</Text>
-        </View>
-        <View className="items-end">
-          <Text className="text-[10px] text-gray-400 uppercase font-bold mb-0.5">
-            {t('home.currentExpense')}
-          </Text>
-          <Text className="text-2xl font-black text-brand leading-none">
-            {(totalAmount > 0 ? totalAmount : (report.requested_amount ?? 0)).toFixed(2)}
-            <Text className="text-sm font-medium text-brand/50"> {report.currency}</Text>
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-// ── Home Screen ───────────────────────────────────────────────────────────────
+const AVATAR_BG = '#E8E8FF';
 
 export default function HomeScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
-  const [refreshing, setRefreshing] = useState(false);
+  const insets = useSafeAreaInsets();
 
-  const { data: user } = useUserQuery();
-  const { data: reports, isLoading, refetch } = useReportsQuery();
-
-  const dateLocale = i18n.language.startsWith('es') ? es : enUS;
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
-  }, [refetch]);
-
-  const stats = useMemo(() => ({
-    pendingAmount: reports
-      ?.filter(r => ['CREATED', 'SUBMITTED', 'PENDING'].includes(r.status.toUpperCase()))
-      ?.reduce((acc, r) => acc + (r.requested_amount ?? 0), 0) ?? 0,
-    activeCount: reports?.filter(r =>
-      r.status === ReportStatus.CREATED || r.status === ReportStatus.SUBMITTED,
-    ).length ?? 0,
-    rejectedCount: reports?.filter(r => r.status === ReportStatus.DECLINED).length ?? 0,
-  }), [reports]);
-
-  const activeReport = useMemo(
-    () => reports?.find(r => r.status === ReportStatus.CREATED) ?? null,
-    [reports],
-  );
-
-  const recentCompleted = useMemo(
-    () => reports
-      ?.filter(r => ['APPROVED', 'PAID', 'DECLINED'].includes(r.status.toUpperCase()))
-      .slice(0, 5) ?? [],
-    [reports],
-  );
-
-  const userInitials = user?.name
-    ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2)
-    : '';
-
-  const hour = new Date().getHours();
-  const greetingKey = hour >= 5 && hour < 12
-    ? 'home.greetingMorning'
-    : hour >= 12 && hour < 20
-      ? 'home.greetingAfternoon'
-      : 'home.greetingEvening';
-
-  const formattedDate = new Date().toLocaleDateString(i18n.language, {
-    weekday: 'long', day: 'numeric', month: 'long',
-  });
+  const {
+    refreshing,
+    onRefresh,
+    stats,
+    activeReport,
+    recentCompleted,
+    firstName,
+    dateLocale,
+    scanSheetOpen,
+    setScanSheetOpen,
+    isModalOpen,
+    extractedTicket,
+    isUploading,
+    isConfirming,
+    pickFromCamera,
+    pickFromGallery,
+    handleConfirm,
+    handleDiscard,
+  } = useHomeScreen();
 
   return (
-    <SafeAreaView className={mt.screen} edges={['top']}>
-      <StatusBar barStyle="dark-content" />
+    <View style={s.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={CARD_BG} />
+      <View style={{ height: insets.top, backgroundColor: CARD_BG }} />
+
+      {/* ── Header ── */}
+      <View style={s.header}>
+        <Text style={s.headerTitle}>{firstName}</Text>
+
+        <PixelCard
+          bg={AVATAR_BG}
+          shadowOffset={3}
+          radius={14}
+          onPress={() => router.push('/(app)/profile')}
+        >
+          <View style={s.avatarInner}>
+            <Image source={userIcon} style={s.avatarImage} />
+          </View>
+        </PixelCard>
+      </View>
+
       <ScrollView
-        className="flex-1 px-6"
-        contentContainerStyle={{ paddingTop: 20, paddingBottom: 40 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={s.scroll}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />
         }
       >
-        {/* ── Header ── */}
-        <View className="flex-row justify-between items-end mb-8">
-          <View className="flex-1">
-            <Text className="text-brand font-bold uppercase tracking-widest text-[10px] mb-1">
-              {formattedDate}
-            </Text>
-            <Text className="text-3xl font-black text-dark tracking-tighter">
-              {user?.name?.split(' ')[0] ?? 'Dashboard'}
-            </Text>
-            <Text className="text-sm text-gray-400 mt-0.5">{t(greetingKey, { name: user?.name?.split(' ')[0] ?? '' })}</Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => router.push('/(app)/profile')}
-            activeOpacity={0.8}
-            className={mt.avatarBtn}
-          >
-            <View className={mt.avatarInner}>
-              <Text className="text-brand font-black text-base tracking-tighter">{userInitials}</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── KPI Stats — horizontal scroll ── */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="flex-row mb-8 -mx-6 px-6"
-          contentContainerStyle={{ gap: 12 }}
-        >
-          <View className={`${mt.statCardPrimary} w-56`}>
-            <View className="flex-row justify-between items-start mb-4">
-              <View className="p-2 bg-white/20 rounded-xl">
-                <Wallet size={20} color="white" />
-              </View>
-              <View className="bg-white/20 px-2 py-0.5 rounded-full">
-                <Text className="text-white text-[9px] font-bold uppercase">
-                  {stats.pendingAmount > 0 ? t('home.inProcess') : t('home.upToDate')}
-                </Text>
-              </View>
-            </View>
-            <Text className="text-white/70 text-sm font-medium">{t('home.pendingReimbursement')}</Text>
-            <Text className="text-white text-3xl font-bold mt-1">{stats.pendingAmount.toFixed(2)} €</Text>
-          </View>
-
-          <View className={`${mt.statCard} w-56`}>
-            <View className="flex-row justify-between items-start mb-4">
-              <View className="p-2 bg-secondary/20 rounded-xl">
-                <Briefcase size={20} color={colors.brand} />
-              </View>
-            </View>
-            <Text className="text-gray-500 text-sm font-medium">{t('home.activeTrips')}</Text>
-            <Text className="text-dark text-3xl font-bold mt-1">{stats.activeCount}</Text>
-          </View>
-
-          <View className={`${mt.statCardDanger} w-56`}>
-            <View className="flex-row justify-between items-start mb-4">
-              <View className={`${mt.iconBox} bg-white`}>
-                <AlertCircle size={20} color="#763626" />
-              </View>
-            </View>
-            <Text className="text-accent/70 text-sm font-medium">{t('home.rejectedItems')}</Text>
-            <Text className="text-accent text-3xl font-bold mt-1">{stats.rejectedCount}</Text>
-          </View>
-        </ScrollView>
-
-        {/* ── Active Trip (matches web's ActiveTripCard) ── */}
-        <View className="mb-8">
-          <View className="flex-row items-center gap-2 mb-4">
-            <View className="w-2 h-2 bg-brand rounded-full" />
-            <Text className={mt.sectionTitle}>{t('home.activeTrip')}</Text>
-          </View>
-
-          {activeReport ? (
-            <ActiveTripCard
+        {/* ── Reporte activo + cámara ── */}
+        {activeReport ? (
+          <View style={s.activeBlock}>
+            <HeroReportCard
               report={activeReport}
               onPress={() => router.push(`/(app)/reports/${activeReport.id}`)}
-              t={t}
               dateLocale={dateLocale}
             />
-          ) : !isLoading && (
-            <View className={`${mt.emptyStateSm} py-10`}>
-              <View className={mt.emptyStateIcon}>
-                <FileText size={24} color="#cbd5e1" />
+            <PixelCard
+              bg={colors.brand}
+              shadowOffset={4}
+              style={s.scanCard}
+              onPress={() => setScanSheetOpen(true)}
+            >
+              <View style={s.scanInner}>
+                <Image source={cameraIcon} style={s.scanIconImage} resizeMode="contain" />
+                <Text style={s.scanTitle}>{t('reportDetail.scanTicket')}</Text>
+                <IconChevronRight size={20} color="rgba(255,255,255,0.6)" />
               </View>
-              <Text className="text-gray-400 text-sm text-center mb-4">{t('trips.noActiveTrips')}</Text>
-              <TouchableOpacity
-                onPress={() => router.push('/(app)/reports')}
-                className={`${mt.btnPrimary} px-5`}
-              >
-                <Plus size={16} color="white" />
-                <Text className={`${mt.btnTextPrimary} ml-1.5`}>{t('home.createFirst')}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+            </PixelCard>
+          </View>
+        ) : (
+          <View style={s.section}>
+            <EmptyState
+              icon={reportIcon}
+              title={t('home.noActive')}
+              description={t('home.noActiveDesc')}
+              buttonLabel={t('home.createFirst')}
+              onButtonPress={() => router.push('/(app)/reports/create')}
+            />
+          </View>
+        )}
+
+        {/* ── Stats ── */}
+        <View style={s.sectionHeader}>
+          <IconClock size={11} color={DARK} />
+          <Text style={s.sectionTitle}>En revisión</Text>
         </View>
-
-        {/* ── Recent Activity (matches web's RecentActivitySection) ── */}
-        {recentCompleted.length > 0 && (
-          <View>
-            <View className="flex-row justify-between items-center mb-4">
-              <View className="flex-row items-center gap-2">
-                <FileText size={16} color="#94a3b8" />
-                <Text className={mt.sectionTitle}>{t('home.recentActivity')}</Text>
+        <PixelCard bg={colors.secondary} shadowOffset={4} style={s.statCard}>
+          <View style={s.statCardInner}>
+            <View style={s.statCardBody}>
+              <View style={s.statItem}>
+                <Text style={s.statBigNum}>{stats.inReviewCount}</Text>
+                <Text style={s.statItemLabel}>{stats.inReviewCount === 1 ? 'reporte' : 'reportes'}</Text>
               </View>
-              <TouchableOpacity onPress={() => router.push('/(app)/reports')}>
-                <Text className="text-xs font-bold text-brand">{t('common.viewAll')}</Text>
-              </TouchableOpacity>
+              <View style={s.statDivider} />
+              <View style={s.statItem}>
+                <Text style={s.statBigNum}>{stats.inReview.toFixed(0)}€</Text>
+                <Text style={s.statItemLabel}>pendiente</Text>
+              </View>
             </View>
+          </View>
+        </PixelCard>
 
-            <View className={`${mt.listSection} shadow-sm`}>
-              {recentCompleted.map((report, idx) => (
-                <TouchableOpacity
-                  key={report.id ?? `report-${idx}`}
-                  onPress={() => router.push(`/(app)/reports/${report.id}`)}
-                  className={`px-4 py-3.5 flex-row items-center gap-3 ${idx < recentCompleted.length - 1 ? 'border-b border-gray-50' : ''}`}
-                >
-                  <View className={`${mt.iconBoxSm} bg-gray-100`}>
-                    <FileText size={14} color="#94a3b8" />
-                  </View>
-                  <View className="flex-1 min-w-0">
-                    <Text className="font-bold text-dark text-sm" numberOfLines={1}>
-                      {report.name}
-                    </Text>
-                    <Text className="text-[10px] text-gray-400 mt-0.5">
-                      {format(new Date(report.end_date), 'dd MMM yyyy', { locale: dateLocale })}
-                    </Text>
-                  </View>
-                  <View className="items-end">
-                    <Text className="font-bold text-dark text-sm">
-                      {(report.approved_amount ?? report.requested_amount ?? 0).toLocaleString()}
-                      <Text className="text-[10px] text-gray-400"> {report.currency}</Text>
-                    </Text>
-                    <StatusBadge status={report.status} />
-                  </View>
-                  <ChevronRight size={14} color="#cbd5e1" />
-                </TouchableOpacity>
-              ))}
+        {/* ── Actividad reciente ── */}
+        {recentCompleted.length > 0 && (
+          <View style={s.section}>
+            <View style={s.sectionHeader}>
+              <IconClock size={11} color={DARK} />
+              <Text style={s.sectionTitle}>{t('home.recentCompleted')}</Text>
             </View>
+            {recentCompleted.map(r => (
+              <HistoryRow
+                key={r.id}
+                report={r}
+                onPress={() => router.push(`/(app)/reports/${r.id}`)}
+                dateLocale={dateLocale}
+              />
+            ))}
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+
+      {/* ── Sheet: cámara o galería ── */}
+      <Modal
+        visible={scanSheetOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setScanSheetOpen(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setScanSheetOpen(false)}>
+          <View style={s.sheetOverlay} />
+        </TouchableWithoutFeedback>
+        <View style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+          <View style={s.sheetHandle} />
+          <View style={s.sheetHeader}>
+            <Text style={s.sheetTitle}>{t('reportDetail.scanTicket')}</Text>
+            <PixelCard bg={colors.danger} shadowOffset={3} radius={8} onPress={() => setScanSheetOpen(false)}>
+              <View style={s.iconBtnInner}>
+                <IconX size={15} color="white" />
+              </View>
+            </PixelCard>
+          </View>
+          <View style={s.sheetOptions}>
+            <PixelCard bg={CARD_BG} shadowOffset={4} style={{ flex: 1 }} onPress={pickFromCamera}>
+              <View style={s.sheetOption}>
+                <View style={[s.sheetOptionIcon, { backgroundColor: `${colors.brand}15`, borderColor: colors.brand }]}>
+                  <IconCamera size={22} color={colors.brand} />
+                </View>
+                <Text style={s.sheetOptionTitle}>Cámara</Text>
+                <Text style={s.sheetOptionSub}>Toma una foto</Text>
+              </View>
+            </PixelCard>
+            <PixelCard bg={CARD_BG} shadowOffset={4} style={{ flex: 1 }} onPress={pickFromGallery}>
+              <View style={s.sheetOption}>
+                <View style={[s.sheetOptionIcon, { backgroundColor: `${DARK}08`, borderColor: `${DARK}30` }]}>
+                  <IconPhoto size={22} color={DARK} />
+                </View>
+                <Text style={s.sheetOptionTitle}>Galería</Text>
+                <Text style={s.sheetOptionSub}>Elige una imagen</Text>
+              </View>
+            </PixelCard>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Modal de confirmación ── */}
+      <Modal
+        visible={isModalOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleDiscard}
+      >
+        <View style={{ flex: 1, backgroundColor: CARD_BG }}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+            <View style={s.modalHandle} />
+            <View style={s.modalHeader}>
+              <Text style={s.modalTitle}>{t('upload.confirmTitle')}</Text>
+              <PixelCard bg={colors.danger} shadowOffset={3} radius={8} onPress={handleDiscard}>
+                <View style={s.iconBtnInner}>
+                  <IconX size={15} color="white" />
+                </View>
+              </PixelCard>
+            </View>
+            <View style={{ flex: 1, backgroundColor: SCREEN_BG }}>
+              {extractedTicket && (
+                <TicketConfirmationForm
+                  ticket={extractedTicket}
+                  onConfirm={handleConfirm}
+                  onCancel={handleDiscard}
+                  isLoading={isConfirming}
+                />
+              )}
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+
+      {/* ── Scanning overlay ── */}
+      <ScanningOverlay visible={isUploading} />
+    </View>
   );
 }
+
+const s = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: SCREEN_BG },
+
+  // ── Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 12,
+    backgroundColor: CARD_BG,
+    borderBottomWidth: 4,
+    borderBottomColor: DARK,
+  },
+  headerTitle: {
+    fontFamily: 'SpaceGrotesk-Bold',
+    fontSize: 24,
+    color: DARK,
+    letterSpacing: 0.5,
+  },
+  avatarInner: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  avatarImage: { width: '100%', height: '100%' },
+  avatarText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 18, color: DARK },
+
+  scroll: { padding: 20, paddingBottom: 120 },
+
+  // ── Active block
+  activeBlock: { marginBottom: 28 },
+
+  // ── Scan CTA
+  scanCard: { marginTop: 8 },
+  scanInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 3,
+  },
+  scanIconImage: { width: 58, height: 58 },
+  scanTitle: { flex: 1, fontFamily: 'SpaceGrotesk-Bold', fontSize: 15, color: 'white', letterSpacing: 0.2 },
+
+  // ── Stats
+  statCard: { marginBottom: 28 },
+  statCardInner: { padding: 16 },
+  statCardBody: { flexDirection: 'row', alignItems: 'center' },
+  statItem: { flex: 1, alignItems: 'center' },
+  statBigNum: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 32, color: DARK, letterSpacing: -1 },
+  statItemLabel: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 10, color: `${DARK}80`, letterSpacing: 0.3, marginTop: 2 },
+  statDivider: { width: 2, height: 44, backgroundColor: `${DARK}15` },
+
+  // ── Sections
+  section: { marginBottom: 28 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  sectionTitle: { flex: 1, fontFamily: 'SpaceGrotesk-Bold', fontSize: 12, color: DARK, letterSpacing: 0.3 },
+
+  // ── Scan sheet
+  sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
+  sheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: CARD_BG,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+  },
+  sheetHandle: {
+    width: 48, height: 6,
+    backgroundColor: DARK,
+    alignSelf: 'center',
+    marginTop: 14, marginBottom: 0,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 4,
+    borderBottomColor: DARK,
+  },
+  sheetTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 20, color: DARK, letterSpacing: 0.3 },
+  iconBtnInner: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  sheetOptions: { flexDirection: 'row', gap: 12, padding: 20 },
+  sheetOption: { alignItems: 'center', paddingVertical: 20, paddingHorizontal: 12, gap: 8 },
+  sheetOptionIcon: {
+    width: 56, height: 56,
+    borderRadius: 10,
+    borderWidth: BORDER_WIDTH,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  sheetOptionTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK },
+  sheetOptionSub: { fontFamily: 'SpaceGrotesk-Medium', fontSize: 10, color: `${DARK}55` },
+
+  // ── Confirmation modal
+  modalHandle: {
+    width: 48, height: 6,
+    backgroundColor: DARK,
+    alignSelf: 'center',
+    marginTop: 14,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 16,
+    backgroundColor: CARD_BG,
+    borderBottomWidth: 4,
+    borderBottomColor: DARK,
+  },
+  modalTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 20, color: DARK, letterSpacing: 0.3 },
+});

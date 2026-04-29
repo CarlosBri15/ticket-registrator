@@ -10,6 +10,13 @@ vi.mock('react-router-dom', async () => {
   return { ...(actual as object), useNavigate: () => mockNavigate };
 });
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, fallback?: string) => fallback ?? key,
+    i18n: { language: 'es' },
+  }),
+}));
+
 vi.mock('../components/DepartmentModal', () => ({
   DepartmentModal: ({ isOpen, onClose, department }: any) =>
     isOpen
@@ -31,29 +38,10 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
     usePermissions: vi.fn(),
     useScope: vi.fn(),
     useScopeContext: vi.fn(),
+    useCompanyScope: vi.fn(),
   };
 });
 
-vi.mock('lucide-react', () => ({
-  Layers: () => null,
-  Search: () => null,
-  Plus: () => null,
-  Trash2: () => null,
-  Pencil: () => null,
-  Building2: () => null,
-  XCircle: () => null,
-  CheckCircle: () => null,
-  CheckCircle2: () => null,
-  AlertTriangle: () => null,
-  Info: () => null,
-  X: () => null,
-}));
-
-vi.mock('../../../components/ui/Button', () => ({
-  Button: ({ children, onClick, disabled }: any) => (
-    <button onClick={onClick} disabled={disabled}>{children}</button>
-  ),
-}));
 vi.mock('../../../components/ui/Pagination', () => ({
   Pagination: () => null,
 }));
@@ -64,6 +52,7 @@ import {
   usePermissions,
   useScope,
   useScopeContext,
+  useCompanyScope,
 } from '@ticket-registrator/shared';
 
 const setupMocks = () => {
@@ -72,6 +61,7 @@ const setupMocks = () => {
   (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => true });
   (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: true, scope: {} });
   (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: 'company-1' });
+  (useCompanyScope as ReturnType<typeof vi.fn>).mockReturnValue({ companyId: 'company-1' });
 };
 
 const renderScreen = () =>
@@ -93,30 +83,34 @@ describe('DepartmentsScreen', () => {
     expect(container).toBeTruthy();
   });
 
-  it('renders Departamentos heading', () => {
+  it('renders the page heading', () => {
     renderScreen();
-    expect(screen.getByText('Departamentos')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('departments.title');
   });
 
-  it('renders search input', () => {
+  it('renders search input when there are departments', () => {
+    (useDepartmentsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'd1', name: 'Recursos Humanos', companyId: 'c1' }],
+      isLoading: false,
+    });
     renderScreen();
-    expect(screen.getByPlaceholderText(/buscar/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('departments.searchPlaceholder')).toBeInTheDocument();
   });
 
   it('renders create department button when user has permission', () => {
     renderScreen();
-    expect(screen.getByText(/nuevo departamento/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'departments.new' })).toBeInTheDocument();
   });
 
   it('does not show create button when user lacks permission', () => {
     (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => false });
     renderScreen();
-    expect(screen.queryByText(/nuevo departamento/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'departments.new' })).not.toBeInTheDocument();
   });
 
   it('shows empty state when no departments', () => {
     renderScreen();
-    expect(screen.getByText(/no hay departamentos/i)).toBeInTheDocument();
+    expect(screen.getByText('departments.empty')).toBeInTheDocument();
   });
 
   it('renders department list when departments exist', () => {
@@ -128,16 +122,16 @@ describe('DepartmentsScreen', () => {
     expect(screen.getByText('Recursos Humanos')).toBeInTheDocument();
   });
 
-  it('shows "Selecciona una organización" when companyId is null', () => {
-    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
+  it('shows the org-selection empty when companyId is null', () => {
+    (useCompanyScope as ReturnType<typeof vi.fn>).mockReturnValue({ companyId: null });
     renderScreen();
-    expect(screen.getByText(/selecciona una organización/i)).toBeInTheDocument();
+    expect(screen.getByText('departments.selectOrg')).toBeInTheDocument();
   });
 
-  it('shows loading spinner when isLoading is true', () => {
+  it('shows loading indicator when isLoading is true', () => {
     (useDepartmentsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: undefined, isLoading: true });
     renderScreen();
-    expect(screen.getByText(/cargando departamentos/i)).toBeInTheDocument();
+    expect(screen.getByText('departments.loading')).toBeInTheDocument();
   });
 
   it('shows "Sin resultados" when search has no matches', () => {
@@ -146,14 +140,15 @@ describe('DepartmentsScreen', () => {
       isLoading: false,
     });
     renderScreen();
-    fireEvent.change(screen.getByPlaceholderText(/buscar/i), { target: { value: 'xyz' } });
-    expect(screen.getByText(/sin resultados/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText('departments.searchPlaceholder'), { target: { value: 'xyz' } });
+    expect(screen.getByText('common.noResults')).toBeInTheDocument();
   });
 
   it('opens create modal when Nuevo Departamento is clicked', () => {
     renderScreen();
-    fireEvent.click(screen.getByText(/nuevo departamento/i));
+    fireEvent.click(screen.getByRole('button', { name: 'departments.new' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Nuevo Departamento')).toBeInTheDocument();
   });
 
   it('opens edit modal when edit button is clicked', () => {
@@ -162,12 +157,7 @@ describe('DepartmentsScreen', () => {
       isLoading: false,
     });
     renderScreen();
-    // buttons: [0]=dept name/navigate, [1]=Nuevo Departamento, [2]=edit for d1, [3]=delete for d1
-    const allButtons = screen.getAllByRole('button');
-    // Click the edit button (second-to-last before delete)
-    const editBtn = allButtons[allButtons.length - 2];
-    fireEvent.click(editBtn);
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    fireEvent.click(screen.getByTitle('Editar'));
     expect(screen.getByText('Editar Departamento')).toBeInTheDocument();
   });
 
@@ -179,30 +169,19 @@ describe('DepartmentsScreen', () => {
       isLoading: false,
     });
     renderScreen();
-    // find all buttons and click the delete one (last button in the row)
-    const buttons = screen.getAllByRole('button');
-    const deleteButton = buttons[buttons.length - 1];
-    fireEvent.click(deleteButton);
+    fireEvent.click(screen.getByTitle('Eliminar'));
     expect(mockDelete).toHaveBeenCalledWith('d1');
   });
 
-  it('uses scope.companyId when not global', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: false, scope: { companyId: 'company-from-scope' } });
-    renderScreen();
-    // Should render without "Selecciona una organización"
-    expect(screen.queryByText(/selecciona una organización/i)).not.toBeInTheDocument();
-  });
-
-  it('navigates to /departments/:id when department card is clicked', () => {
+  it('navigates to /departments/:id when row is clicked', () => {
     (useDepartmentsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
       data: [{ id: 'd1', name: 'Recursos Humanos', companyId: 'c1' }],
       isLoading: false,
     });
     renderScreen();
-    // Click the department name button (first button in card)
-    const deptButton = screen.getByText('Recursos Humanos').closest('button');
-    expect(deptButton).toBeTruthy();
-    fireEvent.click(deptButton!);
+    const rowButton = screen.getByText('Recursos Humanos').closest('button');
+    expect(rowButton).toBeTruthy();
+    fireEvent.click(rowButton!);
     expect(mockNavigate).toHaveBeenCalledWith('/departments/d1');
   });
 
@@ -212,13 +191,8 @@ describe('DepartmentsScreen', () => {
       isLoading: false,
     });
     renderScreen();
-    const allButtons = screen.getAllByRole('button');
-    // The edit button is second-to-last (before delete)
-    const editBtn = allButtons[allButtons.length - 2];
-    fireEvent.click(editBtn);
-    // Should NOT navigate to /departments/d1
-    expect(mockNavigate).not.toHaveBeenCalledWith('/departments/d1');
-    // Should open modal instead
+    fireEvent.click(screen.getByTitle('Editar'));
+    expect(mockNavigate).not.toHaveBeenCalled();
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });

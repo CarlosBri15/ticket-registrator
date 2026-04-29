@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { ReportForm } from './ReportForm';
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (k: string) => k, i18n: { language: 'es' } }),
+}));
 
 vi.mock('@ticket-registrator/shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
@@ -10,115 +13,161 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
   };
 });
 
-vi.mock('lucide-react', () => ({
-  AlertCircle: () => null,
-}));
-
-vi.mock('../../../components/ui/Button', () => ({
-  Button: ({ children, onClick, disabled }: any) => (
-    <button onClick={onClick} disabled={disabled}>{children}</button>
+vi.mock('../../../components/ui/DatePicker', () => ({
+  DatePicker: ({ label, value, onChange, error }: any) => (
+    <div data-testid={`date-${label}`}>
+      <label>{label}</label>
+      <input
+        data-testid={`date-input-${label}`}
+        value={value ? value.toISOString().split('T')[0] : ''}
+        onChange={(e) => onChange(e.target.value ? new Date(e.target.value) : undefined)}
+      />
+      {error && <span data-testid={`date-error-${label}`}>{error}</span>}
+    </div>
   ),
 }));
 
-vi.mock('../../../components/ui/Input', () => ({
-  Input: ({ label, ...props }: any) => <input aria-label={label} {...props} />,
-}));
-
 vi.mock('./ReportTypeSelect', () => ({
-  ReportTypeSelect: ({ label, onChange, value }: any) => (
-    <select aria-label={label} value={value ?? ''} onChange={(e) => onChange?.(e.target.value)}>
-      <option value="">--</option>
-      <option value="trips.typeBusinessTrip">trips.typeBusinessTrip</option>
-    </select>
+  ReportTypeSelect: ({ label, value, onChange, error }: any) => (
+    <div>
+      <label>{label}</label>
+      <select aria-label={label} value={value ?? ''} onChange={(e) => onChange(e.target.value)}>
+        <option value="">--</option>
+        <option value="business">Business</option>
+        <option value="training">Training</option>
+      </select>
+      {error && <span data-testid="type-error">{error}</span>}
+    </div>
   ),
 }));
 
 vi.mock('../../settings/components/CurrencySelect', () => ({
-  CurrencySelect: ({ label, onChange, value }: any) => (
-    <select aria-label={label} value={value ?? ''} onChange={(e) => onChange?.(e.target.value)}>
-      <option value="EUR">EUR</option>
-      <option value="USD">USD</option>
-    </select>
+  CurrencySelect: ({ label, value, onChange }: any) => (
+    <div>
+      <label>{label}</label>
+      <select aria-label={label} value={value ?? ''} onChange={(e) => onChange(e.target.value)}>
+        <option value="EUR">EUR</option>
+        <option value="USD">USD</option>
+      </select>
+    </div>
   ),
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: { language: 'es' },
-  }),
+vi.mock('lucide-react', () => ({
+  AlertCircle: () => <span data-testid="alert-icon" />,
 }));
 
 import { useCreateReportMutation } from '@ticket-registrator/shared';
+import { ReportForm } from './ReportForm';
 
 describe('ReportForm', () => {
+  let mutate: ReturnType<typeof vi.fn>;
+  let capturedSuccess: (() => void) | undefined;
+  let capturedError: ((e: any) => void) | undefined;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    (useCreateReportMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: vi.fn(), isPending: false });
-  });
-
-  it('renders without crashing', () => {
-    const { container } = render(<ReportForm onSuccess={vi.fn()} onCancel={vi.fn()} />);
-    expect(container).toBeTruthy();
-  });
-
-  it('renders trip name input', () => {
-    render(<ReportForm onSuccess={vi.fn()} onCancel={vi.fn()} />);
-    expect(screen.getByLabelText('trips.nameLabel')).toBeInTheDocument();
-  });
-
-  it('renders cancel button', () => {
-    render(<ReportForm onSuccess={vi.fn()} onCancel={vi.fn()} />);
-    expect(screen.getByText('common.cancel')).toBeInTheDocument();
-  });
-
-  it('renders submit button', () => {
-    render(<ReportForm onSuccess={vi.fn()} onCancel={vi.fn()} />);
-    expect(screen.getByText('trips.saveButton')).toBeInTheDocument();
-  });
-
-  it('calls onCancel when cancel button is clicked', () => {
-    const onCancel = vi.fn();
-    render(<ReportForm onSuccess={vi.fn()} onCancel={onCancel} />);
-    fireEvent.click(screen.getByText('common.cancel'));
-    expect(onCancel).toHaveBeenCalled();
-  });
-
-  it('shows api error message when onError is triggered with response message', () => {
-    let capturedOnError: ((error: any) => void) | undefined;
+    mutate = vi.fn();
+    capturedSuccess = undefined;
+    capturedError = undefined;
     (useCreateReportMutation as ReturnType<typeof vi.fn>).mockImplementation((opts: any) => {
-      capturedOnError = opts?.onError;
-      return { mutate: vi.fn(), isPending: false };
+      capturedSuccess = opts?.onSuccess;
+      capturedError = opts?.onError;
+      return { mutate, isPending: false };
     });
-    render(<ReportForm onSuccess={vi.fn()} onCancel={vi.fn()} />);
-    act(() => {
-      capturedOnError?.({ response: { data: { message: 'Error al crear reporte' } } });
-    });
-    expect(screen.getByText('Error al crear reporte')).toBeInTheDocument();
   });
 
-  it('shows generic error when onError has no response message', () => {
-    let capturedOnError: ((error: any) => void) | undefined;
-    (useCreateReportMutation as ReturnType<typeof vi.fn>).mockImplementation((opts: any) => {
-      capturedOnError = opts?.onError;
-      return { mutate: vi.fn(), isPending: false };
+  const renderForm = (overrides: Partial<React.ComponentProps<typeof ReportForm>> = {}) => {
+    const props = { onSuccess: vi.fn(), onCancel: vi.fn(), ...overrides };
+    return { props, ...render(<ReportForm {...props} />) };
+  };
+
+  it('renders the name input, date pickers, currency and type selects', () => {
+    renderForm();
+    expect(screen.getByPlaceholderText('trips.namePlaceholder')).toBeInTheDocument();
+    expect(screen.getByTestId('date-trips.startLabel')).toBeInTheDocument();
+    expect(screen.getByTestId('date-trips.endLabel')).toBeInTheDocument();
+    expect(screen.getByLabelText('trips.currencyLabel')).toBeInTheDocument();
+    expect(screen.getByLabelText('trips.categoryLabel')).toBeInTheDocument();
+  });
+
+  it('renders the cancel and submit buttons', () => {
+    renderForm();
+    expect(screen.getByRole('button', { name: 'common.cancel' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'trips.saveButton' })).toBeInTheDocument();
+  });
+
+  it('fires onCancel when the cancel button is clicked', () => {
+    const { props } = renderForm();
+    fireEvent.click(screen.getByRole('button', { name: 'common.cancel' }));
+    expect(props.onCancel).toHaveBeenCalled();
+  });
+
+  it('disables the submit button while pending', () => {
+    (useCreateReportMutation as ReturnType<typeof vi.fn>).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: true,
     });
-    render(<ReportForm onSuccess={vi.fn()} onCancel={vi.fn()} />);
+    renderForm();
+    const submit = screen.getByRole('button', { name: 'trips.saveButton' }) as HTMLButtonElement;
+    expect(submit.disabled).toBe(true);
+  });
+
+  it('calls createReport with the form values when valid data is submitted', async () => {
+    renderForm();
+    fireEvent.change(screen.getByPlaceholderText('trips.namePlaceholder'), {
+      target: { value: 'Trip to Madrid' },
+    });
+    fireEvent.change(screen.getByTestId('date-input-trips.startLabel'), {
+      target: { value: '2024-05-01' },
+    });
+    fireEvent.change(screen.getByTestId('date-input-trips.endLabel'), {
+      target: { value: '2024-05-10' },
+    });
+    fireEvent.change(screen.getByLabelText('trips.categoryLabel'), {
+      target: { value: 'business' },
+    });
+
+    const form = screen.getByRole('button', { name: 'trips.saveButton' }).closest('form')!;
+    await act(async () => {
+      fireEvent.submit(form);
+    });
+    expect(mutate).toHaveBeenCalled();
+    const arg = mutate.mock.calls[0][0];
+    expect(arg.name).toBe('Trip to Madrid');
+    expect(arg.type).toBe('business');
+    expect(arg.currency).toBe('EUR');
+  });
+
+  it('does not call createReport when form is invalid', async () => {
+    renderForm();
+    const form = screen.getByRole('button', { name: 'trips.saveButton' }).closest('form')!;
+    await act(async () => {
+      fireEvent.submit(form);
+    });
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('calls onSuccess on mutation success', () => {
+    const { props } = renderForm();
+    capturedSuccess?.();
+    expect(props.onSuccess).toHaveBeenCalled();
+  });
+
+  it('renders an API error banner when mutation onError fires', () => {
+    renderForm();
     act(() => {
-      capturedOnError?.({});
+      capturedError?.({ response: { data: { message: 'Server exploded' } } });
+    });
+    expect(screen.getByText('Server exploded')).toBeInTheDocument();
+    expect(screen.getByTestId('alert-icon')).toBeInTheDocument();
+  });
+
+  it('falls back to a translated message when the error response has no message', () => {
+    renderForm();
+    act(() => {
+      capturedError?.({});
     });
     expect(screen.getByText('trips.createError')).toBeInTheDocument();
-  });
-
-  it('calls onSuccess prop when mutation onSuccess fires', () => {
-    let capturedOnSuccess: (() => void) | undefined;
-    (useCreateReportMutation as ReturnType<typeof vi.fn>).mockImplementation((opts: any) => {
-      capturedOnSuccess = opts?.onSuccess;
-      return { mutate: vi.fn(), isPending: false };
-    });
-    const onSuccess = vi.fn();
-    render(<ReportForm onSuccess={onSuccess} onCancel={vi.fn()} />);
-    act(() => { capturedOnSuccess?.(); });
-    expect(onSuccess).toHaveBeenCalled();
   });
 });

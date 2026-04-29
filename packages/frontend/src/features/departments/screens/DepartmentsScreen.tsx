@@ -1,186 +1,248 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Layers, Search, Plus, Trash2, Pencil, Building2 } from "lucide-react";
+import { Layers, Plus, Trash2, Pencil, ChevronRight } from "lucide-react";
 import {
   useDepartmentsQuery,
   useDeleteDepartmentMutation,
   usePermissions,
-  useScope,
+  useCompanyScope,
+  useListState,
+  useModalState,
   type IDepartment,
 } from "@ticket-registrator/shared";
-import { useScopeContext } from "@ticket-registrator/shared";
+import { useTranslation } from "react-i18next";
+import { PageHeader } from "../../../components/ui/PageHeader";
 import { Button } from "../../../components/ui/Button";
 import { Pagination } from "../../../components/ui/Pagination";
+import { SearchInput } from "../../../components/ui/SearchInput";
+import { TableHeader } from "../../../components/ui/TableHeader";
+import { EmptyState } from "../../../components/ui/EmptyState";
 import { DepartmentModal } from "../components/DepartmentModal";
 
-const PAGE_SIZE = 10;
+const DEPT_GRID = "32px 1fr 80px 16px";
 
 export const DepartmentsScreen = () => {
+  const { t } = useTranslation();
   const { can } = usePermissions();
-  const { scope, isGlobal } = useScope();
-  const { activeCompanyId } = useScopeContext();
+  const { companyId } = useCompanyScope();
   const navigate = useNavigate();
-
-  const getCompanyId = () => {
-    if (isGlobal) return activeCompanyId;
-    return (scope as any)?.companyId ?? null;
-  };
-
-  const companyId = getCompanyId();
 
   const { data: departments, isLoading } = useDepartmentsQuery(companyId ?? undefined);
   const deleteMutation = useDeleteDepartmentMutation(companyId ?? "");
 
-  const [search, setSearch] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editing, setEditing] = useState<IDepartment | undefined>();
-  const [page, setPage] = useState(1);
+  const { search, setSearch, page, setPage, paginate } = useListState();
+  const { isOpen: isModalOpen, item: editing, open: openModal, close: closeModal } =
+    useModalState<IDepartment>();
 
-  useEffect(() => { setPage(1); }, [search]);
-
-  const openCreate = () => { setEditing(undefined); setIsModalOpen(true); };
-  const openEdit = (dept: IDepartment) => { setEditing(dept); setIsModalOpen(true); };
-  const closeModal = () => { setIsModalOpen(false); setEditing(undefined); };
-
-  const filtered = departments?.filter((d) =>
-    !search || d.name.toLowerCase().includes(search.toLowerCase())
+  const filtered = departments?.filter(
+    (d) => !search || d.name.toLowerCase().includes(search.toLowerCase()),
   );
-
-  const paginated = filtered?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const totalPages = Math.ceil((filtered?.length ?? 0) / PAGE_SIZE);
+  const { paginated, totalPages } = paginate(filtered ?? []);
 
   if (!companyId) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 text-center">
-        <Building2 className="w-16 h-16 text-gray-200 mb-4" />
-        <h3 className="text-2xl font-black text-dark mb-2">Selecciona una organización</h3>
-        <p className="text-gray-400 max-w-sm">
-          Para ver los departamentos, selecciona primero una organización desde el panel de Organizaciones.
-        </p>
+      <div className="flex flex-col gap-8">
+        <PageHeader title={t("departments.title")} />
+        <EmptyState
+          icon={<Layers className="w-4 h-4" aria-hidden={true} />}
+          title={t("departments.selectOrg")}
+          description={t("departments.selectOrgDesc")}
+        />
       </div>
     );
   }
 
+  const totalDepartments = departments?.length ?? 0;
+  const hasAny = totalDepartments > 0;
+  const hasFilteredResults = (filtered?.length ?? 0) > 0;
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div>
-          <h1 className="text-4xl font-extrabold text-dark tracking-tight mb-2 flex items-center gap-3">
-            <Layers className="w-8 h-8 text-brand" />
-            Departamentos
-          </h1>
-          <p className="text-gray-500 font-medium">Estructura departamental de tu organización.</p>
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        title={t("departments.title")}
+        stats={
+          hasAny
+            ? [{ label: t("departments.total", "Total"), value: totalDepartments }]
+            : undefined
+        }
+        actions={
+          can("create_departments") && (
+            <Button
+              variant="primary"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              onClick={() => openModal()}
+            >
+              {t("departments.new")}
+            </Button>
+          )
+        }
+      />
+
+      <div className="flex flex-col gap-3">
+        {hasAny && (
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={t("departments.searchPlaceholder")}
+          />
+        )}
+
+        <div className="w-full">
+          <TableHeader
+            gridTemplate={DEPT_GRID}
+            columns={[{ label: t("departments.tableName", "Nombre") }, { label: "", align: "right" }]}
+          />
+
+          {(() => {
+            if (isLoading) {
+              return (
+                <div className="flex flex-col items-center justify-center py-14 gap-2">
+                  <div className="w-4 h-4 border-2 border-dark/20 border-t-dark/60 rounded-full animate-spin" />
+                  <p className="font-sans-medium text-[13px] text-dark/55">
+                    {t("departments.loading")}
+                  </p>
+                </div>
+              );
+            }
+
+            if (!hasAny) {
+              return (
+                <div className="flex flex-col items-center py-14 gap-2 text-center border-b border-[var(--color-border-main)]">
+                  <p className="font-sans-medium text-[13px] text-dark/55">
+                    {t("departments.empty")}
+                  </p>
+                  <p className="font-sans-normal text-[12px] text-dark/40 max-w-sm">
+                    {t("departments.emptyDesc")}
+                  </p>
+                </div>
+              );
+            }
+
+            if (!hasFilteredResults) {
+              return (
+                <div className="flex flex-col items-center py-14 gap-2 text-center border-b border-[var(--color-border-main)]">
+                  <p className="font-sans-medium text-[13px] text-dark/55">
+                    {t("common.noResults")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="font-sans-medium text-dark/50 text-[12px] underline underline-offset-2 hover:text-dark transition-colors mt-1"
+                  >
+                    {t("trips.filterClearAll")}
+                  </button>
+                </div>
+              );
+            }
+
+            return paginated.map((dept) => (
+              <DepartmentRow
+                key={dept.id}
+                dept={dept}
+                onClick={() => navigate(`/departments/${dept.id}`)}
+                canEdit={can("edit_departments")}
+                canDelete={can("delete_departments")}
+                onEdit={() => openModal(dept)}
+                onDelete={() => deleteMutation.mutate(dept.id)}
+                editLabel={t("common.edit", "Editar")}
+                deleteLabel={t("common.delete", "Eliminar")}
+              />
+            ));
+          })()}
         </div>
-        {can("create_departments") && (
-          <Button onClick={openCreate} className="shadow-xl shadow-brand/20">
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Departamento
-          </Button>
+
+        {hasFilteredResults && (
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={filtered?.length ?? 0}
+            pageSize={10}
+            onPageChange={setPage}
+          />
         )}
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
-        <input
-          type="text"
-          placeholder="Buscar departamento..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-medium text-dark placeholder-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/30 transition-all"
-        />
-      </div>
-
-      {/* Content */}
-      {(() => {
-        if (isLoading) {
-          return (
-            <div className="flex flex-col items-center justify-center py-32">
-              <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-gray-500 font-medium">Cargando departamentos...</p>
-            </div>
-          );
-        }
-
-        if (!filtered || filtered.length === 0) {
-          return (
-            <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
-              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Layers className="w-10 h-10 text-gray-300" />
-              </div>
-              <h3 className="text-2xl font-black text-dark mb-3">
-                {search ? "Sin resultados" : "No hay departamentos"}
-              </h3>
-              <p className="text-gray-400 max-w-sm mx-auto">
-                {search ? "Prueba con otra búsqueda." : "Crea el primer departamento de tu organización."}
-              </p>
-            </div>
-          );
-        }
-
-        return (
-          <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paginated!.map((dept) => (
-              <div
-                key={dept.id}
-                className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <button
-                    type="button"
-                    className="flex items-center gap-3 min-w-0 text-left flex-1"
-                    onClick={() => navigate(`/departments/${dept.id}`)}
-                  >
-                    <div className="w-10 h-10 bg-brand/10 rounded-2xl flex items-center justify-center shrink-0">
-                      <Layers className="w-5 h-5 text-brand" />
-                    </div>
-                    <p className="font-bold text-dark truncate">{dept.name}</p>
-                  </button>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {can("edit_departments") && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); openEdit(dept); }}
-                        className="p-2 text-gray-300 hover:text-brand hover:bg-brand/10 rounded-xl transition-all"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                    )}
-                    {can("delete_departments") && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(dept.id); }}
-                        className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              totalItems={filtered.length}
-              pageSize={PAGE_SIZE}
-              onPageChange={setPage}
-            />
-          </div>
-        );
-      })()}
-
-      {companyId && (
-        <DepartmentModal
-          isOpen={isModalOpen}
-          onClose={closeModal}
-          companyId={companyId}
-          department={editing}
-        />
-      )}
+      <DepartmentModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        companyId={companyId}
+        department={editing}
+      />
     </div>
   );
 };
+
+// ─── Row ──────────────────────────────────────────────────────────────────────
+
+interface DepartmentRowProps {
+  dept: IDepartment;
+  onClick: () => void;
+  canEdit: boolean;
+  canDelete: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  editLabel: string;
+  deleteLabel: string;
+}
+
+const DepartmentRow = ({
+  dept,
+  onClick,
+  canEdit,
+  canDelete,
+  onEdit,
+  onDelete,
+  editLabel,
+  deleteLabel,
+}: DepartmentRowProps) => (
+  <div className="group relative border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] transition-colors duration-100">
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full text-left grid items-center gap-4 px-4 py-3.5 cursor-pointer"
+      style={{ gridTemplateColumns: DEPT_GRID }}
+    >
+      <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white">
+        <Layers className="w-3.5 h-3.5" aria-hidden={true} />
+      </div>
+      <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
+        {dept.name}
+      </p>
+      <div aria-hidden={true} />
+      <div aria-hidden={true} />
+    </button>
+
+    <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-1">
+      <div className="pointer-events-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+        {canEdit && (
+          <button
+            type="button"
+            title={editLabel}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            className="text-dark/40 hover:text-dark transition-colors p-1"
+          >
+            <Pencil className="w-3.5 h-3.5" aria-hidden={true} />
+          </button>
+        )}
+        {canDelete && (
+          <button
+            type="button"
+            title={deleteLabel}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="text-dark/40 hover:text-danger transition-colors p-1"
+          >
+            <Trash2 className="w-3.5 h-3.5" aria-hidden={true} />
+          </button>
+        )}
+      </div>
+      {!canEdit && !canDelete && (
+        <ChevronRight className="w-4 h-4 text-dark/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+      )}
+    </div>
+  </div>
+);

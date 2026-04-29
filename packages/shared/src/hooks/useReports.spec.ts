@@ -10,6 +10,7 @@ jest.mock('../api/clientContainer', () => ({
     api: {
         reports: jest.fn().mockReturnValue({
             getAll: jest.fn().mockResolvedValue([]),
+            getPaginated: jest.fn().mockResolvedValue({ data: [], total: 0, page: 1, limit: 10, totalPages: 0 }),
             getOne: jest.fn().mockResolvedValue({ id: '1' }),
             create: jest.fn().mockResolvedValue({ id: 'new' }),
             submit: jest.fn().mockResolvedValue({ id: '1', status: 'Submitted' }),
@@ -19,7 +20,7 @@ jest.mock('../api/clientContainer', () => ({
     },
 }));
 
-import { useReportsQuery, useReportQuery, useCreateReportMutation, useSubmitReportMutation, useDeleteReportMutation, useUpdateReportStatusMutation } from './useReports';
+import { useReportsQuery, useReportsPaginatedQuery, useReportQuery, useCreateReportMutation, useSubmitReportMutation, useDeleteReportMutation, useUpdateReportStatusMutation } from './useReports';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '../api/clientContainer';
 
@@ -45,6 +46,24 @@ describe('useReports hooks', () => {
         });
     });
 
+    describe('useReportsPaginatedQuery', () => {
+        it('should call useQuery with paginated queryKey', () => {
+            const params = { page: 1, limit: 10 };
+            useReportsPaginatedQuery(params);
+            expect(useQuery).toHaveBeenCalledWith(expect.objectContaining({
+                queryKey: ['reports', 'paginated', params],
+            }));
+        });
+
+        it('queryFn should call api.reports().getPaginated with params', async () => {
+            const params = { page: 1, limit: 10 };
+            useReportsPaginatedQuery(params);
+            const call = (useQuery as jest.Mock).mock.calls[0][0];
+            await call.queryFn();
+            expect(api.reports().getPaginated).toHaveBeenCalledWith(params);
+        });
+    });
+
     describe('useReportQuery', () => {
         it('should call useQuery with specific report queryKey', () => {
             useReportQuery('abc');
@@ -55,7 +74,7 @@ describe('useReports hooks', () => {
         });
 
         it('should disable query when id is undefined', () => {
-            useReportQuery(undefined);
+            useReportQuery();
             expect(useQuery).toHaveBeenCalledWith(expect.objectContaining({
                 enabled: false,
             }));

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useCreateDepartmentMutation,
   useUpdateDepartmentMutation,
@@ -18,13 +19,14 @@ export const DepartmentModal = ({
   companyId: string;
   department?: IDepartment;
 }) => {
+  const { t } = useTranslation();
   const [name, setName] = useState(department?.name ?? "");
   const isEditing = !!department;
 
   const createMutation = useCreateDepartmentMutation(companyId, { onSuccess: onClose });
   const updateMutation = useUpdateDepartmentMutation(companyId, { onSuccess: onClose });
 
-  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     if (isEditing) {
@@ -38,17 +40,17 @@ export const DepartmentModal = ({
     <FormModal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? "Editar Departamento" : "Nuevo Departamento"}
+      title={isEditing ? t("departments.editDepartment") : t("departments.createDepartment")}
       onSubmit={handleSubmit}
-      submitLabel={isEditing ? "Guardar cambios" : "Crear Departamento"}
+      submitLabel={isEditing ? t("common.saveChanges") : t("departments.createDepartment")}
       isPending={createMutation.isPending || updateMutation.isPending}
       isValid={!!name.trim()}
     >
       <Input
-        label="Nombre del departamento *"
+        label={`${t("departments.nameLabel")} *`}
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Ej: Recursos Humanos"
+        placeholder={t("departments.namePlaceholder")}
         autoFocus
         required
       />

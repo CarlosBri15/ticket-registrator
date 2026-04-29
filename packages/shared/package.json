@@ -3,18 +3,22 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./assets": "./dist/assets.js"
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"require('fs').cpSync('src/assets', 'dist/assets', {recursive:true})\"",
     "test": "jest",
     "test:cov": "jest --coverage",
     "lint": "echo \"Skipping lint for shared...\""
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.66.0",
-    "axios": "^1.7.9",
+    "@tanstack/react-query": "^5.90.20",
+    "axios": "^1.13.4",
     "i18next": "^25.8.4",
     "react-i18next": "^16.5.4",
-    "zod": "^3.23.8"
+    "zod": "^4.3.6"
   },
   "peerDependencies": {
     "react": "*"
@@ -26,8 +30,8 @@
     "@types/jest": "^30.0.0",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.0.0"

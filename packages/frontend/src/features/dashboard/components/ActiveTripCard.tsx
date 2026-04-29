@@ -1,10 +1,8 @@
-import { useTicketsQuery } from "@ticket-registrator/shared";
-import type { IReport } from "@ticket-registrator/shared";
-import { ArrowUpRight, Calendar, Receipt } from "lucide-react";
-import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { format } from "date-fns";
 import type { Locale } from "date-fns";
-import { tokens, radius } from "../../../styles/theme";
+import type { IReport } from "@ticket-registrator/shared";
+import { Calendar, FileText } from "lucide-react";
+import type { TFunction } from "i18next";
 
 export const ActiveTripCard = ({
   currentTrip,
@@ -15,57 +13,43 @@ export const ActiveTripCard = ({
   currentTrip: IReport;
   navigate: (path: string) => void;
   dateLocale: Locale;
-  t: (key: string, opts?: any) => string;
+  t: TFunction;
 }) => {
-  const { data: tickets } = useTicketsQuery(currentTrip.id);
-  const ticketCount = tickets?.length ?? 0;
-  const totalAmount = tickets?.reduce((acc: number, tk: any) => acc + (tk.amount || 0), 0) ?? 0;
-
   return (
     <button
       type="button"
       onClick={() => navigate(`/reports/${currentTrip.id}`)}
-      className={`w-full text-left relative bg-white ${radius.card} p-6 shadow-sm border border-brand/10 overflow-hidden group cursor-pointer hover:shadow-md hover:border-brand/20 transition-all duration-200`}
+      className="group w-full text-left rounded-lg border border-[var(--color-border-main)] bg-[var(--color-surface-card)] hover:bg-[var(--color-secondary)] transition-colors duration-100 overflow-hidden"
     >
-      <div className="relative z-10 flex flex-col gap-5">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2.5">
-            <StatusBadge status={currentTrip.status} size="md" />
-            <span className="text-[10px] font-medium text-slate-300 tracking-wider uppercase font-mono">
-              #{currentTrip.id.substring(0, 8)}
-            </span>
-          </div>
-          <div className={`w-9 h-9 bg-brand/5 ${radius.base} flex items-center justify-center group-hover:bg-brand transition-all duration-200`}>
-            <ArrowUpRight className="w-4 h-4 text-brand group-hover:text-white transition-colors" />
-          </div>
-        </div>
+      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+        <h3 className="flex-1 font-sans-bold text-[22px] text-dark leading-tight tracking-tight">
+          {currentTrip.name}
+        </h3>
+        <span className="shrink-0 inline-flex items-center gap-1.5 bg-brand text-white text-[10px] font-sans-semibold rounded-md px-2 py-0.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-white" />
+          {t("home.inProgress", "En curso")}
+        </span>
+      </div>
 
-        <div>
-          <h3 className="text-xl font-semibold text-dark tracking-tight group-hover:text-brand transition-colors duration-200 leading-tight">
-            {currentTrip.name}
-          </h3>
-          <p className="text-slate-400 font-medium flex items-center gap-2 mt-1.5 text-sm">
-            <Calendar className="w-3.5 h-3.5 text-brand/50" />
-            {format(new Date(currentTrip.start_date), "dd MMM", { locale: dateLocale })} —{" "}
+      <div className="flex items-center gap-3 px-5 py-3.5 border-t border-[var(--color-border-main)]">
+        <div className="w-10 h-10 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white">
+          <FileText className="w-4 h-4" aria-hidden={true} />
+        </div>
+        <div className="flex-1 min-w-0 flex items-center gap-1.5">
+          <Calendar className="w-3 h-3 text-dark/40 shrink-0" aria-hidden={true} />
+          <span className="font-sans-medium text-[12px] text-dark/60">
+            {format(new Date(currentTrip.start_date), "dd MMM", { locale: dateLocale })}
+            {" – "}
             {format(new Date(currentTrip.end_date), "dd MMM yyyy", { locale: dateLocale })}
-          </p>
+          </span>
         </div>
-
-        <div className="flex items-end justify-between pt-4 border-t border-slate-100">
-          <div className={`flex items-center gap-2 bg-slate-50 px-3.5 py-2 ${radius.base} border border-slate-200`}>
-            <Receipt className="w-3.5 h-3.5 text-brand/60" />
-            <span className="text-sm font-semibold text-dark">{ticketCount}</span>
-            <span className="text-xs text-slate-400 font-medium">{t("home.processedTickets")}</span>
-          </div>
-          <div className="text-right">
-            <p className={tokens.statCardLabel + " mb-0.5"}>
-              {t("home.currentExpense")}
-            </p>
-            <p className="text-2xl font-bold text-brand tracking-tight leading-none">
-              {totalAmount > 0 ? totalAmount.toFixed(2) : currentTrip.requested_amount}
-              <span className="text-sm font-medium text-brand/50 ml-1">{currentTrip.currency}</span>
-            </p>
-          </div>
+        <div className="text-right shrink-0">
+          <span className="font-sans-bold text-[20px] text-dark leading-none tabular-nums">
+            {(currentTrip.requested_amount ?? 0).toLocaleString()}
+          </span>
+          <span className="font-sans-medium text-[12px] text-dark/50 ml-1">
+            {currentTrip.currency}
+          </span>
         </div>
       </div>
     </button>

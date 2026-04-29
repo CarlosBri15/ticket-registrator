@@ -20,7 +20,12 @@ export class StorageService {
     };
 
     const keyPath = this.configService.get<string>('GCP_KEY_FILE_PATH');
-    if (keyPath && keyPath.length < 100 && keyPath !== 'undefined') {
+    const isValidPath =
+      keyPath &&
+      keyPath.length > 1 &&
+      !keyPath.startsWith('{') &&
+      keyPath !== 'undefined';
+    if (isValidPath) {
       storageOptions.keyFilename = join(process.cwd(), keyPath);
     }
 
@@ -39,8 +44,11 @@ export class StorageService {
     });
 
     return new Promise((resolve, reject) => {
-      stream.on('error', (error) => {
-        this.logger.error(`Upload failed for file ${fileName}`, error);
+      stream.on('error', (error: Error) => {
+        this.logger.error(
+          `Upload failed for file ${fileName}: ${error.message}`,
+          error.stack,
+        );
         reject(new StorageUploadException());
       });
       stream.on('finish', () => {

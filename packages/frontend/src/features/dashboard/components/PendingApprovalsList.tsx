@@ -1,15 +1,15 @@
 import type { IReport } from "@ticket-registrator/shared";
-import { CheckCircle, Calendar, ChevronRight, Clock } from "lucide-react";
+import { ChevronRight, FileText, CheckCircle2 } from "lucide-react";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { format } from "date-fns";
 import type { Locale } from "date-fns";
-import { tokens, radius } from "../../../styles/theme";
+import type { TFunction } from "i18next";
 
 export interface PendingApprovalsListProps {
   reports: IReport[];
   navigate: (path: string) => void;
   dateLocale: Locale;
-  t: (key: string, opts?: any) => string;
+  t: TFunction;
   title?: string;
   maxItems?: number;
   viewAllPath?: string;
@@ -20,88 +20,88 @@ export const PendingApprovalsList = ({
   navigate,
   dateLocale,
   t,
-  title = "Aprobaciones pendientes",
+  title,
   maxItems = 6,
   viewAllPath = "/reports",
 }: PendingApprovalsListProps) => {
-  if (reports.length === 0) {
-    return (
-      <section className="space-y-4" data-testid="approval-queue">
-        <h2 className="text-base font-semibold text-dark flex items-center gap-2.5">
-          <div className={`w-6 h-6 bg-slate-100 ${radius.base} flex items-center justify-center`}>
-            <Clock className="w-3.5 h-3.5 text-slate-400" />
-          </div>
-          {title}
-        </h2>
-        <div className={`${tokens.emptyState} min-h-[240px]`} data-testid="empty-queue">
-          <div className={tokens.emptyStateIcon}>
-            <CheckCircle className="w-6 h-6 text-success" />
-          </div>
-          <p className={tokens.emptyStateText}>
+  const isEmpty = reports.length === 0;
+  const heading = title ?? t("home.pendingApprovals");
+
+  return (
+    <section className="flex flex-col gap-3" data-testid="approval-queue">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <p className="text-[11px] font-sans-semibold text-dark/45">{heading}</p>
+          {!isEmpty && (
+            <span className="text-[11px] font-sans-bold text-dark/25 tabular-nums">
+              {reports.length}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {isEmpty ? (
+        <div
+          className="flex flex-col items-center justify-center gap-2 py-12 text-center rounded-lg border border-[var(--color-border-main)] bg-[var(--color-surface-card)]"
+          data-testid="empty-queue"
+        >
+          <CheckCircle2 className="w-4 h-4 text-success" aria-hidden={true} />
+          <p className="text-[13px] font-sans-medium text-dark/55">
             {t("home.noPendingApprovals")}
           </p>
         </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="space-y-4" data-testid="approval-queue">
-      <h2 className="text-base font-semibold text-dark flex items-center gap-2.5">
-        <div className={`w-6 h-6 bg-warning/10 ${radius.base} flex items-center justify-center`}>
-          <Clock className="w-3.5 h-3.5 text-warning" />
-        </div>
-        {title}
-        <span className={`${tokens.badgeSm} ${tokens.badgeWarning}`}>
-          {reports.length}
-        </span>
-      </h2>
-
-      <div className={tokens.listSection}>
-        <div className="divide-y divide-slate-50">
+      ) : (
+        <div className="rounded-lg border border-[var(--color-border-main)] bg-[var(--color-surface-card)] overflow-hidden">
           {reports.slice(0, maxItems).map((report) => (
             <button
               key={report.id}
               type="button"
               onClick={() => navigate(`/reports/${report.id}`)}
-              className="w-full text-left p-4 flex items-center justify-between hover:bg-slate-50 cursor-pointer transition-colors group"
+              className="group w-full text-left flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] transition-colors duration-100"
             >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className={`w-9 h-9 bg-brand/5 ${radius.base} flex items-center justify-center font-semibold text-sm text-brand shrink-0`}>
-                  {report.name?.charAt(0).toUpperCase() || "R"}
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-dark text-sm truncate group-hover:text-warning transition-colors">
-                    {report.name}
-                  </p>
-                  <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide flex items-center gap-1 mt-0.5">
-                    <Calendar className="w-3 h-3" />
-                    {format(new Date(report.end_date), "dd MMM yyyy", { locale: dateLocale })}
-                  </p>
-                </div>
+              <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white shrink-0">
+                <FileText className="w-3.5 h-3.5" aria-hidden={true} />
               </div>
-              <div className="flex items-center gap-3 shrink-0 ml-2">
-                <span className="font-semibold text-dark text-sm">
-                  {report.requested_amount.toFixed(2)}
-                  <span className="text-[9px] font-medium text-slate-400 ml-0.5">{report.currency}</span>
-                </span>
+
+              <div className="flex-1 min-w-0">
+                <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
+                  {report.name}
+                </p>
+                <p className="font-sans-medium text-dark/50 text-[12px] mt-0.5 leading-none">
+                  {format(new Date(report.end_date), "dd MMM yyyy", { locale: dateLocale })}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                {report.requested_amount > 0 && (
+                  <div className="text-right">
+                    <p className="text-[14px] font-sans-bold text-dark leading-none tabular-nums">
+                      {report.requested_amount.toFixed(2)}
+                    </p>
+                    <p className="text-[10px] font-sans-medium text-dark/45 mt-0.5 uppercase tracking-wide">
+                      {report.currency}
+                    </p>
+                  </div>
+                )}
                 <StatusBadge status={report.status} size="sm" />
-                <ChevronRight className="w-4 h-4 text-slate-200 group-hover:text-warning group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight className="w-4 h-4 text-dark/30 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </button>
           ))}
+
+          {reports.length > maxItems && (
+            <div className="px-4 py-3 border-t border-[var(--color-border-main)]">
+              <button
+                type="button"
+                onClick={() => navigate(viewAllPath)}
+                className="text-[12px] font-sans-medium text-dark/50 hover:text-dark underline underline-offset-2 transition-colors"
+              >
+                {t("common.viewAll", "Ver todos")} ({reports.length})
+              </button>
+            </div>
+          )}
         </div>
-        {reports.length > maxItems && (
-          <div className="p-4 border-t border-slate-50 text-center">
-            <button
-              onClick={() => navigate(viewAllPath)}
-              className="text-[10px] font-semibold text-brand uppercase tracking-wide hover:underline"
-            >
-              {t("common.viewAll")} ({reports.length})
-            </button>
-          </div>
-        )}
-      </div>
+      )}
     </section>
   );
 };

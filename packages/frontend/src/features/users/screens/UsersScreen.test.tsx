@@ -10,6 +10,13 @@ vi.mock('react-router-dom', async () => {
   return { ...(actual as object), useNavigate: () => mockNavigate };
 });
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, fallback?: string) => fallback ?? key,
+    i18n: { language: 'es' },
+  }),
+}));
+
 vi.mock('@ticket-registrator/shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
   return {
@@ -19,32 +26,15 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
     useDeleteUserMutation: vi.fn(),
     useUpdateUserMutation: vi.fn(),
     useRolesQuery: vi.fn(),
+    useSystemRolesQuery: vi.fn(),
     useDepartmentsQuery: vi.fn(),
     usePermissions: vi.fn(),
     useScope: vi.fn(),
     useScopeContext: vi.fn(),
+    useCompanyScope: vi.fn(),
   };
 });
 
-vi.mock('lucide-react', () => ({
-  Users: () => null,
-  Search: () => null,
-  Plus: () => null,
-  Trash2: () => null,
-  UserCircle: () => null,
-  Mail: () => null,
-  AtSign: () => null,
-  Pencil: () => <span data-testid="pencil-icon" />,
-}));
-
-vi.mock('../../../components/ui/Button', () => ({
-  Button: ({ children, onClick, disabled }: any) => (
-    <button onClick={onClick} disabled={disabled}>{children}</button>
-  ),
-}));
-vi.mock('../../../components/ui/Input', () => ({
-  Input: ({ label, ...props }: any) => <input aria-label={label} {...props} />,
-}));
 const MOCK_ROLES = [{ id: 'r1', name: 'Admin', hierarchy: 99, companyId: 'company-1', description: null }];
 const MOCK_SUPERADMIN_ROLE = { id: 'sa1', name: 'SuperAdmin', hierarchy: 100, companyId: null, description: null };
 
@@ -81,6 +71,7 @@ vi.mock('../../organizations/components/OrgSelect', () => ({
     </select>
   ),
 }));
+
 vi.mock('../../departments/components/DepartmentMultiSelect', () => ({
   DepartmentMultiSelect: ({ onChange }: any) => (
     <div data-testid="dept-multiselect">
@@ -88,10 +79,12 @@ vi.mock('../../departments/components/DepartmentMultiSelect', () => ({
     </div>
   ),
 }));
+
 vi.mock('../../../components/ui/Modal', () => ({
   Modal: ({ isOpen, children, title }: any) =>
     isOpen ? <div role="dialog"><h2>{title}</h2>{children}</div> : null,
 }));
+
 vi.mock('../components/EditUserModal', () => ({
   EditUserModal: ({ isOpen, onClose, user }: any) =>
     isOpen ? (
@@ -119,10 +112,12 @@ import {
   useDeleteUserMutation,
   useUpdateUserMutation,
   useRolesQuery,
+  useSystemRolesQuery,
   useDepartmentsQuery,
   usePermissions,
   useScope,
   useScopeContext,
+  useCompanyScope,
 } from '@ticket-registrator/shared';
 
 const setupMocks = () => {
@@ -130,11 +125,13 @@ const setupMocks = () => {
   (useCreateUserMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: vi.fn(), isPending: false, error: null, reset: vi.fn() });
   (useDeleteUserMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: vi.fn() });
   (useUpdateUserMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: vi.fn(), isPending: false, error: null, reset: vi.fn() });
-  (useRolesQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [] });
+  (useRolesQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: MOCK_ROLES });
+  (useSystemRolesQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [MOCK_SUPERADMIN_ROLE] });
   (useDepartmentsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [] });
   (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => true });
   (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: false, scope: { type: 'company', companyId: 'company-1' } });
   (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: 'company-1' });
+  (useCompanyScope as ReturnType<typeof vi.fn>).mockReturnValue({ companyId: 'company-1' });
 };
 
 const renderScreen = () =>
@@ -158,375 +155,129 @@ describe('UsersScreen', () => {
 
   it('renders the Usuarios heading', () => {
     renderScreen();
-    expect(screen.getByText('Usuarios')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('users.title');
   });
 
-  it('renders search input', () => {
+  it('renders search input when there are users', () => {
+    (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'u1', name: 'Ana', surname: 'García', email: 'ana@test.com', username: 'ana', roleId: 'r1' }],
+      isLoading: false,
+    });
     renderScreen();
-    expect(screen.getByPlaceholderText(/buscar/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('users.searchPlaceholder')).toBeInTheDocument();
   });
 
   it('shows empty state when no users', () => {
     renderScreen();
-    expect(screen.getByText(/no hay usuarios/i)).toBeInTheDocument();
+    expect(screen.getByText('users.empty')).toBeInTheDocument();
   });
 
   it('renders create user button when user has permission', () => {
     renderScreen();
-    expect(screen.getByText(/nuevo usuario/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'users.newUser' })).toBeInTheDocument();
   });
 
   it('does not render create button when user lacks permission', () => {
     (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => false });
     renderScreen();
-    expect(screen.queryByText(/nuevo usuario/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'users.newUser' })).not.toBeInTheDocument();
   });
 
   it('renders user list when users exist', () => {
     (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({
       data: [
-        { id: 'u1', name: 'Ana García', email: 'ana@test.com', username: 'ana.garcia', roleName: 'Admin' },
+        { id: 'u1', name: 'Ana', surname: 'García', email: 'ana@test.com', username: 'ana', roleId: 'r1' },
       ],
       isLoading: false,
     });
     renderScreen();
-    expect(screen.getByText('Ana García')).toBeInTheDocument();
+    expect(screen.getByText(/ana garcía/i)).toBeInTheDocument();
     expect(screen.getByText('ana@test.com')).toBeInTheDocument();
   });
 
   it('shows loading state when isLoading is true', () => {
     (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: undefined, isLoading: true });
     renderScreen();
-    expect(screen.getByText(/cargando usuarios/i)).toBeInTheDocument();
+    expect(screen.getByText('users.loading')).toBeInTheDocument();
   });
 
   it('shows "Sin resultados" when search has no matches', () => {
     (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 'u1', name: 'Ana García', surname: 'García', email: 'ana@test.com', username: 'ana', roleName: 'Admin' }],
+      data: [{ id: 'u1', name: 'Ana', surname: 'García', email: 'ana@test.com', username: 'ana', roleId: 'r1' }],
       isLoading: false,
     });
     renderScreen();
-    fireEvent.change(screen.getByPlaceholderText(/buscar/i), { target: { value: 'xyz' } });
-    expect(screen.getByText(/sin resultados/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText('users.searchPlaceholder'), { target: { value: 'xyz' } });
+    expect(screen.getByText('common.noResults')).toBeInTheDocument();
   });
 
   it('opens create user modal when Nuevo Usuario button is clicked', () => {
     renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'users.newUser' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
-  it('calls delete mutate when delete button is clicked', () => {
-    const mockDelete = vi.fn();
-    (useDeleteUserMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: mockDelete });
-    (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 'u1', name: 'Ana García', surname: 'García', email: 'ana@test.com', username: 'ana', roleName: 'Admin' }],
-      isLoading: false,
-    });
-    renderScreen();
-    // buttons: [0]=Nuevo Usuario, [1]=delete for u1
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[buttons.length - 1]);
-    expect(mockDelete).toHaveBeenCalledWith('u1');
-  });
-
-  it('renders a role select inside the create modal', () => {
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-    expect(screen.getByRole('combobox', { name: /rol/i })).toBeInTheDocument();
-  });
-
-  it('submit button is disabled when required fields are empty', () => {
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-    const submitBtn = screen.getByText(/crear usuario/i).closest('button');
-    expect(submitBtn).toBeDisabled();
-  });
-
-  it('calls create mutate on valid form submit', () => {
-    const mockCreate = vi.fn();
-    (useCreateUserMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: mockCreate, isPending: false, error: null, reset: vi.fn() });
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-
-    fireEvent.change(screen.getByRole('textbox', { name: /nombre/i }), { target: { value: 'Juan' } });
-    fireEvent.change(screen.getByRole('textbox', { name: /apellido/i }), { target: { value: 'Pérez' } });
-    fireEvent.change(screen.getByRole('textbox', { name: /email/i }), { target: { value: 'juan@test.com' } });
-    fireEvent.change(screen.getByRole('textbox', { name: /usuario/i }), { target: { value: 'jperez' } });
-    fireEvent.change(screen.getByLabelText(/contraseña \*/i), { target: { value: 'secret123' } });
-    fireEvent.change(screen.getByLabelText(/confirmar \*/i), { target: { value: 'secret123' } });
-    fireEvent.change(screen.getByLabelText(/rol/i), { target: { value: 'r1' } });
-
-    fireEvent.submit(screen.getByRole('dialog').querySelector('form')!);
-    expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'Juan', email: 'juan@test.com', roleId: 'r1', departmentIds: [] }),
-    );
-  });
-
-  it('shows password mismatch message', () => {
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-
-    fireEvent.change(screen.getByLabelText(/contraseña \*/i), { target: { value: 'abc' } });
-    fireEvent.change(screen.getByLabelText(/confirmar \*/i), { target: { value: 'xyz' } });
-
-    expect(screen.getByText(/las contraseñas no coinciden/i)).toBeInTheDocument();
-  });
-
-  // ── API error handling ────────────────────────────────────────────────────────
-
-  it('shows API error alert when mutation fails with 409', () => {
-    const apiError = { response: { data: { message: 'Email already exists' } } };
-    (useCreateUserMutation as ReturnType<typeof vi.fn>).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: apiError,
-      reset: vi.fn(),
-    });
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-    expect(screen.getByRole('alert')).toBeInTheDocument();
-    expect(screen.getByText('Email already exists')).toBeInTheDocument();
-  });
-
-  it('shows API error alert when mutation fails with 409 duplicate username', () => {
-    const apiError = { response: { data: { message: 'Username already exists' } } };
-    (useCreateUserMutation as ReturnType<typeof vi.fn>).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: apiError,
-      reset: vi.fn(),
-    });
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-    expect(screen.getByText('Username already exists')).toBeInTheDocument();
-  });
-
-  it('shows fallback error message when error has no response data', () => {
-    (useCreateUserMutation as ReturnType<typeof vi.fn>).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: new Error('network error'),
-      reset: vi.fn(),
-    });
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-    expect(screen.getByText(/error inesperado/i)).toBeInTheDocument();
-  });
-
-  it('calls mutation.reset when dismiss button in alert is clicked', () => {
-    const mockReset = vi.fn();
-    const apiError = { response: { data: { message: 'Email already exists' } } };
-    (useCreateUserMutation as ReturnType<typeof vi.fn>).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: apiError,
-      reset: mockReset,
-    });
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-    fireEvent.click(screen.getByRole('button', { name: /cerrar/i }));
-    expect(mockReset).toHaveBeenCalled();
-  });
-
-  it('does not show alert when mutation has no error', () => {
-    (useCreateUserMutation as ReturnType<typeof vi.fn>).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: null,
-      reset: vi.fn(),
-    });
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-  });
-
-  // ── SuperAdmin: org selector ────────────────────────────────────────────────
-
-  it('does NOT show OrgSelect when creator is not SuperAdmin', () => {
-    // companyId is set → creator is not SuperAdmin
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-    expect(screen.queryByRole('combobox', { name: /organización/i })).not.toBeInTheDocument();
-  });
-
-  it('does NOT show OrgSelect before a role is selected (SuperAdmin creator)', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: true, scope: {} });
-    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-    // No role selected yet → isTargetSuperAdmin = false but roleId is "" → OrgSelect is hidden until role chosen
-    // OrgSelect should NOT appear yet (role is empty, isTargetSuperAdmin is false due to selectedRole=null)
-    expect(screen.queryByRole('combobox', { name: /organización/i })).not.toBeInTheDocument();
-  });
-
-  it('shows OrgSelect after a non-SuperAdmin role is selected (SuperAdmin creator)', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: true, scope: {} });
-    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-
-    fireEvent.change(screen.getByRole('combobox', { name: /rol/i }), { target: { value: 'r1' } });
-
-    expect(screen.getByRole('combobox', { name: /organización/i })).toBeInTheDocument();
-  });
-
-  it('does NOT show OrgSelect when SuperAdmin role is selected (no org needed)', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: true, scope: {} });
-    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-
-    fireEvent.change(screen.getByRole('combobox', { name: /rol/i }), { target: { value: 'sa1' } });
-
-    expect(screen.queryByRole('combobox', { name: /organización/i })).not.toBeInTheDocument();
-  });
-
-  it('includes companyId in mutation payload when SuperAdmin selects role then org', () => {
-    const mockCreate = vi.fn();
-    (useCreateUserMutation as ReturnType<typeof vi.fn>).mockReturnValue({
-      mutate: mockCreate, isPending: false, error: null, reset: vi.fn(),
-    });
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: true, scope: {} });
-    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-
-    fireEvent.change(screen.getByRole('textbox', { name: /nombre/i }), { target: { value: 'Juan' } });
-    fireEvent.change(screen.getByRole('textbox', { name: /apellido/i }), { target: { value: 'Pérez' } });
-    fireEvent.change(screen.getByRole('textbox', { name: /email/i }), { target: { value: 'juan@test.com' } });
-    fireEvent.change(screen.getByRole('textbox', { name: /usuario/i }), { target: { value: 'jperez' } });
-    fireEvent.change(screen.getByLabelText(/contraseña \*/i), { target: { value: 'secret123' } });
-    fireEvent.change(screen.getByLabelText(/confirmar \*/i), { target: { value: 'secret123' } });
-    // Select role first → OrgSelect appears
-    fireEvent.change(screen.getByRole('combobox', { name: /rol/i }), { target: { value: 'r1' } });
-    // Select org — roleId must NOT be cleared
-    fireEvent.change(screen.getByRole('combobox', { name: /organización/i }), { target: { value: 'o1' } });
-
-    fireEvent.submit(screen.getByRole('dialog').querySelector('form')!);
-    expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ roleId: 'r1', companyId: 'o1' }),
-    );
-  });
-
-  it('does NOT include companyId in mutation when SuperAdmin creates a SuperAdmin user', () => {
-    const mockCreate = vi.fn();
-    (useCreateUserMutation as ReturnType<typeof vi.fn>).mockReturnValue({
-      mutate: mockCreate, isPending: false, error: null, reset: vi.fn(),
-    });
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: true, scope: {} });
-    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-
-    fireEvent.change(screen.getByRole('textbox', { name: /nombre/i }), { target: { value: 'Root' } });
-    fireEvent.change(screen.getByRole('textbox', { name: /apellido/i }), { target: { value: 'Admin' } });
-    fireEvent.change(screen.getByRole('textbox', { name: /email/i }), { target: { value: 'root@global.com' } });
-    fireEvent.change(screen.getByRole('textbox', { name: /usuario/i }), { target: { value: 'rootadmin' } });
-    fireEvent.change(screen.getByLabelText(/contraseña \*/i), { target: { value: 'secret123' } });
-    fireEvent.change(screen.getByLabelText(/confirmar \*/i), { target: { value: 'secret123' } });
-    fireEvent.change(screen.getByRole('combobox', { name: /rol/i }), { target: { value: 'sa1' } });
-
-    fireEvent.submit(screen.getByRole('dialog').querySelector('form')!);
-    expect(mockCreate).toHaveBeenCalledWith(
-      expect.not.objectContaining({ companyId: expect.anything() }),
-    );
-  });
-
-  // ── Edit user tests ───────────────────────────────────────────────────────────
-
   it('renders edit button for each user', () => {
     (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 'u1', name: 'Ana', surname: 'García', email: 'ana@test.com', username: 'ana', roleId: 'r1', departmentIds: [] }],
+      data: [{ id: 'u1', name: 'Ana', surname: 'García', email: 'ana@test.com', username: 'ana', roleId: 'r1' }],
       isLoading: false,
     });
     renderScreen();
-    expect(screen.getByTitle(/editar usuario/i)).toBeInTheDocument();
+    expect(screen.getByTitle('users.editUser')).toBeInTheDocument();
   });
 
   it('opens edit modal when edit button is clicked', () => {
     (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 'u1', name: 'Ana', surname: 'García', email: 'ana@test.com', username: 'ana', roleId: 'r1', departmentIds: [] }],
+      data: [{ id: 'u1', name: 'Ana', surname: 'García', email: 'ana@test.com', username: 'ana', roleId: 'r1' }],
       isLoading: false,
     });
     renderScreen();
-    fireEvent.click(screen.getByTitle(/editar usuario/i));
+    fireEvent.click(screen.getByTitle('users.editUser'));
     expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
   });
 
-  it('edit modal is pre-filled with user data', () => {
+  it('navigates to /users/:id when user row is clicked', () => {
     (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 'u1', name: 'Ana', surname: 'García', email: 'ana@test.com', username: 'ana', roleId: 'r1', departmentIds: [] }],
+      data: [{ id: 'u1', name: 'Ana', surname: 'García', email: 'ana@test.com', username: 'ana', roleId: 'r1' }],
       isLoading: false,
     });
     renderScreen();
-    fireEvent.click(screen.getByTitle(/editar usuario/i));
-    const nameInput = screen.getByRole('textbox', { name: /nombre \*/i });
-    expect((nameInput as HTMLInputElement).value).toBe('Ana');
-  });
-
-  it('calls updateMutation on edit form submit', () => {
-    const mockUpdate = vi.fn();
-    (useUpdateUserMutation as ReturnType<typeof vi.fn>).mockReturnValue({ mutate: mockUpdate, isPending: false, error: null, reset: vi.fn() });
-    (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 'u1', name: 'Ana', surname: 'García', email: 'ana@test.com', username: 'ana', roleId: 'r1', departmentIds: [] }],
-      isLoading: false,
-    });
-    // The EditUserModal is mocked, so just verify the modal opens and update mock was set up
-    renderScreen();
-    fireEvent.click(screen.getByTitle(/editar usuario/i));
-    expect(screen.getByTestId('edit-modal')).toBeInTheDocument();
-    expect(mockUpdate).toBeDefined();
-  });
-
-  it('navigates to /users/:id when user row name is clicked', () => {
-    (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 'u1', name: 'Ana', surname: 'García', email: 'ana@test.com', username: 'ana', roleId: 'r1', departmentIds: [] }],
-      isLoading: false,
-    });
-    renderScreen();
-    // Click on the user row button (name area)
-    const userButton = screen.getByText('Ana García').closest('button');
-    expect(userButton).toBeTruthy();
-    fireEvent.click(userButton!);
+    const rowButton = screen.getByText(/ana garcía/i).closest('button');
+    expect(rowButton).toBeTruthy();
+    fireEvent.click(rowButton!);
     expect(mockNavigate).toHaveBeenCalledWith('/users/u1');
   });
 
-  // ── DepartmentMultiSelect tests ───────────────────────────────────────────────
-
-  it('shows DepartmentMultiSelect in create modal when role is selected', () => {
-    // companyId is set (non-SuperAdmin creator)
-    renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
-
-    // Select a non-SA role
-    fireEvent.change(screen.getByRole('combobox', { name: /rol/i }), { target: { value: 'r1' } });
-
-    expect(screen.getByTestId('dept-multiselect')).toBeInTheDocument();
-  });
-
-  it('includes departmentIds in create payload when departments selected', () => {
-    const mockCreate = vi.fn();
-    (useCreateUserMutation as ReturnType<typeof vi.fn>).mockReturnValue({
-      mutate: mockCreate, isPending: false, error: null, reset: vi.fn(),
+  it('does not propagate row click when edit button inside row is clicked', () => {
+    (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'u1', name: 'Ana', surname: 'García', email: 'ana@test.com', username: 'ana', roleId: 'r1' }],
+      isLoading: false,
     });
     renderScreen();
-    fireEvent.click(screen.getAllByText(/nuevo usuario/i)[0]);
+    fireEvent.click(screen.getByTitle('users.editUser'));
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
 
-    fireEvent.change(screen.getByRole('textbox', { name: /nombre/i }), { target: { value: 'Juan' } });
-    fireEvent.change(screen.getByRole('textbox', { name: /apellido/i }), { target: { value: 'Pérez' } });
-    fireEvent.change(screen.getByRole('textbox', { name: /email/i }), { target: { value: 'juan@test.com' } });
-    fireEvent.change(screen.getByRole('textbox', { name: /usuario/i }), { target: { value: 'jperez' } });
-    fireEvent.change(screen.getByLabelText(/contraseña \*/i), { target: { value: 'secret123' } });
-    fireEvent.change(screen.getByLabelText(/confirmar \*/i), { target: { value: 'secret123' } });
-    fireEvent.change(screen.getByLabelText(/rol/i), { target: { value: 'r1' } });
+  it('renders the role pill for each user', () => {
+    (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'u1', name: 'Ana', surname: 'García', email: 'ana@test.com', username: 'ana', roleId: 'r1' }],
+      isLoading: false,
+    });
+    renderScreen();
+    expect(screen.getByText('Admin')).toBeInTheDocument();
+  });
 
-    // Click select-dept to add a department
-    fireEvent.click(screen.getByText('select-dept'));
+  it('clears search when "X" button inside the search input is clicked', () => {
+    (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'u1', name: 'Ana', surname: 'García', email: 'ana@test.com', username: 'ana', roleId: 'r1' }],
+      isLoading: false,
+    });
+    renderScreen();
+    const searchInput = screen.getByPlaceholderText('users.searchPlaceholder') as HTMLInputElement;
+    fireEvent.change(searchInput, { target: { value: 'xyz' } });
+    expect(screen.getByText('common.noResults')).toBeInTheDocument();
 
-    fireEvent.submit(screen.getByRole('dialog').querySelector('form')!);
-    expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ departmentIds: ['d1'] }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: /clear search/i }));
+    expect(searchInput.value).toBe('');
   });
 });
