@@ -1,9 +1,4 @@
 import { renderHook, act } from '@testing-library/react-native';
-import { useProfileScreen } from './useProfileScreen';
-import { useUserQuery, useUpdateUserMutation } from '@ticket-registrator/shared';
-
-const mockReplace = jest.fn();
-const mockRemoveToken = jest.fn().mockResolvedValue(undefined);
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -18,16 +13,23 @@ jest.mock('@ticket-registrator/shared', () => ({
 }));
 
 jest.mock('expo-router', () => ({
-  useRouter: () => ({
-    replace: mockReplace,
-  }),
+  useRouter: jest.fn(),
 }));
 
 jest.mock('../api/client', () => ({
   tokenProvider: {
-    removeToken: mockRemoveToken,
+    removeToken: jest.fn(),
   },
 }));
+
+import { useProfileScreen } from './useProfileScreen';
+import { useUserQuery, useUpdateUserMutation } from '@ticket-registrator/shared';
+import { useRouter } from 'expo-router';
+import { tokenProvider } from '../api/client';
+
+const mockReplace = jest.fn();
+const mockRemoveToken = tokenProvider.removeToken as jest.Mock;
+(useRouter as jest.Mock).mockReturnValue({ replace: mockReplace });
 
 describe('useProfileScreen', () => {
   const mockRefetch = jest.fn();
@@ -37,6 +39,7 @@ describe('useProfileScreen', () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
     mockRemoveToken.mockResolvedValue(undefined);
+    (useRouter as jest.Mock).mockReturnValue({ replace: mockReplace });
     (useUserQuery as jest.Mock).mockReturnValue({
       data: mockUser,
       refetch: mockRefetch,

@@ -11,7 +11,7 @@ describe('theme constants', () => {
   });
 
   it('defines SHADOW_HARD', () => {
-    expect(SHADOW_HARD.shadowColor).toBe(colors.dark);
+    expect(SHADOW_HARD.shadowColor).toBe(colors.shadow);
     expect(SHADOW_HARD.shadowOffset.width).toBe(UI.SHADOW_OFFSET);
   });
 });

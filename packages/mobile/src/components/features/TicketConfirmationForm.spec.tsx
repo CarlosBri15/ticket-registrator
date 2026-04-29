@@ -233,19 +233,28 @@ describe('TicketConfirmationForm', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it('disables buttons when isLoading is true', () => {
-    const { UNSAFE_getAllByType } = render(
+  it('disables actions when isLoading is true', () => {
+    const onConfirm = jest.fn();
+    const onCancel = jest.fn();
+    const { queryByText, UNSAFE_getAllByType } = render(
       <TicketConfirmationForm
         ticket={fullyExtractedTicket}
-        onConfirm={jest.fn()}
-        onCancel={jest.fn()}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
         isLoading
       />,
     );
-    const { TouchableOpacity } = require('react-native');
-    const buttons = UNSAFE_getAllByType(TouchableOpacity);
-    const disabledButtons = buttons.filter((b: any) => b.props.disabled === true);
-    expect(disabledButtons.length).toBeGreaterThanOrEqual(2);
+    // Confirm button replaces its label with a spinner while loading
+    expect(queryByText('Confirmar Ticket')).toBeNull();
+    const { ActivityIndicator } = require('react-native');
+    expect(UNSAFE_getAllByType(ActivityIndicator).length).toBeGreaterThanOrEqual(1);
+
+    // Descartar text is still rendered, but pressing it must not fire the handler
+    const cancel = queryByText('Descartar');
+    expect(cancel).toBeTruthy();
+    fireEvent.press(cancel!);
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(onConfirm).not.toHaveBeenCalled();
   });
 
   it('passes null for empty string fields to onConfirm', () => {

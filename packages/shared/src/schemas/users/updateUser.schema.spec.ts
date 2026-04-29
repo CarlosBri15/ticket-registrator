@@ -35,7 +35,7 @@ describe('updateUserSchema', () => {
         const result = updateUserSchema.safeParse({ password: 'validpassword1', confirmPassword: 'differentpassword' });
         expect(result.success).toBe(false);
         if (!result.success) {
-            const confirmError = result.error.errors.find(e => e.path.includes('confirmPassword'));
+            const confirmError = result.error.issues.find(e => e.path.includes('confirmPassword'));
             expect(confirmError?.message).toBe('Passwords do not match');
         }
     });

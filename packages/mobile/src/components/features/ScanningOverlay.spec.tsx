@@ -1,37 +1,62 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { ScanningOverlay } from './ScanningOverlay';
 
-// Mock reanimated
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+    i18n: { language: 'es' },
+  }),
+}));
+
 jest.mock('react-native-reanimated', () => {
   const Reanimated = require('react-native-reanimated/mock');
   Reanimated.default.call = () => {};
   return Reanimated;
 });
 
-// Mock react-native-svg
 jest.mock('react-native-svg', () => {
   const React = require('react');
-  const Svg = ({ children }: any) => React.createElement('Svg', {}, children);
-  Svg.Path = () => React.createElement('Path');
-  Svg.Rect = () => React.createElement('Rect');
-  Svg.G = ({ children }: any) => React.createElement('G', {}, children);
+  const { View } = require('react-native');
+  const stub = (name: string) => {
+    const C = ({ children }: any) => React.createElement(View, null, children);
+    C.displayName = name;
+    return C;
+  };
   return {
-    default: Svg,
-    Path: Svg.Path,
-    Rect: Svg.Rect,
-    G: Svg.G,
+    __esModule: true,
+    default: stub('Svg'),
+    Path: stub('Path'),
+    Rect: stub('Rect'),
+    G: stub('G'),
   };
 });
 
+jest.mock('../ui/PixelCard', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    PixelCard: ({ children }: any) => React.createElement(View, null, children),
+    DARK: '#1A1A1A',
+    CARD_BG: '#FFFFFF',
+  };
+});
+
+import { ScanningOverlay } from './ScanningOverlay';
+
 describe('ScanningOverlay', () => {
-  it('renders correctly when visible', () => {
+  it('renders the loading subtitle when visible', () => {
     const { getByText } = render(<ScanningOverlay visible={true} />);
     expect(getByText(/Extrayendo/)).toBeTruthy();
+  });
+
+  it('renders the translated title key when visible', () => {
+    const { getByText } = render(<ScanningOverlay visible={true} />);
+    expect(getByText('reportDetail.scanTicket')).toBeTruthy();
   });
 
   it('renders nothing when NOT visible', () => {
     const { queryByText } = render(<ScanningOverlay visible={false} />);
     expect(queryByText(/Extrayendo/)).toBeNull();
+    expect(queryByText('reportDetail.scanTicket')).toBeNull();
   });
 });

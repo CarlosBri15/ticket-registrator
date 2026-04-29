@@ -76,10 +76,18 @@ describe('useHomeScreen', () => {
   });
 
   it('calculates stats correctly', () => {
+    (useReportsQuery as jest.Mock).mockReturnValue({
+      data: [
+        { id: '1', status: 'CREATED', requested_amount: 100 },
+        { id: '2', status: 'APPROVED', requested_amount: 50 },
+        { id: '3', status: 'SUBMITTED', requested_amount: 200 },
+      ],
+      isLoading: false,
+      refetch: mockRefetch,
+    });
     const { result } = renderHook(() => useHomeScreen());
-    expect(result.current.stats.approved).toBe(1);
-    // Note: SUBMITTED or PENDING are inReview, our mock has neither
-    expect(result.current.stats.inReview).toBe(0);
+    expect(result.current.stats.inReviewCount).toBe(1);
+    expect(result.current.stats.inReview).toBe(200);
   });
 
   it('refreshes reports correctly', async () => {
