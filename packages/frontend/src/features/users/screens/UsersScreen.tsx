@@ -37,7 +37,7 @@ export const UsersScreen = () => {
   const roles = useMemo(() => {
     const combined = [...(systemRoles || [])];
     (companyRoles || []).forEach((r) => {
-      if (!combined.find((s) => s.id === r.id)) combined.push(r);
+      if (!combined.some((s) => s.id === r.id)) combined.push(r);
     });
     return combined;
   }, [systemRoles, companyRoles]);

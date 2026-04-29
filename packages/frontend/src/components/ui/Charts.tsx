@@ -43,7 +43,7 @@ interface TooltipProps {
 
 const CustomTooltip = ({ active, payload, label, prefix = '', suffix = '' }: TooltipProps) => {
   if (active && payload && payload.length > 0) {
-    const data = payload[0]!;
+    const data = payload[0];
     return (
       <div style={COMMON_TOOLTIP_STYLE} className="font-sans-medium">
         {label && <p className="text-[10px] text-white/50 mb-1">{label}</p>}

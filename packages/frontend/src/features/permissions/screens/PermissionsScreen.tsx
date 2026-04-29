@@ -148,9 +148,14 @@ export const PermissionsScreen = () => {
   const { scope, isGlobal } = useScope();
   const { activeCompanyId } = useScopeContext();
 
-  const companyId = isGlobal
-    ? activeCompanyId
-    : ((scope && typeof scope === 'object' && 'companyId' in scope) ? (scope as { companyId?: string | null }).companyId : null) ?? null;
+  let companyId: string | undefined;
+  if (isGlobal) {
+    companyId = activeCompanyId ?? undefined;
+  } else if (scope && typeof scope === 'object' && 'companyId' in scope) {
+    companyId = (scope as { companyId?: string | null }).companyId ?? undefined;
+  } else {
+    companyId = undefined;
+  }
 
   const canManage = can("manage_permissions");
 

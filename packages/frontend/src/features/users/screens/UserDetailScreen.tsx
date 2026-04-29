@@ -63,7 +63,7 @@ export const UserDetailScreen = () => {
   const roles = useMemo(() => {
     const combined = [...(systemRoles || [])];
     (companyRoles || []).forEach(r => {
-      if (!combined.find(s => s.id === r.id)) combined.push(r);
+      if (!combined.some(s => s.id === r.id)) combined.push(r);
     });
     return combined;
   }, [systemRoles, companyRoles]);
@@ -130,7 +130,7 @@ export const UserDetailScreen = () => {
     );
   }
 
-  const roleName = roles?.find((r) => r.id === user.roleId)?.name ?? "—";
+  const roleName = roles?.find(r => r.id === user.roleId)?.name ?? "—";
   const userDepts = departments?.filter((d) => user.departmentIds?.includes(d.id)) ?? [];
 
   const totalReports = userReports.length;
@@ -144,8 +144,16 @@ export const UserDetailScreen = () => {
   
   // Rating logic (MOCK)
   const ratingValue = 92; // 0 - 100
-  const ratingColor = ratingValue >= 80 ? "var(--color-success, #22C55E)" : ratingValue >= 50 ? "#EAB308" : "#EF4444";
-  const ratingLabel = ratingValue >= 80 ? "Excelente" : ratingValue >= 50 ? "Aceptable" : "Bajo";
+  const ratingColor = ratingValue >= 80
+    ? "var(--color-success, #22C55E)"
+    : ratingValue >= 50
+      ? "#EAB308"
+      : "#EF4444";
+  const ratingLabel = ratingValue >= 80
+    ? "Excelente"
+    : ratingValue >= 50
+      ? "Aceptable"
+      : "Bajo";
 
   return (
     <div className="-mx-6 -mt-7 md:-mx-10 lg:-mt-9 space-y-0 animate-in fade-in duration-500 pb-20">
@@ -165,7 +173,7 @@ export const UserDetailScreen = () => {
 
           <div className="flex items-center gap-3 min-w-0">
             <h1 className="font-space-bold text-dark truncate" style={{ fontSize: 24, letterSpacing: "0.5px" }}>
-              {user!.name} {user!.surname}
+              {user?.name} {user?.surname}
             </h1>
           </div>
         </div>
@@ -184,10 +192,10 @@ export const UserDetailScreen = () => {
           {/* ────── MAIN COLUMN ────── */}
           <div className="min-w-0 px-10 md:px-16 pt-7 space-y-8">
             
-            <UserDetailIdentity 
-              user={user!} 
-              roleName={roleName} 
-              userDepts={userDepts} 
+            <UserDetailIdentity
+              user={user}
+              roleName={roleName}
+              userDepts={userDepts}
             />
 
             {/* ── Active Report (If Exists) ── */}
@@ -197,8 +205,8 @@ export const UserDetailScreen = () => {
                   {t("home.activeTrip")}
                 </p>
                 <ReportCard
-                  report={activeReport!}
-                  onClick={() => navigate(`/reports/${activeReport!.id}`)}
+                  report={activeReport}
+                  onClick={() => navigate(`/reports/${activeReport.id}`)}
                   dateLocale={dateLocale}
                 />
               </section>
@@ -250,24 +258,26 @@ export const UserDetailScreen = () => {
 
           {/* ────── SIDEBAR COLUMN ────── */}
           <aside className="px-8 md:px-10 py-7 space-y-6">
-            <UserDetailRating 
-              ratingValue={ratingValue} 
-              ratingColor={ratingColor} 
-              ratingLabel={ratingLabel} 
+            <UserDetailRating
+              ratingValue={ratingValue}
+              ratingColor={ratingColor}
+              ratingLabel={ratingLabel}
             />
-            <UserDetailSidebar 
-              totalReports={totalReports} 
-              avgApproved={avgApproved} 
-              userId={userId!} 
-            />
+            {userId && (
+              <UserDetailSidebar
+                totalReports={totalReports}
+                avgApproved={avgApproved}
+                userId={userId}
+              />
+            )}
           </aside>
         </div>
 
-      {isEditOpen && (
+      {isEditOpen && user && (
         <EditUserModal
           isOpen={isEditOpen}
           onClose={() => setIsEditOpen(false)}
-          user={user!}
+          user={user}
           companyId={companyId}
         />
       )}

@@ -35,7 +35,12 @@ export const ConfirmDialog = ({
 
   return (
     <div className={tokens.modalOverlay}>
-      <div className={tokens.modalBackdrop} onClick={onCancel} />
+      <button
+        type="button"
+        className={tokens.modalBackdrop}
+        onClick={onCancel}
+        aria-label="Close dialog"
+      />
       
       <div className="relative z-[101] w-full max-w-sm px-4 flex items-center justify-center min-h-screen sm:min-h-0">
         <div className={`${tokens.card} overflow-hidden shadow-hard-lg w-full`}>
@@ -44,8 +49,7 @@ export const ConfirmDialog = ({
               className={`w-16 h-16 ${iconBgClass} border-2 ${iconBorderColor} rounded-2xl flex items-center justify-center shadow-hard-sm`}
             >
               {icon && cloneElement(icon as ReactElement<{ className?: string; style?: React.CSSProperties }>, {
-                className: "w-8 h-8 text-surface-card text-[var(--color-surface-card)]",
-                // Using the broken white from cards instead of pure white
+                className: "w-8 h-8 text-[var(--color-surface-card)]",
                 style: { color: 'var(--color-surface-card)' }
               })}
             </div>

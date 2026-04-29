@@ -385,9 +385,9 @@ export const SuperAdminGlobalDashboard = () => {
 
   const newOrgsLabel = loading
     ? "—"
-    : newOrgsThisMonth > 0
+    : (newOrgsThisMonth > 0
       ? t("dashboard.newOrgsLabel", { count: newOrgsThisMonth })
-      : t("dashboard.noNewOrgs");
+      : t("dashboard.noNewOrgs"));
 
   return (
     <div className={`flex flex-col gap-8 ${loading ? "animate-pulse" : ""}`}>

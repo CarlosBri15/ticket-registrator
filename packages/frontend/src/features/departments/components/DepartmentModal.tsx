@@ -26,7 +26,7 @@ export const DepartmentModal = ({
   const createMutation = useCreateDepartmentMutation(companyId, { onSuccess: onClose });
   const updateMutation = useUpdateDepartmentMutation(companyId, { onSuccess: onClose });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     if (isEditing) {

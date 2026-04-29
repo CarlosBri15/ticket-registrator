@@ -39,7 +39,7 @@ export const FinancialSummary = ({
         </div>
         <div className="flex justify-center items-baseline gap-2">
           <span className="text-[48px] font-space-bold tracking-tighter leading-none text-dark">
-            {(isApproved ? approvedAmount : (isDeclined ? requestedAmount : ticketsTotal)).toFixed(2)}
+            {(isApproved ? approvedAmount : isDeclined ? requestedAmount : ticketsTotal).toFixed(2)}
           </span>
           <span className="text-xl font-space-bold text-dark/30">{currency}</span>
         </div>

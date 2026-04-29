@@ -44,16 +44,15 @@ export const DatePicker = ({
 
     if (mode === 'single') {
       const dateValue = value instanceof Date ? value : null;
-      if (dateValue && !isNaN(dateValue.getTime())) {
+      if (dateValue && !Number.isNaN(dateValue.getTime())) {
         return format(dateValue, "d 'de' MMMM, yyyy", { locale: es });
       }
       return null;
-    } else {
-      const range = value as DateRange;
-      if (!range.start) return null;
-      if (!range.end) return format(range.start, "d 'de' MMMM", { locale: es });
-      return `${format(range.start, 'd MMM')} - ${format(range.end, 'd MMM, yyyy')}`;
     }
+    const range = value as DateRange;
+    if (!range.start) return null;
+    if (!range.end) return format(range.start, "d 'de' MMMM", { locale: es });
+    return `${format(range.start, 'd MMM')} - ${format(range.end, 'd MMM, yyyy')}`;
   };
 
   const displayValue = getDisplayValue();
@@ -76,7 +75,7 @@ export const DatePicker = ({
           className={
             triggerClassName
               ? `${triggerClassName} ${error ? tokens.inputError : ''}`
-              : `${tokens.selectTrigger} ${error ? tokens.inputError : ''} ${open ? tokens.selectTriggerFocus : ''} flex items-center gap-3`
+              : `${tokens.selectTrigger} ${error ? tokens.inputError : ''} ${open ? tokens.selectTriggerFocus : 'flex items-center gap-3'}`
           }
         >
           <CalendarIcon className="w-4 h-4 text-dark/40" />

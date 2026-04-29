@@ -205,13 +205,16 @@ export const AllTicketsScreen = () => {
                     today={t("ticketsPage.today")}
                     yesterday={t("ticketsPage.yesterday")}
                   />
-                  {dayTickets.map((ticket: TicketWithReport) => (
-                    <TicketRow
-                      key={ticket.id}
-                      ticket={ticket}
-                      onClick={() => handleTicketClick(ticket)}
-                    />
-                  ))}
+                  {dayTickets.map((ticket: TicketWithReport) => {
+                    const onRowClick = () => handleTicketClick(ticket);
+                    return (
+                      <TicketRow
+                        key={ticket.id}
+                        ticket={ticket}
+                        onClick={onRowClick}
+                      />
+                    );
+                  })}
                 </div>
               ))}
             </div>

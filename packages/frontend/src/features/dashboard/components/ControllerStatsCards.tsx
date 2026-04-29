@@ -13,7 +13,7 @@ export const WeeklyStatsCard = ({ title, count, icon, colorClass, subtitle }: We
   const isAlert = colorClass === "red" && count > 0;
   const isSuccess = colorClass === "green";
 
-  const iconBg = isAlert ? "bg-red-100 text-red-500" : isSuccess ? "bg-success/10 text-success" : "bg-slate-100 text-slate-400";
+  const iconBg = isAlert ? "bg-red-100 text-red-500" : (isSuccess ? "bg-success/10 text-success" : "bg-slate-100 text-slate-400");
   const valueCls = isAlert ? "text-red-600" : "text-dark";
   const subtitleCls = isAlert ? "text-red-500/70" : "text-slate-400";
   const labelCls = isAlert ? "text-red-500" : "text-slate-400";

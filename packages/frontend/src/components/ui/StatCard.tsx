@@ -72,12 +72,8 @@ export const StatCard = ({
         <div
           className={`inline-flex items-center gap-1 text-[11px] font-sans-semibold w-fit ${
             trendUp
-              ? isPrimary
-                ? "text-green-300"
-                : "text-success"
-              : isPrimary
-              ? "text-red-300"
-              : "text-danger"
+              ? (isPrimary ? "text-green-300" : "text-success")
+              : (isPrimary ? "text-red-300" : "text-danger")
           }`}
         >
           {trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}

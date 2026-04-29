@@ -35,10 +35,13 @@ export const Calendar = ({
 }: CalendarProps) => {
   const [currentMonth, setCurrentMonth] = useState(() => {
     const isDateRange = (v: unknown): v is DateRange => v !== null && typeof v === 'object' && 'start' in v && 'end' in v;
-    const dateValue = mode === 'single'
-      ? (value instanceof Date ? value : (value && isDateRange(value) ? new Date() : new Date()))
-      : (isDateRange(value) && value.start ? new Date(value.start) : new Date());
-    return isNaN(dateValue.getTime()) ? new Date() : dateValue;
+    let dateValue: Date;
+    if (mode === 'single') {
+      dateValue = value instanceof Date ? value : new Date();
+    } else {
+      dateValue = isDateRange(value) && value.start ? new Date(value.start) : new Date();
+    }
+    return Number.isNaN(dateValue.getTime()) ? new Date() : dateValue;
   });
 
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
@@ -85,8 +88,8 @@ export const Calendar = ({
     const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
     return (
       <div className="grid grid-cols-7 mb-2">
-        {days.map((day, i) => (
-          <div key={i} className="text-center text-[10px] font-space-bold text-dark/40 uppercase tracking-widest">
+        {days.map((day) => (
+          <div key={day} className="text-center text-[10px] font-space-bold text-dark/40 uppercase tracking-widest">
             {day}
           </div>
         ))}
@@ -106,36 +109,39 @@ export const Calendar = ({
     let days: React.ReactNode[] = [];
 
     calendarDays.forEach((day, i) => {
-      const dateValue = mode === 'single'
-        ? (value instanceof Date ? value : null)
-        : null;
+      const dateValue = mode === 'single' && value instanceof Date ? value : null;
 
-      const isSelected = mode === 'single'
-        ? dateValue && isSameDay(day, dateValue)
-        : (value as DateRange)?.start && (
-            isSameDay(day, (value as DateRange).start!) || 
-            ((value as DateRange).end && isSameDay(day, (value as DateRange).end!))
-          );
+      let isSelected: boolean;
+      if (mode === 'single') {
+        isSelected = dateValue ? isSameDay(day, dateValue) : false;
+      } else {
+        const rangeValue = value as DateRange;
+        isSelected = !!(
+          (rangeValue?.start && isSameDay(day, rangeValue.start)) ||
+          (rangeValue?.end && isSameDay(day, rangeValue.end))
+        );
+      }
 
-      const isInRange = mode === 'range' && 
-        (value as DateRange)?.start && 
-        (value as DateRange)?.end && 
-        isWithinInterval(day, { 
-          start: (value as DateRange).start!, 
-          end: (value as DateRange).end! 
-        });
+      let isInRange = false;
+      if (mode === 'range') {
+        const rangeValue = value as DateRange;
+        if (rangeValue?.start && rangeValue?.end) {
+          isInRange = isWithinInterval(day, { start: rangeValue.start, end: rangeValue.end });
+        }
+      }
 
       const isCurrentMonth = isSameMonth(day, monthStart);
       const isTodayDate = isToday(day);
 
+      const rangeValue = value as DateRange;
       days.push(
         <button
-          key={day.toString()}
+          key={day.toISOString()}
           type="button"
           onClick={() => onDateClick(day)}
           className={`
             relative h-10 w-10 flex items-center justify-center text-xs font-space-bold transition-all duration-100
-            ${!isCurrentMonth ? 'text-dark/20' : 'text-dark'} 
+            ${!isCurrentMonth ? 'text-dark/20' : 'text-dark'}
             hover:bg-brand/10 rounded-lg
             ${isSelected ? 'bg-brand text-white border-2 border-border-main !rounded-lg shadow-hard-sm z-10 scale-105' : ''}
             ${isInRange && !isSelected ? 'bg-brand/10 text-brand' : ''}
@@ -143,13 +149,13 @@ export const Calendar = ({
           `}
         >
           <span className="relative z-10">{format(day, 'd')}</span>
-          
+
           {/* Range selection background connector */}
-          {isInRange && (
+          {isInRange && rangeValue?.start && rangeValue?.end && (
             <div className={`
               absolute inset-0 bg-brand/10 -z-0
-              ${isSameDay(day, (value as DateRange).start!) ? 'rounded-l-lg' : ''}
-              ${isSameDay(day, (value as DateRange).end!) ? 'rounded-r-lg' : ''}
+              ${isSameDay(day, rangeValue.start) ? 'rounded-l-lg' : ''}
+              ${isSameDay(day, rangeValue.end) ? 'rounded-r-lg' : ''}
             `} />
           )}
         </button>

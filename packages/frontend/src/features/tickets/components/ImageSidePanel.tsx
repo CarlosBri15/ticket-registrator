@@ -35,7 +35,7 @@ export const ImageSidePanel = ({ imageUrl, isLoading, onClose }: ImageSidePanelP
               {t("common.loading")}
             </p>
           </div>
-        ) : imageUrl ? (
+        ) : (imageUrl ? (
           <img
             src={imageUrl}
             alt="Ticket"
@@ -50,7 +50,7 @@ export const ImageSidePanel = ({ imageUrl, isLoading, onClose }: ImageSidePanelP
               {t("ticketDetail.noImage")}
             </p>
           </div>
-        )}
+        ))}
       </div>
 
       {imageUrl && (
