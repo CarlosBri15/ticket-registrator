@@ -79,6 +79,38 @@ type EditableFields = {
   payment_type: string;
 };
 
+// Helper: Compute formatted date string
+const getFormattedDate = (date: string | null | undefined): string => {
+  return date ? format(new Date(date), 'd MMM yyyy', { locale: es }) : '---';
+};
+
+// Helper: Compute payment display value
+const getPaymentValue = (paymentType: string | null | undefined, lastFourDigits: string | null | undefined): string | null => {
+  if (!paymentType) return null;
+  if (lastFourDigits) return `${paymentType} •••• ${lastFourDigits}`;
+  return paymentType;
+};
+
+// Helper: Initialize form data from ticket
+const initializeFormData = (ticket: ITicket): EditableFields => ({
+  location_name: ticket.location_name ?? '',
+  location_address: ticket.location_address ?? '',
+  date: ticket.date ? new Date(ticket.date).toISOString().split('T')[0] : '',
+  amount: ticket.amount == null ? '' : String(ticket.amount),
+  currency: ticket.currency ?? '',
+  payment_type: ticket.payment_type ?? '',
+});
+
+// Helper: Build update payload
+const buildUpdatePayload = (formData: EditableFields) => ({
+  location_name: formData.location_name || null,
+  location_address: formData.location_address || null,
+  date: formData.date || null,
+  amount: formData.amount ? Number.parseFloat(formData.amount) : null,
+  currency: formData.currency || null,
+  payment_type: formData.payment_type || null,
+});
+
 export const TicketDetailModal = ({
   visible,
   onClose,
@@ -107,14 +139,7 @@ export const TicketDetailModal = ({
 
   const handleStartEdit = () => {
     if (!ticket) return;
-    setFormData({
-      location_name:    ticket.location_name ?? '',
-      location_address: ticket.location_address ?? '',
-      date:             ticket.date ? new Date(ticket.date).toISOString().split('T')[0] : '',
-      amount:           ticket.amount == null ? '' : String(ticket.amount),
-      currency:         ticket.currency ?? '',
-      payment_type:     ticket.payment_type ?? '',
-    });
+    setFormData(initializeFormData(ticket));
     setIsEditing(true);
   };
 
@@ -123,14 +148,7 @@ export const TicketDetailModal = ({
     updateTicket({
       reportId,
       ticketId: ticket.id,
-      data: {
-        location_name:    formData.location_name    || null,
-        location_address: formData.location_address || null,
-        date:             formData.date             || null,
-        amount:           formData.amount ? Number.parseFloat(formData.amount) : null,
-        currency:         formData.currency         || null,
-        payment_type:     formData.payment_type     || null,
-      },
+      data: buildUpdatePayload(formData),
     });
   };
 
@@ -142,15 +160,8 @@ export const TicketDetailModal = ({
 
   if (!ticket) return null;
 
-  const formattedDate = ticket.date
-    ? format(new Date(ticket.date), 'd MMM yyyy', { locale: es })
-    : '---';
-
-  const paymentValue = ticket.payment_type
-    ? ticket.last_four_digits
-      ? `${ticket.payment_type} •••• ${ticket.last_four_digits}`
-      : ticket.payment_type
-    : null;
+  const formattedDate = getFormattedDate(ticket.date);
+  const paymentValue = getPaymentValue(ticket.payment_type, ticket.last_four_digits);
 
   return (
     <Modal
