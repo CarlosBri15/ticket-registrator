@@ -1,113 +1,75 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import { es } from 'date-fns/locale';
-
-// ─── Mocks ────────────────────────────────────────────────────────────────────
-
-vi.mock('@ticket-registrator/shared', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
-  return {
-    ...actual,
-    useTicketsQuery: vi.fn(),
-  };
-});
+import { enUS } from 'date-fns/locale';
 
 vi.mock('lucide-react', () => ({
-  ArrowUpRight: () => <svg data-testid="icon-arrow-up-right" />,
-  Calendar: () => <svg data-testid="icon-calendar" />,
-  Receipt: () => <svg data-testid="icon-receipt" />,
+  Calendar: () => <span data-testid="cal-icon" />,
+  FileText: () => <span data-testid="file-icon" />,
 }));
 
-vi.mock('../../../components/ui/StatusBadge', () => ({
-  StatusBadge: ({ status }: any) => <span data-testid="status-badge">{status}</span>,
-}));
-
-// ─── Imports after mocks ──────────────────────────────────────────────────────
-
-import { useTicketsQuery } from '@ticket-registrator/shared';
 import { ActiveTripCard } from './ActiveTripCard';
+import type { IReport } from '@ticket-registrator/shared';
 
-// ─── Setup helpers ────────────────────────────────────────────────────────────
+const buildTrip = (overrides: Partial<IReport> = {}): IReport =>
+  ({
+    id: 'r1',
+    name: 'Trip to Madrid',
+    start_date: '2024-01-15T00:00:00Z',
+    end_date: '2024-01-20T00:00:00Z',
+    requested_amount: 1234,
+    currency: 'EUR',
+    status: 'CREATED',
+    ...overrides,
+  } as unknown as IReport);
 
-const setupMocks = () => {
-  (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-    data: [
-      { id: 'tk-1', amount: 100.5 },
-      { id: 'tk-2', amount: 50.25 },
-    ],
-  });
+const renderCard = (overrides: Partial<React.ComponentProps<typeof ActiveTripCard>> = {}) => {
+  const props = {
+    currentTrip: buildTrip(),
+    navigate: vi.fn(),
+    dateLocale: enUS,
+    t: ((key: string, fallback?: string) => fallback ?? key) as any,
+    ...overrides,
+  };
+  return { props, ...render(<ActiveTripCard {...props} />) };
 };
-
-const mockTrip = {
-  id: 'trip-abc12345',
-  name: 'Business Trip to Madrid',
-  status: 'SUBMITTED',
-  start_date: '2026-03-01T00:00:00.000Z',
-  end_date: '2026-03-10T00:00:00.000Z',
-  requested_amount: 500,
-  currency: 'EUR',
-};
-
-const t = (key: string) => key;
-
-// ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('ActiveTripCard', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    setupMocks();
-  });
-
-  const renderCard = (navigateFn = vi.fn()) =>
-    render(
-      <MemoryRouter>
-        <ActiveTripCard
-          currentTrip={mockTrip as any}
-          navigate={navigateFn}
-          dateLocale={es}
-          t={t}
-        />
-      </MemoryRouter>,
-    );
-
-  it('renders trip name', () => {
+  it('renders the trip name', () => {
     renderCard();
-    expect(screen.getByText('Business Trip to Madrid')).toBeInTheDocument();
+    expect(screen.getByText('Trip to Madrid')).toBeInTheDocument();
   });
 
-  it('renders trip dates', () => {
+  it('renders the in-progress badge', () => {
     renderCard();
-    // The dates are formatted using date-fns. We check the component is rendered.
-    // With es locale, 01 mar → "01 mar" and end "10 mar 2026"
-    expect(screen.getByText(/mar/i)).toBeInTheDocument();
+    expect(screen.getByText('En curso')).toBeInTheDocument();
   });
 
-  it('shows ticket count', () => {
+  it('renders the formatted date range', () => {
     renderCard();
-    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText(/15 Jan.*–.*20 Jan/)).toBeInTheDocument();
   });
 
-  it('shows total amount from tickets when tickets exist', () => {
+  it('renders the requested amount and currency', () => {
     renderCard();
-    // 100.5 + 50.25 = 150.75
-    expect(screen.getByText('150.75')).toBeInTheDocument();
+    expect(screen.getByText(/1,234|1234/)).toBeInTheDocument();
+    expect(screen.getByText('EUR')).toBeInTheDocument();
   });
 
-  it('shows requested_amount when no tickets', () => {
-    (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [],
-    });
+  it('renders 0 when requested_amount is missing', () => {
+    renderCard({ currentTrip: buildTrip({ requested_amount: null as any }) });
+    expect(screen.getByText('0')).toBeInTheDocument();
+  });
+
+  it('renders the calendar and file icons', () => {
     renderCard();
-    // totalAmount is 0, so shows requested_amount: 500
-    expect(screen.getByText('500')).toBeInTheDocument();
+    expect(screen.getByTestId('cal-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('file-icon')).toBeInTheDocument();
   });
 
-  it('calls navigate when card is clicked', () => {
+  it('calls navigate with /reports/:id when the card is clicked', () => {
     const navigate = vi.fn();
-    renderCard(navigate);
-    const button = screen.getByRole('button');
-    fireEvent.click(button);
-    expect(navigate).toHaveBeenCalledWith('/reports/trip-abc12345');
+    renderCard({ navigate });
+    fireEvent.click(screen.getByText('Trip to Madrid'));
+    expect(navigate).toHaveBeenCalledWith('/reports/r1');
   });
 });

@@ -14,7 +14,7 @@ export class TicketsRepository {
   async findById(id: string) {
     return this.db.query.tickets.findFirst({
       where: and(eq(schema.tickets.id, id), isNull(schema.tickets.deletedAt)),
-      with: { items: true },
+      with: { items: { with: { category: true } } },
     });
   }
 
@@ -24,7 +24,7 @@ export class TicketsRepository {
         eq(schema.tickets.reportId, reportId),
         isNull(schema.tickets.deletedAt),
       ),
-      with: { items: true },
+      with: { items: { with: { category: true } } },
       orderBy: [desc(schema.tickets.createdAt)],
     });
   }
@@ -122,6 +122,10 @@ export class TicketsRepository {
         .where(eq(schema.tickets.id, ticketId))
         .returning();
     });
+  }
+
+  async hardDelete(ticketId: string) {
+    return this.db.delete(schema.tickets).where(eq(schema.tickets.id, ticketId));
   }
 
   async transaction<T>(

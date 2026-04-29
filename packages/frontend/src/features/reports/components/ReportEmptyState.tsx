@@ -1,10 +1,5 @@
-/**
- * ReportEmptyState — Zero-state card for the reports list.
- * Shows an icon, title, description, optional CTA, and optional "clear filters" link.
- */
 import { Plus, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { tokens } from "../../../styles/theme";
 
 interface ReportEmptyStateProps {
   title: string;
@@ -25,12 +20,14 @@ export const ReportEmptyState = ({
 }: ReportEmptyStateProps) => {
   const { t } = useTranslation();
   return (
-    <div className={tokens.emptyState}>
-      <div className={`${tokens.emptyStateIcon} mb-4`}>
-        <FileText className="w-5 h-5 text-dark/35" />
+    <div className="flex flex-col items-center justify-center text-center py-14 px-6 gap-2">
+      <div className="w-10 h-10 rounded-lg bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 mb-1">
+        <FileText className="w-4 h-4" aria-hidden={true} />
       </div>
       <p className="font-sans-semibold text-dark text-[14px]">{title}</p>
-      <p className={`${tokens.emptyStateText} mt-1`}>{description}</p>
+      <p className="text-[13px] font-sans-normal text-dark/55 max-w-sm leading-relaxed">
+        {description}
+      </p>
       {filtered && onClear && (
         <button
           type="button"
@@ -44,9 +41,9 @@ export const ReportEmptyState = ({
         <button
           type="button"
           onClick={onAction}
-          className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 bg-brand hover:bg-brand-hover text-dark rounded-md font-sans-medium text-[13px] transition-colors border border-brand/20"
+          className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-full font-sans-medium text-[13px] transition-colors"
         >
-          <Plus className="w-3.5 h-3.5" />
+          <Plus className="w-3.5 h-3.5" aria-hidden={true} />
           {actionLabel}
         </button>
       )}

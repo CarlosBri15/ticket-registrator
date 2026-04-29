@@ -1,8 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useNavigate } from 'react-router-dom';
 
-// ─── Shared mock ──────────────────────────────────────────────────────────────
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  return { ...actual, useNavigate: vi.fn() };
+});
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, opts?: Record<string, unknown>) => {
+      if (opts && 'count' in opts) return `${key}:${opts.count}`;
+      if (opts && 'filtered' in opts) return `${key}:${opts.filtered}/${opts.total}`;
+      return key;
+    },
+    i18n: { language: 'es' },
+  }),
+}));
 
 vi.mock('@ticket-registrator/shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
@@ -15,53 +29,60 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
   };
 });
 
-vi.mock('lucide-react', () => ({
-  Wallet: () => null, Plane: () => null, AlertCircle: () => null, Plus: () => null,
-  FileText: () => null, ArrowUpRight: () => null, ChevronRight: () => null,
-  TrendingUp: () => null, TrendingDown: () => null, Clock: () => null, Calendar: () => null,
-  Receipt: () => null, Sparkles: () => null, Users: () => null, CheckCircle: () => null,
-  Building2: () => null, Shield: () => null, Layers: () => null, Lock: () => null,
-  BarChart2: () => null, Globe: () => null, Search: () => null, X: () => null,
+vi.mock('recharts', () => {
+  const Comp = ({ children }: any) => <div>{children}</div>;
+  return {
+    ResponsiveContainer: Comp,
+    BarChart: Comp,
+    Bar: () => null,
+    XAxis: () => null,
+    YAxis: () => null,
+    Tooltip: () => null,
+  };
+});
+
+vi.mock('./components/DashboardHero', () => ({
+  DashboardHero: ({ firstName, actions }: any) => (
+    <div data-testid="hero">
+      <span>{firstName}</span>
+      {actions}
+    </div>
+  ),
 }));
 
-vi.mock('recharts', () => ({
-  BarChart: ({ children }: any) => <div data-testid="bar-chart">{children}</div>,
-  Bar: () => null, XAxis: () => null, YAxis: () => null, Tooltip: () => null,
-  ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
-  PieChart: ({ children }: any) => <div>{children}</div>,
-  Pie: () => null, Cell: () => null, Legend: () => null,
+vi.mock('../../components/ui/StatCard', () => ({
+  StatCard: ({ title, value, subtitle }: any) => (
+    <div data-testid="stat-card">
+      <span data-testid="stat-title">{title}</span>
+      <span data-testid="stat-value">{value}</span>
+      <span data-testid="stat-subtitle">{subtitle}</span>
+    </div>
+  ),
+}));
+
+vi.mock('../../components/ui/SectionCard', () => ({
+  SectionCard: ({ title, children }: any) => (
+    <div data-testid="section-card">
+      <h3>{title}</h3>
+      {children}
+    </div>
+  ),
+}));
+
+vi.mock('../../components/ui/SearchInput', () => ({
+  SearchInput: ({ value, onChange, placeholder }: any) => (
+    <input
+      data-testid="search-input"
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  ),
 }));
 
 vi.mock('../../components/ui/Button', () => ({
   Button: ({ children, onClick }: any) => <button onClick={onClick}>{children}</button>,
 }));
-vi.mock('../../components/ui/StatCard', () => ({
-  StatCard: ({ title, value, subtitle }: any) => (
-    <div data-testid="stat-card">
-      <span>{title}</span>
-      {value !== undefined && <span data-testid="stat-value">{value}</span>}
-      {subtitle && <span>{subtitle}</span>}
-    </div>
-  ),
-}));
-vi.mock('../../components/ui/StatusBadge', () => ({
-  StatusBadge: ({ status }: any) => <span>{status}</span>,
-}));
-
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string, opts?: any) => (opts?.name ? `${key} ${opts.name}` : key),
-    i18n: { language: 'es' },
-  }),
-}));
-
-const mockNavigate = vi.fn();
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
-  return { ...actual, useNavigate: () => mockNavigate };
-});
-
-// ─── Imports after mocks ──────────────────────────────────────────────────────
 
 import {
   useUserQuery,
@@ -71,13 +92,23 @@ import {
 } from '@ticket-registrator/shared';
 import { SuperAdminGlobalDashboard } from './SuperAdminDashboard';
 
-// ─── Setup helpers ────────────────────────────────────────────────────────────
+const setActiveCompanyId = vi.fn();
 
-const setupGlobal = (orgs: any[] = [], users: any[] = []) => {
-  (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null, setActiveCompanyId: vi.fn() });
-  (useOrganizationsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: orgs, isLoading: false });
-  (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: users });
-  (useUserQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: null });
+const setupMocks = (opts: { orgs?: any[]; users?: any[]; loading?: boolean } = {}) => {
+  (useUserQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+    data: { name: 'Ana García', roleName: 'SuperAdmin' },
+  });
+  (useOrganizationsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+    data: opts.orgs ?? [],
+    isLoading: opts.loading ?? false,
+  });
+  (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+    data: opts.users ?? [],
+    isLoading: opts.loading ?? false,
+  });
+  (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({
+    setActiveCompanyId,
+  });
 };
 
 const renderScreen = () =>
@@ -87,256 +118,156 @@ const renderScreen = () =>
     </MemoryRouter>,
   );
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
-
-describe('SuperAdmin global mode', () => {
+describe('SuperAdminGlobalDashboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    setupGlobal();
+    (useNavigate as ReturnType<typeof vi.fn>).mockReturnValue(vi.fn());
+    setupMocks();
   });
 
-  it('renders SuperAdminGlobalDashboard instead of regular dashboard', () => {
+  it('renders the dashboard hero with user first name', () => {
+    renderScreen();
+    expect(screen.getByText('Ana')).toBeInTheDocument();
+  });
+
+  it('renders the global stats grid', () => {
     renderScreen();
     expect(screen.getByTestId('global-stats')).toBeInTheDocument();
+    expect(screen.getAllByTestId('stat-card').length).toBeGreaterThanOrEqual(2);
   });
 
-  it('shows greeting with user name in global mode', () => {
-    (useUserQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: { name: 'Carlos', roleName: 'SuperAdmin' } });
-    renderScreen();
-    expect(screen.getByText(/Carlos/)).toBeInTheDocument();
-  });
-
-  it('shows SuperAdmin role badge', () => {
-    (useUserQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: { name: 'Carlos', roleName: 'SuperAdmin' } });
-    renderScreen();
-    expect(screen.getByText('SuperAdmin')).toBeInTheDocument();
-  });
-
-  it('shows total organizations count in global stats', () => {
-    setupGlobal(
-      [{ id: 'o1', name: 'Acme', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-       { id: 'o2', name: 'Globex', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-      [],
-    );
-    renderScreen();
-    const statValues = screen.getAllByTestId('stat-value');
-    // First stat = orgs count = "2"
-    expect(statValues[0].textContent).toBe('2');
-  });
-
-  it('shows total users count in global stats', () => {
-    setupGlobal(
-      [{ id: 'o1', name: 'Acme', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-      [{ id: 'u1', companyId: 'o1' }, { id: 'u2', companyId: 'o1' }, { id: 'u3', companyId: 'o1' }],
-    );
-    renderScreen();
-    const statValues = screen.getAllByTestId('stat-value');
-    // Second stat = users count = "3"
-    expect(statValues[1].textContent).toBe('3');
-  });
-
-  it('shows loading placeholder "—" while orgs are loading', () => {
-    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null, setActiveCompanyId: vi.fn() });
-    (useOrganizationsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: undefined, isLoading: true });
-    (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: undefined });
-    renderScreen();
-    const statValues = screen.getAllByTestId('stat-value');
-    expect(statValues[0].textContent).toBe('—');
-  });
-
-  it('renders org list with org names', () => {
-    setupGlobal([
-      { id: 'o1', name: 'Acme Corp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: 'o2', name: 'Globex Inc', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    ]);
-    renderScreen();
-    // Acme Corp may appear in both the org grid and the "largest org" card
-    expect(screen.getAllByText('Acme Corp').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Globex Inc')).toBeInTheDocument();
-  });
-
-  it('shows empty state when no organizations exist', () => {
-    setupGlobal([]);
-    renderScreen();
-    expect(screen.getByText(/no hay organizaciones/i)).toBeInTheDocument();
-  });
-
-  it('filters org list by search input', () => {
-    setupGlobal([
-      { id: 'o1', name: 'Acme Corp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: 'o2', name: 'Globex Inc', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    ]);
-    renderScreen();
-    fireEvent.change(screen.getByPlaceholderText(/buscar organización/i), { target: { value: 'Acme' } });
-    // Acme Corp appears in the filtered org grid (and possibly in the "largest org" stat card)
-    expect(screen.getAllByText('Acme Corp').length).toBeGreaterThanOrEqual(1);
-    // Globex Inc is filtered out from the org grid and is NOT the largest org
-    expect(screen.queryByText('Globex Inc')).not.toBeInTheDocument();
-  });
-
-  it('shows no results message when search has no matches', () => {
-    setupGlobal([{ id: 'o1', name: 'Acme Corp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }]);
-    renderScreen();
-    fireEvent.change(screen.getByPlaceholderText(/buscar organización/i), { target: { value: 'zzz' } });
-    expect(screen.getByText(/sin resultados/i)).toBeInTheDocument();
-  });
-
-  it('clears search when X button is clicked', () => {
-    setupGlobal([{ id: 'o1', name: 'Acme Corp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }]);
-    renderScreen();
-    const input = screen.getByPlaceholderText(/buscar organización/i);
-    fireEvent.change(input, { target: { value: 'test' } });
-    // The X (clear) button renders when search has a value
-    expect(input).toHaveValue('test');
-  });
-
-  it('calls setActiveCompanyId when "Ver" button is clicked on an org', () => {
-    const mockSet = vi.fn();
-    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null, setActiveCompanyId: mockSet });
-    (useOrganizationsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 'o1', name: 'Acme Corp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-      isLoading: false,
+  it('renders org and user counters in stat cards', () => {
+    setupMocks({
+      orgs: [{ id: 'o1', name: 'Org 1', createdAt: '2024-01-15T00:00:00Z' }],
+      users: [{ id: 'u1', companyId: 'o1' }, { id: 'u2', companyId: 'o1' }],
     });
-    (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [] });
     renderScreen();
-    fireEvent.click(screen.getByText('Ver'));
-    expect(mockSet).toHaveBeenCalledWith('o1');
+    const values = screen.getAllByTestId('stat-value').map((n) => n.textContent);
+    expect(values).toContain('1'); // orgs
+    expect(values).toContain('2'); // users
   });
 
-  it('navigates to /organizations/:id when arrow button is clicked', () => {
-    setupGlobal([{ id: 'o1', name: 'Acme Corp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }]);
+  it('shows "—" placeholders while loading', () => {
+    setupMocks({ loading: true });
     renderScreen();
-    fireEvent.click(screen.getByTitle('Detalle completo'));
-    expect(mockNavigate).toHaveBeenCalledWith('/organizations/o1');
+    const values = screen.getAllByTestId('stat-value').map((n) => n.textContent);
+    expect(values.filter((v) => v === '—').length).toBeGreaterThanOrEqual(2);
   });
 
-  it('navigates to /organizations when "Nueva org" is clicked', () => {
-    setupGlobal();
-    renderScreen();
-    fireEvent.click(screen.getByText('Nueva org'));
-    expect(mockNavigate).toHaveBeenCalledWith('/organizations');
-  });
-
-  it('shows org count summary at the bottom of the list', () => {
-    setupGlobal([
-      { id: 'o1', name: 'Acme', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: 'o2', name: 'Globex', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    ]);
-    renderScreen();
-    expect(screen.getByText(/2 de 2 organizaciones/i)).toBeInTheDocument();
-  });
-
-  it('shows loading skeletons while orgs are loading', () => {
-    (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null, setActiveCompanyId: vi.fn() });
-    (useOrganizationsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: undefined, isLoading: true });
-    (useUsersQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [] });
-    const { container } = renderScreen();
-    expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
-  });
-
-  // ── Empty orgs card ──────────────────────────────────────────────────────
-
-  it('renders empty-orgs-card in global stats', () => {
-    setupGlobal(
-      [{ id: 'o1', name: 'Acme', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-      [{ id: 'u1', companyId: 'o1' }],
-    );
+  it('renders the empty-orgs card', () => {
+    setupMocks({
+      orgs: [
+        { id: 'o1', name: 'Org 1', createdAt: '2024-01-01' },
+        { id: 'o2', name: 'Org 2', createdAt: '2024-01-01' },
+      ],
+      users: [{ id: 'u1', companyId: 'o1' }],
+    });
     renderScreen();
     expect(screen.getByTestId('empty-orgs-card')).toBeInTheDocument();
   });
 
-  it('shows "Todas tienen usuarios" when all orgs have at least one user', () => {
-    setupGlobal(
-      [{ id: 'o1', name: 'Acme', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-      [{ id: 'u1', companyId: 'o1' }],
-    );
-    renderScreen();
-    expect(screen.getByText('Todas tienen usuarios')).toBeInTheDocument();
-  });
-
-  it('shows "Requieren atención" when there are orgs without users', () => {
-    setupGlobal(
-      [
-        { id: 'o1', name: 'Acme', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'o2', name: 'Empty Org', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  it('renders the largest-org name', () => {
+    setupMocks({
+      orgs: [
+        { id: 'o1', name: 'Big Org', createdAt: '2024-01-01' },
+        { id: 'o2', name: 'Small Org', createdAt: '2024-01-01' },
       ],
-      [{ id: 'u1', companyId: 'o1' }],
-    );
-    renderScreen();
-    expect(screen.getByText('Requieren atención')).toBeInTheDocument();
-  });
-
-  it('shows "1" in empty-orgs-card when one org has no users', () => {
-    setupGlobal(
-      [
-        { id: 'o1', name: 'Acme', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'o2', name: 'Empty', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      ],
-      [{ id: 'u1', companyId: 'o1' }],
-    );
-    renderScreen();
-    const card = screen.getByTestId('empty-orgs-card');
-    expect(card.textContent).toContain('1');
-  });
-
-  // ── Largest org card ─────────────────────────────────────────────────────
-
-  it('shows largest org name in stat card', () => {
-    setupGlobal(
-      [
-        { id: 'o1', name: 'Pequeña', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'o2', name: 'Grande Corp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      ],
-      [
+      users: [
         { id: 'u1', companyId: 'o1' },
-        { id: 'u2', companyId: 'o2' },
+        { id: 'u2', companyId: 'o1' },
         { id: 'u3', companyId: 'o2' },
-        { id: 'u4', companyId: 'o2' },
       ],
-    );
+    });
     renderScreen();
-    expect(screen.getByTestId('largest-org-name').textContent).toBe('Grande Corp');
+    expect(screen.getByTestId('largest-org-name')).toHaveTextContent('Big Org');
   });
 
-  it('shows "—" in largest org card when no orgs exist', () => {
-    setupGlobal([], []);
+  it('shows em dash when there is no largest org', () => {
     renderScreen();
-    expect(screen.getByTestId('largest-org-name').textContent).toBe('—');
+    expect(screen.getByTestId('largest-org-name')).toHaveTextContent('—');
   });
 
-  // ── Charts section ───────────────────────────────────────────────────────
-
-  it('renders global-charts section when orgs exist', () => {
-    setupGlobal(
-      [{ id: 'o1', name: 'Acme', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-      [{ id: 'u1', companyId: 'o1' }],
-    );
+  it('renders global-charts when there is at least one org', () => {
+    setupMocks({
+      orgs: [{ id: 'o1', name: 'Org 1', createdAt: '2024-01-01' }],
+    });
     renderScreen();
     expect(screen.getByTestId('global-charts')).toBeInTheDocument();
   });
 
-  it('does not render global-charts when no orgs exist', () => {
-    setupGlobal([], []);
+  it('does not render global-charts when there are no orgs', () => {
     renderScreen();
     expect(screen.queryByTestId('global-charts')).not.toBeInTheDocument();
   });
 
-  it('renders chart labels for org growth and user distribution', () => {
-    setupGlobal(
-      [{ id: 'o1', name: 'Acme', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-      [{ id: 'u1', companyId: 'o1' }],
-    );
+  it('renders organisation rows with their name', () => {
+    setupMocks({
+      orgs: [{ id: 'o1', name: 'Acme Inc', createdAt: '2024-01-15T00:00:00Z' }],
+    });
     renderScreen();
-    expect(screen.getByText(/altas de organizaciones/i)).toBeInTheDocument();
-    expect(screen.getByText(/usuarios por organización/i)).toBeInTheDocument();
+    // Org name appears in the row + the largest-org card; just assert presence.
+    expect(screen.getAllByText('Acme Inc').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('shows "Sin usuarios registrados aún" in distribution chart when all orgs empty', () => {
-    setupGlobal(
-      [{ id: 'o1', name: 'Acme', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-      [],
-    );
+  it('filters organisations by the search input', () => {
+    setupMocks({
+      orgs: [
+        { id: 'o1', name: 'Acme', createdAt: '2024-01-15T00:00:00Z' },
+        { id: 'o2', name: 'Globex', createdAt: '2024-01-15T00:00:00Z' },
+      ],
+    });
+    const { container } = renderScreen();
+    fireEvent.change(screen.getByTestId('search-input'), { target: { value: 'glob' } });
+    // Row paragraph is <p class="font-sans-semibold ..."> with the org name.
+    const rowNames = Array.from(container.querySelectorAll('p.font-sans-semibold'))
+      .map((n) => n.textContent);
+    expect(rowNames).toContain('Globex');
+    expect(rowNames).not.toContain('Acme');
+  });
+
+  it('shows the no-results message when search has no matches', () => {
+    setupMocks({
+      orgs: [{ id: 'o1', name: 'Acme', createdAt: '2024-01-15T00:00:00Z' }],
+    });
     renderScreen();
-    expect(screen.getByText(/sin usuarios registrados aún/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByTestId('search-input'), { target: { value: 'xyz' } });
+    expect(screen.getByText('dashboard.orgNoResults')).toBeInTheDocument();
+  });
+
+  it('shows the no-orgs message when there are no organisations', () => {
+    renderScreen();
+    expect(screen.getByText('dashboard.orgNone')).toBeInTheDocument();
+  });
+
+  it('calls setActiveCompanyId when the "view" button on an org is clicked', () => {
+    setupMocks({
+      orgs: [{ id: 'org-42', name: 'Test Org', createdAt: '2024-01-15T00:00:00Z' }],
+    });
+    renderScreen();
+    fireEvent.click(screen.getByText('common.view'));
+    expect(setActiveCompanyId).toHaveBeenCalledWith('org-42');
+  });
+
+  it('navigates to /organizations when "Ver todos" is clicked', () => {
+    const navigate = vi.fn();
+    (useNavigate as ReturnType<typeof vi.fn>).mockReturnValue(navigate);
+    renderScreen();
+    fireEvent.click(screen.getByText('common.viewAll'));
+    expect(navigate).toHaveBeenCalledWith('/organizations');
+  });
+
+  it('navigates to organisation detail when the org name button is clicked', () => {
+    const navigate = vi.fn();
+    (useNavigate as ReturnType<typeof vi.fn>).mockReturnValue(navigate);
+    setupMocks({
+      orgs: [{ id: 'o-detail', name: 'Detail Org', createdAt: '2024-01-15T00:00:00Z' }],
+    });
+    const { container } = renderScreen();
+    // The clickable row is the button whose first child is the org name <p>.
+    const rowButton = Array.from(container.querySelectorAll('button')).find(
+      (b) => b.querySelector('p.font-sans-semibold')?.textContent === 'Detail Org',
+    )!;
+    fireEvent.click(rowButton);
+    expect(navigate).toHaveBeenCalledWith('/organizations/o-detail');
   });
 });

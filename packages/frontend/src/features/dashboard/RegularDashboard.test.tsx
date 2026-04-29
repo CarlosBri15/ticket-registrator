@@ -54,14 +54,6 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
   };
 });
 
-vi.mock('lucide-react', () => ({
-  Wallet: () => null, Plane: () => null, AlertCircle: () => null, Plus: () => null,
-  FileText: () => null, ArrowUpRight: () => null, ChevronRight: () => null,
-  TrendingUp: () => null, TrendingDown: () => null, Clock: () => null, Calendar: () => null,
-  Receipt: () => null, Sparkles: () => null, Users: () => null, CheckCircle: () => null,
-  Building2: () => null, Shield: () => null, Layers: () => null, Lock: () => null,
-  BarChart2: () => null, Globe: () => null, Search: () => null, X: () => null,
-}));
 
 vi.mock('recharts', () => ({
   BarChart: ({ children }: any) => <div data-testid="bar-chart">{children}</div>,
@@ -173,16 +165,6 @@ describe('DashboardPage', () => {
     expect(screen.getByText(/carlos/i)).toBeInTheDocument();
   });
 
-  it('renders active trip for self scope', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: true, isGlobal: false });
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 'r1', name: 'Viaje París', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-10', requested_amount: 500, approved_amount: null, currency: 'EUR' }],
-      isLoading: false,
-    });
-    renderScreen();
-    expect(screen.getByText('Viaje París')).toBeInTheDocument();
-  });
-
   it('renders team stats when not self scope', () => {
     (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: false, isGlobal: false });
     (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -235,16 +217,6 @@ describe('DashboardPage', () => {
     expect(screen.getByText('trips.noActiveTrips')).toBeInTheDocument();
   });
 
-  it('shows requiresAttention for self scope with declined report', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: true, isGlobal: false });
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 'r1', name: 'Rechazado', status: 'DECLINED', start_date: '2024-01-01', end_date: '2024-01-10', requested_amount: 200, approved_amount: null, currency: 'EUR' }],
-      isLoading: false,
-    });
-    renderScreen();
-    expect(screen.getByText('home.requiresAttention')).toBeInTheDocument();
-  });
-
   it('shows team reports label when cannot approve', () => {
     (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: false, isGlobal: false });
     (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => false });
@@ -266,17 +238,6 @@ describe('DashboardPage', () => {
     });
     renderScreen();
     expect(screen.getByText('analytics.noData')).toBeInTheDocument();
-  });
-
-  it('clicking active trip card does not crash', () => {
-    (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: true, isGlobal: false });
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 'r1', name: 'Viaje París', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-10', requested_amount: 500, approved_amount: null, currency: 'EUR' }],
-      isLoading: false,
-    });
-    renderScreen();
-    fireEvent.click(screen.getByText('Viaje París'));
-    expect(screen.getByText('Viaje París')).toBeInTheDocument();
   });
 
   // ── Company mode (SuperAdmin activated a company) ─────────────────────────

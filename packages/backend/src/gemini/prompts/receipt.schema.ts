@@ -33,9 +33,9 @@ export const receiptSchema = {
         properties: {
           description: { type: SchemaType.STRING },
           price: { type: SchemaType.NUMBER },
-          expense_type: { type: SchemaType.STRING, nullable: true },
+          category: { type: SchemaType.STRING, nullable: true },
         },
-        required: ['description', 'price', 'expense_type'],
+        required: ['description', 'price', 'category'],
       },
     },
 

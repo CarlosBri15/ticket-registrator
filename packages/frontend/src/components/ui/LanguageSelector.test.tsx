@@ -7,6 +7,7 @@ let mockLanguage = 'es';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
+    t: (key: string) => key,
     i18n: {
       get language() { return mockLanguage; },
       changeLanguage: mockChangeLanguage,

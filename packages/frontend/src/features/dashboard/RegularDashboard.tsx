@@ -1,14 +1,12 @@
 import React, { useMemo, useState } from "react";
 import {
-  Plus, Clock, FileText, TrendingUp, Users,
-  CheckCircle, Wallet, Plane, ChevronRight,
+  Plus, TrendingUp, Users, CheckCircle, Wallet,
+  FileText, ChevronRight, Camera,
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { StatCard } from "../../components/ui/StatCard";
-import { SectionHeader } from "../../components/ui/SectionHeader";
-import { PixelCard } from "../../components/ui/PixelCard";
-import { userIcon } from "@ticket-registrator/shared/assets";
-import { nbTokens } from "@ticket-registrator/shared";
+import { ReportCard } from "../reports/components/ReportCard";
+import { ReportRowItem } from "../reports/components/ReportRow";
 import {
   useReportsQuery,
   useUserQuery,
@@ -31,11 +29,7 @@ import { DashboardHero } from "./components/DashboardHero";
 import { PendingStatsCard } from "./components/PendingStatsCard";
 import { RecentActivitySection } from "./components/RecentActivitySection";
 import { useDashboardHelpers } from "./hooks/useDashboardHelpers";
-import { tokens, radius } from "../../styles/theme";
 import { TicketUploadModal } from "../tickets/components/TicketUploadModal";
-import { ReportCard } from "../reports/components/ReportCard";
-import { ReportRow } from "../reports/components/ReportRow";
-import { DARK, BORDER } from "../reports/constants";
 
 // ─── Team KPIs (non-self users with approval access) ─────────────────────────
 
@@ -63,10 +57,10 @@ const TeamKpis = ({
 
 interface UserDashboardProps {
   currentTrip: IReport | null;
-  inReviewCount: number;
-  inReviewAmount: number;
+  inReviewReports: IReport[];
   recentCompleted: IReport[];
   firstName: string;
+  todayLabel: string;
   navigate: (path: string) => void;
   onUpload: () => void;
   dateLocale: Locale;
@@ -76,157 +70,113 @@ interface UserDashboardProps {
 
 const UserDashboard = ({
   currentTrip,
-  inReviewCount,
-  inReviewAmount,
+  inReviewReports,
   recentCompleted,
   firstName,
+  todayLabel,
   navigate,
   onUpload,
   dateLocale,
   t,
   companyBanner,
 }: UserDashboardProps) => (
-  <div className={`-mx-6 md:-mx-10 ${companyBanner ? "" : "-mt-7 lg:-mt-9"}`}>
+  <div className="flex flex-col gap-10 pb-12">
 
-    {companyBanner && <div className="px-10 md:px-16 pt-4">{companyBanner}</div>}
+    {companyBanner}
 
-    <div className={tokens.headerPage}>
-      <span className="font-space-bold text-dark" style={{ fontSize: 24, letterSpacing: "0.5px" }}>
-        {firstName}
-      </span>
-      <Button
-        variant="secondary"
-        size="icon"
-        onClick={() => navigate("/settings")}
-        className="!bg-[#E8E8FF]"
-      >
-        <img src={userIcon} alt="avatar" className="w-10 h-10 object-contain" />
-      </Button>
+    {/* Greeting */}
+    <div className="flex items-end justify-between pt-1">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[36px] font-sans-bold text-dark leading-none tracking-tight">
+          {firstName}
+        </h1>
+        <p className="text-[11px] font-sans-medium text-dark/45 capitalize">{todayLabel}</p>
+      </div>
     </div>
 
-    {/* Two-column grid */}
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_420px]">
+    {/* Active report */}
+    <div className="flex flex-col gap-2">
+      <p className="text-[11px] font-sans-semibold text-dark/45">{t("home.activeTrip")}</p>
+      {currentTrip ? (
+        <>
+          <ReportCard
+            report={currentTrip}
+            onClick={() => navigate(`/reports/${currentTrip.id}`)}
+            dateLocale={dateLocale}
+          />
+          <button
+            type="button"
+            onClick={onUpload}
+            className="self-start flex items-center gap-1.5 font-sans-medium text-[12px] text-dark/40 hover:text-dark transition-colors mt-0.5"
+          >
+            <Camera className="w-3 h-3" />
+            {t("home.scanTicket")}
+          </button>
+        </>
+      ) : (
+        <div className="flex flex-col items-start gap-3 py-4">
+          <p className="font-sans-normal text-dark/40 text-[13px]">
+            {t("trips.noActiveTrips")}
+          </p>
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Plus className="w-3.5 h-3.5" />}
+            onClick={() => navigate("/reports")}
+          >
+            {t("home.createFirst")}
+          </Button>
+        </div>
+      )}
+    </div>
 
-      {/* Left: active report + in-review stats */}
-      <main className="min-w-0 px-10 md:px-16 pt-4 pb-7 lg:pb-9 space-y-6">
-
-        <section>
-          <SectionHeader icon={<FileText />} title={t("home.activeTrip")} />
-          {currentTrip ? (
-            <ReportCard
-              report={currentTrip}
-              onClick={() => navigate(`/reports/${currentTrip.id}`)}
-              onUpload={onUpload}
-              uploadLabel={t("home.scanTicket")}
+    {/* In review */}
+    {inReviewReports.length > 0 && (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-1.5">
+          <p className="text-[11px] font-sans-semibold text-dark/45">{t("dashboard.inReview")}</p>
+          <span className="text-[11px] font-sans-bold text-dark/25 tabular-nums">
+            {inReviewReports.length}
+          </span>
+        </div>
+        <div className="w-full">
+          {inReviewReports.map((r) => (
+            <ReportRowItem
+              key={r.id}
+              report={r}
+              onClick={() => navigate(`/reports/${r.id}`)}
               dateLocale={dateLocale}
             />
-          ) : (
-            <PixelCard shadowOffset={3} bg="var(--color-surface-card)" className="w-full">
-              <div className="flex flex-col items-center text-center py-10 px-6 gap-3">
-                <div
-                  style={{
-                    width: 52, height: 52,
-                    backgroundColor: "#1E3A8A",
-                    border: "2px solid #1E3A8A",
-                    borderRadius: 16,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    boxShadow: `${nbTokens.shadowBadge}px ${nbTokens.shadowBadge}px 0px #172554`,
-                  }}
-                >
-                  <Plane className="w-5 h-5 text-white" />
-                </div>
-                <p className="font-space-bold text-dark" style={{ fontSize: 14 }}>
-                  {t("trips.noActiveTrips")}
-                </p>
-                <p className="font-space" style={{ fontSize: 12, color: `${DARK}40`, maxWidth: 260, lineHeight: 1.6 }}>
-                  {t("trips.primerViajeDesc")}
-                </p>
-                <Button
-                  onClick={() => navigate("/reports")}
-                  variant="primary"
-                  size="sm"
-                  leftIcon={<Plus className="w-3.5 h-3.5" />}
-                >
-                  {t("home.createFirst")}
-                </Button>
-              </div>
-            </PixelCard>
-          )}
-        </section>
+          ))}
+        </div>
+      </div>
+    )}
 
-        {/* En revisión */}
-        <section>
-          <SectionHeader
-            icon={<Clock />}
-            title={t("dashboard.inReview")}
-            count={inReviewCount > 0 ? inReviewCount : undefined}
-          />
-          <PixelCard bg="#FFC83D" className="w-full">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-1 flex flex-col items-center gap-0.5">
-                  <span className="font-space-bold text-dark" style={{ fontSize: 36, letterSpacing: "-1px", lineHeight: 1 }}>
-                    {inReviewCount}
-                  </span>
-                  <span className="font-space-bold" style={{ fontSize: 10, color: `${DARK}60`, letterSpacing: "0.3px" }}>
-                    {t("dashboard.report", { count: inReviewCount })}
-                  </span>
-                </div>
-                <div style={{ width: 2, height: 48, backgroundColor: `${DARK}30` }} />
-                <div className="flex-1 flex flex-col items-center gap-0.5">
-                  <span className="font-space-bold text-dark" style={{ fontSize: 36, letterSpacing: "-1px", lineHeight: 1 }}>
-                    {inReviewAmount.toFixed(0)}€
-                  </span>
-                  <span className="font-space-bold" style={{ fontSize: 10, color: `${DARK}60`, letterSpacing: "0.3px" }}>
-                    {t("dashboard.pendingAmount")}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </PixelCard>
-        </section>
-      </main>
+    {/* Recent completed */}
+    {recentCompleted.length > 0 && (
+      <div className="flex flex-col gap-2">
+        <p className="text-[11px] font-sans-semibold text-dark/45">{t("home.recentActivity")}</p>
+        <div className="w-full">
+          {recentCompleted.map((r) => (
+            <ReportRowItem
+              key={r.id}
+              report={r}
+              onClick={() => navigate(`/reports/${r.id}`)}
+              dateLocale={dateLocale}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => navigate("/reports")}
+          className="self-start flex items-center gap-1 font-sans-medium text-[12px] text-dark/40 hover:text-dark transition-colors mt-0.5"
+        >
+          {t("common.viewAll")}
+          <ChevronRight className="w-3 h-3" />
+        </button>
+      </div>
+    )}
 
-      {/* Separator */}
-      <div className="hidden lg:block self-stretch" style={{ width: 2, backgroundColor: BORDER }} />
-
-      {/* Right: recent history */}
-      <aside className="px-8 md:px-10 py-7 lg:py-9">
-        {recentCompleted.length > 0 ? (
-          <section>
-            <SectionHeader icon={<Clock />} title={t("home.recentActivity")} count={recentCompleted.length} />
-            <div className="space-y-2.5">
-              {recentCompleted.map((r) => (
-                <ReportRow
-                  key={r.id}
-                  report={r}
-                  onClick={() => navigate(`/reports/${r.id}`)}
-                  dateLocale={dateLocale}
-                />
-              ))}
-            </div>
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/reports")}
-              className="w-full mt-1 border-t-2 border-border-main rounded-none"
-              rightIcon={<ChevronRight className="w-3.5 h-3.5" />}
-            >
-              {t("common.viewAll")}
-            </Button>
-          </section>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
-            <Clock className="w-7 h-7" style={{ color: `${DARK}20` }} />
-            <p className="font-space-semibold" style={{ fontSize: 12, color: `${DARK}30` }}>
-              {t("home.recentActivity")}
-            </p>
-            <p className="font-space" style={{ fontSize: 11, color: `${DARK}25` }}>
-              {t("trips.noCompletedTrips")}
-            </p>
-          </div>
-        )}
-      </aside>
-    </div>
   </div>
 );
 
@@ -261,11 +211,12 @@ export const RegularDashboard = () => {
       amounts,
       currentTrip,
       teamMemberCount: users?.length ?? 0,
+      inReviewReports,
       inReviewCount: inReviewReports.length,
       inReviewAmount: inReviewReports.reduce((acc: number, r) => acc + (r.requested_amount ?? 0), 0),
       recentCompleted: reports
         .filter((r) => ["APPROVED", "PAID", "DECLINED", "REJECTED"].includes(r.status.toUpperCase()))
-        .slice(0, 5),
+        .slice(0, 4),
     };
   }, [reports, users]);
 
@@ -273,7 +224,7 @@ export const RegularDashboard = () => {
 
   const {
     reportsByStatus, amounts, currentTrip,
-    teamMemberCount, inReviewCount, inReviewAmount, recentCompleted,
+    teamMemberCount, inReviewReports, recentCompleted,
   } = data;
 
   const firstName = user?.name?.split(" ")[0] || t("layout.defaultUser");
@@ -287,10 +238,10 @@ export const RegularDashboard = () => {
       <>
         <UserDashboard
           currentTrip={currentTrip}
-          inReviewCount={inReviewCount}
-          inReviewAmount={inReviewAmount}
+          inReviewReports={inReviewReports}
           recentCompleted={recentCompleted}
           firstName={firstName}
+          todayLabel={new Date().toLocaleDateString(i18n.language, { weekday: "long", day: "numeric", month: "long" })}
           navigate={navigate}
           onUpload={() => setIsUploadModalOpen(true)}
           dateLocale={dateLocale}
@@ -390,15 +341,17 @@ export const RegularDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           {amounts.approved > 0 && (
-            <div className={`bg-success/5 border border-success/20 ${radius.card} p-5 flex items-center justify-between`}>
-              <div className="flex items-center gap-3.5">
-                <div className={`w-10 h-10 bg-success/10 ${radius.sm} flex items-center justify-center text-success`}>
-                  <CheckCircle className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className={tokens.statCardLabel + " !text-success"}>{t("home.totalApproved")}</p>
-                  <p className="text-xl font-bold text-success">{amounts.approved.toFixed(2)} €</p>
-                </div>
+            <div className="flex items-center gap-3 p-4 rounded-lg border border-green-100 bg-green-50/50">
+              <div className="w-9 h-9 rounded-md bg-green-100 flex items-center justify-center text-success shrink-0">
+                <CheckCircle className="w-4 h-4" aria-hidden={true} />
+              </div>
+              <div>
+                <p className="text-[11px] font-sans-semibold uppercase tracking-wide text-success">
+                  {t("home.totalApproved")}
+                </p>
+                <p className="text-[18px] font-sans-bold text-success leading-none mt-0.5 tabular-nums">
+                  {amounts.approved.toFixed(2)} €
+                </p>
               </div>
             </div>
           )}

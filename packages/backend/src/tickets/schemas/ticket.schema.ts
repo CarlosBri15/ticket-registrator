@@ -9,7 +9,8 @@ import {
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { reports } from '../../reports/schemas/report.schema';
-import { items } from '../../items/schemas/item.schema';
+import { items, Item } from '../../items/schemas/item.schema';
+import { Category } from '../../categories/schemas/category.schema';
 import { ticketHistories } from '../../history/history.schema';
 import { TicketStatus, TicketLifecycle } from '@ticket-registrator/shared';
 
@@ -66,3 +67,7 @@ export const ticketRelations = relations(tickets, ({ one, many }) => ({
 
 export type Ticket = typeof tickets.$inferSelect;
 export type InsertTicket = typeof tickets.$inferInsert;
+
+export type TicketWithItems = Ticket & {
+  items?: (Item & { category?: Category | null })[];
+};

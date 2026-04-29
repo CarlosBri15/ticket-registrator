@@ -15,6 +15,17 @@ export class ReportsRepository {
   async findById(id: string): Promise<Report | undefined> {
     return this.db.query.reports.findFirst({
       where: and(eq(schema.reports.id, id), isNull(schema.reports.deletedAt)),
+      with: {
+        tickets: {
+          with: {
+            items: {
+              with: {
+                category: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 

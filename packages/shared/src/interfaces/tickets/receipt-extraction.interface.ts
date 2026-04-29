@@ -14,7 +14,8 @@ export interface IReceiptExtraction {
   items?: Array<{
     description: string;
     price: number;
-    expense_type?: string;
+    category?: string;
+    categoryId?: string;
   }>;
   total?: number;
   converted_amount?: number;

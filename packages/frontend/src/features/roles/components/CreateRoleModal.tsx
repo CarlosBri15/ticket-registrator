@@ -13,11 +13,11 @@ import { AlertError, getApiErrorMessage } from "../../../components/ui/Alert";
 
 // System role names are universal; only "Empleado" uses a translation key.
 const HIERARCHY_LEVELS = [
-  { min: 100, labelKey: "SuperAdmin",          color: "bg-purple-100 text-purple-700" },
-  { min: 99,  labelKey: "Admin",               color: "bg-brand/10 text-brand" },
-  { min: 50,  labelKey: "Manager",             color: "bg-amber-100 text-amber-700" },
-  { min: 40,  labelKey: "Controller",          color: "bg-blue-100 text-blue-700" },
-  { min: 1,   labelKey: "roles.levelEmployee", color: "bg-gray-100 text-gray-600" },
+  { min: 100, labelKey: "SuperAdmin",          color: "bg-purple-50 text-purple-700" },
+  { min: 99,  labelKey: "Admin",               color: "bg-blue-50 text-blue-700" },
+  { min: 50,  labelKey: "Manager",             color: "bg-amber-50 text-amber-700" },
+  { min: 40,  labelKey: "Controller",          color: "bg-emerald-50 text-emerald-700" },
+  { min: 1,   labelKey: "roles.levelEmployee", color: "bg-[var(--color-secondary)] text-dark/70" },
 ] as const;
 
 export const getHierarchyMeta = (h: number) =>
@@ -88,46 +88,48 @@ export const CreateRoleModal = ({
       subtitle={t("roles.createRoleSubtitle")}
       size="xl"
     >
-      <div className="space-y-4">
-        {mutation.error && (
-          <AlertError message={getApiErrorMessage(mutation.error)} />
-        )}
+      <div className="flex flex-col gap-5">
+        {mutation.error && <AlertError message={getApiErrorMessage(mutation.error)} />}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* ── Left: Existing roles reference ── */}
-          <div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+          <div className="flex flex-col gap-2">
+            <p className="text-[11px] font-sans-bold text-dark/70 uppercase tracking-wide">
               {t("roles.currentHierarchies")}
             </p>
             {sortedRoles.length === 0 ? (
-              <p className="text-sm text-gray-400 italic">{t("roles.empty")}</p>
+              <p className="text-[13px] font-sans-normal text-dark/45 italic">
+                {t("roles.empty")}
+              </p>
             ) : (
-              <div className="space-y-1.5">
+              <div className="rounded-md border border-[var(--color-border-main)] bg-[var(--color-surface-card)] overflow-hidden">
                 {sortedRoles.map((role) => {
                   const meta = getHierarchyMeta(role.hierarchy);
                   return (
                     <div
                       key={role.id}
-                      className="flex items-center justify-between gap-2 py-1.5 px-2 bg-gray-50 rounded-lg"
+                      className="flex items-center justify-between gap-2 px-3 py-2 border-b border-[var(--color-border-main)] last:border-b-0"
                     >
-                      <span className="text-sm font-medium text-dark truncate">
+                      <span className="text-[13px] font-sans-medium text-dark truncate">
                         {role.name}
                       </span>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${meta.color}`}>
-                        {resolveLabel(meta.labelKey)} ({role.hierarchy})
+                      <span
+                        className={`text-[10px] font-sans-bold px-1.5 py-0.5 rounded shrink-0 ${meta.color}`}
+                      >
+                        {resolveLabel(meta.labelKey)} · {role.hierarchy}
                       </span>
                     </div>
                   );
                 })}
               </div>
             )}
-            <p className="text-xs text-gray-400 mt-3 leading-relaxed">
+            <p className="text-[12px] font-sans-normal text-dark/45 leading-relaxed">
               {t("roles.hierarchyHint")}
             </p>
           </div>
 
           {/* ── Right: Form ── */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <Input
               label={`${t("roles.nameLabel")} *`}
               value={name}
@@ -137,7 +139,7 @@ export const CreateRoleModal = ({
               autoFocus
             />
 
-            <div>
+            <div className="flex flex-col gap-1">
               <Input
                 label={`${t("roles.hierarchyLabel")} *`}
                 type="number"
@@ -145,11 +147,13 @@ export const CreateRoleModal = ({
                 max={99}
                 step={1}
                 value={hierarchyStr}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHierarchyStr(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setHierarchyStr(e.target.value)
+                }
                 required
               />
               {hierarchyMeta && (
-                <p className="text-xs text-gray-400 -mt-1 ml-1">
+                <p className="text-[11px] font-sans-medium text-dark/55 ml-1">
                   → {resolveLabel(hierarchyMeta.labelKey)}
                 </p>
               )}
@@ -163,10 +167,15 @@ export const CreateRoleModal = ({
             />
 
             <div className="flex gap-3 pt-2">
-              <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
+              <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
                 {t("common.cancel")}
               </Button>
-              <Button type="submit" isLoading={mutation.isPending} disabled={!isValid} className="flex-1">
+              <Button
+                type="submit"
+                isLoading={mutation.isPending}
+                disabled={!isValid}
+                className="flex-1"
+              >
                 {t("roles.createRole")}
               </Button>
             </div>

@@ -10,7 +10,7 @@ const mapItemToIItem = (item: Item): IItem => ({
   amount: item.amount,
   currency: item.currency,
   status: item.status,
-  expense_type: item.expenseType,
+  categoryId: item.categoryId,
 });
 
 @Injectable()

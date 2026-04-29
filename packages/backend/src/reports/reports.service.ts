@@ -10,7 +10,6 @@ import {
   isNull,
   sql,
   SQL,
-  inArray,
 } from 'drizzle-orm';
 import {
   IReport,
@@ -59,8 +58,8 @@ export class ReportsService {
 
     const overlapping = await this.reportsRepository.findOverlapping(
       requester.id,
-      new Date(dto.start_date!),
-      new Date(dto.end_date!),
+      new Date(dto.start_date),
+      new Date(dto.end_date),
     );
 
     if (overlapping) {
@@ -72,10 +71,10 @@ export class ReportsService {
       requestedAmount: 0,
       approvedAmount: 0,
       status: ReportStatus.CREATED,
-      name: dto.name as string,
-      startDate: new Date(dto.start_date!),
-      endDate: new Date(dto.end_date!),
-      currency: dto.currency as string,
+      name: dto.name,
+      startDate: new Date(dto.start_date),
+      endDate: new Date(dto.end_date),
+      currency: dto.currency,
       type: dto.type ?? '',
     });
 
@@ -156,6 +155,8 @@ export class ReportsService {
       report,
     );
     if (!allowed) throw new ReportUnauthorizedException();
+
+    console.log(report);
 
     return mapReportToIReport(report);
   }
@@ -264,15 +265,15 @@ export class ReportsService {
     } else if (maxHierarchy >= AUTHORITY_LEVELS.COMPANY) {
       conditions.push(
         and(
-          eq(schema.users.companyId, requester.companyId),
+          eq(schema.users.companyId, requester.companyId!),
           isNull(schema.users.deletedAt),
         )!,
       );
     } else if (maxHierarchy >= AUTHORITY_LEVELS.DEPARTMENT) {
       conditions.push(
         and(
-          eq(schema.users.companyId, requester.companyId),
-          sql`EXISTS (SELECT 1 FROM ${schema.usersToDepartments} WHERE ${schema.usersToDepartments.userId} = ${schema.users.id} AND ${inArray(schema.usersToDepartments.departmentId, requester.departmentIds)})`,
+          eq(schema.users.companyId, requester.companyId!),
+          sql`EXISTS (SELECT 1 FROM ${schema.usersToDepartments} ud WHERE ud.user_id = ${schema.users.id} AND ud.department_id = ANY(${requester.departmentIds}::uuid[]))`,
           isNull(schema.users.deletedAt),
         )!,
       );

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import { TicketDetailModal } from './TicketDetailModal';
-import type { ITicket } from '@ticket-registrator/shared';
+
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -25,22 +25,33 @@ jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-const baseTicket = {
+const baseTicket: any = {
   id: 'ticket-1',
-  status: 'CREATED' as any,
+  report_id: 'report-1',
+  lifecycle: 'Draft',
+  version: 1,
+  status: 'Pending',
+  cgs_bucket_link: null,
   location_name: 'Restaurante Test',
   location_address: 'Calle Mayor 1',
   date: '2024-03-15T00:00:00.000Z',
   amount: 42.5,
   currency: 'EUR',
+  converted_amount: null,
+  converted_currency: null,
+  cgs_bucket_link_justification: null,
   payment_type: 'Tarjeta',
-  expense_type: 'Comida',
   last_four_digits: '1234',
+  image_id: null,
+  flag: false,
+  llm_comment: null,
   items: [
-    { id: 'i1', name: 'Menú', amount: 30, currency: 'EUR', status: 'PAID' as any, expense_type: 'Food' },
-    { id: 'i2', name: 'Bebida', amount: 12.5, currency: 'EUR', status: 'PAID' as any, expense_type: 'Food' },
+    { id: 'i1', name: 'Menú', amount: 30, currency: 'EUR', status: 'Pending', categoryId: 'cat1', categoryName: 'Comida' },
+    { id: 'i2', name: 'Bebida', amount: 12.5, currency: 'EUR', status: 'Pending', categoryId: 'cat1', categoryName: 'Comida' },
   ],
-} as unknown as ITicket;
+  createdAt: '2024-03-15T00:00:00.000Z',
+  updatedAt: '2024-03-15T00:00:00.000Z',
+};
 
 describe('TicketDetailModal — read-only view', () => {
   it('does not render when ticket is null', () => {
@@ -73,7 +84,7 @@ describe('TicketDetailModal — read-only view', () => {
     // Open image modal
     const { Pressable } = require('react-native');
     const buttons = UNSAFE_queryByType(Pressable);
-    fireEvent.press(buttons!);
+    fireEvent.press(buttons);
 
     expect(getByText('ticketDetail.noImage')).toBeTruthy();
   });
@@ -87,7 +98,7 @@ describe('TicketDetailModal — read-only view', () => {
     // Open image modal
     const { Pressable, ActivityIndicator } = require('react-native');
     const buttons = UNSAFE_queryByType(Pressable);
-    fireEvent.press(buttons!);
+    fireEvent.press(buttons);
 
     const indicators = UNSAFE_getAllByType(ActivityIndicator);
     expect(indicators.length).toBeGreaterThanOrEqual(1);
@@ -115,7 +126,7 @@ describe('TicketDetailModal — read-only view', () => {
     const { Pressable } = require('react-native');
     const buttons = UNSAFE_getAllByType(Pressable);
     // The X button is the last one in the header actions in this case
-    fireEvent.press(buttons[2]); 
+    fireEvent.press(buttons[2]);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -188,6 +199,7 @@ describe('TicketDetailModal — edit flow', () => {
     expect(getByDisplayValue('Restaurante Test')).toBeTruthy();
     expect(getByDisplayValue('EUR')).toBeTruthy();
     expect(getByDisplayValue('Tarjeta')).toBeTruthy();
+    expect(getByDisplayValue('cat1')).toBeTruthy();
   });
 
   it('pre-populates amount as string', () => {
@@ -263,7 +275,7 @@ describe('TicketDetailModal — edit flow', () => {
   });
 
   it('passes null for empty string fields when saving', () => {
-    const ticket = { ...baseTicket, location_name: null, payment_type: null, expense_type: null, amount: null } as any;
+    const ticket = { ...baseTicket, location_name: null, payment_type: null, items: [], amount: null };
     const mutate = jest.fn();
     const shared = require('@ticket-registrator/shared');
     (shared.useUpdateTicketMutation as jest.Mock).mockReturnValue({ mutate, isPending: false });
@@ -370,5 +382,13 @@ describe('TicketDetailModal — edit flow', () => {
     expect(getByDisplayValue('Efectivo')).toBeTruthy();
   });
 
-  // expense_type is not editable in current form UI, removing test
+  it('updates categoryId when user types', () => {
+    const { getByTestId, getByPlaceholderText, getByDisplayValue } = render(
+      <TicketDetailModal visible={true} onClose={jest.fn()} ticket={baseTicket} reportId="r1" isEditable={true} />,
+    );
+    fireEvent.press(getByTestId('icon-edit-2'));
+    const input = getByPlaceholderText('confirmForm.categoryPlaceholder');
+    fireEvent.changeText(input, 'Transporte');
+    expect(getByDisplayValue('Transporte')).toBeTruthy();
+  });
 });

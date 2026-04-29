@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx vitest *)",
+      "Bash(git stash *)",
+      "Bash(npx tsc *)",
+      "Bash(cat)",
+      "Bash(chmod +x /tmp/audit_files.sh)",
+      "Bash(bash /tmp/audit_files.sh)",
+      "Bash(grep -oE '\"name\":\"[^\"]*\",\"status\":\"failed\"' \"C:\\\\\\\\Users\\\\\\\\carlo\\\\\\\\.claude\\\\\\\\projects\\\\\\\\C--Users-carlo-OneDrive-Escritorio-ticket-registrator-ticket-registrator\\\\\\\\7edc79df-ae23-4e15-900c-08a175098ad5\\\\\\\\tool-results\\\\\\\\b3eb58n1n.txt\")",
+      "Bash(python -c \"import sys, json; d=json.load\\(sys.stdin\\); fails=[t['name'] for t in d['testResults'] if t['status']=='failed']; print\\('\\\\n'.join\\(fails\\)\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(grep -n \"RoleSelect\\\\|fieldRole\\\\|users\\\\\\\\.role\" src/features/users/components/CreateUserModal.tsx)"
+    ]
+  }
+}

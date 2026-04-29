@@ -32,7 +32,8 @@ describe('Input', () => {
   it('applies normal border when no error', () => {
     const { container } = render(<Input label="Email" />);
     const input = container.querySelector('input');
-    expect(input?.className).toContain('border-slate-200');
+    expect(input?.className).toContain('border-[var(--color-border-main)]');
+    expect(input?.className).not.toContain('border-danger');
   });
 
   it('passes extra props to input', () => {

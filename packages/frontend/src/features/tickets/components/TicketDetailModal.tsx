@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { Modal } from "../../../components/ui/Modal";
-import { PixelCard } from "../../../components/ui/PixelCard";
 import { useTicketImageQuery, type ITicket } from "@ticket-registrator/shared";
-import { ticketIcon } from "@ticket-registrator/shared/assets";
 import { format } from "date-fns";
 import { useDateLocale } from "../../../hooks/useDateLocale";
 import { useTranslation } from "react-i18next";
@@ -41,7 +39,7 @@ export const TicketDetailModal = ({
   const [imageOpen, setImageOpen] = useState(false);
 
   const itemApproval = useItemApproval();
-  const ticketForm   = useTicketForm();
+  const ticketForm = useTicketForm();
 
   const { data: imageData, isLoading: isLoadingImage } = useTicketImageQuery(
     reportId,
@@ -57,11 +55,14 @@ export const TicketDetailModal = ({
   const formattedCreatedAt = ticket.createdAt
     ? format(new Date(ticket.createdAt), "d MMM yyyy · HH:mm", { locale: dateLocale }) : null;
 
-  const paymentValue = ticket.payment_type
-    ? ticket.last_four_digits
-      ? `${ticket.payment_type} •••• ${ticket.last_four_digits}`
-      : ticket.payment_type
-    : null;
+  let paymentValue = null;
+  if (ticket.payment_type) {
+    const pType = ticket.payment_type.toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+    paymentValue = ticket.last_four_digits
+      ? `${pType} •••• ${ticket.last_four_digits}`
+      : pType;
+  }
+
 
   const handleClose = () => {
     ticketForm.cancelEdit();
@@ -70,38 +71,36 @@ export const TicketDetailModal = ({
     onClose();
   };
 
-  const CloseBtn = () => (
+  const renderCloseBtn = () => (
     <button type="button" onClick={handleClose} className={tokens.modalClose}>
       <X className="w-4 h-4" />
     </button>
   );
 
-  const headerActions = !ticketForm.isEditing ? (
-    <>
-      <PixelCard bg="var(--color-surface-card)" shadowOffset={3} radius={8} onClick={() => setImageOpen((v) => !v)}>
-        <div className="w-9 h-9 flex items-center justify-center">
-          <Camera className="w-4 h-4 text-dark" />
-        </div>
-      </PixelCard>
+  const headerActions = ticketForm.isEditing ? renderCloseBtn() : (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setImageOpen((v) => !v)}
+        className="w-10 h-10 flex items-center justify-center text-dark/30 hover:text-dark hover:bg-dark/5 rounded-full transition-colors duration-200"
+      >
+        <Camera className="w-[18px] h-[18px]" />
+      </button>
       {isEditable && (
-        <PixelCard
-          bg="#1E3A8A"
-          borderColor="#1E3A8A"
-          shadowColor="#172554"
-          shadowOffset={3}
-          radius={8}
+        <button
+          type="button"
           onClick={() => ticketForm.startEdit(ticket)}
+          className="w-10 h-10 flex items-center justify-center text-dark/30 hover:text-dark hover:bg-dark/5 rounded-full transition-colors duration-200"
         >
-          <div data-testid="edit-ticket-btn" className="w-9 h-9 flex items-center justify-center">
-            <svg className="w-4 h-4 text-surface-card" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-          </div>
-        </PixelCard>
+          <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+        </button>
       )}
-      <CloseBtn />
-    </>
-  ) : <CloseBtn />;
+      {renderCloseBtn()}
+    </div>
+  );
+
 
   return (
     <Modal
@@ -109,7 +108,7 @@ export const TicketDetailModal = ({
       onClose={handleClose}
       size="3xl"
       title={ticket.location_name || t("reportDetail.noTicketName")}
-      icon={<img src={ticketIcon} alt="" className="w-9 h-9 object-contain select-none" />}
+      subtitle={formattedDate || undefined}
       actions={headerActions}
       hideDefaultClose
       sidePanel={imageOpen ? (
@@ -130,13 +129,10 @@ export const TicketDetailModal = ({
           isSaving={ticketForm.isSaving}
         />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_2px_minmax(0,3fr)] gap-4 lg:gap-0">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_2px_minmax(0,3fr)] gap-8">
 
           {/* Left: ticket data */}
-          <div className="lg:pr-4">
-            <p className="text-sm font-space-bold text-dark mb-2 px-1">
-              {t("ticketDetail.ticketData")}
-            </p>
+          <div className="flex flex-col gap-4 pl-4 pb-4">
             <PhysicalReceiptCard
               ticket={ticket}
               formattedDate={formattedDate}

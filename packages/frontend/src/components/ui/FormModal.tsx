@@ -36,7 +36,7 @@ export const FormModal = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} subtitle={subtitle} size={size}>
       <form onSubmit={onSubmit} className="space-y-4">
-        {error && <AlertError message={getApiErrorMessage(error)} />}
+        {error ? <AlertError message={getApiErrorMessage(error)} /> : null}
 
         {children}
 

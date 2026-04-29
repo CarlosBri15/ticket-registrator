@@ -17,100 +17,84 @@ export const PhysicalReceiptCard = ({
 }: PhysicalReceiptCardProps) => {
   const { t } = useTranslation();
 
-  // Deterministic fake barcode based on ticket ID
-  const seed = ticket.id
-    ? ticket.id.charCodeAt(ticket.id.length - 1) + ticket.id.charCodeAt(0)
-    : 42;
-
   return (
-    <div className="relative w-full bg-[var(--color-surface-card)] border-2 border-border-main p-6 shadow-hard-lg font-mono text-dark">
-      {/* Header */}
-      <div className="text-center pb-5 border-b-2 border-dashed border-border-main">
-        <h3 className="text-xl font-bold tracking-[0.2em] uppercase mb-1">
-          {t("ticketDetail.receipt").toUpperCase()}
-        </h3>
-        <p className="text-[10px] text-dark/40 uppercase font-bold tracking-[0.3em]">
-          NO.{ticket.id?.substring(0, 8) || "00000000"}
-        </p>
-      </div>
-
-      {/* Amount Box */}
-      <div className="py-7 text-center border-b-2 border-dashed border-border-main">
-        <p className="text-[10px] font-bold text-dark/40 mb-1 tracking-[0.1em] uppercase">
+    <div className="relative w-full">
+      <div className="w-full bg-white border-x border-t border-border-main rounded-t-xl overflow-hidden shadow-sm">
+      {/* Amount Section */}
+      <div className="p-8 text-center bg-[#FAFAF8]/50 border-b border-border-main">
+        <p className="text-[11px] font-sans-bold text-dark/30 mb-2">
           {t("ticketDetail.totalAmount")}
         </p>
-        <div className="flex justify-center items-baseline gap-1.5">
-          <span className="text-[42px] leading-none font-bold tracking-tighter">
+        <div className="flex justify-center items-baseline gap-2">
+          <span className="text-[48px] leading-none font-sans-bold text-dark tracking-tighter">
             {ticket.amount == null ? "—" : ticket.amount.toLocaleString()}
           </span>
-          <span className="text-lg font-bold text-dark/60">{ticket.currency || ""}</span>
+          <span className="text-xl font-sans-bold text-dark/40">{ticket.currency || ""}</span>
         </div>
       </div>
 
-      {/* Key Details */}
-      <div className="py-6 space-y-3.5 text-[13px] border-b-2 border-dashed border-border-main">
-        <div className="flex justify-between items-start gap-4">
-          <span className="text-dark/40 font-bold uppercase tracking-wider shrink-0">
+      {/* Details List */}
+      <div className="p-6 space-y-5">
+        <div className="flex justify-between items-baseline py-1 border-b border-border-main/40 last:border-0">
+          <span className="text-[11px] font-sans-bold text-dark/30 shrink-0">
             {t("common.date")}
           </span>
-          <span className="font-bold text-right">{formattedDate || "—"}</span>
+          <span className="text-[13px] font-sans-bold text-dark">{formattedDate || "—"}</span>
         </div>
-        <div className="flex justify-between items-start gap-4">
-          <span className="text-dark/40 font-bold uppercase tracking-wider shrink-0">
+        <div className="flex justify-between items-start py-1 border-b border-border-main/40 last:border-0">
+          <span className="text-[11px] font-sans-bold text-dark/30 shrink-0 mt-0.5">
             {t("ticketDetail.merchant")}
           </span>
-          <span className="font-bold text-right line-clamp-2 leading-snug break-words">
+          <span className="text-[13px] font-sans-bold text-dark text-right max-w-[200px] leading-snug">
             {ticket.location_name || "—"}
           </span>
         </div>
-        <div className="flex justify-between items-start gap-4">
-          <span className="text-dark/40 font-bold uppercase tracking-wider shrink-0">
+        <div className="flex justify-between items-start py-1 border-b border-border-main/40 last:border-0">
+          <span className="text-[11px] font-sans-bold text-dark/30 shrink-0 mt-0.5">
             {t("confirmForm.address")}
           </span>
-          <span className="font-bold text-right line-clamp-2 leading-snug text-xs mt-0.5 break-words">
+          <span className="text-[12px] font-sans-semibold text-dark/60 text-right max-w-[220px] leading-relaxed">
             {ticket.location_address || "—"}
           </span>
         </div>
-        <div className="flex justify-between items-start gap-4">
-          <span className="text-dark/40 font-bold uppercase tracking-wider shrink-0">
+        <div className="flex justify-between items-baseline py-1 border-b border-border-main/40 last:border-0">
+          <span className="text-[11px] font-sans-bold text-dark/30 shrink-0">
             {t("ticketDetail.payment")}
           </span>
-          <span className="font-bold text-right uppercase">{paymentValue || "—"}</span>
+          <span className="text-[13px] font-sans-bold text-dark">{paymentValue || "—"}</span>
         </div>
-      </div>
 
-      <div className="pt-6 pb-2">
-        <div className="flex justify-between items-center mb-6">
+        <div className="pt-4 flex justify-between items-center">
           <StatusBadge status={ticket.status} size="sm" />
           {ticket.expense_type && (
-            <span className="text-[10px] font-bold text-brand uppercase tracking-wider px-2 py-1 border-2 border-brand/40 bg-brand/5">
+            <span className="text-[10px] font-sans-bold text-dark/40 bg-dark/5 px-2 py-1 rounded-md">
               {ticket.expense_type}
             </span>
           )}
         </div>
-
-        {/* Barcode visual */}
-        <div className="w-full h-12 opacity-30 flex justify-between items-end px-2 mix-blend-multiply mb-3">
-          {[...Array(30)].map((_, i) => {
-            const isThick = (seed * i * 3) % 7 === 0;
-            const isMid = (seed * i * 7) % 5 === 0;
-            const isTall = (seed * i * 11) % 3 === 0;
-            return (
-              <div
-                key={i}
-                className="bg-dark"
-                style={{
-                  width: isThick ? "4px" : isMid ? "2.5px" : "1px",
-                  height: isTall ? "100%" : "80%",
-                }}
-              />
-            );
-          })}
-        </div>
-        <p className="text-center text-[9px] text-dark/30 tracking-[0.2em] font-bold uppercase">
-          {t("ticketDetail.uploadedOn").toUpperCase()} {formattedCreatedAt || "—"}
-        </p>
       </div>
+
+      <div className="bg-[#FAFAF8] px-6 py-3 border-t border-border-main flex justify-between items-center text-[10px] font-sans-bold text-dark/30">
+        <span>Id: {ticket.id?.substring(0, 8) || "—"}</span>
+        <span>
+          {t("ticketDetail.uploadedOn").toLowerCase().replace(/^\w/, (c) => c.toUpperCase())} {formattedCreatedAt || "—"}
+        </span>
+      </div>
+      </div>
+      
+      {/* ── Zigzag Bottom ────────────────────────────────────────────────── */}
+      <div 
+        className="h-2 w-full bg-white border-x border-b border-border-main"
+        style={{
+          maskImage: 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'8\' viewBox=\'0 0 20 8\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0.5L5 5.5L10 0.5L15 5.5L20 0.5V8H0V0.5Z\' fill=\'black\'/%3E%3C/svg%3E")',
+          maskRepeat: 'repeat-x',
+          maskSize: '20px 8px',
+          WebkitMaskImage: 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'8\' viewBox=\'0 0 20 8\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0.5L5 5.5L10 0.5L15 5.5L20 0.5V8H0V0.5Z\' fill=\'black\'/%3E%3C/svg%3E")',
+          WebkitMaskRepeat: 'repeat-x',
+          WebkitMaskSize: '20px 8px',
+          marginTop: '-1px'
+        }}
+      />
     </div>
   );
 };

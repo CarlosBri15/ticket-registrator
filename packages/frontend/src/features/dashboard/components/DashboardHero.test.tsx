@@ -1,16 +1,14 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import type { ICurrentUser } from '@ticket-registrator/shared';
 import { DashboardHero } from './DashboardHero';
 
-vi.mock('lucide-react', () => ({
-  Sparkles: () => <div data-testid="sparkles-icon" />,
-}));
 
 describe('DashboardHero', () => {
   const mockUser = {
     name: 'Juan Pérez',
     roleName: 'Admin',
-  };
+  } as ICurrentUser;
 
   const mockT = (key: string, opts?: any) => (opts?.name ? `${key} ${opts.name}` : key);
 
@@ -25,7 +23,9 @@ describe('DashboardHero', () => {
         subtitleIcon={<div />}
       />
     );
-    expect(screen.getByText(/home\.greetingDay Juan/)).toBeInTheDocument();
+    expect(
+      screen.getByText((_content, node) => node?.textContent === 'home.greetingDay Juan'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Admin')).toBeInTheDocument();
   });
 

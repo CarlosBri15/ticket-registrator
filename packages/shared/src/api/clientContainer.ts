@@ -7,6 +7,7 @@ import { departmentsApi } from './departments';
 import { rolesApi } from './roles';
 import { organizationsApi } from './organizations';
 import { permissionsApi } from './permissions';
+import { categoriesApi } from './categories';
 
 let client: AxiosInstance | null = null;
 
@@ -30,4 +31,5 @@ export const api = {
     roles: () => rolesApi(getApiClient()),
     organizations: () => organizationsApi(getApiClient()),
     permissions: () => permissionsApi(getApiClient()),
+    categories: () => categoriesApi(getApiClient()),
 };

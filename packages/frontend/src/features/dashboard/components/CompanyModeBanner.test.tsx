@@ -9,6 +9,20 @@ vi.mock('lucide-react', () => ({
   Globe: () => <svg data-testid="icon-globe" />,
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const map: Record<string, string> = {
+        'dashboard.companyModeBanner': 'Modo empresa',
+        'dashboard.companyDetail': 'Detalle',
+        'dashboard.companyGlobalView': 'Vista global',
+      };
+      return map[key] ?? key;
+    },
+    i18n: { language: 'es' },
+  }),
+}));
+
 // ─── Imports after mocks ──────────────────────────────────────────────────────
 
 import { CompanyModeBanner } from './CompanyModeBanner';

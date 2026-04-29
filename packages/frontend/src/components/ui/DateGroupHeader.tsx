@@ -1,6 +1,5 @@
 import { format, isToday, isYesterday } from "date-fns";
 import type { Locale } from "date-fns/locale";
-import { DARK, SHADOW } from "../../features/reports/constants";
 
 interface DateGroupHeaderProps {
   date: Date;
@@ -28,32 +27,12 @@ export const DateGroupHeader = ({
   }
 
   return (
-    <div className="flex items-center gap-3 px-0.5 mb-2.5">
-      <div
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 font-space-bold text-[11px] shrink-0"
-        style={{
-          borderColor: `${DARK}20`,
-          color: DARK,
-          background: "#fff",
-          boxShadow: `2px 2px 0px ${SHADOW}`,
-        }}
-      >
+    <div className="flex items-center gap-3 px-1 mb-2">
+      <span className="text-[11px] font-sans-semibold text-dark/45 leading-none shrink-0">
         {label}
-      </div>
-
-      <div className="h-[1.5px] bg-dark/10 flex-1 rounded-full" />
-
-      <span
-        className="font-space-bold text-[9px] shrink-0"
-        style={{
-          background: "#fff",
-          border: `2px solid ${SHADOW}`,
-          borderRadius: 8,
-          padding: "2px 8px",
-          color: `${DARK}60`,
-          boxShadow: `1.5px 1.5px 0px ${SHADOW}`,
-        }}
-      >
+      </span>
+      <div className="h-px bg-[var(--color-border-main)] flex-1" />
+      <span className="text-[10px] font-sans-bold text-dark/35 tabular-nums shrink-0">
         {count}
       </span>
     </div>

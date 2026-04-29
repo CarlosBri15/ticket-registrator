@@ -13,17 +13,17 @@ import {
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { 
-  IconClock, 
-  IconAlertCircle, 
-  IconArrowLeft, 
-  IconSend, 
-  IconCalendar, 
-  IconCamera, 
-  IconPhoto, 
-  IconFileDescription, 
-  IconChevronRight, 
-  IconX 
+import {
+  IconClock,
+  IconAlertCircle,
+  IconArrowLeft,
+  IconSend,
+  IconCalendar,
+  IconCamera,
+  IconPhoto,
+  IconFileDescription,
+  IconChevronRight,
+  IconX
 } from '@tabler/icons-react-native';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
@@ -110,15 +110,15 @@ const FinancialSummary = React.memo(({
 });
 
 const fs = StyleSheet.create({
-  wrap:        { alignItems: 'flex-end' },
+  wrap: { alignItems: 'flex-end' },
   amountLabel: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 9, color: `${DARK}55`, letterSpacing: 0.2, marginBottom: 2 },
-  amount:      { fontFamily: 'SpaceGrotesk-Bold', fontSize: 28, letterSpacing: -0.8, lineHeight: 32 },
+  amount: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 28, letterSpacing: -0.8, lineHeight: 32 },
   amountSplit: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 20, letterSpacing: -0.5, marginBottom: 2 },
-  currency:    { fontFamily: 'SpaceGrotesk-Bold', fontSize: 10, color: `${DARK}55`, letterSpacing: 0.2 },
-  hintRow:     { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  splitWrap:   { flexDirection: 'row', alignItems: 'flex-start' },
-  splitCol:    { alignItems: 'flex-end', paddingHorizontal: 10 },
-  splitDivider:{ width: 2, backgroundColor: DARK, alignSelf: 'stretch', opacity: 0.1 },
+  currency: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 10, color: `${DARK}55`, letterSpacing: 0.2 },
+  hintRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  splitWrap: { flexDirection: 'row', alignItems: 'flex-start' },
+  splitCol: { alignItems: 'flex-end', paddingHorizontal: 10 },
+  splitDivider: { width: 2, backgroundColor: DARK, alignSelf: 'stretch', opacity: 0.1 },
 });
 
 // ── Screen ─────────────────────────────────────────────────────────────────────
@@ -406,9 +406,9 @@ export default function ReportDetailScreen() {
 }
 
 const s = StyleSheet.create({
-  screen:  { flex: 1, backgroundColor: SCREEN_BG },
-  centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  scroll:  { padding: 20, paddingBottom: 52 },
+  screen: { flex: 1, backgroundColor: SCREEN_BG },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  scroll: { padding: 20, paddingBottom: 52 },
 
   // Header
   header: {
@@ -428,8 +428,8 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerIcon:  { width: 44, height: 44 },
-  headerMid:   { flex: 1, minWidth: 0 },
+  headerIcon: { width: 44, height: 44 },
+  headerMid: { flex: 1, minWidth: 0 },
   headerTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 18, color: DARK },
 
   // Info card
@@ -450,8 +450,8 @@ const s = StyleSheet.create({
     opacity: 0.06,
   },
   uploadRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingBottom: 16 },
-  uploadPrimary:  { flex: 2 },
-  uploadSecondary:{ flex: 1 },
+  uploadPrimary: { flex: 2 },
+  uploadSecondary: { flex: 1 },
   uploadBtnInner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -459,13 +459,13 @@ const s = StyleSheet.create({
     gap: 7,
     paddingVertical: 13,
   },
-  uploadPrimaryText:   { color: 'white', fontFamily: 'SpaceGrotesk-Bold', fontSize: 11, letterSpacing: 0.2 },
-  uploadSecondaryText: { color: DARK,    fontFamily: 'SpaceGrotesk-Bold', fontSize: 11, letterSpacing: 0.2 },
+  uploadPrimaryText: { color: 'white', fontFamily: 'SpaceGrotesk-Bold', fontSize: 11, letterSpacing: 0.2 },
+  uploadSecondaryText: { color: DARK, fontFamily: 'SpaceGrotesk-Bold', fontSize: 11, letterSpacing: 0.2 },
 
   // Section
-  section:       { marginBottom: 8 },
+  section: { marginBottom: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  sectionTitle:  { flex: 1, fontFamily: 'SpaceGrotesk-Bold', fontSize: 12, color: DARK, letterSpacing: 0.3 },
+  sectionTitle: { flex: 1, fontFamily: 'SpaceGrotesk-Bold', fontSize: 12, color: DARK, letterSpacing: 0.3 },
   countPill: {
     backgroundColor: CARD_BG,
     paddingHorizontal: 10,
@@ -484,10 +484,10 @@ const s = StyleSheet.create({
     paddingVertical: 11,
     gap: 10,
   },
-  ticketIcon:    { width: 44, height: 44 },
-  ticketName:    { fontFamily: 'SpaceGrotesk-Bold', fontSize: 11, color: DARK, marginBottom: 3 },
-  ticketMeta:    { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  ticketDate:    { fontFamily: 'SpaceGrotesk-Medium', fontSize: 9, color: `${DARK}60` },
+  ticketIcon: { width: 44, height: 44 },
+  ticketName: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 11, color: DARK, marginBottom: 3 },
+  ticketMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  ticketDate: { fontFamily: 'SpaceGrotesk-Medium', fontSize: 9, color: `${DARK}60` },
   expensePill: {
     backgroundColor: `${colors.brand}18`,
     paddingHorizontal: 6,
@@ -496,22 +496,22 @@ const s = StyleSheet.create({
     borderColor: colors.brand,
     borderRadius: 4,
   },
-  expenseText:    { fontFamily: 'SpaceGrotesk-Bold', fontSize: 8, color: colors.brand },
-  ticketAmount:   { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK },
+  expenseText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 8, color: colors.brand },
+  ticketAmount: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK },
   ticketCurrency: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 8, color: `${DARK}55` },
 
   // Empty state
   emptyInner: { alignItems: 'center', paddingVertical: 32, paddingHorizontal: 24, gap: 8 },
-  emptyIcon:  { width: 64, height: 64, marginBottom: 4 },
+  emptyIcon: { width: 64, height: 64, marginBottom: 4 },
   emptyTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK, letterSpacing: 0.3 },
-  emptyText:  { fontFamily: 'SpaceGrotesk-Medium', fontSize: 11, color: `${DARK}60`, textAlign: 'center', lineHeight: 16 },
+  emptyText: { fontFamily: 'SpaceGrotesk-Medium', fontSize: 11, color: `${DARK}60`, textAlign: 'center', lineHeight: 16 },
 
   // Error state
   errorInner: { alignItems: 'center', padding: 24, gap: 10 },
   errorTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 14, color: DARK, textAlign: 'center' },
-  errorText:  { fontFamily: 'SpaceGrotesk-Medium', fontSize: 11, color: `${DARK}60`, textAlign: 'center' },
+  errorText: { fontFamily: 'SpaceGrotesk-Medium', fontSize: 11, color: `${DARK}60`, textAlign: 'center' },
   errorBtnInner: { paddingHorizontal: 20, paddingVertical: 10 },
-  errorBtnText:  { color: 'white', fontFamily: 'SpaceGrotesk-Bold', fontSize: 12, letterSpacing: 0.2 },
+  errorBtnText: { color: 'white', fontFamily: 'SpaceGrotesk-Bold', fontSize: 12, letterSpacing: 0.2 },
 
   // Modal confirmation
   modalHandle: {

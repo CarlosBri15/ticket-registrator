@@ -15,8 +15,8 @@ export interface BaseSelectProps {
   emptyI18nKey: 'ui.selectOption' | 'ui.selectOptions';
   open: boolean;
   onToggle: () => void;
-  triggerRef: React.RefObject<HTMLButtonElement>;
-  containerRef: React.RefObject<HTMLDivElement>;
+  triggerRef: React.RefObject<HTMLButtonElement | null>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
   handleKeyDown: (e: React.KeyboardEvent) => void;
   dropdownStyle: React.CSSProperties;
   nativeSelect: React.ReactNode;

@@ -1,19 +1,24 @@
-import type { ReactNode } from "react";
-import { tokens } from "../../styles/theme";
+import type { ReactNode } from 'react';
 
 interface EmptyStateProps {
   icon: ReactNode;
   title: string;
   description: string;
+  action?: ReactNode;
   className?: string;
 }
 
-export const EmptyState = ({ icon, title, description, className }: EmptyStateProps) => (
-  <div className={`${tokens.emptyState} ${className ?? ""}`}>
-    <div className={tokens.emptyStateIcon}>
+export const EmptyState = ({ icon, title, description, action, className }: EmptyStateProps) => (
+  <div
+    className={`flex flex-col items-center justify-center text-center py-14 px-6 gap-2 ${className ?? ''}`}
+  >
+    <div className="w-10 h-10 rounded-lg bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 mb-1">
       {icon}
     </div>
-    <h3 className="text-base font-space-bold text-dark mb-1">{title}</h3>
-    <p className={tokens.emptyStateText}>{description}</p>
+    <h3 className="text-[14px] font-sans-semibold text-dark">{title}</h3>
+    <p className="text-[13px] font-sans-normal text-dark/55 max-w-sm leading-relaxed">
+      {description}
+    </p>
+    {action && <div className="mt-2">{action}</div>}
   </div>
 );

@@ -5,9 +5,7 @@ import {
   Pencil,
   Plane,
   ChevronRight,
-  Clock,
   ArrowLeft,
-  FileText
 } from "lucide-react";
 import {
   useUsersQuery,
@@ -22,8 +20,6 @@ import {
   useReportFilterState,
 } from "@ticket-registrator/shared";
 import { EditUserModal } from "../components/EditUserModal";
-import { PixelCard } from "../../../components/ui/PixelCard";
-import { SectionHeader } from "../../../components/ui/SectionHeader";
 import { Button } from "../../../components/ui/Button";
 import { ReportRow } from "../../reports/components/ReportRow";
 import { ReportCard } from "../../reports/components/ReportCard";
@@ -195,8 +191,10 @@ export const UserDetailScreen = () => {
 
             {/* ── Active Report (If Exists) ── */}
             {activeReport && (
-              <section className="space-y-4">
-                <SectionHeader icon={<FileText />} title={t("home.activeTrip")} />
+              <section className="flex flex-col gap-2">
+                <p className="text-[11px] font-sans-semibold text-dark/45">
+                  {t("home.activeTrip")}
+                </p>
                 <ReportCard
                   report={activeReport!}
                   onClick={() => navigate(`/reports/${activeReport!.id}`)}
@@ -205,30 +203,33 @@ export const UserDetailScreen = () => {
               </section>
             )}
 
-            <section className="space-y-4 pb-12">
-              <SectionHeader
-                icon={<Clock />}
-                title={t("users.reportsHistory", "Historial de Reportes")}
-                count={historyReports.length}
-              />
+            <section className="flex flex-col gap-3 pb-12">
+              <div className="flex items-center gap-1.5">
+                <p className="text-[11px] font-sans-semibold text-dark/45">
+                  {t("users.reportsHistory", "Historial de Reportes")}
+                </p>
+                <span className="text-[11px] font-sans-bold text-dark/25 tabular-nums">
+                  {historyReports.length}
+                </span>
+              </div>
               
               <div className="pb-2">
                 <ReportFilterBar
                   search={search}           onSearch={setSearch}
                   statusFilter={statusFilter} onStatus={setStatusFilter}
-                  dateRange={dateRange}     onDateRange={(val) => setDateRange(val)}
+                  dateRange={dateRange as any}     onDateRange={setDateRange as any}
                   hasFilters={hasActiveFilters} onClear={clearFilters}
                 />
               </div>
 
               <div className="space-y-2.5">
                 {historyReports.length === 0 ? (
-                  <PixelCard className="w-full opacity-60">
-                    <div className="flex flex-col items-center py-12 gap-3 text-center">
-                      <Plane className="w-10 h-10 opacity-10" />
-                      <p className="font-space-semibold text-dark/30 text-sm">Sin historial registrado</p>
-                    </div>
-                  </PixelCard>
+                  <div className="flex flex-col items-center py-12 gap-2 text-center border border-[var(--color-border-main)] rounded-lg bg-[var(--color-surface-card)]">
+                    <Plane className="w-4 h-4 text-dark/25" aria-hidden={true} />
+                    <p className="font-sans-medium text-[13px] text-dark/55">
+                      {t("users.noHistory", "Sin historial registrado")}
+                    </p>
+                  </div>
                 ) : (
                   historyReports.map((report) => (
                     <ReportRow 

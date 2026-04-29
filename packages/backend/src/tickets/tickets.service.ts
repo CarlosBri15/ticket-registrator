@@ -27,8 +27,8 @@ import {
   UpdateTicketStatusDto,
 } from './dto/update-ticket-user.dto';
 import * as schema from '../db/schema';
-import { Ticket, InsertTicket } from './schemas/ticket.schema';
-import { InsertItem, Item } from '../items/schemas/item.schema';
+import { Ticket, InsertTicket, TicketWithItems } from './schemas/ticket.schema';
+import { InsertItem } from '../items/schemas/item.schema';
 import { Report as ReportEntity } from '../reports/schemas/report.schema';
 
 @Injectable()
@@ -50,9 +50,7 @@ export class TicketsService {
     file: Express.Multer.File,
     language?: string,
   ): Promise<ITicket> {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
+    const report = await this.getReportOrThrow(reportId);
 
     if (
       !(await this.ticketsAuthService.validateCanModifyReport(
@@ -90,7 +88,9 @@ export class TicketsService {
 
         if (oldRatioStr && newRatioStr) {
           // New format: Check aspect ratio first (tolerance 5%)
-          if (Math.abs(parseFloat(oldRatioStr) - parseFloat(newRatioStr)) > 0.05)
+          if (
+            Math.abs(Number.parseFloat(oldRatioStr) - Number.parseFloat(newRatioStr)) > 0.05
+          )
             continue;
 
           const distance = this.cryptoService.calculateHammingDistance(
@@ -100,9 +100,9 @@ export class TicketsService {
 
           // Hamming distance threshold for 24x24 (576 bits):
           // 20 matches (approx 3% difference) is used as a fast, conservative check for nearly-identical images.
-          // We rely on the subsequent Semantic Check (Date/Amount/Location) to catch duplicates 
+          // We rely on the subsequent Semantic Check (Date/Amount/Location) to catch duplicates
           // with different angles or minor visual variations, avoiding false positive collisions.
-          if (distance <= 20) {
+          if (distance === 0) {
             throw new DuplicateTicketException(
               `This receipt has already been processed (Similarity match)`,
             );
@@ -113,7 +113,7 @@ export class TicketsService {
             newHash,
             oldHash,
           );
-          if (distance <= 2) {
+          if (distance === 0) {
             throw new DuplicateTicketException(
               `This receipt has already been processed (Exact match)`,
             );
@@ -124,6 +124,7 @@ export class TicketsService {
 
     const geminiData = await this.geminiService.extractReceipt(
       imageBase64,
+      requester.companyId,
       file.mimetype || 'image/jpeg',
       language,
     );
@@ -197,7 +198,7 @@ export class TicketsService {
         name: item.description ?? null,
         amount: item.price ?? null,
         currency: report.currency ?? null,
-        expenseType: item.expense_type ?? null,
+        categoryId: item.categoryId ?? null,
         status: ItemStatus.PENDING,
       })) ?? [];
 
@@ -230,16 +231,14 @@ export class TicketsService {
     );
 
     const fullTicket = (await this.ticketsRepository.findById(ticket.id)) as
-      | (Ticket & { items: Item[] })
+      | TicketWithItems
       | undefined;
-    if (!fullTicket) throw new TicketNotFoundException(ticket.id);
+    if (fullTicket?.reportId !== reportId) throw new TicketNotFoundException(ticket.id);
     return mapTicketToITicket(fullTicket);
   }
 
   async findAll(requester: UserPayload, reportId: string): Promise<ITicket[]> {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
+    const report = await this.getReportOrThrow(reportId);
 
     if (
       !(await this.ticketsAuthService.validateCanViewReport(requester, report))
@@ -256,9 +255,7 @@ export class TicketsService {
     reportId: string,
     ticketId: string,
   ): Promise<ITicket> {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
+    const report = await this.getReportOrThrow(reportId);
 
     if (
       !(await this.ticketsAuthService.validateCanViewReport(requester, report))
@@ -267,9 +264,9 @@ export class TicketsService {
     }
 
     const ticket = (await this.ticketsRepository.findById(ticketId)) as
-      | (Ticket & { items: Item[] })
+      | TicketWithItems
       | undefined;
-    if (!ticket || ticket.reportId !== reportId)
+    if (ticket?.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     return mapTicketToITicket(ticket);
@@ -321,9 +318,7 @@ export class TicketsService {
     ticketId: string,
     dto: UpdateTicketStatusDto,
   ): Promise<ITicket> {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
+    const report = await this.getReportOrThrow(reportId);
 
     if (report.status !== ReportStatus.SUBMITTED) {
       throw new TicketStatusConflictException(
@@ -332,7 +327,7 @@ export class TicketsService {
     }
 
     const currentTicket = await this.ticketsRepository.findById(ticketId);
-    if (!currentTicket || currentTicket.reportId !== reportId)
+    if (currentTicket?.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     const oldSnapshot = {
@@ -369,28 +364,12 @@ export class TicketsService {
   }
 
   async remove(requester: UserPayload, reportId: string, ticketId: string) {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
-
-    if (
-      !(await this.ticketsAuthService.validateCanModifyReport(
-        requester,
-        report,
-      ))
-    ) {
-      throw new TicketUnauthorizedException();
-    }
-
-    if (report.status !== ReportStatus.CREATED) {
-      throw new TicketStatusConflictException(
-        'Cannot hide tickets after submission',
-      );
-    }
-
-    const ticket = await this.ticketsRepository.findById(ticketId);
-    if (!ticket || ticket.reportId !== reportId)
-      throw new TicketNotFoundException(ticketId);
+    const { currentTicket: ticket } = await this.getValidatedReportAndTicket(
+      requester,
+      reportId,
+      ticketId,
+      'hide',
+    );
 
     const historyData: typeof schema.ticketHistories.$inferInsert = {
       ticketId,
@@ -403,6 +382,35 @@ export class TicketsService {
     await this.ticketsRepository.softDelete(ticketId, historyData);
 
     this.logger.log(`Ticket removed: ${ticketId} by user ${requester.id}`);
+    return { deleted: true };
+  }
+
+  async hardDelete(requester: UserPayload, reportId: string, ticketId: string) {
+    const { currentTicket: ticket } = await this.getValidatedReportAndTicket(
+      requester,
+      reportId,
+      ticketId,
+      'hard delete',
+    );
+
+    // Delete from GCS first
+    if (ticket.cgsBucketLink) {
+      try {
+        await this.storageService.removeFile(ticket.cgsBucketLink);
+      } catch (error) {
+        this.logger.error(
+          `Failed to delete GCS file ${ticket.cgsBucketLink} during hard delete of ticket ${ticketId}`,
+          error,
+        );
+        // We continue with DB deletion even if GCS fail (optional strategy)
+        // Or we could rethrow if we want strict consistency.
+        // User asked to "fully delete", so we aim for both.
+      }
+    }
+
+    await this.ticketsRepository.hardDelete(ticketId);
+
+    this.logger.log(`Ticket hard deleted: ${ticketId} by user ${requester.id}`);
     return { deleted: true };
   }
 
@@ -419,14 +427,20 @@ export class TicketsService {
     return { url };
   }
 
+  private async getReportOrThrow(reportId: string): Promise<ReportEntity> {
+    const report = await this.reportsRepository.findById(reportId);
+    if (!report || report.deletedAt)
+      throw new ReportNotFoundException(reportId);
+    return report;
+  }
+
   private async getValidatedReportAndTicket(
     requester: UserPayload,
     reportId: string,
     ticketId: string,
+    actionDesc: string = 'edit',
   ): Promise<{ report: ReportEntity; currentTicket: Ticket }> {
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report || report.deletedAt)
-      throw new ReportNotFoundException(reportId);
+    const report = await this.getReportOrThrow(reportId);
 
     if (
       !(await this.ticketsAuthService.validateCanModifyReport(
@@ -439,12 +453,12 @@ export class TicketsService {
 
     if (report.status !== ReportStatus.CREATED) {
       throw new TicketStatusConflictException(
-        'Cannot edit tickets after report submission',
+        `Cannot ${actionDesc} tickets after report submission`,
       );
     }
 
     const currentTicket = await this.ticketsRepository.findById(ticketId);
-    if (!currentTicket || currentTicket.reportId !== reportId)
+    if (currentTicket?.reportId !== reportId)
       throw new TicketNotFoundException(ticketId);
 
     return { report, currentTicket };
@@ -500,7 +514,7 @@ export class TicketsService {
         name: item.name ?? null,
         amount: item.amount ?? null,
         currency: item.currency ?? null,
-        expenseType: item.expense_type ?? null,
+        categoryId: item.categoryId ?? null,
         status: ItemStatus.PENDING,
       }));
       meaningfulChange = true;

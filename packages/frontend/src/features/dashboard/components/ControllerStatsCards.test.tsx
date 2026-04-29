@@ -34,13 +34,13 @@ describe('ControllerStatsCards', () => {
         />
       );
       const title = screen.getByText('RED TITLE');
-      expect(title).toHaveClass('text-red-600');
-      
+      expect(title).toHaveClass('text-red-500');
+
       const statValue = screen.getByTestId('stat-value');
-      expect(statValue).toHaveClass('text-red-700');
+      expect(statValue).toHaveClass('text-red-600');
     });
 
-    it('renders with gray colors when count is 0 and colorClass is red', () => {
+    it('renders with slate colors when count is 0 and colorClass is red', () => {
         render(
           <WeeklyStatsCard
             title="ZERO TITLE"
@@ -51,17 +51,17 @@ describe('ControllerStatsCards', () => {
           />
         );
         const title = screen.getByText('ZERO TITLE');
-        expect(title).toHaveClass('text-gray-400');
-        
+        expect(title).toHaveClass('text-slate-400');
+
         const statValue = screen.getByTestId('stat-value');
         expect(statValue).toHaveClass('text-dark');
       });
   });
 
   describe('PendingAmountCard', () => {
-    it('renders amount formatted to 2 decimal places', () => {
+    it('renders amount rounded to whole units', () => {
       render(<PendingAmountCard amount={123.456} />);
-      expect(screen.getByText('123.46')).toBeInTheDocument();
+      expect(screen.getByText('123')).toBeInTheDocument();
       expect(screen.getByText('Importe pendiente')).toBeInTheDocument();
     });
   });

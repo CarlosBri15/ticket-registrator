@@ -32,18 +32,87 @@ export default function AllTicketsScreen() {
   const {
     tickets,
     isLoading,
-    search,        setSearch,
-    ticketDate,    setTicketDate,
-    uploadDate,    setUploadDate,
-    reportFilter,  setReportFilter,
+    search, setSearch,
+    ticketDate, setTicketDate,
+    uploadDate, setUploadDate,
+    reportFilter, setReportFilter,
     reportOptions,
     hasFilters,
     clearFilters,
-    isDetailOpen,  setIsDetailOpen,
+    isDetailOpen, setIsDetailOpen,
     selectedTicket, setSelectedTicket,
     selectedReportId,
     handleTicketPress,
   } = useTicketsScreen();
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <View style={s.centered}>
+          <ActivityIndicator size="large" color={colors.brand} />
+        </View>
+      );
+    }
+
+    if (tickets.length === 0) {
+      return (
+        <View style={s.centered}>
+          <Image source={ticketIcon} style={s.emptyIcon} contentFit="contain" />
+          <Text style={s.emptyTitle}>SIN TICKETS</Text>
+          <Text style={s.emptyText}>
+            {hasFilters
+              ? 'No hay resultados para los filtros aplicados.'
+              : 'Sube tickets desde tus reportes para verlos aquí.'}
+          </Text>
+        </View>
+      );
+    }
+
+    return tickets.map(ticket => (
+      <PixelCard
+        key={ticket.id}
+        bg={CARD_BG}
+        shadowOffset={3}
+        style={s.ticketCard}
+        onPress={() => handleTicketPress(ticket)}
+      >
+        <View style={s.ticketRow}>
+          <Image source={ticketIcon} style={s.ticketIcon} contentFit="contain" />
+
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={s.ticketName} numberOfLines={1}>
+              {ticket.location_name ?? t('reportDetail.noTicketName')}
+            </Text>
+            <View style={s.pillRow}>
+              {ticket.expense_type ? (
+                <View style={s.expensePill}>
+                  <Text style={s.expenseText}>{ticket.expense_type}</Text>
+                </View>
+              ) : null}
+              <View style={s.reportPill}>
+                <IconFolder size={8} color={`${DARK}50`} />
+                <Text style={s.reportPillText} numberOfLines={1}>{ticket.reportName}</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={s.ticketRight}>
+            <Text style={s.ticketAmount}>
+              {ticket.amount == null ? '—' : ticket.amount.toLocaleString()}
+              {ticket.currency
+                ? <Text style={s.ticketCurrency}> {ticket.currency}</Text>
+                : null}
+            </Text>
+            <Text style={s.ticketDate}>
+              {format(new Date(ticket.createdAt), 'dd/MM/yy')}
+            </Text>
+          </View>
+
+          <IconChevronRight size={16} color={`${DARK}30`} style={{ marginLeft: 4 }} />
+        </View>
+      </PixelCard>
+    ));
+  };
 
   return (
     <View style={s.screen}>
@@ -62,9 +131,9 @@ export default function AllTicketsScreen() {
 
       {/* ── Filters ── */}
       <TicketsFilterPanel
-        search={search}           onSearch={setSearch}
-        ticketDate={ticketDate}   onTicketDate={(s, e) => setTicketDate({ start: s, end: e })}
-        uploadDate={uploadDate}   onUploadDate={(s, e) => setUploadDate({ start: s, end: e })}
+        search={search} onSearch={setSearch}
+        ticketDate={ticketDate} onTicketDate={(s, e) => setTicketDate({ start: s, end: e })}
+        uploadDate={uploadDate} onUploadDate={(s, e) => setUploadDate({ start: s, end: e })}
         reportFilter={reportFilter} onReportFilter={setReportFilter}
         reports={reportOptions}
         hasFilters={hasFilters}
@@ -77,67 +146,9 @@ export default function AllTicketsScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {isLoading ? (
-          <View style={s.centered}>
-            <ActivityIndicator size="large" color={colors.brand} />
-          </View>
-        ) : tickets.length === 0 ? (
-          <View style={s.centered}>
-            <Image source={ticketIcon} style={s.emptyIcon} contentFit="contain" />
-            <Text style={s.emptyTitle}>SIN TICKETS</Text>
-            <Text style={s.emptyText}>
-              {hasFilters
-                ? 'No hay resultados para los filtros aplicados.'
-                : 'Sube tickets desde tus reportes para verlos aquí.'}
-            </Text>
-          </View>
-        ) : (
-          tickets.map(ticket => (
-            <PixelCard
-              key={ticket.id}
-              bg={CARD_BG}
-              shadowOffset={3}
-              style={s.ticketCard}
-              onPress={() => handleTicketPress(ticket)}
-            >
-              <View style={s.ticketRow}>
-                <Image source={ticketIcon} style={s.ticketIcon} contentFit="contain" />
-
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={s.ticketName} numberOfLines={1}>
-                    {ticket.location_name ?? t('reportDetail.noTicketName')}
-                  </Text>
-                  <View style={s.pillRow}>
-                    {ticket.expense_type ? (
-                      <View style={s.expensePill}>
-                        <Text style={s.expenseText}>{ticket.expense_type}</Text>
-                      </View>
-                    ) : null}
-                    <View style={s.reportPill}>
-                      <IconFolder size={8} color={`${DARK}50`} />
-                      <Text style={s.reportPillText} numberOfLines={1}>{ticket.reportName}</Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View style={s.ticketRight}>
-                  <Text style={s.ticketAmount}>
-                    {ticket.amount == null ? '—' : ticket.amount.toLocaleString()}
-                    {ticket.currency
-                      ? <Text style={s.ticketCurrency}> {ticket.currency}</Text>
-                      : null}
-                  </Text>
-                  <Text style={s.ticketDate}>
-                    {format(new Date(ticket.createdAt), 'dd/MM/yy')}
-                  </Text>
-                </View>
-
-                <IconChevronRight size={16} color={`${DARK}30`} style={{ marginLeft: 4 }} />
-              </View>
-            </PixelCard>
-          ))
-        )}
+        {renderContent()}
       </ScrollView>
+
 
       {selectedTicket && (
         <TicketDetailModal

@@ -1,10 +1,5 @@
 import { useMemo } from "react";
-import {
-  TrendingUp,
-  Users,
-  Building2,
-  Shield,
-} from "lucide-react";
+import { TrendingUp, Users, Building2, Shield } from "lucide-react";
 import { StatCard } from "../../components/ui/StatCard";
 import {
   useReportsQuery,
@@ -48,7 +43,10 @@ export const AdminDashboard = () => {
   );
 
   const activeTripsCount = useMemo(
-    () => filteredReports.filter((r) => ["CREATED", "DRAFT", "PENDING"].includes(r.status.toUpperCase())).length,
+    () =>
+      filteredReports.filter((r) =>
+        ["CREATED", "DRAFT", "PENDING"].includes(r.status.toUpperCase()),
+      ).length,
     [filteredReports],
   );
 
@@ -69,7 +67,7 @@ export const AdminDashboard = () => {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300 pb-10">
+    <div className="flex flex-col gap-8">
       {isCompanyMode && (
         <CompanyModeBanner
           orgName={activeOrg?.name ?? t("layout.defaultOrg")}
@@ -84,7 +82,7 @@ export const AdminDashboard = () => {
         greetingKey={getGreetingKey()}
         firstName={firstName}
         subtitle={t("dashboard.subtitleAdmin")}
-        subtitleIcon={<Shield className="w-3.5 h-3.5" />}
+        subtitleIcon={<Shield className="w-3.5 h-3.5" aria-hidden={true} />}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="admin-stats">
@@ -92,25 +90,25 @@ export const AdminDashboard = () => {
           variant="primary"
           title={t("layout.users")}
           value={String(users?.length ?? 0)}
-          icon={<Users className="w-4 h-4" />}
+          icon={<Users className="w-4 h-4" aria-hidden={true} />}
           subtitle={t("home.teamMembers")}
         />
         <StatCard
           title={t("layout.departments")}
           value={String(departments?.length ?? 0)}
-          icon={<Building2 className="w-4 h-4" />}
+          icon={<Building2 className="w-4 h-4" aria-hidden={true} />}
           subtitle={t("home.companyAreas")}
         />
         <PendingStatsCard count={pendingReports.length} />
         <StatCard
           title={t("home.activeTrips")}
           value={String(activeTripsCount)}
-          icon={<TrendingUp className="w-4 h-4" />}
+          icon={<TrendingUp className="w-4 h-4" aria-hidden={true} />}
           subtitle={t("home.activeReportsTeam")}
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2">
           <PendingApprovalsList
             reports={pendingReports}

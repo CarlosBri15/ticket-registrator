@@ -3,7 +3,6 @@ import { Check, AlertCircle, Cpu, Home, MapPin, Calendar, DollarSign, CreditCard
 import type { ITicket } from "@ticket-registrator/shared";
 import { Input } from "../../../components/ui/Input";
 import { Button } from "../../../components/ui/Button";
-import { tokens, radius } from "../../../styles/theme";
 
 interface TicketConfirmationFormProps {
   ticket: ITicket;
@@ -23,11 +22,20 @@ type FieldKey =
 const isExtracted = (value: any): boolean =>
   value !== null && value !== undefined && value !== "";
 
-const FIELD_META: Record<FieldKey, { label: string; placeholder: string; icon: React.ElementType; type?: string; step?: string }> = {
+const FIELD_META: Record<
+  FieldKey,
+  { label: string; placeholder: string; icon: React.ElementType; type?: string; step?: string }
+> = {
   location_name: { label: "Establecimiento", placeholder: "Nombre del comercio", icon: Home },
   location_address: { label: "Dirección", placeholder: "Dirección completa", icon: MapPin },
   date: { label: "Fecha", placeholder: "", icon: Calendar, type: "date" },
-  amount: { label: "Importe Total", placeholder: "0.00", icon: DollarSign, type: "number", step: "0.01" },
+  amount: {
+    label: "Importe Total",
+    placeholder: "0.00",
+    icon: DollarSign,
+    type: "number",
+    step: "0.01",
+  },
   currency: { label: "Moneda", placeholder: "EUR", icon: CreditCard },
   payment_type: { label: "Método de Pago", placeholder: "Ej: Tarjeta, Efectivo", icon: CreditCard },
 };
@@ -66,7 +74,11 @@ export const TicketConfirmationForm = ({
     if (!raw) return "—";
     if (key === "date") {
       try {
-        return new Date(raw).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+        return new Date(raw).toLocaleDateString("es-ES", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
       } catch {
         return raw;
       }
@@ -96,23 +108,24 @@ export const TicketConfirmationForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
       {/* AI Confidence Banner */}
-      <div className={`flex items-center gap-5 p-5 ${radius.card} bg-brand/5 border-2 border-border-main shadow-hard-sm`}>
-        <div className={`w-12 h-12 bg-brand border-2 border-border-main rounded-xl flex items-center justify-center shrink-0 shadow-hard-sm`}>
-          <Cpu className="w-6 h-6 text-surface-card" />
+      <div className="flex items-center gap-4 p-4 rounded-lg border border-[var(--color-border-main)] bg-[var(--color-surface-card)]">
+        <div className="w-10 h-10 rounded-md bg-dark text-white flex items-center justify-center shrink-0">
+          <Cpu className="w-5 h-5" aria-hidden={true} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-space-bold text-brand uppercase tracking-wider">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-[12px] font-sans-semibold text-dark">
               IA extrajo {extractedKeys.length}/{allKeys.length} campos
             </p>
-            <span className="text-sm font-space-bold text-brand">{confidencePct}%</span>
+            <span className="text-[12px] font-sans-bold text-dark tabular-nums">
+              {confidencePct}%
+            </span>
           </div>
-          <div className="h-2.5 bg-brand/10 border border-brand/20 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-dark/8 rounded-full overflow-hidden">
             <div
-              className="h-full bg-brand rounded-full transition-all duration-700"
+              className="h-full bg-dark rounded-full transition-all duration-700"
               style={{ width: `${confidencePct}%` }}
             />
           </div>
@@ -121,30 +134,33 @@ export const TicketConfirmationForm = ({
 
       {/* Extracted Fields (read-only) */}
       {extractedKeys.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Check className="w-3.5 h-3.5 text-success" />
-            <p className="text-[10px] font-semibold text-success uppercase tracking-widest">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-1.5">
+            <Check className="w-3.5 h-3.5 text-success" aria-hidden={true} />
+            <p className="text-[11px] font-sans-semibold text-success uppercase tracking-wide">
               Datos extraídos automáticamente
             </p>
           </div>
-          <div className={`${tokens.listSection} divide-y divide-dark/5`}>
+          <div className="rounded-lg border border-[var(--color-border-main)] bg-[var(--color-surface-card)] overflow-hidden">
             {extractedKeys.map((key) => {
               const Icon = FIELD_META[key].icon;
               return (
-                <div key={key} className="flex items-center gap-4 px-6 py-4">
-                  <div className={`w-9 h-9 bg-success/5 border-2 border-success/20 rounded-xl flex items-center justify-center shrink-0 shadow-hard-sm`}>
-                    <Icon className="w-4 h-4 text-success" />
+                <div
+                  key={key}
+                  className="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border-main)] last:border-b-0"
+                >
+                  <div className="w-8 h-8 rounded-md bg-green-50 border border-green-100 flex items-center justify-center text-success shrink-0">
+                    <Icon className="w-3.5 h-3.5" aria-hidden={true} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={tokens.statCardLabel}>{FIELD_META[key].label}</p>
-                    <p className="text-sm font-space-bold text-dark truncate mt-0.5" style={{ fontSize: 14 }}>
+                    <p className="text-[11px] font-sans-medium text-dark/50 uppercase tracking-wide">
+                      {FIELD_META[key].label}
+                    </p>
+                    <p className="text-[14px] font-sans-semibold text-dark truncate mt-0.5 leading-snug">
                       {formatExtractedValue(key)}
                     </p>
                   </div>
-                  <div className="w-6 h-6 bg-success/15 border border-success/30 rounded-full flex items-center justify-center shrink-0">
-                    <Check className="w-3.5 h-3.5 text-success" />
-                  </div>
+                  <Check className="w-4 h-4 text-success shrink-0" aria-hidden={true} />
                 </div>
               );
             })}
@@ -154,14 +170,14 @@ export const TicketConfirmationForm = ({
 
       {/* Missing Fields (editable) */}
       {missingKeys.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <AlertCircle className="w-3.5 h-3.5 text-warning" />
-            <p className="text-[10px] font-space-bold text-warning uppercase tracking-widest">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-700" aria-hidden={true} />
+            <p className="text-[11px] font-sans-semibold text-amber-700 uppercase tracking-wide">
               Completa estos campos
             </p>
           </div>
-          <div className={`bg-warning/5 ${radius.card} border-2 border-warning/20 p-6 shadow-hard-sm`}>
+          <div className="rounded-lg border border-amber-100 bg-amber-50/40 p-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {missingKeys.map((key) => {
                 const meta = FIELD_META[key];
@@ -188,9 +204,9 @@ export const TicketConfirmationForm = ({
 
       {/* All fields extracted */}
       {missingKeys.length === 0 && (
-        <div className={`${tokens.alert} ${tokens.alertSuccess}`}>
-          <Check className="w-4 h-4 shrink-0" />
-          <p className="text-sm font-semibold">
+        <div className="flex items-start gap-3 px-4 py-3 rounded-lg border border-green-100 bg-green-50/50 text-green-700">
+          <Check className="w-4 h-4 shrink-0 mt-0.5" aria-hidden={true} />
+          <p className="text-[12px] font-sans-medium leading-relaxed">
             La IA extrajo todos los campos. Revisa la información y confirma.
           </p>
         </div>
@@ -198,36 +214,51 @@ export const TicketConfirmationForm = ({
 
       {/* Items List */}
       {ticket.items && ticket.items.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <List className="w-3.5 h-3.5 text-slate-400" />
-            <p className={tokens.listSectionTitle}>Resumen de Items</p>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-1.5">
+            <List className="w-3.5 h-3.5 text-dark/40" aria-hidden={true} />
+            <p className="text-[11px] font-sans-semibold text-dark/50 uppercase tracking-wide">
+              Resumen de Items
+            </p>
           </div>
-          <div className={`bg-surface border-2 border-border-main ${radius.card} p-5 shadow-hard-sm`}>
-            <div className="max-h-48 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-              {ticket.items.map((item, index) => (
-                <div
-                  key={item.id || `${item.name}-${index}`}
-                  className={`flex justify-between items-center bg-[var(--color-surface-card)] p-4 ${radius.sm} border-2 border-border-main shadow-hard-sm`}
-                >
-                  <span className="text-sm font-space-bold text-dark truncate mr-4">{item.name}</span>
-                  <span className="text-sm font-space-bold text-brand shrink-0">
-                    {item.amount} {item.currency}
+          <div className="rounded-lg border border-[var(--color-border-main)] bg-[var(--color-surface-card)] max-h-48 overflow-y-auto">
+            {ticket.items.map((item, index) => (
+              <div
+                key={item.id || `${item.name}-${index}`}
+                className="flex justify-between items-center px-4 py-3 border-b border-[var(--color-border-main)] last:border-b-0"
+              >
+                <span className="text-[13px] font-sans-medium text-dark truncate mr-4">
+                  {item.name}
+                </span>
+                <span className="text-[13px] font-sans-bold text-dark shrink-0 tabular-nums">
+                  {item.amount}
+                  <span className="font-sans-medium text-dark/50 ml-1 text-[11px]">
+                    {item.currency}
                   </span>
-                </div>
-              ))}
-            </div>
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex gap-4 pt-6 border-t-2 border-border-main/10">
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={isLoading} className="flex-1">
+      <div className="flex gap-3 pt-4 border-t border-[var(--color-border-main)]">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onCancel}
+          disabled={isLoading}
+          className="flex-1"
+        >
           Descartar
         </Button>
-        <Button type="submit" isLoading={isLoading} className="flex-[1.5]">
-          <Check className="w-4 h-4 mr-2" />
+        <Button
+          type="submit"
+          isLoading={isLoading}
+          leftIcon={<Check className="w-3.5 h-3.5" />}
+          className="flex-[1.5]"
+        >
           Confirmar Ticket
         </Button>
       </div>

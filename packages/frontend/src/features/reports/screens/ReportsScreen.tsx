@@ -62,9 +62,9 @@ export const ReportsScreen = () => {
     [paginatedData, currentReport],
   );
 
-  const isLoading    = isLoadingCurrent || isLoadingList;
-  const totalItems   = paginatedData?.total ?? 0;
-  const totalPages   = paginatedData?.totalPages ?? 1;
+  const isLoading = isLoadingCurrent || isLoadingList;
+  const totalItems = paginatedData?.total ?? 0;
+  const totalPages = paginatedData?.totalPages ?? 1;
   const hasAnyReports = (allReports?.length ?? 0) > 0;
 
   return (
@@ -120,7 +120,6 @@ export const ReportsScreen = () => {
             report={currentReport}
             onClick={() => navigate(`/reports/${currentReport.id}`)}
             dateLocale={dateLocale}
-            isActive
           />
         </div>
       )}
@@ -135,7 +134,7 @@ export const ReportsScreen = () => {
           {/* Filtros — encima de la tabla, debajo del reporte activo */}
           {!isLoading && hasAnyReports && (
             <ReportFilterBar
-              search={search}             onSearch={setSearch}
+              search={search} onSearch={setSearch}
               statusFilter={statusFilter} onStatus={setStatusFilter}
               dateRange={dateRange as any} onDateRange={setDateRange as any}
               hasFilters={hasActiveFilters} onClear={clearFilters}
@@ -144,7 +143,7 @@ export const ReportsScreen = () => {
 
           {/* Tabla sin borde exterior */}
           <div className="w-full">
-            <TableHeader 
+            <TableHeader
               columns={[
                 { label: t("reports.tableName") },
                 { label: t("reports.tableStatus"), align: "center" },
@@ -163,7 +162,7 @@ export const ReportsScreen = () => {
                   </>
                 );
               }
-              
+
               if (listReports.length > 0) {
                 return listReports.map((r) => (
                   <ReportRowItem

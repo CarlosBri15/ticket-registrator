@@ -29,34 +29,56 @@ jest.mock('react-i18next', () => ({
 
 const fullyExtractedTicket = {
   id: 'ticket-1',
-  status: 'CREATED' as any,
+  report_id: 'report-1',
+  lifecycle: 'Draft',
+  version: 1,
+  status: 'Pending',
+  cgs_bucket_link: null,
   location_name: 'Restaurante El Sol',
   location_address: 'Calle Mayor 5',
   date: '2024-06-15T00:00:00.000Z',
   amount: 55.0,
   currency: 'EUR',
+  converted_amount: null,
+  converted_currency: null,
+  cgs_bucket_link_justification: null,
   payment_type: 'Tarjeta',
-  expense_type: 'Comida',
   last_four_digits: null,
+  image_id: null,
+  flag: false,
+  llm_comment: null,
   items: [
-    { id: 'i1', name: 'Menú del día', amount: 15, currency: 'EUR', status: 'PAID' as any, expense_type: 'Food' },
-    { id: 'i2', name: 'Postre', amount: 5, currency: 'EUR', status: 'PAID' as any, expense_type: 'Food' },
+    { id: 'i1', name: 'Menú del día', amount: 35, currency: 'EUR', status: 'Pending', categoryId: 'cat1', categoryName: 'Comida' },
+    { id: 'i2', name: 'Postre', amount: 20, currency: 'EUR', status: 'Pending', categoryId: 'cat1', categoryName: 'Comida' },
   ],
-} as unknown as ITicket;
+  createdAt: '2024-06-15T00:00:00.000Z',
+  updatedAt: '2024-06-15T00:00:00.000Z',
+};
 
 const emptyTicket = {
   id: 'ticket-2',
-  status: 'CREATED' as any,
+  report_id: 'report-1',
+  lifecycle: 'Draft',
+  version: 1,
+  status: 'Pending',
+  cgs_bucket_link: null,
   location_name: null,
   location_address: null,
   date: null,
   amount: null,
   currency: null,
+  converted_amount: null,
+  converted_currency: null,
+  cgs_bucket_link_justification: null,
   payment_type: null,
-  expense_type: null,
   last_four_digits: null,
+  image_id: null,
+  flag: false,
+  llm_comment: null,
   items: [],
-} as unknown as ITicket;
+  createdAt: '2024-06-15T00:00:00.000Z',
+  updatedAt: '2024-06-15T00:00:00.000Z',
+};
 
 describe('TicketConfirmationForm', () => {
   // ── AI Confidence Banner ───────────────────────────────────────────────────
@@ -220,13 +242,10 @@ describe('TicketConfirmationForm', () => {
         isLoading
       />,
     );
-    // Since onPress is undefined, PixelCard renders as a View instead of a Pressable.
-    const { ActivityIndicator } = require('react-native');
-    const loaders = UNSAFE_getAllByType(ActivityIndicator);
-    expect(loaders.length).toBeGreaterThanOrEqual(1);
-    
-    // We can also check that Decartar button is rendered as text without an onPress handler
-    // (indirectly by checking that it doesn't respond to click if we tried).
+    const { TouchableOpacity } = require('react-native');
+    const buttons = UNSAFE_getAllByType(TouchableOpacity);
+    const disabledButtons = buttons.filter((b: any) => b.props.disabled === true);
+    expect(disabledButtons.length).toBeGreaterThanOrEqual(2);
   });
 
   it('passes null for empty string fields to onConfirm', () => {

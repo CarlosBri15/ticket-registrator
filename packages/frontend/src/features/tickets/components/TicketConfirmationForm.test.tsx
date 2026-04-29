@@ -26,8 +26,11 @@ vi.mock('../../../components/ui/Button', () => ({
 
 const mockTicket = {
   id: 't1', location_name: 'Restaurante El Sol', amount: 25, currency: 'EUR',
-  status: 'PENDING', date: '2024-01-10', expense_type: 'Comida',
+  status: 'Pending', date: '2024-01-10',
   location_address: 'Calle Mayor 1', payment_type: 'Tarjeta',
+  items: [
+    { id: 'i1', name: 'Consulta', categoryId: 'cat1', categoryName: 'Comida', amount: 25, currency: 'EUR', status: 'Pending' }
+  ],
 };
 
 describe('TicketConfirmationForm', () => {
@@ -82,8 +85,9 @@ describe('TicketConfirmationForm', () => {
   it('shows missing fields section when ticket has null fields', () => {
     const partialTicket = {
       id: 't2', location_name: null, amount: null, currency: null,
-      status: 'PENDING', date: null, expense_type: null,
+      status: 'Pending', date: null,
       location_address: null, payment_type: null,
+      items: [],
     };
     render(
       <TicketConfirmationForm

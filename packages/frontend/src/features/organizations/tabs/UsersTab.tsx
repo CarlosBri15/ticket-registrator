@@ -1,9 +1,7 @@
-import { UserCircle, Plus } from "lucide-react";
+import { User, Plus } from "lucide-react";
 import { type IUser } from "@ticket-registrator/shared";
 import { Button } from "../../../components/ui/Button";
 import { SearchInput } from "../../../components/ui/SearchInput";
-import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
-import { EmptyState } from "../../../components/ui/EmptyState";
 import { useTranslation } from "react-i18next";
 
 interface UsersTabProps {
@@ -30,52 +28,57 @@ export const UsersTab = ({
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <LoadingSpinner />
+        <div className="w-4 h-4 border-2 border-dark/20 border-t-dark/60 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <SearchInput
-          value={search}
-          onChange={onSearch}
-          placeholder={t("users.searchPlaceholder")}
-          className="flex-1"
-        />
+        <div className="flex-1 min-w-0">
+          <SearchInput
+            value={search}
+            onChange={onSearch}
+            placeholder={t("users.searchPlaceholder")}
+          />
+        </div>
         {canCreate && (
-          <Button onClick={onCreate} className="shrink-0" leftIcon={<Plus className="w-4 h-4" />}>
+          <Button onClick={onCreate} leftIcon={<Plus className="w-3.5 h-3.5" />}>
             {t("users.new")}
           </Button>
         )}
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState
-          icon={<UserCircle className="w-7 h-7 text-white" />}
-          title={search ? t("common.noResults") : t("users.empty")}
-          description={search ? t("common.tryAnotherSearch") : t("users.emptyDesc")}
-        />
+        <div className="flex flex-col items-center py-14 gap-2 text-center rounded-lg border border-dashed border-[var(--color-border-main)] bg-[var(--color-surface-card)]">
+          <User className="w-4 h-4 text-dark/25" aria-hidden={true} />
+          <p className="font-sans-medium text-[13px] text-dark/55">
+            {search ? t("common.noResults") : t("users.empty")}
+          </p>
+          <p className="font-sans-normal text-[12px] text-dark/40 max-w-sm">
+            {search ? t("common.tryAnotherSearch") : t("users.emptyDesc")}
+          </p>
+        </div>
       ) : (
-        <div className="space-y-2">
+        <div className="rounded-lg border border-[var(--color-border-main)] bg-[var(--color-surface-card)] overflow-hidden">
           {filtered.map((user) => (
             <div
               key={user.id}
-              className="flex items-center gap-3 p-4 bg-[var(--color-surface-card)] border-2 border-border-main rounded-xl"
+              className="group flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] transition-colors duration-100"
             >
-              <div className="w-9 h-9 bg-brand/10 rounded-xl flex items-center justify-center shrink-0">
-                <UserCircle className="w-4 h-4 text-brand" />
+              <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white shrink-0">
+                <User className="w-3.5 h-3.5" aria-hidden={true} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-space-bold text-dark text-sm truncate">
+                <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
                   {user.name} {user.surname}
                 </p>
-                <p className="text-xs font-space text-dark/40 truncate">
+                <p className="font-sans-medium text-dark/50 text-[12px] mt-0.5 truncate leading-none">
                   {user.email} · @{user.username}
                 </p>
               </div>
-              <span className="text-xs bg-brand/10 text-brand px-2.5 py-1 rounded-full font-space-bold shrink-0">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--color-secondary)] text-dark/70 text-[11px] font-sans-semibold shrink-0 group-hover:bg-white">
                 {getRoleName(user.roleId)}
               </span>
             </div>

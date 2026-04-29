@@ -1,14 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  ChevronLeft,
-  Layers,
-  UserCircle,
-  Pencil,
-  Trash2,
-  ArrowRight,
-  Plane,
-} from "lucide-react";
+import { Layers, User, Pencil, Trash2, ChevronRight } from "lucide-react";
 import {
   useDepartmentsQuery,
   useUsersQuery,
@@ -19,11 +11,15 @@ import {
   useScopeContext,
   useUserQuery,
 } from "@ticket-registrator/shared";
+import { useTranslation } from "react-i18next";
+import { PageHeader } from "../../../components/ui/PageHeader";
+import { SectionCard } from "../../../components/ui/SectionCard";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
+import { Button } from "../../../components/ui/Button";
 import { DepartmentModal } from "../components/DepartmentModal";
-import { tokens, radius } from "../../../styles/theme";
 
 export const DepartmentDetailScreen = () => {
+  const { t } = useTranslation();
   const { id: deptId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -33,7 +29,7 @@ export const DepartmentDetailScreen = () => {
   const { data: currentUser } = useUserQuery();
   const { can } = usePermissions();
 
-  const companyId = isGlobal ? activeCompanyId : (currentUser?.companyId ?? null);
+  const companyId = isGlobal ? activeCompanyId : currentUser?.companyId ?? null;
 
   const { data: departments, isLoading: loadingDepts } = useDepartmentsQuery(companyId ?? undefined);
   const { data: users, isLoading: loadingUsers } = useUsersQuery();
@@ -45,27 +41,20 @@ export const DepartmentDetailScreen = () => {
   const department = departments?.find((d) => d.id === deptId);
   const members = (users ?? []).filter((u) => u.departmentIds?.includes(deptId ?? ""));
   const memberIds = new Set(members.map((u) => u.id));
-  const deptReports = (allReports ?? []).filter((r) => r.user_id && memberIds.has(r.user_id));
+  const deptReports = (allReports ?? []).filter(
+    (r) => r.user_id && memberIds.has(r.user_id),
+  );
 
   if (isLoading) {
     return (
-      <div className="space-y-6 pb-20 animate-pulse">
-        <div className={`h-8 w-36 bg-slate-100 ${radius.sm}`} />
-        <div className={`bg-brand ${radius.card} p-8 space-y-4`}>
-          <div className={`h-8 w-1/2 bg-white/20 ${radius.sm}`} />
-          <div className="h-4 w-1/4 bg-white/10 rounded" />
+      <div className="flex flex-col gap-8 animate-pulse">
+        <div className="flex flex-col gap-4">
+          <div className="h-4 w-32 bg-dark/5 rounded" />
+          <div className="h-10 w-64 bg-dark/5 rounded" />
         </div>
-        <div className="grid grid-cols-2 gap-6">
-          <div className={`bg-white ${radius.card} border border-slate-200 p-6 space-y-3`}>
-            {[1, 2, 3].map((i) => (
-              <div key={i} className={`h-10 bg-slate-100 ${radius.sm}`} />
-            ))}
-          </div>
-          <div className={`bg-white ${radius.card} border border-slate-200 p-6 space-y-3`}>
-            {[1, 2].map((i) => (
-              <div key={i} className={`h-8 bg-slate-100 ${radius.sm}`} />
-            ))}
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+          <div className="h-[300px] bg-dark/5 rounded-lg" />
+          <div className="h-[200px] bg-dark/5 rounded-lg" />
         </div>
       </div>
     );
@@ -73,17 +62,17 @@ export const DepartmentDetailScreen = () => {
 
   if (!department) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 text-center">
-        <Layers className="w-12 h-12 text-slate-200 mb-4" />
-        <h2 className="text-xl font-semibold text-dark mb-2">Departamento no encontrado</h2>
-        <p className="text-slate-400 text-sm mb-6">El departamento que buscas no existe o fue eliminado.</p>
-        <button
-          type="button"
-          onClick={() => navigate("/departments")}
-          className="flex items-center gap-1 text-sm font-semibold text-brand hover:underline"
-        >
-          <ChevronLeft className="w-4 h-4" /> Volver a Departamentos
-        </button>
+      <div className="flex flex-col gap-8">
+        <PageHeader
+          title={t("departments.title", "Departamentos")}
+          back={{ label: t("departments.title", "Departamentos"), onClick: () => navigate("/departments") }}
+        />
+        <div className="flex flex-col items-center py-14 gap-2 text-center">
+          <Layers className="w-4 h-4 text-dark/25" aria-hidden={true} />
+          <p className="font-sans-medium text-[13px] text-dark/55">
+            {t("departments.notFound", "Departamento no encontrado")}
+          </p>
+        </div>
       </div>
     );
   }
@@ -91,7 +80,7 @@ export const DepartmentDetailScreen = () => {
   const totalReports = deptReports.length;
   const totalRequested = deptReports.reduce((acc, r) => acc + (r.requested_amount ?? 0), 0);
   const pendingCount = deptReports.filter((r) =>
-    ["PENDING", "SUBMITTED", "CREATED", "DRAFT"].includes(r.status?.toUpperCase() ?? "")
+    ["PENDING", "SUBMITTED", "CREATED", "DRAFT"].includes(r.status?.toUpperCase() ?? ""),
   ).length;
 
   const recentReports = [...deptReports]
@@ -100,182 +89,150 @@ export const DepartmentDetailScreen = () => {
 
   const handleDelete = () => {
     deleteMutation.mutate(department.id, {
-      onSuccess: () => {
-        navigate("/departments");
-      },
+      onSuccess: () => navigate("/departments"),
     });
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-      {/* Back button */}
-      <button
-        type="button"
-        onClick={() => navigate("/departments")}
-        className="flex items-center gap-2 text-slate-400 hover:text-dark transition-colors group"
-      >
-        <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-        <span className="text-sm font-semibold">Departamentos</span>
-      </button>
-
-      {/* Hero card */}
-      <div className={`bg-brand ${radius.card} p-6 shadow-md`}>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className={`w-12 h-12 bg-white/20 ${radius.sm} flex items-center justify-center shrink-0 border border-white/30`}>
-              <Layers className="w-6 h-6 text-white" />
-            </div>
-            <div className="space-y-1.5">
-              <h1 className="text-xl font-bold text-white tracking-tight">
-                {department.name}
-              </h1>
-              <span className={`text-xs bg-white/20 text-white px-2.5 py-1 ${radius.full} font-semibold border border-white/20`}>
-                {members.length} {members.length === 1 ? "miembro" : "miembros"}
-              </span>
-            </div>
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        title={department.name}
+        back={{
+          label: t("departments.title", "Departamentos"),
+          onClick: () => navigate("/departments"),
+        }}
+        stats={[
+          { label: t("departments.members", "Miembros"), value: members.length },
+          { label: t("departments.reports", "Reportes"), value: totalReports },
+          { label: t("departments.pending", "Pendientes"), value: pendingCount },
+        ]}
+        actions={
+          <div className="flex items-center gap-1">
             {can("edit_departments") && (
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="sm"
                 data-testid="edit-button"
+                title={t("common.edit", "Editar")}
                 onClick={() => setIsEditOpen(true)}
-                className={`p-2 bg-white/20 hover:bg-white/30 ${radius.sm} transition-all border border-white/20 shrink-0`}
-                title="Editar departamento"
+                leftIcon={<Pencil className="w-3.5 h-3.5" />}
               >
-                <Pencil className="w-4 h-4 text-white" />
-              </button>
+                {t("common.edit", "Editar")}
+              </Button>
             )}
             {can("delete_departments") && (
-              <button
-                type="button"
+              <Button
+                variant="ghost-danger"
+                size="icon"
                 data-testid="delete-button"
+                title={t("common.delete", "Eliminar")}
                 onClick={handleDelete}
-                className={`p-2 bg-white/20 hover:bg-red-500/30 ${radius.sm} transition-all border border-white/20 shrink-0`}
-                title="Eliminar departamento"
               >
-                <Trash2 className="w-4 h-4 text-white" />
-              </button>
+                <Trash2 className="w-4 h-4" />
+              </Button>
             )}
           </div>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Two-column grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left col — Members */}
-        <div className={`lg:col-span-2 ${tokens.listSection}`}>
-          <div className={`${tokens.listSectionHeader}`}>
-            <UserCircle className="w-4 h-4 text-slate-400" />
-            <h2 className={tokens.listSectionTitle}>
-              Miembros
-            </h2>
-            <span className={`${tokens.badgeSm} ${tokens.badgeNeutral}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 items-start">
+        {/* Members list */}
+        <SectionCard
+          title={t("departments.members", "Miembros")}
+          padded={false}
+          action={
+            <span className="px-1.5 py-0.5 rounded bg-dark/5 text-dark/45 text-[11px] font-sans-bold">
               {members.length}
             </span>
-          </div>
-
-          <div className="p-5">
-            {members.length === 0 ? (
-              <div className="text-center py-10">
-                <div className={`w-12 h-12 bg-slate-50 ${radius.sm} flex items-center justify-center mx-auto mb-3`}>
-                  <UserCircle className="w-6 h-6 text-slate-200" />
-                </div>
-                <p className="text-sm font-semibold text-slate-400">Sin miembros</p>
-                <p className="text-xs text-slate-300 mt-1">
-                  Este departamento aún no tiene miembros asignados.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {members.map((member) => (
-                  <button
-                    key={member.id}
-                    type="button"
-                    onClick={() => navigate(`/users/${member.id}`)}
-                    className={`w-full text-left group bg-slate-50 hover:bg-white ${radius.sm} border border-slate-100 hover:border-brand/20 hover:shadow-sm transition-all p-3.5 flex items-center justify-between`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`w-8 h-8 bg-brand/10 ${radius.sm} flex items-center justify-center shrink-0`}>
-                        <span className="text-sm font-semibold text-brand">
-                          {member.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-dark text-sm truncate group-hover:text-brand transition-colors">
-                          {member.name} {member.surname}
-                        </p>
-                        <p className="text-xs text-slate-400 mt-0.5 truncate">{member.email}</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-slate-200 group-hover:text-brand group-hover:translate-x-0.5 transition-all shrink-0" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right col — Stats & recent reports */}
-        <div className="space-y-4">
-          {/* Stats card */}
-          <div className={tokens.card}>
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Plane className="w-4 h-4 text-slate-400" />
-              <h2 className={tokens.listSectionTitle}>
-                Reportes del departamento
-              </h2>
+          }
+        >
+          {members.length === 0 ? (
+            <div className="flex flex-col items-center py-12 gap-2 text-center">
+              <User className="w-4 h-4 text-dark/25" aria-hidden={true} />
+              <p className="font-sans-medium text-[13px] text-dark/55">
+                {t("departments.noMembers", "Sin miembros")}
+              </p>
+              <p className="font-sans-normal text-[12px] text-dark/40 max-w-sm">
+                {t("departments.noMembersDesc", "Este departamento aún no tiene miembros asignados.")}
+              </p>
             </div>
+          ) : (
             <div>
-              <p className={tokens.statCardLabel}>Total reportes</p>
-              <p className="text-2xl font-bold text-dark mt-1">{totalReports}</p>
+              {members.map((member) => (
+                <button
+                  key={member.id}
+                  type="button"
+                  onClick={() => navigate(`/users/${member.id}`)}
+                  className="group w-full text-left flex items-center gap-3 px-4 py-3 border-t border-[var(--color-border-main)] first:border-t-0 hover:bg-[var(--color-secondary)] transition-colors duration-100"
+                >
+                  <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 shrink-0 group-hover:bg-white">
+                    <User className="w-3.5 h-3.5" aria-hidden={true} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
+                      {member.name} {member.surname}
+                    </p>
+                    <p className="font-sans-medium text-dark/50 text-[12px] mt-0.5 truncate leading-none">
+                      {member.email}
+                    </p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-dark/30 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                </button>
+              ))}
             </div>
-            <div>
-              <p className={tokens.statCardLabel}>Importe solicitado</p>
-              <p className="text-xl font-bold text-dark mt-1">{totalRequested.toLocaleString()}</p>
-            </div>
-            <div>
-              <p className={tokens.statCardLabel}>Pendientes</p>
-              <p className="text-xl font-bold text-warning mt-1">{pendingCount}</p>
-            </div>
-          </div>
+          )}
+        </SectionCard>
 
-          {/* Recent reports */}
+        {/* Stats + Recent reports */}
+        <div className="flex flex-col gap-4">
+          <SectionCard title={t("departments.summary", "Resumen")}>
+            <SidebarStat
+              label={t("departments.totalReports", "Total reportes")}
+              value={totalReports.toString()}
+            />
+            <SidebarStat
+              label={t("departments.totalRequested", "Importe solicitado")}
+              value={totalRequested.toLocaleString()}
+            />
+            <SidebarStat
+              label={t("departments.pending", "Pendientes")}
+              value={pendingCount.toString()}
+              danger={pendingCount > 0}
+            />
+          </SectionCard>
+
           {recentReports.length > 0 && (
-            <div className={tokens.listSection}>
-              <div className={tokens.listSectionHeader}>
-                <p className={tokens.listSectionTitle}>
-                  Últimos reportes
-                </p>
-              </div>
-              <div className="p-3 space-y-1.5">
+            <SectionCard title={t("departments.recentReports", "Últimos reportes")} padded={false}>
+              <div>
                 {recentReports.map((report) => (
                   <button
                     key={report.id}
                     type="button"
                     onClick={() => navigate(`/reports/${report.id}`)}
-                    className={`w-full text-left group bg-slate-50 hover:bg-white ${radius.sm} border border-slate-100 hover:border-brand/20 transition-all p-3 flex items-center justify-between gap-2`}
+                    className="group w-full text-left flex items-center gap-3 px-4 py-3 border-t border-[var(--color-border-main)] first:border-t-0 hover:bg-[var(--color-secondary)] transition-colors duration-100"
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <StatusBadge status={report.status} />
-                      <p className="text-xs font-semibold text-dark truncate group-hover:text-brand transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-sans-semibold text-dark text-[13px] truncate leading-snug">
                         {report.name}
                       </p>
+                      <p className="font-sans-bold text-dark/70 tabular-nums text-[12px] mt-0.5">
+                        {(report.requested_amount ?? 0).toLocaleString()}
+                        {report.currency && (
+                          <span className="font-sans-medium text-dark/45 ml-1">
+                            {report.currency}
+                          </span>
+                        )}
+                      </p>
                     </div>
-                    <p className="text-xs font-semibold text-dark shrink-0">
-                      {(report.requested_amount ?? 0).toLocaleString()}
-                    </p>
+                    <StatusBadge status={report.status} size="sm" />
                   </button>
                 ))}
               </div>
-            </div>
+            </SectionCard>
           )}
         </div>
       </div>
 
-      {/* Edit modal */}
       {companyId && isEditOpen && (
         <DepartmentModal
           isOpen={isEditOpen}
@@ -287,3 +244,22 @@ export const DepartmentDetailScreen = () => {
     </div>
   );
 };
+
+const SidebarStat = ({
+  label,
+  value,
+  danger,
+}: {
+  label: string;
+  value: string;
+  danger?: boolean;
+}) => (
+  <div className="flex items-center justify-between gap-3">
+    <span className="text-[12px] font-sans-medium text-dark/55">{label}</span>
+    <span
+      className={`text-[18px] font-sans-bold tabular-nums leading-none ${danger ? "text-warning" : "text-dark"}`}
+    >
+      {value}
+    </span>
+  </div>
+);

@@ -7,16 +7,16 @@
   --font-mono: 'IBM Plex Mono', monospace;
 
   /* ── Brand — Grafito (near-black warm) ──────────────────────────────── */
-  --color-brand:       #1C1917;
+  --color-brand: #1C1917;
   --color-brand-hover: #2A2724;
   --color-brand-light: #F5F4F0;
 
   /* ── Sidebar — Warm cream ───────────────────────────────────────────────── */
-  --color-sidebar:        #F5F4F0;
+  --color-sidebar: #F5F4F0;
   --color-sidebar-accent: #ECEAE7;
 
   /* ── Secondary — Warm stone neutrals ────────────────────────────────────── */
-  --color-secondary:       #F5F4F0;
+  --color-secondary: #F5F4F0;
   --color-secondary-light: #F7F6F3;
 
   /* ── Dark — Warm near-black ──────────────────────────────────────────────── */
@@ -25,28 +25,32 @@
   /* ── Semantic ────────────────────────────────────────────────────────────── */
   --color-success: #16A34A;
   --color-warning: #D97706;
-  --color-danger:  #DC2626;
-  --color-info:    #2563EB;
+  --color-danger: #DC2626;
+  --color-info: #2563EB;
 
   /* ── Surface — White content area ───────────────────────────────────────── */
-  --color-surface:        #FFFFFF; /* Pure white body background */
-  --color-surface-card:   #FFFFFF; /* Pure white cards */
-  --color-surface-header: #FFFFFF; /* Pure white headers */
+  --color-surface: #FFFFFF;
+  /* Pure white body background */
+  --color-surface-card: #FFFFFF;
+  /* Pure white cards */
+  --color-surface-header: #FFFFFF;
+  /* Pure white headers */
 
   /* ── Borders — Warm stone ─────────────────────────────────────────────── */
-  --color-border-main: #E5E4E0; /* Warm stone-200 */
+  --color-border-main: #E5E4E0;
+  /* Warm stone-200 */
   --color-shadow-main: #E5E4E0;
 
   /* ── Shadows ─────────────────────────────────────────────────────────────── */
-  --shadow-hard:    none;
-  --shadow-hard-lg: 0px 4px 16px rgba(28,25,23,0.06), 0px 1px 3px rgba(28,25,23,0.04);
+  --shadow-hard: none;
+  --shadow-hard-lg: 0px 4px 16px rgba(28, 25, 23, 0.06), 0px 1px 3px rgba(28, 25, 23, 0.04);
   --shadow-hard-sm: none;
 
   /* ── Radii ────────────────────────────────────────────────────────────────── */
-  --radius-lg:   8px;
-  --radius-xl:   10px;
-  --radius-2xl:  12px;
-  --radius-3xl:  16px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 12px;
+  --radius-3xl: 16px;
   --radius-card: 8px;
   --radius-base: 6px;
 }
@@ -61,33 +65,69 @@
 }
 
 @layer utilities {
-  /* ── Typography utility overrides ──────────────────────────────────────── */
-  .font-space          { font-family: 'IBM Plex Mono', monospace; font-weight: 400; }
-  .font-space-medium   { font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
-  .font-space-semibold { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
-  .font-space-bold     { font-family: 'IBM Plex Mono', monospace; font-weight: 700; }
 
-  .font-sans-normal    { font-family: 'Manrope', sans-serif; font-weight: 400; }
-  .font-sans-medium    { font-family: 'Manrope', sans-serif; font-weight: 500; }
-  .font-sans-semibold  { font-family: 'Manrope', sans-serif; font-weight: 600; }
-  .font-sans-bold      { font-family: 'Manrope', sans-serif; font-weight: 700; }
+  /* ── Typography utility overrides ──────────────────────────────────────── */
+  .font-space {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 400;
+  }
+
+  .font-space-medium {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+  }
+
+  .font-space-semibold {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+  }
+
+  .font-space-bold {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+  }
+
+  .font-sans-normal {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 400;
+  }
+
+  .font-sans-medium {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 500;
+  }
+
+  .font-sans-semibold {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+  }
+
+  .font-sans-bold {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+  }
 
   /* ── Press animations ────────────────────────────────────────────────────── */
   .btn-press {
     transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
   }
+
   .btn-press:active {
     transform: scale(0.985);
   }
+
   .btn-press-lg {
     transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
   }
+
   .btn-press-lg:active {
     transform: scale(0.98);
   }
+
   .btn-press-sm {
     transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
   }
+
   .btn-press-sm:active {
     transform: scale(0.99);
   }
@@ -97,12 +137,21 @@
     scrollbar-width: thin;
     scrollbar-color: rgba(37, 99, 235, 0.2) transparent;
   }
-  .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: rgba(37, 99, 235, 0.2);
     border-radius: 99px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(37, 99, 235, 0.4);
   }
@@ -110,14 +159,41 @@
 
 /* ── Slide-up stagger animations ─────────────────────────────────────────────── */
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0);    }
-}
-.animate-slide-up { animation: slide-up 0.25s ease-out both; }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
 
-.stagger-children > *:nth-child(1) { animation-delay:   0ms; }
-.stagger-children > *:nth-child(2) { animation-delay:  40ms; }
-.stagger-children > *:nth-child(3) { animation-delay:  80ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 120ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 160ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 200ms; }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out both;
+}
+
+.stagger-children>*:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.stagger-children>*:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.stagger-children>*:nth-child(3) {
+  animation-delay: 80ms;
+}
+
+.stagger-children>*:nth-child(4) {
+  animation-delay: 120ms;
+}
+
+.stagger-children>*:nth-child(5) {
+  animation-delay: 160ms;
+}
+
+.stagger-children>*:nth-child(6) {
+  animation-delay: 200ms;
+}

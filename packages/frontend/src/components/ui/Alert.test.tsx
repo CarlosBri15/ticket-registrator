@@ -10,6 +10,13 @@ vi.mock('lucide-react', () => ({
   X:            () => <svg data-testid="icon-x" />,
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => (key === 'common.close' ? 'Cerrar' : key),
+    i18n: { language: 'es' },
+  }),
+}));
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Alert — shared behaviour
 // ─────────────────────────────────────────────────────────────────────────────
@@ -127,11 +134,11 @@ describe('AlertError', () => {
 
 describe('getApiErrorMessage', () => {
   it('returns fallback when error is null', () => {
-    expect(getApiErrorMessage(null)).toBe('Error inesperado. Inténtalo de nuevo.');
+    expect(getApiErrorMessage(null)).toBe('Unexpected error. Please try again.');
   });
 
   it('returns fallback when error has no response.data', () => {
-    expect(getApiErrorMessage(new Error('network'))).toBe('Error inesperado. Inténtalo de nuevo.');
+    expect(getApiErrorMessage(new Error('network'))).toBe('Unexpected error. Please try again.');
   });
 
   it('returns string message from response.data.message', () => {
@@ -146,15 +153,15 @@ describe('getApiErrorMessage', () => {
 
   it('returns fallback when response.data.message is a number', () => {
     const error = { response: { data: { message: 42 } } };
-    expect(getApiErrorMessage(error)).toBe('Error inesperado. Inténtalo de nuevo.');
+    expect(getApiErrorMessage(error)).toBe('Unexpected error. Please try again.');
   });
 
   it('returns fallback when response.data exists but has no message key', () => {
     const error = { response: { data: { statusCode: 500 } } };
-    expect(getApiErrorMessage(error)).toBe('Error inesperado. Inténtalo de nuevo.');
+    expect(getApiErrorMessage(error)).toBe('Unexpected error. Please try again.');
   });
 
   it('returns fallback for empty error object', () => {
-    expect(getApiErrorMessage({})).toBe('Error inesperado. Inténtalo de nuevo.');
+    expect(getApiErrorMessage({})).toBe('Unexpected error. Please try again.');
   });
 });

@@ -1,61 +1,58 @@
 import { memo } from "react";
-import { User, Mail, AtSign, ChevronRight } from "lucide-react";
+import { User, ChevronRight } from "lucide-react";
 import { type IUser } from "@ticket-registrator/shared";
-import { PixelCard } from "../../../components/ui/PixelCard";
-import { RoleBadge } from "../../../components/ui/RoleBadge";
-import { DARK } from "../constants";
 
 interface UserRowProps {
   user: IUser;
   roleName?: string;
   onClick: () => void;
+  rightAction?: React.ReactNode;
 }
 
-export const UserRow = memo(({ user, roleName, onClick }: UserRowProps) => (
-  <PixelCard onClick={onClick} className="w-full">
-    <div className="flex items-center gap-4 px-4 py-3.5">
-      {/* Avatar / Icon */}
-      <div
-        className="w-12 h-12 flex items-center justify-center shrink-0 rounded-xl border-2 select-none"
-        style={{
-          backgroundColor: `${DARK}05`,
-          borderColor: `${DARK}10`,
-          color: DARK
-        }}
-      >
-        <User className="w-6 h-6 opacity-40" />
+export const USER_GRID = "32px 1fr 1.2fr 140px 16px";
+
+export const UserRow = memo(({ user, roleName, onClick, rightAction }: UserRowProps) => (
+  <div className="group relative border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] transition-colors duration-100">
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full text-left grid items-center gap-4 px-4 py-3.5 cursor-pointer"
+      style={{ gridTemplateColumns: USER_GRID }}
+    >
+      <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white">
+        <User className="w-3.5 h-3.5" aria-hidden={true} />
       </div>
 
-      {/* User Info */}
-      <div className="flex-1 min-w-0">
-        <p className="font-space-bold text-dark truncate" style={{ fontSize: 15 }}>
+      <div className="min-w-0">
+        <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
           {user.name} {user.surname}
         </p>
-        <div className="flex items-center gap-3 mt-1 flex-wrap">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <Mail className="w-3 h-3 shrink-0" style={{ color: `${DARK}40` }} />
-            <span className="font-space-semibold truncate" style={{ fontSize: 11, color: `${DARK}50` }}>
-              {user.email}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 min-w-0">
-            <AtSign className="w-3 h-3 shrink-0" style={{ color: `${DARK}40` }} />
-            <span className="font-space-semibold truncate" style={{ fontSize: 11, color: `${DARK}50` }}>
-              {user.username}
-            </span>
-          </div>
-        </div>
+        <p className="font-sans-medium text-dark/50 text-[12px] mt-0.5 truncate leading-none">
+          @{user.username}
+        </p>
       </div>
 
-      {/* Role & Actions */}
-      <div className="flex items-center gap-4 shrink-0">
-        <div className="hidden sm:block">
-          <RoleBadge roleName={roleName} />
-        </div>
-        <div className="shrink-0 flex items-center justify-center">
-          <ChevronRight className="w-5 h-5" style={{ color: `${DARK}25` }} />
-        </div>
+      <p className="font-sans-medium text-[12px] text-dark/60 truncate">{user.email}</p>
+
+      <div className="flex items-center justify-end">
+        {roleName ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--color-secondary)] text-dark/70 text-[11px] font-sans-semibold whitespace-nowrap group-hover:bg-white">
+            {roleName}
+          </span>
+        ) : (
+          <span className="text-dark/30 text-[11px] font-sans-medium">—</span>
+        )}
+      </div>
+
+      <div aria-hidden={true} />
+    </button>
+
+    <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center">
+      <div className="pointer-events-auto">
+        {rightAction ?? (
+          <ChevronRight className="w-4 h-4 text-dark/30 opacity-0 group-hover:opacity-100 transition-opacity duration-100" />
+        )}
       </div>
     </div>
-  </PixelCard>
+  </div>
 ));

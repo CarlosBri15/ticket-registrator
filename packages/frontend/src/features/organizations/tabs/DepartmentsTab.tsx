@@ -3,8 +3,6 @@ import { format } from "date-fns";
 import { type IDepartment } from "@ticket-registrator/shared";
 import { Button } from "../../../components/ui/Button";
 import { SearchInput } from "../../../components/ui/SearchInput";
-import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
-import { EmptyState } from "../../../components/ui/EmptyState";
 import { useTranslation } from "react-i18next";
 import { useDateLocale } from "../../../hooks/useDateLocale";
 
@@ -39,68 +37,77 @@ export const DepartmentsTab = ({
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <LoadingSpinner />
+        <div className="w-4 h-4 border-2 border-dark/20 border-t-dark/60 rounded-full animate-spin" />
       </div>
     );
   }
 
+  const isEmpty = !filtered || filtered.length === 0;
+
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <SearchInput
-          value={search}
-          onChange={onSearch}
-          placeholder={t("departments.searchPlaceholder")}
-          className="flex-1"
-        />
+        <div className="flex-1 min-w-0">
+          <SearchInput
+            value={search}
+            onChange={onSearch}
+            placeholder={t("departments.searchPlaceholder")}
+          />
+        </div>
         {canCreate && (
-          <Button onClick={onCreate} className="shrink-0" leftIcon={<Plus className="w-4 h-4" />}>
+          <Button onClick={onCreate} leftIcon={<Plus className="w-3.5 h-3.5" />}>
             {t("departments.new")}
           </Button>
         )}
       </div>
 
-      {!filtered || filtered.length === 0 ? (
-        <EmptyState
-          icon={<Layers className="w-7 h-7 text-white" />}
-          title={search ? t("common.noResults") : t("departments.empty")}
-          description={search ? t("common.tryAnotherSearch") : t("departments.emptyDesc")}
-        />
+      {isEmpty ? (
+        <div className="flex flex-col items-center py-14 gap-2 text-center rounded-lg border border-dashed border-[var(--color-border-main)] bg-[var(--color-surface-card)]">
+          <Layers className="w-4 h-4 text-dark/25" aria-hidden={true} />
+          <p className="font-sans-medium text-[13px] text-dark/55">
+            {search ? t("common.noResults") : t("departments.empty")}
+          </p>
+          <p className="font-sans-normal text-[12px] text-dark/40 max-w-sm">
+            {search ? t("common.tryAnotherSearch") : t("departments.emptyDesc")}
+          </p>
+        </div>
       ) : (
-        <div className="space-y-2">
+        <div className="rounded-lg border border-[var(--color-border-main)] bg-[var(--color-surface-card)] overflow-hidden">
           {filtered.map((dept) => (
             <div
               key={dept.id}
-              className="flex items-center gap-3 p-4 bg-[var(--color-surface-card)] border-2 border-border-main rounded-xl"
+              className="group flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] transition-colors duration-100"
             >
-              <div className="w-9 h-9 bg-brand/10 rounded-xl flex items-center justify-center shrink-0">
-                <Layers className="w-4 h-4 text-brand" />
+              <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white shrink-0">
+                <Layers className="w-3.5 h-3.5" aria-hidden={true} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-space-bold text-dark text-sm truncate">{dept.name}</p>
-                <p className="text-xs font-space text-dark/40 mt-0.5">
+                <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
+                  {dept.name}
+                </p>
+                <p className="font-sans-medium text-dark/50 text-[12px] mt-0.5 leading-none">
                   {format(new Date(dept.createdAt), "dd MMM yyyy", { locale: dateLocale })}
                 </p>
               </div>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 {canEdit && (
                   <button
                     type="button"
                     onClick={() => onEdit(dept)}
-                    className="p-2 text-dark/20 hover:text-brand hover:bg-brand/10 rounded-xl transition-all"
+                    className="text-dark/40 hover:text-dark transition-colors p-1.5"
                     title={t("common.edit")}
                   >
-                    <Pencil className="w-4 h-4" />
+                    <Pencil className="w-3.5 h-3.5" aria-hidden={true} />
                   </button>
                 )}
                 {canDelete && (
                   <button
                     type="button"
                     onClick={() => onDelete(dept.id)}
-                    className="p-2 text-dark/20 hover:text-danger hover:bg-danger/10 rounded-xl transition-all"
+                    className="text-dark/40 hover:text-danger transition-colors p-1.5"
                     title={t("common.delete")}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" aria-hidden={true} />
                   </button>
                 )}
               </div>

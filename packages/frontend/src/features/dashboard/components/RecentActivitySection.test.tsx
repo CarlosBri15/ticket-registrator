@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import type { TFunction } from 'i18next';
+import type { IReport } from '@ticket-registrator/shared';
 import { RecentActivitySection } from './RecentActivitySection';
 import { es } from 'date-fns/locale';
 
@@ -10,11 +12,12 @@ vi.mock('../../../components/ui/StatusBadge', () => ({
 vi.mock('lucide-react', () => ({
   Clock: () => <div data-testid="clock-icon" />,
   ChevronRight: () => <div data-testid="chevron-icon" />,
+  FileText: () => <div data-testid="filetext-icon" />,
 }));
 
 describe('RecentActivitySection', () => {
   const mockNavigate = vi.fn();
-  const mockT = (key: string) => key;
+  const mockT = ((key: string) => key) as unknown as TFunction;
   const mockReports = [
     {
       id: '1',
@@ -24,7 +27,7 @@ describe('RecentActivitySection', () => {
       requested_amount: 100,
       currency: 'EUR',
     },
-  ];
+  ] as unknown as IReport[];
 
   it('renders correctly with reports', () => {
     render(

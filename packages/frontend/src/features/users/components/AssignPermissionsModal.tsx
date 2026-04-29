@@ -8,8 +8,6 @@ import {
 import { Button } from "../../../components/ui/Button";
 import { Modal } from "../../../components/ui/Modal";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface AssignPermissionsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -17,8 +15,6 @@ interface AssignPermissionsModalProps {
   roleId: string;
   roleName?: string;
 }
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const getPermissionResource = (permissionName: string): string => {
   const parts = permissionName.split("_");
@@ -29,8 +25,6 @@ const getPermissionResource = (permissionName: string): string => {
 const capitalizeFirst = (str: string): string =>
   str.charAt(0).toUpperCase() + str.slice(1);
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export const AssignPermissionsModal = ({
   isOpen,
   onClose,
@@ -38,8 +32,7 @@ export const AssignPermissionsModal = ({
   roleId,
   roleName,
 }: AssignPermissionsModalProps) => {
-  const { data: allPermissions, isLoading: loadingAll } =
-    useAllPermissionsQuery();
+  const { data: allPermissions, isLoading: loadingAll } = useAllPermissionsQuery();
   const { data: assignedPermissions, isLoading: loadingAssigned } =
     useRolePermissionsQuery(companyId, roleId);
 
@@ -48,7 +41,6 @@ export const AssignPermissionsModal = ({
 
   const [localAssigned, setLocalAssigned] = useState<Set<string>>(new Set());
 
-  // Initialize local state when assigned permissions load
   useEffect(() => {
     if (assignedPermissions) {
       setLocalAssigned(new Set(assignedPermissions.map((p) => p.id)));
@@ -79,10 +71,10 @@ export const AssignPermissionsModal = ({
 
     const allOps = [
       ...toAdd.map((permissionId) =>
-        assignMutation.mutateAsync({ roleId, permissionId, companyId, _companyId: companyId })
+        assignMutation.mutateAsync({ roleId, permissionId, companyId, _companyId: companyId }),
       ),
       ...toRemove.map((permissionId) =>
-        unassignMutation.mutateAsync({ roleId, permissionId, companyId })
+        unassignMutation.mutateAsync({ roleId, permissionId, companyId }),
       ),
     ];
 
@@ -90,7 +82,6 @@ export const AssignPermissionsModal = ({
     onClose();
   };
 
-  // Group permissions by resource
   const groupedPermissions: Record<string, typeof allPermissions> = {};
   if (allPermissions) {
     for (const perm of allPermissions) {
@@ -100,9 +91,7 @@ export const AssignPermissionsModal = ({
     }
   }
 
-  const sortedGroups = Object.keys(groupedPermissions).sort((a, b) =>
-    a.localeCompare(b)
-  );
+  const sortedGroups = Object.keys(groupedPermissions).sort((a, b) => a.localeCompare(b));
   const totalCount = allPermissions?.length ?? 0;
   const selectedCount = localAssigned.size;
 
@@ -117,24 +106,23 @@ export const AssignPermissionsModal = ({
       {isLoading ? (
         <div className="flex justify-center items-center py-16">
           <div
-            className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin"
+            className="w-5 h-5 border-2 border-dark/20 border-t-dark/60 rounded-full animate-spin"
             aria-label="Cargando permisos"
           />
         </div>
       ) : (
-        <div className="space-y-4">
-          {/* Count badge */}
-          <p className="text-sm font-semibold text-gray-500">
-            {selectedCount} de {totalCount} permisos seleccionados
+        <div className="flex flex-col gap-5">
+          <p className="text-[12px] font-sans-medium text-dark/55">
+            <span className="font-sans-bold text-dark">{selectedCount}</span> de {totalCount}{" "}
+            permisos seleccionados
           </p>
 
-          {/* Permission groups */}
-          <div className="space-y-5 max-h-[50vh] overflow-y-auto pr-1">
+          <div className="flex flex-col gap-5 max-h-[50vh] overflow-y-auto pr-1">
             {sortedGroups.map((group) => {
               const perms = groupedPermissions[group] ?? [];
               return (
-                <div key={group}>
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                <div key={group} className="flex flex-col gap-2">
+                  <p className="text-[11px] font-sans-bold text-dark/70 uppercase tracking-wide">
                     {capitalizeFirst(group)}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -143,21 +131,25 @@ export const AssignPermissionsModal = ({
                       return (
                         <label
                           key={perm.id}
-                          className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 cursor-pointer hover:bg-brand/5 hover:border-brand/20 transition-all"
+                          className={`flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
+                            isChecked
+                              ? "bg-[var(--color-secondary)] border-dark/20"
+                              : "bg-[var(--color-surface-card)] border-[var(--color-border-main)] hover:bg-[var(--color-secondary)]"
+                          }`}
                         >
                           <input
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => togglePermission(perm.id)}
-                            className="mt-0.5 w-4 h-4 rounded accent-brand shrink-0"
+                            className="mt-0.5 w-4 h-4 rounded accent-dark shrink-0"
                             aria-label={perm.name}
                           />
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-dark break-all">
+                            <p className="font-sans-semibold text-dark text-[13px] break-all leading-snug">
                               {perm.name}
                             </p>
                             {perm.description && (
-                              <p className="text-xs text-gray-400 mt-0.5">
+                              <p className="text-[12px] font-sans-normal text-dark/50 mt-0.5">
                                 {perm.description}
                               </p>
                             )}
@@ -171,14 +163,8 @@ export const AssignPermissionsModal = ({
             })}
           </div>
 
-          {/* Actions */}
           <div className="flex gap-3 pt-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onClose}
-              className="flex-1"
-            >
+            <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
               Cancelar
             </Button>
             <Button

@@ -19,13 +19,6 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
   };
 });
 
-vi.mock('lucide-react', () => ({
-  Lock: () => null,
-  Building2: () => null,
-  Shield: () => null,
-  Check: () => null,
-  Loader2: () => null,
-}));
 
 import {
   useRolesQuery,

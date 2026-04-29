@@ -40,19 +40,16 @@ describe("Pagination", () => {
 
   it("renders summary text with correct from/to/total", () => {
     render(<Pagination {...defaultProps} page={2} totalItems={50} pageSize={10} />);
-    // page 2: from=11, to=20 — unique numbers that don't collide with page buttons
-    expect(screen.getByText("11")).toBeInTheDocument();
-    expect(screen.getByText("20")).toBeInTheDocument();
+    // Range and total are rendered as "11–20" and "50" in spans
+    expect(screen.getByText("11–20")).toBeInTheDocument();
     expect(screen.getByText("50")).toBeInTheDocument();
-    // Summary paragraph contains the i18n keys as text nodes
-    expect(screen.getByText(/11/)).toBeInTheDocument();
   });
 
   it("computes correct 'to' on last page with fewer items", () => {
     render(<Pagination {...defaultProps} page={5} totalPages={5} totalItems={48} pageSize={10} />);
-    // page 5: from=41, to=min(50,48)=48; "48" appears twice (to + total)
-    expect(screen.getByText("41")).toBeInTheDocument();
-    expect(screen.getAllByText("48").length).toBeGreaterThanOrEqual(1);
+    // page 5: from=41, to=min(50,48)=48 — rendered as "41–48"
+    expect(screen.getByText("41–48")).toBeInTheDocument();
+    expect(screen.getByText("48")).toBeInTheDocument();
   });
 
   it("renders Previous button disabled on first page", () => {
@@ -125,6 +122,7 @@ describe("Pagination", () => {
   it("highlights the current page button", () => {
     render(<Pagination {...defaultProps} page={3} totalPages={5} />);
     const activeBtn = screen.getByRole("button", { name: "3" });
-    expect(activeBtn.className).toContain("bg-brand");
+    expect(activeBtn.className).toContain("bg-[var(--color-dark)]");
+    expect(activeBtn.className).toContain("text-white");
   });
 });

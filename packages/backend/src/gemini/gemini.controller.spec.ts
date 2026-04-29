@@ -21,6 +21,12 @@ describe('GeminiController', () => {
     items: [{ name: 'Coffee', amount: 4.5 }],
   };
 
+  const mockUser = {
+    id: 'user-1',
+    companyId: 'org-1',
+    email: 'test@example.com',
+  };
+
   beforeEach(async () => {
     geminiServiceMock = {
       extractReceipt: jest.fn(),
@@ -53,18 +59,19 @@ describe('GeminiController', () => {
         mockExtractedData,
       );
 
-      const result = await controller.extractReceipt(mockFile);
+      const result = await controller.extractReceipt(mockUser as any, mockFile);
 
       expect(geminiServiceMock.extractReceipt).toHaveBeenCalledWith(
         mockFile.buffer.toString('base64'),
+        mockUser.companyId,
       );
       expect(result).toEqual(mockExtractedData);
     });
 
     it('should throw BadRequestException if no file is uploaded', async () => {
-      await expect(controller.extractReceipt(null as any)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.extractReceipt(mockUser as any, null as any),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should propagate GeminiExtractionException if service fails', async () => {
@@ -72,9 +79,9 @@ describe('GeminiController', () => {
         new GeminiExtractionException(),
       );
 
-      await expect(controller.extractReceipt(mockFile)).rejects.toThrow(
-        GeminiExtractionException,
-      );
+      await expect(
+        controller.extractReceipt(mockUser as any, mockFile),
+      ).rejects.toThrow(GeminiExtractionException);
     });
   });
 });

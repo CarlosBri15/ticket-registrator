@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Camera, ExternalLink, Image as ImageIcon, Loader2, X } from "lucide-react";
+import { Camera, ExternalLink, Image as ImageIcon, X } from "lucide-react";
 import { tokens } from "../../../styles/theme";
 
 interface ImageSidePanelProps {
@@ -13,11 +13,11 @@ export const ImageSidePanel = ({ imageUrl, isLoading, onClose }: ImageSidePanelP
 
   return (
     <>
-      <div className="bg-[var(--color-surface-header)] border-b-4 border-[var(--color-shadow-main)] px-6 pt-6 pb-5 shrink-0">
+      <div className="px-6 pt-6 pb-4 border-b border-[var(--color-border-main)] shrink-0">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <Camera className="w-5 h-5 text-dark/50 shrink-0" />
-            <h2 className="text-xl font-space-bold text-dark tracking-tight truncate">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Camera className="w-4 h-4 text-dark/45 shrink-0" aria-hidden={true} />
+            <h2 className="text-[16px] font-sans-bold text-dark tracking-tight truncate">
               {t("ticketDetail.imageTitle")}
             </h2>
           </div>
@@ -30,8 +30,8 @@ export const ImageSidePanel = ({ imageUrl, isLoading, onClose }: ImageSidePanelP
       <div className="flex-1 flex items-center justify-center p-6 overflow-hidden min-h-0">
         {isLoading ? (
           <div className="flex flex-col items-center gap-3">
-            <Loader2 className="w-8 h-8 text-dark/30 animate-spin" />
-            <p className="text-[10px] font-space-bold text-dark/30 uppercase tracking-widest">
+            <div className="w-5 h-5 border-2 border-dark/20 border-t-dark/60 rounded-full animate-spin" />
+            <p className="text-[11px] font-sans-medium text-dark/45 uppercase tracking-wide">
               {t("common.loading")}
             </p>
           </div>
@@ -39,15 +39,14 @@ export const ImageSidePanel = ({ imageUrl, isLoading, onClose }: ImageSidePanelP
           <img
             src={imageUrl}
             alt="Ticket"
-            className="max-w-full max-h-full object-contain rounded-lg"
-            style={{ boxShadow: "4px 4px 0px rgba(26,26,26,0.35)" }}
+            className="max-w-full max-h-full object-contain rounded-lg border border-[var(--color-border-main)]"
           />
         ) : (
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-lg border-2 border-border-main flex items-center justify-center mx-auto mb-3">
-              <ImageIcon className="w-7 h-7 text-dark/20" />
+          <div className="flex flex-col items-center text-center gap-2">
+            <div className="w-10 h-10 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40">
+              <ImageIcon className="w-4 h-4" aria-hidden={true} />
             </div>
-            <p className="text-[10px] font-space-bold text-dark/30 uppercase tracking-widest">
+            <p className="text-[12px] font-sans-medium text-dark/55">
               {t("ticketDetail.noImage")}
             </p>
           </div>
@@ -60,9 +59,9 @@ export const ImageSidePanel = ({ imageUrl, isLoading, onClose }: ImageSidePanelP
             href={imageUrl}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center justify-center gap-2 py-3 rounded-lg border-2 border-border-main text-xs font-space-bold text-dark/50 hover:text-dark transition-colors bg-[var(--color-surface-card)] shadow-hard-sm"
+            className="flex items-center justify-center gap-2 py-2.5 rounded-md border border-[var(--color-border-main)] bg-[var(--color-surface-card)] hover:bg-[var(--color-secondary)] text-[12px] font-sans-medium text-dark/70 transition-colors"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3.5 h-3.5" aria-hidden={true} />
             {t("ticketDetail.fullscreen")}
           </a>
         </div>

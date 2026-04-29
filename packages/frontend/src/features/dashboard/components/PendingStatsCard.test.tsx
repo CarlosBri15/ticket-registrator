@@ -8,10 +8,14 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('lucide-react', () => ({
-  AlertCircle: () => <div data-testid="alert-icon" />,
-  CheckCircle: () => <div data-testid="check-icon" />,
-}));
+vi.mock('lucide-react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('lucide-react')>();
+  return {
+    ...actual,
+    AlertCircle: () => <div data-testid="alert-icon" />,
+    CheckCircle2: () => <div data-testid="check-icon" />,
+  };
+});
 
 describe('PendingStatsCard', () => {
   it('renders "everything clear" state when count is 0', () => {

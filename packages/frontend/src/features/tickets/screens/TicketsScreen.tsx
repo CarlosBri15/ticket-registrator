@@ -1,107 +1,93 @@
 import { useMemo, useState } from "react";
-import { Receipt, Search, X } from "lucide-react";
+import { Receipt, ChevronRight } from "lucide-react";
 import { useReportsQuery, api, type ITicket } from "@ticket-registrator/shared";
-import { DARK } from "../../reports/constants";
 import { useQueries } from "@tanstack/react-query";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
-import { PixelCard } from "../../../components/ui/PixelCard";
 import { DateGroupHeader } from "../../../components/ui/DateGroupHeader";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { SearchInput } from "../../../components/ui/SearchInput";
+import { PageHeader } from "../../../components/ui/PageHeader";
 import { TicketDetailModal } from "../components/TicketDetailModal";
 import { useGroupedByDate } from "../../../hooks/useGroupedByDate";
 import { useDateLocale } from "../../../hooks/useDateLocale";
 import { useTranslation } from "react-i18next";
-import { tokens } from "../../../styles/theme";
-import { EmptyState } from "../../../components/ui/EmptyState";
-import { ticketIcon } from "@ticket-registrator/shared/assets";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 type TicketWithReport = ITicket & { reportId: string; reportName: string };
 
-// ─── Ticket card ──────────────────────────────────────────────────────────────
+const TICKET_GRID = "32px 1fr 140px 120px 16px";
 
-const TicketCard = ({
+// ─── Ticket row ───────────────────────────────────────────────────────────────
+
+const TicketRow = ({
   ticket,
   onClick,
 }: {
   ticket: TicketWithReport;
   onClick: () => void;
 }) => (
-  <PixelCard shadowOffset={3} onClick={onClick} className="w-full">
-    <div className="flex items-center gap-3 px-3.5 py-3">
+  <button
+    type="button"
+    onClick={onClick}
+    className="group w-full text-left border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] cursor-pointer transition-colors duration-100"
+  >
+    <div
+      className="grid items-center gap-4 px-4 py-3"
+      style={{ gridTemplateColumns: TICKET_GRID }}
+    >
+      <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white">
+        <Receipt className="w-3.5 h-3.5" aria-hidden={true} />
+      </div>
 
-      {/* Ticket icon */}
-      <img
-        src={ticketIcon}
-        alt=""
-        className="w-10 h-10 shrink-0 object-contain opacity-90"
-      />
-
-      {/* Main info */}
-      <div className="flex-1 min-w-0">
-        <p className="font-space-bold text-[13px] text-dark truncate leading-tight">
+      <div className="min-w-0">
+        <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
           {ticket.location_name || "Ticket"}
         </p>
-        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-          {ticket.expense_type && (
-            <span
-              className="font-space-bold text-[8px] uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0"
-              style={{
-                color: "#1E3A8A",
-                background: "rgba(59,130,246,0.10)",
-                border: "1px solid rgba(59,130,246,0.25)",
-              }}
-            >
-              {ticket.expense_type}
+        <div className="flex items-center gap-2 mt-0.5 min-w-0">
+          {ticket.items?.[0]?.categoryName && (
+            <span className="text-[11px] font-sans-medium text-dark/55 truncate">
+              {ticket.items[0].categoryName}
             </span>
           )}
-          <span
-            className="font-space-semibold text-[9px] truncate"
-            style={{ color: `${DARK}40` }}
-          >
+          {ticket.items?.[0]?.categoryName && ticket.reportName && (
+            <span className="text-dark/20 text-[11px]">·</span>
+          )}
+          <span className="text-[11px] font-sans-medium text-dark/45 truncate">
             {ticket.reportName}
           </span>
         </div>
       </div>
 
-      {/* Amount + status */}
-      <div className="shrink-0 text-right flex flex-col items-end gap-1.5">
-        <div className="flex items-baseline gap-1">
-          <span
-            className="font-space-bold text-dark tabular-nums leading-none"
-            style={{ fontSize: 17 }}
-          >
-            {ticket.amount == null ? "—" : ticket.amount.toLocaleString()}
-          </span>
-          {ticket.currency && (
-            <span
-              className="font-space-bold leading-none"
-              style={{ fontSize: 9, color: `${DARK}50` }}
-            >
-              {ticket.currency}
-            </span>
-          )}
-        </div>
+      <div className="flex items-center justify-end">
         <StatusBadge status={ticket.status} size="sm" />
       </div>
+
+      <p className="text-right font-sans-bold text-dark tabular-nums text-[14px]">
+        {ticket.amount == null ? "---" : ticket.amount.toLocaleString()}
+        {ticket.amount != null && ticket.currency && (
+          <span className="font-sans-medium ml-1 text-dark/50 text-[11px]">
+            {ticket.currency}
+          </span>
+        )}
+      </p>
+
+      <ChevronRight className="w-4 h-4 text-dark/30 opacity-0 group-hover:opacity-100 transition-opacity duration-100" />
     </div>
-  </PixelCard>
+  </button>
 );
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-const SkeletonCard = () => (
-  <div className="bg-white border-2 border-border-main/20 rounded-2xl p-3.5 animate-pulse">
-    <div className="flex items-center gap-3">
-      <div className="w-10 h-10 bg-dark/10 rounded-xl shrink-0" />
-      <div className="flex-1 space-y-2">
-        <div className="h-3.5 w-2/3 bg-dark/10 rounded" />
-        <div className="h-2.5 w-1/3 bg-dark/10 rounded" />
+const SkeletonRow = () => (
+  <div className="border-b border-[var(--color-border-main)]">
+    <div className="grid items-center gap-4 px-4 py-3 animate-pulse" style={{ gridTemplateColumns: TICKET_GRID }}>
+      <div className="w-8 h-8 rounded-md bg-dark/5 border border-[var(--color-border-main)]" />
+      <div className="space-y-2 min-w-0">
+        <div className="h-3.5 w-1/2 bg-dark/8 rounded" />
+        <div className="h-2.5 w-1/3 bg-dark/5 rounded" />
       </div>
-      <div className="space-y-1.5 shrink-0">
-        <div className="h-4 w-16 bg-dark/10 rounded" />
-        <div className="h-3 w-12 bg-dark/10 rounded ml-auto" />
-      </div>
+      <div className="h-4 w-16 bg-dark/8 rounded justify-self-end" />
+      <div className="h-3.5 w-12 bg-dark/8 rounded justify-self-end" />
+      <div />
     </div>
   </div>
 );
@@ -119,7 +105,6 @@ export const AllTicketsScreen = () => {
 
   const dateLocale = useDateLocale();
 
-  // Fetch tickets for every report in parallel
   const ticketQueries = useQueries({
     queries: (reports || []).map((report) => ({
       queryKey: ["tickets", report.id],
@@ -132,19 +117,18 @@ export const AllTicketsScreen = () => {
     (reports?.length ?? 0) > 0 && ticketQueries.some((q) => q.isLoading);
   const isLoading = isLoadingReports || isLoadingTickets;
 
-  // Aggregate + filter all tickets across all reports
   const allTickets = useMemo<TicketWithReport[]>(() => {
     if (!reports) return [];
     const all: TicketWithReport[] = [];
     reports.forEach((report, idx) => {
       const reportTickets = ticketQueries[idx]?.data ?? [];
-      reportTickets.forEach((ticket) => {
+      reportTickets.forEach((ticket: ITicket) => {
         if (search) {
           const q = search.toLowerCase();
           const matches =
             ticket.location_name?.toLowerCase().includes(q) ||
-            ticket.expense_type?.toLowerCase().includes(q) ||
-            ticket.items?.[0]?.expense_type?.toLowerCase().includes(q) ||
+            ticket.items?.[0]?.categoryName?.toLowerCase().includes(q) ||
+            ticket.items?.[0]?.name?.toLowerCase().includes(q) ||
             String(ticket.amount).includes(q) ||
             report.name.toLowerCase().includes(q);
           if (!matches) return;
@@ -158,109 +142,82 @@ export const AllTicketsScreen = () => {
   const groupedByDate = useGroupedByDate(allTickets);
   const totalTickets = groupedByDate.reduce((sum, g) => sum + g.items.length, 0);
 
+  const hasReports = (reports?.length ?? 0) > 0;
+  const hasAnyTickets = allTickets.length > 0;
+
   const handleTicketClick = (ticket: TicketWithReport) => {
     setSelectedTicket(ticket);
     setSelectedReportId(ticket.reportId);
     setIsDetailOpen(true);
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────────
-
   return (
-    // Negative margins para que el header llegue a los bordes, igual que ReportsScreen
-    <div className="-mx-6 -mt-7 md:-mx-10 lg:-mt-9">
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        title={t("ticketsPage.title")}
+        stats={hasAnyTickets ? [{ label: t("ticketsPage.title"), value: totalTickets }] : undefined}
+      />
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div
-        className="flex items-center justify-between px-10 md:px-16 py-3"
-        style={{ backgroundColor: "#FFFFFF", borderBottom: "4px solid rgba(26,26,26,0.2)" }}
-      >
-        <h1 className="font-space-bold text-dark" style={{ fontSize: 24, letterSpacing: "0.5px" }}>
-          {t("layout.allTickets")}
-        </h1>
-
-        {/* Badge en PixelCard — mismo tamaño que el botón "+" de ReportsScreen (inner 52px) */}
-        {!isLoading && totalTickets > 0 && (
-          <PixelCard shadowOffset={3} radius={14}>
-            <div
-              className="flex items-center justify-center px-4"
-              style={{ height: 52 }}
-            >
-              <span className="font-space-bold text-dark/50" style={{ fontSize: 13 }}>
-                {totalTickets}
-              </span>
-            </div>
-          </PixelCard>
+      <div className="flex flex-col gap-4">
+        {hasReports && (
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={t("ticketsPage.searchPlaceholder")}
+          />
         )}
-      </div>
 
-      {/* ── Content ────────────────────────────────────────────────────────── */}
-      <div className="space-y-5 animate-in fade-in duration-300 pb-16 px-10 md:px-16 pt-6">
-
-      {/* Search bar */}
-      <div className="flex items-center gap-2.5 px-4 py-3 border-2 border-border-main rounded-2xl bg-white shadow-hard-sm">
-        <Search className="w-4 h-4 text-dark/30 shrink-0" />
-        <input
-          type="text"
-          placeholder={t("ticketsPage.searchPlaceholder")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className={tokens.searchInput}
-        />
-        {search && (
-          <button
-            type="button"
-            onClick={() => setSearch("")}
-            className="text-dark/30 hover:text-dark transition-colors shrink-0"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-
-      {/* Content */}
-      {isLoading ? (
-        <div className="space-y-6">
-          {[0, 1].map((g) => (
-            <div key={g} className="space-y-2.5">
-              {/* Fake date header */}
-              <div className="flex items-center gap-3 px-0.5 mb-2.5">
-                <div className="w-20 h-6 bg-dark/10 rounded-lg animate-pulse" />
-                <div className="h-[1.5px] bg-dark/10 flex-1 rounded-full animate-pulse" />
-                <div className="w-6 h-5 bg-dark/10 rounded animate-pulse" />
+        {(() => {
+          if (isLoading) {
+            return (
+              <div className="flex flex-col gap-6">
+                <p className="sr-only">{t("ticketsPage.loading")}</p>
+                <div className="flex justify-center py-2">
+                  <div className="w-4 h-4 border-2 border-dark/20 border-t-dark/60 rounded-full animate-spin" />
+                </div>
+                <div>
+                  <SkeletonRow />
+                  <SkeletonRow />
+                  <SkeletonRow />
+                </div>
               </div>
-              {[0, 1, 2].map((i) => <SkeletonCard key={i} />)}
-            </div>
-          ))}
-        </div>
-      ) : groupedByDate.length === 0 ? (
-        <EmptyState
-          icon={<Receipt className="w-7 h-7 text-white" />}
-          title={search ? t("ticketsPage.noResults") : t("ticketsPage.noTickets")}
-          description={search ? t("ticketsPage.noResultsDesc") : t("ticketsPage.noTicketsDesc")}
-        />
-      ) : (
-        <div className="space-y-6">
-          {groupedByDate.map(({ date, items: dayTickets }) => (
-            <div key={date.toISOString()} className="space-y-2">
-              <DateGroupHeader
-                date={date}
-                count={dayTickets.length}
-                dateLocale={dateLocale}
-                today={t("ticketsPage.today")}
-                yesterday={t("ticketsPage.yesterday")}
+            );
+          }
+
+          if (!hasAnyTickets) {
+            return (
+              <EmptyState
+                icon={<Receipt className="w-4 h-4" aria-hidden={true} />}
+                title={search ? t("ticketsPage.noResults") : t("ticketsPage.noTickets")}
+                description={search ? t("ticketsPage.noResultsDesc") : t("ticketsPage.noTicketsDesc")}
               />
-              {dayTickets.map((ticket) => (
-                <TicketCard
-                  key={ticket.id}
-                  ticket={ticket}
-                  onClick={() => handleTicketClick(ticket)}
-                />
+            );
+          }
+
+          return (
+            <div className="flex flex-col gap-6">
+              {groupedByDate.map(({ date, items: dayTickets }) => (
+                <div key={date.toISOString()}>
+                  <DateGroupHeader
+                    date={date}
+                    count={dayTickets.length}
+                    dateLocale={dateLocale}
+                    today={t("ticketsPage.today")}
+                    yesterday={t("ticketsPage.yesterday")}
+                  />
+                  {dayTickets.map((ticket: TicketWithReport) => (
+                    <TicketRow
+                      key={ticket.id}
+                      ticket={ticket}
+                      onClick={() => handleTicketClick(ticket)}
+                    />
+                  ))}
+                </div>
               ))}
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })()}
+      </div>
 
       <TicketDetailModal
         isOpen={isDetailOpen}
@@ -268,7 +225,6 @@ export const AllTicketsScreen = () => {
         ticket={selectedTicket}
         reportId={selectedReportId}
       />
-      </div>
     </div>
   );
 };

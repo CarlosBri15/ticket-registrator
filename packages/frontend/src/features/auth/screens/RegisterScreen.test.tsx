@@ -115,10 +115,10 @@ describe('RegisterForm', () => {
     const user = (await import('@testing-library/user-event')).default.setup();
     const { container } = renderRegister();
     
-    await user.type(screen.getByPlaceholderText('Ej: Ana'), 'Ana');
-    await user.type(screen.getByPlaceholderText('Ej: García'), 'García');
-    await user.type(screen.getByPlaceholderText('ana@empresa.com'), 'ana@example.com');
-    await user.type(screen.getByPlaceholderText('ana.garcia'), 'ana.garcia');
+    await user.type(screen.getByPlaceholderText('register.namePlaceholder'), 'Ana');
+    await user.type(screen.getByPlaceholderText('register.surnamePlaceholder'), 'García');
+    await user.type(screen.getByPlaceholderText('register.emailPlaceholder'), 'ana@example.com');
+    await user.type(screen.getByPlaceholderText('register.usernamePlaceholder'), 'ana.garcia');
     
     const passwordInputs = container.querySelectorAll('input[type="password"]');
     await user.type(passwordInputs[0] as HTMLElement, 'Password123!');

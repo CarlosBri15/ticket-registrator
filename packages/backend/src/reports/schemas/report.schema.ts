@@ -36,3 +36,7 @@ export const reportRelations = relations(reports, ({ one, many }) => ({
 
 export type Report = typeof reports.$inferSelect;
 export type InsertReport = typeof reports.$inferInsert;
+
+export type ReportWithTickets = Report & {
+  tickets?: (typeof tickets.$inferSelect)[];
+};

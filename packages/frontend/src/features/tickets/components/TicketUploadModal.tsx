@@ -2,10 +2,13 @@ import { useState, useCallback } from "react";
 import { Upload, File, AlertCircle, Sparkles } from "lucide-react";
 import { Modal } from "../../../components/ui/Modal";
 import { Button } from "../../../components/ui/Button";
-import { useUploadTicketMutation, useUpdateTicketMutation, useDeleteTicketMutation } from "@ticket-registrator/shared";
+import {
+  useUploadTicketMutation,
+  useUpdateTicketMutation,
+  useDeleteTicketMutation,
+} from "@ticket-registrator/shared";
 import type { ITicket } from "@ticket-registrator/shared";
 import { TicketConfirmationForm } from "./TicketConfirmationForm";
-import { tokens, radius } from "../../../styles/theme";
 
 interface TicketUploadModalProps {
   isOpen: boolean;
@@ -13,10 +16,10 @@ interface TicketUploadModalProps {
   reportId: string;
 }
 
-type Step = 'upload' | 'confirm';
+type Step = "upload" | "confirm";
 
 export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadModalProps) => {
-  const [step, setStep] = useState<Step>('upload');
+  const [step, setStep] = useState<Step>("upload");
   const [file, setFile] = useState<File | null>(null);
   const [extractedTicket, setExtractedTicket] = useState<ITicket | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -24,29 +27,26 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
   const uploadMutation = useUploadTicketMutation({
     onSuccess: (ticket: ITicket) => {
       setExtractedTicket(ticket);
-      setStep('confirm');
-    }
+      setStep("confirm");
+    },
   });
 
   const updateMutation = useUpdateTicketMutation({
-    onSuccess: () => {
-      handleClose();
-    }
+    onSuccess: () => handleClose(),
   });
 
   const deleteMutation = useDeleteTicketMutation({
     onSuccess: () => {
-      setStep('upload');
+      setStep("upload");
       setExtractedTicket(null);
       setFile(null);
-    }
+    },
   });
 
   const handleClose = () => {
     onClose();
-    // Reset state after a delay to allow for closing animation
     setTimeout(() => {
-      setStep('upload');
+      setStep("upload");
       setFile(null);
       setExtractedTicket(null);
     }, 300);
@@ -78,10 +78,8 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
 
   const handleUpload = () => {
     if (!file) return;
-
     const formData = new FormData();
-    formData.append('image', file); // 'image' field as expected by backend
-
+    formData.append("image", file);
     uploadMutation.mutate({ reportId, formData });
   };
 
@@ -90,7 +88,7 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
     updateMutation.mutate({
       reportId,
       ticketId: extractedTicket.id,
-      data: updatedData
+      data: updatedData,
     });
   };
 
@@ -99,28 +97,29 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
       setFile(null);
       return;
     }
-    // Delete the pending ticket if user cancels
     deleteMutation.mutate({ reportId, ticketId: extractedTicket.id });
   };
+
+  const dropZoneClass = (() => {
+    if (file) return "border-success/40 bg-green-50/40";
+    if (isDragging) return "border-dark/50 bg-[var(--color-secondary)]";
+    return "border-[var(--color-border-main)] bg-[var(--color-surface-card)] hover:bg-[var(--color-secondary)]";
+  })();
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={step === 'upload' ? "Subir Ticket de Gasto" : "Confirmar Datos Extraídos"}
+      title={step === "upload" ? "Subir Ticket de Gasto" : "Confirmar Datos Extraídos"}
     >
-      <div className="space-y-6">
-        {step === 'upload' ? (
+      <div className="flex flex-col gap-5">
+        {step === "upload" ? (
           <>
             <label
               onDragOver={onDragOver}
               onDragLeave={onDragLeave}
               onDrop={onDrop}
-              className={`
-                relative border-2 border-dashed ${radius.card} p-10 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer
-                ${isDragging ? 'border-brand bg-brand/5' : 'border-dark/10 bg-surface-header/30 hover:bg-white hover:border-brand/30'}
-                ${file ? 'border-success/30 bg-success/5' : ''}
-              `}
+              className={`relative border border-dashed rounded-lg p-10 transition-colors duration-200 flex flex-col items-center justify-center cursor-pointer ${dropZoneClass}`}
             >
               <input
                 type="file"
@@ -131,84 +130,112 @@ export const TicketUploadModal = ({ isOpen, onClose, reportId }: TicketUploadMod
               />
 
               {file ? (
-                <div className="flex flex-col items-center animate-in zoom-in-95 duration-300">
-                  <div className="w-16 h-16 bg-success/10 text-success border-2 border-success/30 rounded-2xl flex items-center justify-center mb-5 shadow-hard-sm">
-                    <File className="w-8 h-8" />
+                <div className="flex flex-col items-center gap-3 animate-in zoom-in-95 duration-200">
+                  <div className="w-12 h-12 rounded-md bg-green-50 border border-green-100 flex items-center justify-center text-success">
+                    <File className="w-5 h-5" aria-hidden={true} />
                   </div>
-                  <p className="text-dark font-space-bold mb-1" style={{ fontSize: 16 }}>{file.name}</p>
-                  <p className="text-dark/40 font-space text-xs">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  <div className="text-center">
+                    <p className="text-[14px] font-sans-semibold text-dark">{file.name}</p>
+                    <p className="text-[12px] font-sans-medium text-dark/45 mt-0.5">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
                   {!uploadMutation.isPending && (
-                    <Button 
-                      variant="ghost-danger" 
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setFile(null); }}
-                      className="mt-5"
-                      size="sm"
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setFile(null);
+                      }}
+                      className="text-[12px] font-sans-medium text-danger hover:opacity-80 mt-1"
                     >
                       Quitar archivo
-                    </Button>
+                    </button>
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-16 h-16 bg-brand/10 text-brand border-2 border-brand/20 rounded-2xl flex items-center justify-center mb-5 shadow-hard-sm">
-                    <Upload className="w-8 h-8" />
+                <div className="flex flex-col items-center text-center gap-3">
+                  <div className="w-12 h-12 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/45">
+                    <Upload className="w-5 h-5" aria-hidden={true} />
                   </div>
-                  <h4 className="text-lg font-space-bold text-dark mb-2">Arrastra tu ticket aquí</h4>
-                  <p className="text-dark/50 font-space text-sm max-w-[220px]">Soporta imágenes (JPG, PNG) y documentos PDF</p>
-                  <div className="mt-6 px-5 py-2.5 bg-[var(--color-surface-card)] border-2 border-border-main rounded-xl text-xs font-space-bold text-dark/40 shadow-hard-sm">
+                  <div>
+                    <p className="text-[15px] font-sans-bold text-dark">
+                      Arrastra tu ticket aquí
+                    </p>
+                    <p className="text-[12px] font-sans-medium text-dark/55 max-w-[240px] mt-1">
+                      Soporta imágenes (JPG, PNG) y documentos PDF
+                    </p>
+                  </div>
+                  <p className="mt-2 text-[11px] font-sans-medium text-dark/45 underline underline-offset-2">
                     O haz clic para explorar
-                  </div>
+                  </p>
                 </div>
               )}
             </label>
 
-            <div className={`${tokens.alert} ${tokens.alertWarning}`}>
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <p className="text-xs leading-relaxed font-space-medium">
-                Asegúrate de que el ticket sea legible y contenga claramente la fecha, el importe total y el comercio. Nuestra IA se encargará del resto.
+            <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-amber-50 border border-amber-100">
+              <AlertCircle
+                className="w-4 h-4 text-amber-700 shrink-0 mt-0.5"
+                aria-hidden={true}
+              />
+              <p className="text-[12px] font-sans-medium text-amber-800 leading-relaxed">
+                Asegúrate de que el ticket sea legible y contenga claramente la fecha, el importe
+                total y el comercio. Nuestra IA se encargará del resto.
               </p>
             </div>
 
-            <div className="flex gap-3 pt-2">
-              <Button variant="secondary" onClick={handleClose} disabled={uploadMutation.isPending} className="flex-1">
+            <div className="flex gap-3 pt-1">
+              <Button
+                variant="secondary"
+                onClick={handleClose}
+                disabled={uploadMutation.isPending}
+                className="flex-1"
+              >
                 Cancelar
               </Button>
               <Button
                 onClick={handleUpload}
                 isLoading={uploadMutation.isPending}
                 disabled={!file}
+                leftIcon={<Sparkles className="w-3.5 h-3.5" />}
                 className="flex-1"
               >
-                <Sparkles className="w-4 h-4 mr-2" />
                 Procesar con IA
               </Button>
             </div>
           </>
         ) : (
-          <div className="space-y-4">
-            {extractedTicket && (() => {
-              const missing = [
-                extractedTicket.location_name, extractedTicket.location_address,
-                extractedTicket.date, extractedTicket.currency,
-                extractedTicket.payment_type
-              ].filter(v => v === null || v === undefined || v === "").length;
-              const hasMissing = missing > 0 || (extractedTicket.amount === null || extractedTicket.amount === undefined);
-              return hasMissing ? (
-                <div className={`${tokens.alert} ${tokens.alertWarning}`}>
-                  <Sparkles className="w-4 h-4 shrink-0 mt-0.5" />
-                  <p className="text-xs leading-relaxed font-medium">
-                    La IA no pudo leer algunos campos del ticket. Completa los que aparecen destacados antes de confirmar.
-                  </p>
-                </div>
-              ) : (
-                <div className={`${tokens.alert} ${tokens.alertInfo}`}>
-                  <Sparkles className="w-4 h-4 shrink-0 mt-0.5" />
-                  <p className="text-xs leading-relaxed font-medium">
-                    La IA extrajo todos los datos de tu ticket correctamente. Revisa la información y confirma.
-                  </p>
-                </div>
-              );
-            })()}
+          <div className="flex flex-col gap-4">
+            {extractedTicket &&
+              (() => {
+                const missing = [
+                  extractedTicket.location_name,
+                  extractedTicket.location_address,
+                  extractedTicket.date,
+                  extractedTicket.currency,
+                  extractedTicket.payment_type,
+                  extractedTicket.items?.[0]?.categoryId,
+                ].filter((v) => v === null || v === undefined || v === "").length;
+                const hasMissing =
+                  missing > 0 ||
+                  extractedTicket.amount === null ||
+                  extractedTicket.amount === undefined;
+                const variantClass = hasMissing
+                  ? "bg-amber-50 border-amber-100 text-amber-800"
+                  : "bg-blue-50 border-blue-100 text-blue-800";
+                const message = hasMissing
+                  ? "La IA no pudo leer algunos campos del ticket. Completa los que aparecen destacados antes de confirmar."
+                  : "La IA extrajo todos los datos de tu ticket correctamente. Revisa la información y confirma.";
+                return (
+                  <div
+                    className={`flex items-start gap-3 px-4 py-3 rounded-lg border ${variantClass}`}
+                  >
+                    <Sparkles className="w-4 h-4 shrink-0 mt-0.5" aria-hidden={true} />
+                    <p className="text-[12px] font-sans-medium leading-relaxed">{message}</p>
+                  </div>
+                );
+              })()}
 
             {extractedTicket && (
               <TicketConfirmationForm

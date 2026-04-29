@@ -1,11 +1,3 @@
-/**
- * ReportCard — Fila compacta de una sola línea para el reporte activo.
- *
- * Todo el contenido fluye left-to-right sin justify-between:
- *   nombre · tipo · fecha · [estado pill] · importe [→ on hover]
- *
- * Elimina el gap vacío en el centro que tenía el diseño anterior.
- */
 import { memo } from "react";
 import { ChevronRight } from "lucide-react";
 import { format, type Locale } from "date-fns";
@@ -16,7 +8,6 @@ interface ReportCardProps {
   report: IReport;
   onClick: () => void;
   dateLocale: Locale;
-  isActive?: boolean;
 }
 
 export const ReportCard = memo(({

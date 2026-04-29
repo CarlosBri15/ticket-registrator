@@ -27,23 +27,20 @@ describe('StatusBadge', () => {
     expect(screen.getByText('UNKNOWN_STATUS')).toBeInTheDocument();
   });
 
-  it('renders with sm size by default', () => {
+  it('renders with sm size by default (font-size 11px)', () => {
     const { container } = render(<StatusBadge status="APPROVED" />);
-    expect(container.querySelector('span')?.className).toContain('text-[10px]');
+    const span = container.querySelector('span') as HTMLElement;
+    expect(span.style.fontSize).toBe('11px');
   });
 
-  it('renders with md size when specified', () => {
+  it('renders with md size when specified (font-size 12px)', () => {
     const { container } = render(<StatusBadge status="APPROVED" size="md" />);
-    expect(container.querySelector('span')?.className).toContain('text-xs');
+    const span = container.querySelector('span') as HTMLElement;
+    expect(span.style.fontSize).toBe('12px');
   });
 
-  it('shows pulse animation for PENDING status', () => {
+  it('renders without pulse animation (web design has no animation)', () => {
     const { container } = render(<StatusBadge status="PENDING" />);
-    expect(container.querySelector('.animate-ping')).toBeInTheDocument();
-  });
-
-  it('does not show pulse animation for APPROVED status', () => {
-    const { container } = render(<StatusBadge status="APPROVED" />);
     expect(container.querySelector('.animate-ping')).not.toBeInTheDocument();
   });
 });

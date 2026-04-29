@@ -183,7 +183,8 @@ export class SeedService implements OnApplicationBootstrap {
   }
 
   async seedDefaultCategories() {
-    const existingCategories = await this.categoriesRepository.findAllSystemCategories();
+    const existingCategories =
+      await this.categoriesRepository.findAllSystemCategories();
     const existingMap = new Map(existingCategories.map((c) => [c.name, c]));
 
     let seededCount = 0;

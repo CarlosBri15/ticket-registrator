@@ -8,16 +8,25 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
   return {
     ...actual,
     useReportsQuery: vi.fn(),
-    useTicketsQuery: vi.fn(),
+    api: {
+      tickets: () => ({ getByReport: vi.fn().mockResolvedValue([]) }),
+    },
   };
 });
 
-vi.mock('lucide-react', () => ({
-  FileText: () => null,
-  Receipt: () => null,
-  ArrowRight: () => null,
-  Calendar: () => null,
-  Search: () => null,
+vi.mock('@tanstack/react-query', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-query')>();
+  return {
+    ...actual,
+    useQueries: vi.fn(),
+  };
+});
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, fallback?: string) => fallback ?? key,
+    i18n: { language: 'es' },
+  }),
 }));
 
 vi.mock('../../../components/ui/StatusBadge', () => ({
@@ -29,15 +38,12 @@ vi.mock('../components/TicketDetailModal', () => ({
     isOpen ? <div role="dialog">ticket-detail</div> : null,
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ i18n: { language: 'es' } }),
-}));
-
-import { useReportsQuery, useTicketsQuery } from '@ticket-registrator/shared';
+import { useReportsQuery } from '@ticket-registrator/shared';
+import { useQueries } from '@tanstack/react-query';
 
 const setupMocks = () => {
   (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false });
-  (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false });
+  (useQueries as ReturnType<typeof vi.fn>).mockReturnValue([]);
 };
 
 const renderScreen = () =>
@@ -58,25 +64,41 @@ describe('AllTicketsScreen', () => {
     expect(container).toBeTruthy();
   });
 
-  it('renders Todos los Tickets heading', () => {
+  it('renders the page title', () => {
     renderScreen();
-    expect(screen.getByText('Todos los Tickets')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ticketsPage.title');
   });
 
-  it('renders search input', () => {
+  it('renders search input when there are reports', () => {
+    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05' }],
+      isLoading: false,
+    });
+    (useQueries as ReturnType<typeof vi.fn>).mockReturnValue([{ data: [], isLoading: false }]);
     renderScreen();
-    expect(screen.getByPlaceholderText(/buscar/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('ticketsPage.searchPlaceholder')).toBeInTheDocument();
   });
 
   it('shows empty state when no reports', () => {
     renderScreen();
-    expect(screen.getByText(/no hay tickets registrados/i)).toBeInTheDocument();
+    expect(screen.getByText('ticketsPage.noTickets')).toBeInTheDocument();
   });
 
-  it('shows loading state', () => {
+  it('shows loading spinner when reports are loading', () => {
     (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: undefined, isLoading: true });
-    renderScreen();
-    expect(screen.getByText(/cargando tickets/i)).toBeInTheDocument();
+    const { container } = renderScreen();
+    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+    expect(screen.getByText('ticketsPage.loading')).toBeInTheDocument();
+  });
+
+  it('shows loading spinner when ticket queries are pending', () => {
+    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: 'r1', name: 'Viaje', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05' }],
+      isLoading: false,
+    });
+    (useQueries as ReturnType<typeof vi.fn>).mockReturnValue([{ data: undefined, isLoading: true }]);
+    const { container } = renderScreen();
+    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
   });
 
   it('renders ticket rows when report has tickets', () => {
@@ -84,41 +106,32 @@ describe('AllTicketsScreen', () => {
       data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05' }],
       isLoading: false,
     });
-    (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+    (useQueries as ReturnType<typeof vi.fn>).mockReturnValue([{
       data: [{
         id: 't1', location_name: 'Restaurante El Sol', amount: 25, currency: 'EUR',
-        status: 'PENDING', date: '2024-01-10', expense_type: 'Comida',
+        status: 'Pending', date: '2024-01-10', createdAt: '2024-01-10T10:00:00Z',
+        items: [{ id: 'i1', categoryName: 'Comida', categoryId: 'cat1', status: 'Pending', amount: 25, currency: 'EUR', name: 'Item 1' }],
       }],
       isLoading: false,
-    });
+    }]);
     renderScreen();
     expect(screen.getByText('Restaurante El Sol')).toBeInTheDocument();
   });
 
-  it('renders report group label with link', () => {
+  it('renders the report name within the row', () => {
     (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
       data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05' }],
       isLoading: false,
     });
-    (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+    (useQueries as ReturnType<typeof vi.fn>).mockReturnValue([{
       data: [{
         id: 't1', location_name: 'Tienda ABC', amount: 10, currency: 'EUR',
-        status: 'PENDING', date: '2024-01-10', expense_type: 'Otro',
+        status: 'Pending', date: '2024-01-10', createdAt: '2024-01-10T10:00:00Z', items: [],
       }],
       isLoading: false,
-    });
+    }]);
     renderScreen();
     expect(screen.getByText('Viaje Madrid')).toBeInTheDocument();
-  });
-
-  it('shows loading spinner in ReportTicketGroup when tickets are loading', () => {
-    (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05' }],
-      isLoading: false,
-    });
-    (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: undefined, isLoading: true });
-    const { container } = renderScreen();
-    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
   });
 
   it('opens ticket detail modal when a ticket is clicked', () => {
@@ -126,10 +139,10 @@ describe('AllTicketsScreen', () => {
       data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05' }],
       isLoading: false,
     });
-    (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 't1', location_name: 'Restaurante Sol', amount: 25, currency: 'EUR', status: 'PENDING', date: '2024-01-10' }],
+    (useQueries as ReturnType<typeof vi.fn>).mockReturnValue([{
+      data: [{ id: 't1', location_name: 'Restaurante Sol', amount: 25, currency: 'EUR', status: 'Pending', date: '2024-01-10', createdAt: '2024-01-10T10:00:00Z', items: [] }],
       isLoading: false,
-    });
+    }]);
     renderScreen();
     fireEvent.click(screen.getByText('Restaurante Sol'));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -140,42 +153,43 @@ describe('AllTicketsScreen', () => {
       data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05' }],
       isLoading: false,
     });
-    (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+    (useQueries as ReturnType<typeof vi.fn>).mockReturnValue([{
       data: [
-        { id: 't1', location_name: 'Restaurante Sol', amount: 25, currency: 'EUR', status: 'PENDING', date: '2024-01-10', expense_type: 'Comida' },
-        { id: 't2', location_name: 'Hotel Central', amount: 120, currency: 'EUR', status: 'APPROVED', date: '2024-01-11', expense_type: 'Alojamiento' },
+        { id: 't1', location_name: 'Restaurante Sol', amount: 25, currency: 'EUR', status: 'Pending', date: '2024-01-10', createdAt: '2024-01-10T10:00:00Z', items: [{ categoryName: 'Comida' }] },
+        { id: 't2', location_name: 'Hotel Central', amount: 120, currency: 'EUR', status: 'Approved', date: '2024-01-11', createdAt: '2024-01-11T10:00:00Z', items: [{ categoryName: 'Alojamiento' }] },
       ],
       isLoading: false,
-    });
+    }]);
     renderScreen();
-    fireEvent.change(screen.getByPlaceholderText(/buscar/i), { target: { value: 'Sol' } });
+    fireEvent.change(screen.getByPlaceholderText('ticketsPage.searchPlaceholder'), { target: { value: 'Sol' } });
     expect(screen.getByText('Restaurante Sol')).toBeInTheDocument();
     expect(screen.queryByText('Hotel Central')).not.toBeInTheDocument();
   });
 
-  it('hides ticket group when search matches nothing', () => {
+  it('shows no-results empty state when search matches nothing', () => {
     (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
       data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05' }],
       isLoading: false,
     });
-    (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 't1', location_name: 'Restaurante Sol', amount: 25, currency: 'EUR', status: 'PENDING', date: '2024-01-10', expense_type: 'Comida' }],
+    (useQueries as ReturnType<typeof vi.fn>).mockReturnValue([{
+      data: [{ id: 't1', location_name: 'Restaurante Sol', amount: 25, currency: 'EUR', status: 'Pending', date: '2024-01-10', createdAt: '2024-01-10T10:00:00Z', items: [{ categoryName: 'Comida' }] }],
       isLoading: false,
-    });
+    }]);
     renderScreen();
-    fireEvent.change(screen.getByPlaceholderText(/buscar/i), { target: { value: 'xyz-no-match' } });
+    fireEvent.change(screen.getByPlaceholderText('ticketsPage.searchPlaceholder'), { target: { value: 'xyz-no-match' } });
     expect(screen.queryByText('Restaurante Sol')).not.toBeInTheDocument();
+    expect(screen.getByText('ticketsPage.noResults')).toBeInTheDocument();
   });
 
-  it('renders ticket without date as "---"', () => {
+  it('renders ticket without amount as "---"', () => {
     (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
       data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05' }],
       isLoading: false,
     });
-    (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 't1', location_name: 'Ticket sin fecha', amount: 10, currency: 'EUR', status: 'PENDING', date: null }],
+    (useQueries as ReturnType<typeof vi.fn>).mockReturnValue([{
+      data: [{ id: 't1', location_name: 'Ticket sin monto', amount: null, currency: 'EUR', status: 'Pending', date: '2024-01-10', createdAt: '2024-01-10T10:00:00Z', items: [] }],
       isLoading: false,
-    });
+    }]);
     renderScreen();
     expect(screen.getByText('---')).toBeInTheDocument();
   });
@@ -185,10 +199,10 @@ describe('AllTicketsScreen', () => {
       data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05' }],
       isLoading: false,
     });
-    (useTicketsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
-      data: [{ id: 't1', location_name: null, amount: 10, currency: 'EUR', status: 'PENDING', date: '2024-01-10' }],
+    (useQueries as ReturnType<typeof vi.fn>).mockReturnValue([{
+      data: [{ id: 't1', location_name: null, amount: 10, currency: 'EUR', status: 'Pending', date: '2024-01-10', createdAt: '2024-01-10T10:00:00Z', items: [] }],
       isLoading: false,
-    });
+    }]);
     renderScreen();
     expect(screen.getByText('Ticket')).toBeInTheDocument();
   });

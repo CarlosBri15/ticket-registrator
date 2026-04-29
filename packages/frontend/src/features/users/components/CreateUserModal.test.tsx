@@ -12,13 +12,47 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
 });
 
 vi.mock('../../roles/components/RoleSelect', () => ({
-  RoleSelect: ({ label, value, onChange, placeholder, required }: any) => (
-    <select aria-label={label} value={value ?? ''} onChange={(e) => onChange?.(e.target.value)} required={required}>
+  RoleSelect: ({ value, onChange, placeholder, required }: any) => (
+    <select aria-label="Rol" value={value ?? ''} onChange={(e) => onChange?.(e.target.value)} required={required}>
       <option value="">{placeholder}</option>
       <option value="r1">Admin</option>
       <option value="r2">Empleado</option>
     </select>
   ),
+}));
+
+vi.mock('../../organizations/components/OrgSelect', () => ({
+  OrgSelect: ({ label, value, onChange }: any) => (
+    <select aria-label={label} value={value ?? ''} onChange={(e) => onChange?.(e.target.value)}>
+      <option value="">Seleccionar org</option>
+      <option value="o1">Org 1</option>
+    </select>
+  ),
+}));
+
+vi.mock('../../departments/components/DepartmentMultiSelect', () => ({
+  DepartmentMultiSelect: () => <div data-testid="dept-multi-select" />,
+}));
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const map: Record<string, string> = {
+        'users.fieldName': 'Nombre',
+        'users.fieldSurname': 'Apellido',
+        'users.fieldEmail': 'Email',
+        'users.fieldUsername': 'Username',
+        'users.fieldPassword': 'Contraseña',
+        'users.fieldConfirmPassword': 'Confirmar contraseña',
+        'users.passwordMismatch': 'Las contraseñas no coinciden.',
+        'users.create': 'Crear usuario',
+        'users.createUserBtn': 'Crear usuario',
+        'users.fieldRole': 'Rol',
+      };
+      return map[key] ?? key;
+    },
+    i18n: { language: 'es' },
+  }),
 }));
 
 vi.mock('lucide-react', () => ({
@@ -93,6 +127,7 @@ describe('CreateUserModal', () => {
       mutate: mockMutate,
       isPending: false,
       error: null,
+      reset: vi.fn(),
     });
   });
 
@@ -200,7 +235,7 @@ describe('CreateUserModal', () => {
       password: 'password123',
       confirmPassword: 'password123',
       roleId: 'r1',
-      companyId: 'c1',
+      departmentIds: [],
     });
   });
 

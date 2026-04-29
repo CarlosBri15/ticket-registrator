@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Users, Building2, Layers, Lock, Shield } from "lucide-react";
+import type { PermissionType } from "@ticket-registrator/shared";
 import { radius, text } from "../../../styles/theme";
 
 export const QuickActionsGrid = ({
@@ -7,7 +8,7 @@ export const QuickActionsGrid = ({
   can,
 }: {
   navigate: (path: string) => void;
-  can: (permission: string) => boolean;
+  can: (permission: PermissionType) => boolean;
 }) => {
   const { t } = useTranslation();
   const links = [
@@ -16,7 +17,7 @@ export const QuickActionsGrid = ({
     { labelKey: "layout.roles", icon: Layers, path: "/roles", permission: "view_roles" },
     { labelKey: "layout.permissions", icon: Lock, path: "/permissions", permission: "view_permissions" },
     { labelKey: "layout.organizations", icon: Shield, path: "/organizations", permission: "view_company" },
-  ].filter((l) => can(l.permission));
+  ].filter((l) => can(l.permission as PermissionType));
 
   if (links.length === 0) return null;
 

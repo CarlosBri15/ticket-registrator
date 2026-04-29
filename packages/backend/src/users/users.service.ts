@@ -132,7 +132,7 @@ export class UsersService {
 
     if (maxHierarchy < AUTHORITY_LEVELS.GLOBAL) {
       userFilters.push(
-        eq(this.usersRepository.schema.users.companyId, requester.companyId),
+        eq(this.usersRepository.schema.users.companyId, requester.companyId!),
       );
 
       if (

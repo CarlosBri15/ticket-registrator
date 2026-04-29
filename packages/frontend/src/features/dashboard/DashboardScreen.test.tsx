@@ -45,6 +45,7 @@ import {
   useScope,
   useScopeContext,
   usePermissions,
+  useUserQuery,
 } from '@ticket-registrator/shared';
 
 // ─── Setup helpers ────────────────────────────────────────────────────────────
@@ -61,6 +62,7 @@ const renderScreen = () =>
 describe('DashboardPage router', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (useUserQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: { hierarchy: 99 } });
   });
 
   it('renders SuperAdminGlobalDashboard when isGlobal and no activeCompanyId', () => {
@@ -71,28 +73,31 @@ describe('DashboardPage router', () => {
     expect(screen.getByTestId('global-stats')).toBeInTheDocument();
   });
 
-  it('renders AdminDashboard when isGlobal is false and can() returns true', () => {
+  it('renders AdminDashboard when can approve_reports and hierarchy is admin', () => {
     (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: false });
     (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
     (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => true });
+    (useUserQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: { hierarchy: 99 } });
     renderScreen();
     expect(screen.getByTestId('admin-stats')).toBeInTheDocument();
   });
 
-  it('renders RegularDashboard when isGlobal is false and can() returns false', () => {
+  it('renders RegularDashboard when can() returns false', () => {
     (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: false });
     (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
     (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: () => false });
+    (useUserQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: { hierarchy: 10 } });
     renderScreen();
     expect(screen.getByTestId('regular-dashboard')).toBeInTheDocument();
     expect(screen.queryByTestId('global-stats')).not.toBeInTheDocument();
     expect(screen.queryByTestId('admin-stats')).not.toBeInTheDocument();
   });
 
-  it('renders ControllerDashboard when can approve_reports but not view_users', () => {
+  it('renders ControllerDashboard when can approve_reports but hierarchy is below admin', () => {
     (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isGlobal: false });
     (useScopeContext as ReturnType<typeof vi.fn>).mockReturnValue({ activeCompanyId: null });
     (usePermissions as ReturnType<typeof vi.fn>).mockReturnValue({ can: (p: string) => p === 'approve_reports' });
+    (useUserQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: { hierarchy: 50 } });
     renderScreen();
     expect(screen.getByTestId('controller-dashboard')).toBeInTheDocument();
   });

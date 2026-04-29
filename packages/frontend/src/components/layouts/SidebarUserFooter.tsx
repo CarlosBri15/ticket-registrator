@@ -2,7 +2,6 @@ import { NavLink } from "react-router-dom";
 import { Settings, LogOut, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ICurrentUser } from "@ticket-registrator/shared";
-import { RoleBadge } from "../ui/RoleBadge";
 
 interface SidebarUserFooterProps {
   user: ICurrentUser | undefined;
@@ -47,7 +46,11 @@ export const SidebarUserFooter = ({ user, isCollapsed, onLogout }: SidebarUserFo
             <span className="text-[13px] font-sans-semibold text-dark truncate leading-none">
               {user?.name || t("layout.defaultUser")}
             </span>
-            <RoleBadge roleName={user?.roleName} size="sm" />
+            {user?.roleName && (
+              <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded bg-[var(--color-secondary)] text-dark/60 text-[10px] font-sans-semibold">
+                {user.roleName}
+              </span>
+            )}
           </div>
         )}
       </div>

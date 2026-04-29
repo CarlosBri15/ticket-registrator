@@ -1,6 +1,5 @@
 import { Calendar } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { userIcon } from "@ticket-registrator/shared/assets";
 import type { ICurrentUser } from "@ticket-registrator/shared";
 
 interface DashboardHeroProps {
@@ -39,35 +38,32 @@ export const DashboardHero = ({
   const greetingName = nameIndex > 0 ? fullGreeting.slice(nameIndex) : fullGreeting;
 
   return (
-    <div className="flex items-center justify-between gap-4 pb-6 mb-1">
-      <div className="flex items-center gap-4">
-        {/* Avatar */}
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-white overflow-hidden border-2 border-border-main shadow-hard">
-          <img src={userIcon} alt="avatar" className="w-10 h-10 object-contain" />
+    <div className="flex items-end justify-between gap-4 pt-1">
+      <div className="flex flex-col gap-2 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          {subtitleIcon && <span className="shrink-0 text-dark/40">{subtitleIcon}</span>}
+          <p className="text-[11px] font-sans-semibold text-dark/45 uppercase tracking-wide">
+            {subtitle}
+          </p>
+          {(badgeContent || user?.roleName) && (
+            <span className="text-[10px] font-sans-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-[var(--color-secondary)] text-dark/60">
+              {badgeContent || user?.roleName}
+            </span>
+          )}
         </div>
 
-        <div>
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            {subtitleIcon && <div className="shrink-0">{subtitleIcon}</div>}
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.18em]">{subtitle}</p>
-            {(badgeContent || user?.roleName) && (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand/10 text-brand border border-brand/15">
-                {badgeContent || user?.roleName}
-              </span>
-            )}
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 leading-tight">
-            <span className="text-slate-400 font-medium">{greetingPrefix}</span>
-            {greetingName}
-          </h1>
-          <p className="text-xs text-slate-400 font-medium mt-1 flex items-center gap-1.5 capitalize">
-            <Calendar className="w-3 h-3" />
-            {today}
-          </p>
-        </div>
+        <h1 className="text-[36px] font-sans-bold text-dark leading-none tracking-tight">
+          <span className="text-dark/40 font-sans-medium">{greetingPrefix}</span>
+          {greetingName}
+        </h1>
+
+        <p className="text-[12px] font-sans-medium text-dark/45 flex items-center gap-1.5 capitalize mt-0.5">
+          <Calendar className="w-3 h-3 text-dark/35" aria-hidden={true} />
+          {today}
+        </p>
       </div>
 
-      {actions && <div className="shrink-0">{actions}</div>}
+      {actions && <div className="shrink-0 flex items-center gap-2">{actions}</div>}
     </div>
   );
 };

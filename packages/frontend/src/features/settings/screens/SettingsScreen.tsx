@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Globe, User, LogOut, Check, Mail, Pencil, X, Shield, Key } from "lucide-react";
+import { LogOut, Check, Mail, Pencil, X, Shield, Key } from "lucide-react";
 import {
   useUserQuery,
   useUpdateUserMutation,
@@ -10,9 +10,9 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
-import { tokens, radius } from "../../../styles/theme";
+import { PageHeader } from "../../../components/ui/PageHeader";
+import { SectionCard } from "../../../components/ui/SectionCard";
 import { LANGUAGES } from "../../../constants/config";
-
 import { useQueryClient } from "@tanstack/react-query";
 
 export const SettingsScreen = () => {
@@ -68,51 +68,47 @@ export const SettingsScreen = () => {
   const permissionsCount = user?.permissions?.length ?? 0;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-dark tracking-tight">{t("settings.title")}</h1>
-        <p className="text-slate-500 text-sm mt-1">{t("settings.languageDesc")}</p>
-      </div>
+    <div className="max-w-2xl mx-auto flex flex-col gap-8">
+      <PageHeader title={t("settings.title")} subtitle={t("settings.languageDesc")} />
 
-      {/* Profile Card */}
-      <section className={`${tokens.listSection}`}>
-        <div className={`${tokens.listSectionHeader} px-6 py-4`}>
-          <div className="flex items-center gap-3 flex-1">
-            <User className="w-4 h-4 text-slate-400" />
-            <h2 className="font-semibold text-dark">{t("settings.profile")}</h2>
-          </div>
-          {!isEditing && (
+      {/* Profile */}
+      <SectionCard
+        title={t("settings.profile")}
+        action={
+          !isEditing && (
             <button
+              type="button"
               onClick={startEdit}
-              className="flex items-center gap-1.5 text-xs font-semibold text-brand hover:text-brand/70 transition-colors"
+              className="flex items-center gap-1.5 text-[12px] font-sans-medium text-dark/50 hover:text-dark transition-colors"
             >
-              <Pencil className="w-3.5 h-3.5" />
+              <Pencil className="w-3.5 h-3.5" aria-hidden={true} />
               {t("settings.editProfile")}
             </button>
-          )}
-        </div>
-
+          )
+        }
+      >
         {isEditing ? (
-          <form onSubmit={handleSave} className="p-6 space-y-4">
-            <div className="flex items-center gap-5 mb-2">
-              <div className={`w-12 h-12 bg-brand text-white ${radius.sm} flex items-center justify-center font-bold text-lg shadow-sm shrink-0`}>
+          <form onSubmit={handleSave} className="flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center font-sans-bold text-[14px] text-dark/70 shrink-0">
                 {userInitials}
               </div>
-              <p className="text-sm text-slate-400 font-medium">{t("settings.profileInfo")}</p>
+              <p className="text-[13px] font-sans-normal text-dark/55">
+                {t("settings.profileInfo")}
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <Input
                 label={t("settings.nameLabel")}
                 value={form.name}
-                onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
+                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                 placeholder="Carlos"
                 required
               />
               <Input
                 label={t("settings.surnameLabel")}
                 value={form.surname}
-                onChange={(e) => setForm(p => ({ ...p, surname: e.target.value }))}
+                onChange={(e) => setForm((p) => ({ ...p, surname: e.target.value }))}
                 placeholder="García"
               />
             </div>
@@ -120,81 +116,80 @@ export const SettingsScreen = () => {
               label={t("settings.email")}
               type="email"
               value={form.email}
-              onChange={(e) => setForm(p => ({ ...p, email: e.target.value }))}
+              onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
               placeholder="carlos@empresa.com"
             />
             <div className="flex gap-3 pt-2">
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 onClick={cancelEdit}
+                leftIcon={<X className="w-3.5 h-3.5" />}
                 className="flex-1"
               >
-                <X className="w-4 h-4 mr-1.5" />
                 {t("settings.cancelEdit")}
               </Button>
               <Button
                 type="submit"
                 isLoading={updateMutation.isPending}
                 disabled={!form.name.trim()}
+                leftIcon={<Check className="w-3.5 h-3.5" />}
                 className="flex-1"
               >
-                <Check className="w-4 h-4 mr-1.5" />
                 {t("settings.saveChanges")}
               </Button>
             </div>
           </form>
         ) : (
-          <div className="p-6">
-            <div className="flex items-center gap-5 mb-5">
-              <div className={`w-12 h-12 bg-brand text-white ${radius.sm} flex items-center justify-center font-bold text-lg shadow-sm shrink-0`}>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center font-sans-bold text-[14px] text-dark/70 shrink-0">
                 {userInitials}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-dark truncate">
+                <p className="font-sans-semibold text-dark text-[14px] truncate">
                   {user?.name ?? "—"} {user?.surname ?? ""}
                 </p>
-                <p className="text-sm text-slate-400 flex items-center gap-2 mt-1 truncate">
-                  <Mail className="w-3.5 h-3.5 shrink-0" />
+                <p className="text-[12px] font-sans-medium text-dark/55 flex items-center gap-1.5 mt-0.5 truncate">
+                  <Mail className="w-3 h-3 shrink-0 text-dark/40" aria-hidden={true} />
                   {user?.email ?? "—"}
                 </p>
               </div>
               {saveOk && (
-                <div className={`${tokens.badgeSm} ${tokens.badgeSuccess} shrink-0`}>
-                  <Check className="w-3 h-3" />
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-[11px] font-sans-semibold">
+                  <Check className="w-3 h-3" aria-hidden={true} />
                   {t("settings.updateSuccess")}
-                </div>
+                </span>
               )}
             </div>
 
-            {/* Role + Permissions info */}
             {(user?.roleName || permissionsCount > 0) && (
-              <div className="space-y-3 pt-4 border-t border-slate-100">
+              <div className="flex flex-col gap-3 pt-3 border-t border-[var(--color-border-main)]">
                 {user?.roleName && (
                   <div className="flex items-center justify-between">
-                    <div className={`flex items-center gap-2 ${tokens.listSectionTitle}`}>
-                      <Shield className="w-3.5 h-3.5" />
+                    <span className="flex items-center gap-2 text-[12px] font-sans-medium text-dark/55">
+                      <Shield className="w-3.5 h-3.5 text-dark/40" aria-hidden={true} />
                       {t("settings.myRole")}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`${tokens.badgeSm} ${tokens.badgeBrand}`}>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--color-secondary)] text-dark/70 text-[11px] font-sans-semibold">
                         {user.roleName}
                       </span>
                       {user?.hierarchy !== undefined && (
-                        <span className="text-[10px] font-semibold text-slate-400">
+                        <span className="text-[10px] font-sans-medium text-dark/40">
                           {t("settings.hierarchyLevel", { level: user.hierarchy })}
                         </span>
                       )}
-                    </div>
+                    </span>
                   </div>
                 )}
                 {permissionsCount > 0 && (
                   <div className="flex items-center justify-between">
-                    <div className={`flex items-center gap-2 ${tokens.listSectionTitle}`}>
-                      <Key className="w-3.5 h-3.5" />
+                    <span className="flex items-center gap-2 text-[12px] font-sans-medium text-dark/55">
+                      <Key className="w-3.5 h-3.5 text-dark/40" aria-hidden={true} />
                       {t("settings.myPermissions")}
-                    </div>
-                    <span className="text-xs font-semibold text-slate-500">
+                    </span>
+                    <span className="text-[12px] font-sans-semibold text-dark/70">
                       {t("settings.permissionsCount", { count: permissionsCount })}
                     </span>
                   </div>
@@ -203,63 +198,61 @@ export const SettingsScreen = () => {
             )}
           </div>
         )}
-      </section>
+      </SectionCard>
 
-      {/* Language Section */}
-      <section className={tokens.listSection}>
-        <div className={`${tokens.listSectionHeader} px-6 py-4`}>
-          <Globe className="w-4 h-4 text-slate-400" />
-          <div>
-            <h2 className="font-semibold text-dark">{t("settings.language")}</h2>
-            <p className="text-xs text-slate-400 mt-0.5">{t("settings.languageDesc")}</p>
-          </div>
-        </div>
-        <div className="p-5 space-y-2">
+      {/* Language */}
+      <SectionCard title={t("settings.language")}>
+        <p className="text-[12px] font-sans-normal text-dark/50 -mt-2">
+          {t("settings.languageDesc")}
+        </p>
+        <div className="flex flex-col gap-2">
           {LANGUAGES.map((lang) => {
             const isActive = i18n.language.startsWith(lang.code);
             return (
               <button
                 key={lang.code}
+                type="button"
                 onClick={() => i18n.changeLanguage(lang.code)}
-                className={`w-full flex items-center justify-between p-4 ${radius.sm} border-2 transition-all duration-200 ${
+                className={`w-full flex items-center justify-between p-3 rounded-md border transition-colors duration-100 ${
                   isActive
-                    ? "border-brand bg-brand/5 text-brand"
-                    : "border-slate-100 hover:border-brand/30 hover:bg-slate-50 text-slate-600"
+                    ? "border-dark/30 bg-[var(--color-secondary)]"
+                    : "border-[var(--color-border-main)] bg-[var(--color-surface-card)] hover:bg-[var(--color-secondary)]"
                 }`}
               >
-                <div className="flex items-center gap-4">
-                  <span className="text-2xl">{lang.flag}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xl" aria-hidden={true}>{lang.flag}</span>
                   <div className="text-left">
-                    <p className={`font-semibold text-sm ${isActive ? "text-brand" : "text-dark"}`}>{lang.label}</p>
-                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">{lang.code.toUpperCase()}</p>
+                    <p className="font-sans-semibold text-[13px] text-dark">{lang.label}</p>
+                    <p className="text-[10px] font-sans-medium text-dark/40 uppercase tracking-wide">
+                      {lang.code.toUpperCase()}
+                    </p>
                   </div>
                 </div>
                 {isActive && (
-                  <div className="w-6 h-6 bg-brand text-white rounded-full flex items-center justify-center">
-                    <Check className="w-3.5 h-3.5" />
-                  </div>
+                  <Check className="w-4 h-4 text-dark/70" aria-hidden={true} />
                 )}
               </button>
             );
           })}
         </div>
-      </section>
+      </SectionCard>
 
       {/* Logout */}
-      <section className={`bg-white ${radius.card} border border-danger/15 shadow-sm overflow-hidden`}>
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-4 px-6 py-5 text-danger hover:bg-danger/5 transition-colors group"
-        >
-          <div className={`w-9 h-9 bg-danger/10 ${radius.sm} flex items-center justify-center group-hover:bg-danger/15 transition-colors`}>
-            <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-          </div>
-          <div className="text-left">
-            <p className="font-semibold text-sm">{t("settings.logout")}</p>
-            <p className="text-xs text-danger/60">{t("settings.closeSessionDesc")}</p>
-          </div>
-        </button>
-      </section>
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="w-full flex items-center gap-3 px-5 py-4 rounded-lg border border-red-100 bg-red-50/50 text-danger hover:bg-red-50 transition-colors"
+      >
+        <div className="w-9 h-9 rounded-md bg-red-100 flex items-center justify-center shrink-0">
+          <LogOut className="w-4 h-4" aria-hidden={true} />
+        </div>
+        <div className="text-left">
+          <p className="font-sans-semibold text-[13px]">{t("settings.logout")}</p>
+          <p className="text-[12px] font-sans-normal opacity-70">
+            {t("settings.closeSessionDesc")}
+          </p>
+        </div>
+      </button>
     </div>
   );
 };

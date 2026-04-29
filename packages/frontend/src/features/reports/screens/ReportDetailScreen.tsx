@@ -44,11 +44,14 @@ export const ReportDetailScreen = () => {
 
   const categoryData = useMemo(() => {
     if (!tk || tk.length === 0) return [];
-    const counts = tk.reduce((acc, ticket) => {
-      const cat = ticket.expense_type || t("trips.typeOther") || "Otros";
-      acc[cat] = (acc[cat] || 0) + (ticket.amount || 0);
-      return acc;
-    }, {} as Record<string, number>);
+    const counts: Record<string, number> = {};
+    for (const ticket of tk) {
+      if (!ticket.items?.length) continue;
+      for (const item of ticket.items) {
+        const cat = item.categoryName ?? t("trips.typeOther");
+        counts[cat] = (counts[cat] ?? 0) + (item.amount ?? 0);
+      }
+    }
     return Object.entries(counts)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
@@ -144,6 +147,7 @@ export const ReportDetailScreen = () => {
             </div>
           </div>
 
+
           <div className="flex items-center gap-8">
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-sans-medium text-dark/45 leading-none">{t("reportForm.dateRange")}</span>
@@ -177,14 +181,6 @@ export const ReportDetailScreen = () => {
                 value={rejected.toLocaleString()}
                 currency={r.currency}
                 variant="danger"
-              />
-            )}
-            {!isApproved && (
-              <StatItem
-                label={t("reportDetail.requested") ?? "Solicitado"}
-                value={(r.requested_amount ?? 0).toLocaleString()}
-                currency={r.currency}
-                variant="muted"
               />
             )}
           </div>
@@ -262,7 +258,7 @@ export const ReportDetailScreen = () => {
                   <DonutChart
                     data={categoryData}
                     height={200}
-                    centerValue={report?.approved_amount?.toLocaleString() ?? ticketsTotal.toLocaleString()}
+                    centerValue={report?.requested_amount?.toLocaleString() ?? ticketsTotal.toLocaleString()}
                     centerLabel={report?.currency ?? ""}
                   />
                 </div>
