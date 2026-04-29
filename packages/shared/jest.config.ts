@@ -20,6 +20,7 @@ const config: Config = {
     '^react-dom$': '<rootDir>/../../node_modules/react-dom',
     '^react-dom/(.*)$': '<rootDir>/../../node_modules/react-dom/$1',
     '^react/jsx-runtime$': '<rootDir>/../../node_modules/react/jsx-runtime',
+    '\\.(png|jpg|jpeg|gif|svg|webp)$': '<rootDir>/__mocks__/fileMock.js',
   },
 };
 
