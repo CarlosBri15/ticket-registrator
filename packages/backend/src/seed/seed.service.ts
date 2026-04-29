@@ -10,7 +10,7 @@ import { PermissionsService } from '../permissions/permissions.service';
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import {
   Roles,
   ROLE_NAME_TO_HIERARCHY,
@@ -230,7 +230,10 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     const existingSuperAdmin = await this.db.query.users.findFirst({
-      where: eq(schema.users.username, 'SuperAdmin'),
+      where: or(
+        eq(schema.users.username, 'SuperAdmin'),
+        eq(schema.users.email, 'superadmin@system.com'),
+      ),
     });
 
     if (existingSuperAdmin) {

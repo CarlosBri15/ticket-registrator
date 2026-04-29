@@ -38,11 +38,9 @@ describe('GeminiService', () => {
           categoriesRepository: CategoriesRepository,
         ) => {
           const svc = new GeminiService(configService, categoriesRepository);
-          (svc as any).genAI = {
-            getGenerativeModel: () => ({
-              generateContent: mockGenerateContent,
-            }),
-          };
+          // The model is now a property initialised in the constructor.
+          // We mock it directly so tests don't require a real API key.
+          (svc as any).model = { generateContent: mockGenerateContent };
           return svc;
         },
         inject: [ConfigService, CategoriesRepository],
@@ -108,11 +106,7 @@ describe('GeminiService', () => {
         { get: () => 'fake-api-key' } as any,
         categoriesRepoMock as any,
       );
-      (testService as any).genAI = {
-        getGenerativeModel: () => ({
-          generateContent: mockGenerateContent,
-        }),
-      };
+      (testService as any).model = { generateContent: mockGenerateContent };
 
       const result = await testService.extractReceipt('base64-data', 'org-1');
 
@@ -136,6 +130,47 @@ describe('GeminiService', () => {
       await expect(
         service.extractReceipt('base64-data', 'org-1'),
       ).rejects.toThrow(GeminiExtractionException);
+    });
+
+    it('should correctly calculate costs when cached tokens are present', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        response: {
+          text: () => JSON.stringify({ total: 100 }),
+          usageMetadata: {
+            promptTokenCount: 1000,
+            candidatesTokenCount: 200,
+            totalTokenCount: 1200,
+            cachedContentTokenCount: 800,
+          },
+        },
+      });
+
+      // No crash means it successfully went through the cost calculation logic
+      const result = await service.extractReceipt('base64-data', 'org-1');
+      expect(result.total).toBe(100);
+    });
+
+    it('should handle missing usageMetadata gracefully', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        response: {
+          text: () => JSON.stringify({ total: 50 }),
+          usageMetadata: undefined, // Missing!
+        },
+      });
+
+      const result = await service.extractReceipt('base64-data', 'org-1');
+      expect(result.total).toBe(50);
+    });
+
+    it('should handle null items in response gracefully', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        response: {
+          text: () => JSON.stringify({ total: 50, items: null }),
+        },
+      });
+
+      const result = await service.extractReceipt('base64-data', 'org-1');
+      expect(result.items).toBeNull();
     });
   });
 });

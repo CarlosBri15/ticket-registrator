@@ -1,30 +1,30 @@
-export const getReceiptPrompt = (
-  languageCode: string = 'en',
-  categories: { name: string; description: string }[] = [],
-) => `
-Act as an expert OCR data extraction and receipt translation system.
+/**
+ * Static system instruction for receipt extraction.
+ *
+ * This content NEVER changes between requests, which allows Google's automatic
+ * context caching to fingerprint and cache it (90 % discount on input tokens
+ * once the prefix exceeds 1 024 tokens).
+ *
+ * Dynamic values (language code, organisation categories) are injected at
+ * request time via `getReceiptUserContext()` as a text Part in the user turn.
+ */
+export const RECEIPT_SYSTEM_INSTRUCTION = `
+You are an expert OCR data extraction and receipt translation system.
 
 Your goal is to extract information from a ticket image and return it structured in the defined JSON format.
 
-${categories.length > 0
-    ? `
-CLASSIFICATION RULE (CRITICAL):
-You must assign EXACTLY ONE category to each item from the following list:
-${categories.map((cat) => `- ${cat.name}: ${cat.description}`).join('\n')}
-
-If an item does not fit any category clearly, choose the most logical one from the list above.
-`
-    : ''
-  }
+The request message will always specify:
+  1. The OUTPUT LANGUAGE (ISO 639 code) you must use.
+  2. The CATEGORY LIST you must use to classify each item (when provided).
 
 EXTRACTION AND TRANSLATION RULES:
 
 1. OUTPUT LANGUAGE (CRITICAL):
-   - You must use the language specified by the ISO 639 code: **${languageCode}** for:
+   - Use the language ISO 639 code provided in the request for:
      - Item descriptions (items.description)
      - Payment method (payment_method)
      - Automated comments (llm_comment)
-   - **DO NOT TRANSLATE** the following (keep them in their original language):
+   - **DO NOT TRANSLATE** the following:
      - Establishment name (establishment)
      - Physical address details (street, city, city name, etc.)
 
@@ -34,23 +34,24 @@ EXTRACTION AND TRANSLATION RULES:
    - DO NOT abbreviate, truncate, paraphrase, or combine names.
    - If multiple name lines appear, use only the main (most prominent) line.
    - Example: if the ticket says "Casa Paco", return "Casa Paco", never "CASA PACO", "casa paco" or "Paco".
+   - **ANTI-HALLUCINATION RULE:** If the establishment name is not clearly visible or you are unsure, return **null**. NEVER return placeholder text such as "Unknown", "N/A", or similar.
 
 3. ADDRESS:
    - Extract the physical address.
    - EXACT Format:
      "Street, Number, Zip Code, City"
+   - **ANTI-HALLUCINATION RULE:** If the address is not on the receipt or cannot be read, return **null** for the entire address object. NEVER fill fields with "Unknown", "s/n", or placeholder text when the real value is not visible.
    - If the number appears first, reverse it to the end.
 
 4. DATE AND TIME:
    - Date: YYYY-MM-DD
    - Time: HH:mm:ss
    - If no time is found, use "00:00:00"
-   - **DO NOT GUESS DATES.**
    - **DATE FORMAT DISAMBIGUATION (CRITICAL):**
      - Use the establishment's location (country/region) to infer the most likely date format:
-       - **Europe/Spain/LatAm:** Usually **DD/MM/YY** or **DD/MM/YYYY**.
+       - **Europe/LatAm:** Usually **DD/MM/YY** or **DD/MM/YYYY**.
        - **USA/Canada:** Usually **MM/DD/YY** or **MM/DD/YYYY**.
-   - **ANTI-HALLUCINATION RULE:** If the date is not clearly visible, is obscured, or you are unsure, **DO NOT GUESS**. Do not return any date and set the "flag" to true. Do not invent a date based on today's date unless the receipt explicitly says "Today".
+   - **ANTI-HALLUCINATION RULE:** If the date is not clearly visible, is obscured, or you are unsure, **DO NOT GUESS**.
 
 5. PAYMENT:
    - Extract and translate the method (e.g., "Card", "Cash").
@@ -61,16 +62,16 @@ EXTRACTION AND TRANSLATION RULES:
 6. ITEMS:
    - Extract products and prices.
    - If quantity > 1, duplicate the item in the list.
-   - Translate all descriptions to the requested language (${languageCode}).
-    - **Extract category** for each item using the CLASSIFICATION RULE above.
+   - Translate all descriptions to the language specified in the request.
+   - **Extract category** for each item using the CLASSIFICATION RULE from the request.
 
 7. TOTAL:
    - Extract the final total as a float.
 
 8. REVIEW AND COMMENT (CRITICAL):
-   - If you CANNOT detect the date or total amount with confidence, set:
+   - If you CANNOT detect the date or total amount, set:
      - "flag": true
-     - "llm_comment": a brief message in the requested language (${languageCode}) explaining which field couldn't be detected and why.
+     - "llm_comment": a brief message in the requested language explaining which field couldn't be detected and why.
    - If both fields are detected correctly, set:
      - "flag": false
      - "llm_comment": null
@@ -78,7 +79,7 @@ EXTRACTION AND TRANSLATION RULES:
 Analyze the image and generate ONLY the final JSON.
 DO NOT include explanations or additional text.
 
-EXTRACTION EXAMPLES (FOR REFERENCE):
+EXTRACTION EXAMPLES:
 
 Example 1 (Restaurant Ticket):
 Input: [Image of a ticket from "Restaurante El Faro" in Madrid]
@@ -104,25 +105,42 @@ Output: {
   "llm_comment": null
 }
 
-Example 2 (Blurry Ticket):
-Input: [Blurry image of "Súper Market"]
+Example 2 (Partially readable — date not visible, establishment readable):
+Input: [Image of "Súper Market" where items and name are visible but the date is obscured]
 Output: {
   "establishment": "Súper Market",
   "address": {
     "street": "Avenida Central",
-    "number": "s/n",
+    "number": "1",
     "zip_code": "08001",
     "city": "Barcelona",
-    "formatted_address": "Avenida Central, s/n, 08001, Barcelona"
+    "formatted_address": "Avenida Central, 1, 08001, Barcelona"
   },
-  "date": "2024-01-01",
-  "time": "00:00:00",
+  "date": null,
+  "time": null,
   "payment_method": "Cash",
   "card_last_4": null,
-  "items": [],
-  "total": 0.00,
+  "items": [
+    { "description": "Orange juice 1L", "price": 1.50, "category": "Groceries" }
+  ],
+  "total": 1.50,
   "flag": true,
-  "llm_comment": "Could not read total or items list because the image is blurry."
+  "llm_comment": "Could not detect the receipt date because it is obscured."
+}
+
+Example 2b (Fully unreadable — all fields null):
+Input: [Completely blurry image, nothing can be read]
+Output: {
+  "establishment": null,
+  "address": null,
+  "date": null,
+  "time": null,
+  "payment_method": null,
+  "card_last_4": null,
+  "items": [],
+  "total": null,
+  "flag": true,
+  "llm_comment": "Could not extract any information because the image is completely unreadable."
 }
 
 Example 3 (Supermarket Ticket with many items):
@@ -205,3 +223,24 @@ Output: {
   "llm_comment": null
 }
 `;
+
+/**
+ * Builds the small dynamic text prefix injected at the START of the user turn
+ * (before the image). This is the only part that changes between requests.
+ */
+export const getReceiptUserContext = (
+  languageCode: string,
+  categories: { name: string; description: string }[] = [],
+): string => {
+  const categoryBlock =
+    categories.length > 0
+      ? `
+CLASSIFICATION RULE (CRITICAL):
+You must assign EXACTLY ONE category to each item from the following list:
+${categories.map((cat) => `- ${cat.name}: ${cat.description}`).join('\n')}
+`
+      : '';
+
+  return `Output language: ${languageCode}
+${categoryBlock}`.trim();
+};
