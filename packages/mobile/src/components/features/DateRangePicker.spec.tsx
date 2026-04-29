@@ -51,14 +51,30 @@ describe('DateRangePicker', () => {
 
   it('shows error message if provided', () => {
     const { getByText } = render(
-      <DateRangePicker 
-        startDate={null} 
-        endDate={null} 
-        onStartChange={jest.fn()} 
-        onEndChange={jest.fn()} 
+      <DateRangePicker
+        startDate={null}
+        endDate={null}
+        onStartChange={jest.fn()}
+        onEndChange={jest.fn()}
         error="Date error"
       />
     );
     expect(getByText('Date error')).toBeTruthy();
+  });
+
+  it('does not render error text when error is not provided', () => {
+    const { queryByText } = render(
+      <DateRangePicker startDate={null} endDate={null} onStartChange={jest.fn()} onEndChange={jest.fn()} />
+    );
+    expect(queryByText('Date error')).toBeNull();
+  });
+
+  it('opens the date picker modal when the trigger is pressed', () => {
+    const { getAllByText, getByText } = render(
+      <DateRangePicker startDate={null} endDate={null} onStartChange={jest.fn()} onEndChange={jest.fn()} />
+    );
+    fireEvent.press(getAllByText('DD / MM / AAAA')[0]);
+    // DatePickerModal becomes visible — range mode renders "Seleccionar inicio"
+    expect(getByText('Seleccionar inicio')).toBeTruthy();
   });
 });

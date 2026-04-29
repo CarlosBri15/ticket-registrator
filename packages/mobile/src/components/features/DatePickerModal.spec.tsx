@@ -71,4 +71,69 @@ describe('DatePickerModal', () => {
     );
     expect(getByText('Seleccionar inicio')).toBeTruthy();
   });
+
+  it('navigates to previous month correctly (Jan wraps to Dec of prior year)', () => {
+    const { getByText, getByTestId } = render(
+      <DatePickerModal visible={true} onClose={jest.fn()} value={new Date(2025, 0, 1)} />
+    );
+    expect(getByText('Enero 2025')).toBeTruthy();
+    fireEvent.press(getByTestId('icon-chevron-left'));
+    expect(getByText('Diciembre 2024')).toBeTruthy();
+  });
+
+  it('navigates to next month correctly (Dec wraps to Jan of next year)', () => {
+    const { getByText, getByTestId } = render(
+      <DatePickerModal visible={true} onClose={jest.fn()} value={new Date(2025, 11, 1)} />
+    );
+    expect(getByText('Diciembre 2025')).toBeTruthy();
+    fireEvent.press(getByTestId('icon-chevron-right'));
+    expect(getByText('Enero 2026')).toBeTruthy();
+  });
+
+  it('calls onRangeSelect with start date and null on first press in range mode', () => {
+    const onRangeSelect = jest.fn();
+    // Use a month+year where the 28th only appears once in the grid (no other-month cells share it)
+    const { getAllByText } = render(
+      <DatePickerModal
+        visible={true}
+        onClose={jest.fn()}
+        rangeMode={true}
+        startDate={null}
+        endDate={null}
+        onRangeSelect={onRangeSelect}
+      />
+    );
+    // Press the first occurrence of '14' — always a current-month day
+    fireEvent.press(getAllByText('14')[0]);
+    expect(onRangeSelect).toHaveBeenCalledWith(expect.any(Date), null);
+  });
+
+  it('calls onRangeSelect and onClose on second press (end date selection)', () => {
+    const onRangeSelect = jest.fn();
+    const onClose = jest.fn();
+    const start = new Date(2025, 2, 1); // March 2025
+    const { getAllByText } = render(
+      <DatePickerModal
+        visible={true}
+        onClose={onClose}
+        rangeMode={true}
+        startDate={start}
+        endDate={null}
+        onRangeSelect={onRangeSelect}
+      />
+    );
+    // First press → sets start, moves to picking end
+    fireEvent.press(getAllByText('12')[0]);
+    // Second press → sets end and calls onClose
+    fireEvent.press(getAllByText('22')[0]);
+    expect(onRangeSelect).toHaveBeenCalledTimes(2);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('uses single-date title when no title and not range mode', () => {
+    const { getByText } = render(
+      <DatePickerModal visible={true} onClose={jest.fn()} />
+    );
+    expect(getByText('Seleccionar fecha')).toBeTruthy();
+  });
 });

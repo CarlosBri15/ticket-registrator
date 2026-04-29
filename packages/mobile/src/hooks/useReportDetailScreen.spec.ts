@@ -122,4 +122,103 @@ describe('useReportDetailScreen', () => {
     expect(result.current.selectedTicket).toEqual(mockTicket);
     expect(result.current.isDetailOpen).toBe(true);
   });
+
+  it('isEditable is false for non-editable statuses', () => {
+    (useReportQuery as jest.Mock).mockReturnValue({
+      data: { id: reportId, status: 'SUBMITTED' },
+      isLoading: false,
+      refetch: mockRefetchReport,
+    });
+    const { result } = renderHook(() => useReportDetailScreen(reportId));
+    expect(result.current.isEditable).toBe(false);
+    expect(result.current.canSubmit).toBe(false);
+  });
+
+  it('canSubmit is false when tickets list is empty', () => {
+    (useTicketsQuery as jest.Mock).mockReturnValue({
+      data: [],
+      isLoading: false,
+      refetch: mockRefetchTickets,
+    });
+    const { result } = renderHook(() => useReportDetailScreen(reportId));
+    expect(result.current.canSubmit).toBe(false);
+  });
+
+  it('ticketsTotal is 0 when no tickets', () => {
+    (useTicketsQuery as jest.Mock).mockReturnValue({
+      data: [],
+      isLoading: false,
+      refetch: mockRefetchTickets,
+    });
+    const { result } = renderHook(() => useReportDetailScreen(reportId));
+    expect(result.current.ticketsTotal).toBe(0);
+  });
+
+  it('ticketsTotal is 0 when tickets is undefined', () => {
+    (useTicketsQuery as jest.Mock).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      refetch: mockRefetchTickets,
+    });
+    const { result } = renderHook(() => useReportDetailScreen(reportId));
+    expect(result.current.ticketsTotal).toBe(0);
+  });
+
+  it('handleConfirm does nothing when extractedTicket is null', () => {
+    const updateMutate = jest.fn();
+    (useUpdateTicketMutation as jest.Mock).mockReturnValue({ mutate: updateMutate, isPending: false });
+    const { result } = renderHook(() => useReportDetailScreen(reportId));
+    act(() => { result.current.handleConfirm({ amount: 10 }); });
+    expect(updateMutate).not.toHaveBeenCalled();
+  });
+
+  it('handleDiscard does nothing when extractedTicket is null', () => {
+    const deleteMutate = jest.fn();
+    (useDeleteTicketMutation as jest.Mock).mockReturnValue({ mutate: deleteMutate });
+    const { result } = renderHook(() => useReportDetailScreen(reportId));
+    act(() => { result.current.handleDiscard(); });
+    expect(deleteMutate).not.toHaveBeenCalled();
+  });
+
+  it('shows camera permission error when denied', async () => {
+    (ImagePicker.requestCameraPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
+    const { result } = renderHook(() => useReportDetailScreen(reportId));
+    await act(async () => { await result.current.pickFromCamera(); });
+    expect(Alert.alert).toHaveBeenCalledWith('common.error', expect.any(String));
+  });
+
+  it('shows gallery permission error when denied', async () => {
+    (ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
+    const { result } = renderHook(() => useReportDetailScreen(reportId));
+    await act(async () => { await result.current.pickFromGallery(); });
+    expect(Alert.alert).toHaveBeenCalledWith('common.error', expect.any(String));
+  });
+
+  it('does not upload when camera is canceled', async () => {
+    (ImagePicker.requestCameraPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+    (ImagePicker.launchCameraAsync as jest.Mock).mockResolvedValue({ canceled: true });
+    const mutate = jest.fn();
+    (useUploadTicketMutation as jest.Mock).mockReturnValue({ mutate, isPending: false });
+    const { result } = renderHook(() => useReportDetailScreen(reportId));
+    await act(async () => { await result.current.pickFromCamera(); });
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('does not upload when gallery is canceled', async () => {
+    (ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+    (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({ canceled: true });
+    const mutate = jest.fn();
+    (useUploadTicketMutation as jest.Mock).mockReturnValue({ mutate, isPending: false });
+    const { result } = renderHook(() => useReportDetailScreen(reportId));
+    await act(async () => { await result.current.pickFromGallery(); });
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('setIsModalOpen closes the modal', () => {
+    const { result } = renderHook(() => useReportDetailScreen(reportId));
+    act(() => { result.current.setIsModalOpen(true); });
+    expect(result.current.isModalOpen).toBe(true);
+    act(() => { result.current.setIsModalOpen(false); });
+    expect(result.current.isModalOpen).toBe(false);
+  });
 });

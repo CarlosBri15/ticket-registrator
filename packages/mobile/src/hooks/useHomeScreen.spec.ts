@@ -138,13 +138,125 @@ describe('useHomeScreen', () => {
 
   it('shows error Alert if camera permission denied', async () => {
     (ImagePicker.requestCameraPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
-    
+
     const { result } = renderHook(() => useHomeScreen());
-    
+
     await act(async () => {
       await result.current.pickFromCamera();
     });
 
     expect(Alert.alert).toHaveBeenCalledWith('common.error', expect.any(String));
+  });
+
+  it('does nothing in pickFromCamera when activeReport is null', async () => {
+    (useReportsQuery as jest.Mock).mockReturnValue({
+      data: [],
+      isLoading: false,
+      refetch: mockRefetch,
+    });
+    (ImagePicker.requestCameraPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+
+    const mutate = jest.fn();
+    (useUploadTicketMutation as jest.Mock).mockReturnValue({ mutate, isPending: false });
+
+    const { result } = renderHook(() => useHomeScreen());
+    await act(async () => { await result.current.pickFromCamera(); });
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('does nothing in pickFromGallery when activeReport is null', async () => {
+    (useReportsQuery as jest.Mock).mockReturnValue({
+      data: [],
+      isLoading: false,
+      refetch: mockRefetch,
+    });
+    (ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+
+    const mutate = jest.fn();
+    (useUploadTicketMutation as jest.Mock).mockReturnValue({ mutate, isPending: false });
+
+    const { result } = renderHook(() => useHomeScreen());
+    await act(async () => { await result.current.pickFromGallery(); });
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('shows error Alert when gallery permission is denied', async () => {
+    (ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
+
+    const { result } = renderHook(() => useHomeScreen());
+    await act(async () => { await result.current.pickFromGallery(); });
+    expect(Alert.alert).toHaveBeenCalledWith('common.error', expect.any(String));
+  });
+
+  it('does not call uploadTicket when camera result is canceled', async () => {
+    (ImagePicker.requestCameraPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+    (ImagePicker.launchCameraAsync as jest.Mock).mockResolvedValue({ canceled: true });
+
+    const mutate = jest.fn();
+    (useUploadTicketMutation as jest.Mock).mockReturnValue({ mutate, isPending: false });
+
+    const { result } = renderHook(() => useHomeScreen());
+    await act(async () => { await result.current.pickFromCamera(); });
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('does not call uploadTicket when gallery result is canceled', async () => {
+    (ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+    (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({ canceled: true });
+
+    const mutate = jest.fn();
+    (useUploadTicketMutation as jest.Mock).mockReturnValue({ mutate, isPending: false });
+
+    const { result } = renderHook(() => useHomeScreen());
+    await act(async () => { await result.current.pickFromGallery(); });
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('handleConfirm does nothing when extractedTicket or activeReport is null', () => {
+    const updateMutate = jest.fn();
+    (useUpdateTicketMutation as jest.Mock).mockReturnValue({ mutate: updateMutate, isPending: false });
+
+    const { result } = renderHook(() => useHomeScreen());
+    act(() => { result.current.handleConfirm({ amount: 50 }); });
+    expect(updateMutate).not.toHaveBeenCalled();
+  });
+
+  it('handleDiscard does nothing when extractedTicket or activeReport is null', () => {
+    const deleteMutate = jest.fn();
+    (useDeleteTicketMutation as jest.Mock).mockReturnValue({ mutate: deleteMutate });
+
+    const { result } = renderHook(() => useHomeScreen());
+    act(() => { result.current.handleDiscard(); });
+    expect(deleteMutate).not.toHaveBeenCalled();
+  });
+
+  it('recentCompleted filters reports correctly', () => {
+    (useReportsQuery as jest.Mock).mockReturnValue({
+      data: [
+        { id: '1', status: 'APPROVED', requested_amount: 100 },
+        { id: '2', status: 'PAID', requested_amount: 200 },
+        { id: '3', status: 'DECLINED', requested_amount: 50 },
+        { id: '4', status: 'REJECTED', requested_amount: 75 },
+        { id: '5', status: 'CREATED', requested_amount: 10 },
+      ],
+      isLoading: false,
+      refetch: mockRefetch,
+    });
+    const { result } = renderHook(() => useHomeScreen());
+    expect(result.current.recentCompleted).toHaveLength(4);
+    expect(result.current.recentCompleted.map((r: any) => r.id)).not.toContain('5');
+  });
+
+  it('returns default initials when user has no name', () => {
+    (useUserQuery as jest.Mock).mockReturnValue({ data: {} });
+    const { result } = renderHook(() => useHomeScreen());
+    expect(result.current.userInitials).toBe('??');
+    expect(result.current.firstName).toBe('');
+  });
+
+  it('setScanSheetOpen updates scanSheetOpen state', () => {
+    const { result } = renderHook(() => useHomeScreen());
+    act(() => { result.current.setScanSheetOpen(true); });
+    expect(result.current.scanSheetOpen).toBe(true);
   });
 });

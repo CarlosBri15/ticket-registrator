@@ -81,4 +81,92 @@ describe('useTicketsScreen', () => {
     expect(result.current.reportFilter).toBeNull();
     expect(result.current.hasFilters).toBe(false);
   });
+
+  it('hasFilters is true when ticketDate.start is set', () => {
+    const { result } = renderHook(() => useTicketsScreen());
+    act(() => { result.current.setTicketDate({ start: new Date(), end: null }); });
+    expect(result.current.hasFilters).toBe(true);
+  });
+
+  it('hasFilters is true when uploadDate.end is set', () => {
+    const { result } = renderHook(() => useTicketsScreen());
+    act(() => { result.current.setUploadDate({ start: null, end: new Date() }); });
+    expect(result.current.hasFilters).toBe(true);
+  });
+
+  it('filters tickets by search matching location_name', () => {
+    const ticket = {
+      id: 't1',
+      report_id: '1',
+      location_name: 'Madrid',
+      expense_type: null,
+      amount: 100,
+      createdAt: new Date().toISOString(),
+      date: new Date().toISOString(),
+      reportName: 'Report A',
+    };
+    (useQueries as jest.Mock).mockReturnValue([{ data: [ticket], isLoading: false }]);
+
+    const { result } = renderHook(() => useTicketsScreen());
+    act(() => { result.current.setSearch('madrid'); });
+    expect(result.current.tickets).toHaveLength(1);
+
+    act(() => { result.current.setSearch('nomatch'); });
+    expect(result.current.tickets).toHaveLength(0);
+  });
+
+  it('filters tickets by reportFilter', () => {
+    const ticket = {
+      id: 't1',
+      report_id: '1',
+      location_name: 'A',
+      expense_type: null,
+      amount: 10,
+      createdAt: new Date().toISOString(),
+      date: new Date().toISOString(),
+      reportName: 'Report A',
+    };
+    (useQueries as jest.Mock).mockReturnValue([{ data: [ticket], isLoading: false }]);
+
+    const { result } = renderHook(() => useTicketsScreen());
+    act(() => { result.current.setReportFilter('99'); }); // wrong id
+    expect(result.current.tickets).toHaveLength(0);
+
+    act(() => { result.current.setReportFilter('1'); }); // correct id
+    expect(result.current.tickets).toHaveLength(1);
+  });
+
+  it('filters tickets by ticketDate range (excludes out-of-range)', () => {
+    const pastDate = new Date(2020, 0, 1).toISOString();
+    const ticket = {
+      id: 't2',
+      report_id: '1',
+      location_name: 'B',
+      expense_type: null,
+      amount: 20,
+      createdAt: new Date().toISOString(),
+      date: pastDate,
+      reportName: 'Report A',
+    };
+    (useQueries as jest.Mock).mockReturnValue([{ data: [ticket], isLoading: false }]);
+
+    const { result } = renderHook(() => useTicketsScreen());
+    act(() => {
+      result.current.setTicketDate({ start: new Date(2024, 0, 1), end: new Date(2024, 11, 31) });
+    });
+    expect(result.current.tickets).toHaveLength(0);
+  });
+
+  it('returns empty allTickets when reports is undefined', () => {
+    (useReportsQuery as jest.Mock).mockReturnValue({ data: undefined, isLoading: false });
+    (useQueries as jest.Mock).mockReturnValue([]);
+    const { result } = renderHook(() => useTicketsScreen());
+    expect(result.current.tickets).toEqual([]);
+  });
+
+  it('isLoading is true while reports are loading', () => {
+    (useReportsQuery as jest.Mock).mockReturnValue({ data: undefined, isLoading: true });
+    const { result } = renderHook(() => useTicketsScreen());
+    expect(result.current.isLoading).toBe(true);
+  });
 });

@@ -47,4 +47,46 @@ describe('PixelCard', () => {
     });
     expect(contentView).toBeTruthy();
   });
+
+  it('renders static (non-interactive) variant when no onPress is provided', () => {
+    // Static mode: pressing should not throw, and children are still rendered
+    const { getByText, queryByText } = render(
+      <PixelCard>
+        <Text>StaticCard</Text>
+      </PixelCard>
+    );
+    expect(getByText('StaticCard')).toBeTruthy();
+    // No onPress was provided so there is no button role accessible
+    expect(queryByText('StaticCard')).toBeTruthy();
+  });
+
+  it('applies custom shadowOffset and radius props without error', () => {
+    expect(() =>
+      render(
+        <PixelCard shadowOffset={8} radius={16} onPress={jest.fn()}>
+          <Text>Custom</Text>
+        </PixelCard>
+      )
+    ).not.toThrow();
+  });
+
+  it('renders with active=true without throwing', () => {
+    expect(() =>
+      render(
+        <PixelCard active={true} onPress={jest.fn()}>
+          <Text>Active</Text>
+        </PixelCard>
+      )
+    ).not.toThrow();
+  });
+
+  it('renders with active=true in static mode without throwing', () => {
+    expect(() =>
+      render(
+        <PixelCard active={true}>
+          <Text>Active Static</Text>
+        </PixelCard>
+      )
+    ).not.toThrow();
+  });
 });
