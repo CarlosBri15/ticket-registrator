@@ -26,7 +26,7 @@ export const getAvatarColor = (name: string): string => {
   if (!name) return AVATAR_PALETTE[0];
   const code = name
     .split('')
-    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    .reduce((acc, char) => acc + (char.codePointAt(0) ?? 0), 0);
   return AVATAR_PALETTE[code % AVATAR_PALETTE.length];
 };
 

@@ -11,9 +11,14 @@ export const useCompanyScope = () => {
   const { scope, isGlobal } = useScope();
   const { activeCompanyId } = useScopeContext();
 
-  const companyId: string | null = isGlobal
-    ? activeCompanyId
-    : (scope.type !== "global" ? scope.companyId : null);
+  let companyId: string | null;
+  if (isGlobal) {
+    companyId = activeCompanyId;
+  } else if (scope.type === "global") {
+    companyId = null;
+  } else {
+    companyId = scope.companyId;
+  }
 
   return { companyId, isGlobal };
 };
