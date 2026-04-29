@@ -4,6 +4,7 @@ import { CreditCard, Banknote, FileText, ChevronRight } from 'lucide-react';
 import { type ITicket } from '@ticket-registrator/shared';
 import { useDateLocale } from '../../../hooks/useDateLocale';
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { TableHeader } from "../../../components/ui/TableHeader";
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
@@ -15,7 +16,7 @@ const TicketRowContent = ({
 }: {
   ticket: ITicket;
   dateLocale: Locale;
-  t: (key: string, defaultValue?: string) => string;
+  t: TFunction;
 }) => {
   const isCard = ticket.payment_type?.toLowerCase().includes('card') || ticket.payment_type?.toLowerCase().includes('tarjeta');
   const PaymentIcon = isCard ? CreditCard : Banknote;

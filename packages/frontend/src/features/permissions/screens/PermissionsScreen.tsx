@@ -190,7 +190,7 @@ export const PermissionsScreen = () => {
         {
           roleId: selectedRoleId,
           permissionId: permission.id,
-          companyId: companyId ?? null,
+          companyId: companyId ?? undefined,
           _companyId: companyId ?? undefined,
         },
         { onSettled: () => setPendingPermId(null) },

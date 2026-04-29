@@ -3,12 +3,13 @@ import { ChevronRight, FileText, CheckCircle2 } from "lucide-react";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { format } from "date-fns";
 import type { Locale } from "date-fns";
+import type { TFunction } from "i18next";
 
 export interface PendingApprovalsListProps {
   reports: IReport[];
   navigate: (path: string) => void;
   dateLocale: Locale;
-  t: (key: string, opts?: Record<string, unknown>) => string;
+  t: TFunction;
   title?: string;
   maxItems?: number;
   viewAllPath?: string;

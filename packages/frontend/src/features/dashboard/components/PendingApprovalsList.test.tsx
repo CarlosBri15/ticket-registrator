@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { es } from 'date-fns/locale';
+import type { TFunction } from 'i18next';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -17,7 +18,7 @@ import { PendingApprovalsList } from './PendingApprovalsList';
 
 const setupMocks = () => {};
 
-const t = (key: string) => key;
+const t = ((key: string) => key) as unknown as TFunction;
 
 const makeReport = (i: number) => ({
   id: `report-${i}`,

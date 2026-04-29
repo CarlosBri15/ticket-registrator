@@ -67,7 +67,7 @@ export const AnalyticsSection = memo(({ reports }: { reports: IReport[] }) => {
                 />
                 <Tooltip
                   contentStyle={tooltipStyle}
-                  formatter={(value: number) => [`${Number(value).toFixed(2)}`, t("analytics.totalAmount")]}
+                  formatter={(value) => [`${Number(value ?? 0).toFixed(2)}`, t("analytics.totalAmount")]}
                   cursor={{ fill: "#F5F4F0" }}
                 />
                 <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill="#1C1917" />

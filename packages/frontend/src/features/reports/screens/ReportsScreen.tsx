@@ -19,7 +19,6 @@ import { useDateLocale } from "../../../hooks/useDateLocale";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { TableHeader } from "../../../components/ui/TableHeader";
-import type { DateRange } from "../../../components/ui/Calendar";
 
 const PAGE_SIZE = 5;
 
@@ -137,7 +136,7 @@ export const ReportsScreen = () => {
             <ReportFilterBar
               search={search} onSearch={setSearch}
               statusFilter={statusFilter} onStatus={setStatusFilter}
-              dateRange={dateRange as DateRange | null} onDateRange={setDateRange}
+              dateRange={dateRange} onDateRange={setDateRange}
               hasFilters={hasActiveFilters} onClear={clearFilters}
             />
           )}

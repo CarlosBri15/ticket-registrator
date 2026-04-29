@@ -1,21 +1,24 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, type Dispatch, type SetStateAction } from "react";
 
 export interface DateRange {
   start: Date | null;
   end: Date | null;
 }
 
-/**
- * Manages the filter state for a report list screen.
- *
- * Tracks: text search, status filter, date range, and history expand/collapse.
- * Returns a stable `clearFilters` action and a `hasActiveFilters` flag.
- *
- * Usage:
- *   const filters = useReportFilterState();
- *   const visible = reports.filter(r => matchesFilters(r, filters));
- */
-export const useReportFilterState = () => {
+export interface UseReportFilterStateReturn {
+  search: string;
+  setSearch: Dispatch<SetStateAction<string>>;
+  statusFilter: string;
+  setStatusFilter: Dispatch<SetStateAction<string>>;
+  dateRange: DateRange | null;
+  setDateRange: Dispatch<SetStateAction<DateRange | null>>;
+  showAllHistory: boolean;
+  setShowAllHistory: Dispatch<SetStateAction<boolean>>;
+  hasActiveFilters: boolean;
+  clearFilters: () => void;
+}
+
+export const useReportFilterState = (): UseReportFilterStateReturn => {
   const [search, setSearch]               = useState("");
   const [statusFilter, setStatusFilter]   = useState("ALL");
   const [dateRange, setDateRange]         = useState<DateRange | null>(null);

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   createReportSchema,
   type CreateReportSchema,
@@ -41,7 +42,7 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm<CreateReportSchema>({
+  } = useForm<z.input<typeof createReportSchema>, unknown, CreateReportSchema>({
     resolver: zodResolver(createReportSchema),
     defaultValues: {
       name: "",
@@ -81,7 +82,7 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
             render={({ field }) => (
               <DatePicker
                 label={t("trips.startLabel")}
-                value={field.value}
+                value={field.value as Date | undefined}
                 onChange={field.onChange}
                 error={errors.start_date?.message}
               />
@@ -93,7 +94,7 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
             render={({ field }) => (
               <DatePicker
                 label={t("trips.endLabel")}
-                value={field.value}
+                value={field.value as Date | undefined}
                 onChange={field.onChange}
                 error={errors.end_date?.message}
               />

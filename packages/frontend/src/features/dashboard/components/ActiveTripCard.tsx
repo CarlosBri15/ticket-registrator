@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import type { Locale } from "date-fns";
 import type { IReport } from "@ticket-registrator/shared";
 import { Calendar, FileText } from "lucide-react";
+import type { TFunction } from "i18next";
 
 export const ActiveTripCard = ({
   currentTrip,
@@ -12,7 +13,7 @@ export const ActiveTripCard = ({
   currentTrip: IReport;
   navigate: (path: string) => void;
   dateLocale: Locale;
-  t: (key: string, opts?: Record<string, unknown>) => string;
+  t: TFunction;
 }) => {
   return (
     <button
