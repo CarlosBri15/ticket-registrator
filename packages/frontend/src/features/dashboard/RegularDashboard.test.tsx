@@ -30,6 +30,25 @@ vi.mock('./components/PendingApprovalsList', () => ({
 vi.mock('./components/QuickActionsGrid', () => ({
   QuickActionsGrid: () => <div data-testid="quick-actions" />,
 }));
+// Bypass React.lazy so the AnalyticsSection (recharts) renders synchronously in
+// the test renderer — otherwise Suspense shows the skeleton first and the
+// chart-related assertions miss.
+vi.mock('./components/LazyDashboardCharts', async () => {
+  const a = await vi.importActual<typeof import('./components/AnalyticsSection')>(
+    './components/AnalyticsSection',
+  );
+  const g = await vi.importActual<typeof import('./components/OrgGrowthChart')>(
+    './components/OrgGrowthChart',
+  );
+  const d = await vi.importActual<typeof import('./components/OrgDistributionChart')>(
+    './components/OrgDistributionChart',
+  );
+  return {
+    AnalyticsSection: a.AnalyticsSection,
+    OrgGrowthChart: g.OrgGrowthChart,
+    OrgDistributionChart: d.OrgDistributionChart,
+  };
+});
 // ─── Shared mock ──────────────────────────────────────────────────────────────
 
 vi.mock('@ticket-registrator/shared', async (importOriginal) => {

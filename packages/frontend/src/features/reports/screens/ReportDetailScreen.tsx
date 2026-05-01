@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { Suspense, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Send, Trash2, ThumbsUp, ThumbsDown,
@@ -20,7 +20,8 @@ import { format, eachDayOfInterval, isSameDay } from "date-fns";
 import { useDateLocale } from "../../../hooks/useDateLocale";
 import { useReportDetailActions } from "../hooks/useReportDetailActions";
 import { useTranslation } from "react-i18next";
-import { DonutChart, AreaTrendChart } from "../../../components/ui/Charts";
+import { DonutChart, AreaTrendChart } from "../../../components/ui/LazyCharts";
+import { ChartSkeleton } from "../../../components/ui/ChartSkeleton";
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
@@ -251,22 +252,26 @@ export const ReportDetailScreen = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <SectionCard title={t("analytics.expensesByType")} className="h-[280px]">
                 <div className="flex-1 flex items-center justify-center">
-                  <DonutChart
-                    data={categoryData}
-                    height={200}
-                    centerValue={report?.requested_amount?.toLocaleString() ?? ticketsTotal.toLocaleString()}
-                    centerLabel={report?.currency ?? ""}
-                  />
+                  <Suspense fallback={<ChartSkeleton height={200} />}>
+                    <DonutChart
+                      data={categoryData}
+                      height={200}
+                      centerValue={report?.requested_amount?.toLocaleString() ?? ticketsTotal.toLocaleString()}
+                      centerLabel={report?.currency ?? ""}
+                    />
+                  </Suspense>
                 </div>
               </SectionCard>
 
               <SectionCard title={t("analytics.dailyExpensesTrend")} className="h-[280px]">
                 <div className="flex-1">
-                  <AreaTrendChart
-                    data={trendData}
-                    height={180}
-                    currency={report?.currency ?? ""}
-                  />
+                  <Suspense fallback={<ChartSkeleton height={180} />}>
+                    <AreaTrendChart
+                      data={trendData}
+                      height={180}
+                      currency={report?.currency ?? ""}
+                    />
+                  </Suspense>
                 </div>
               </SectionCard>
             </div>
