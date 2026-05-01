@@ -70,7 +70,7 @@ export const RecentActivitySection = ({
                     {report.currency}
                   </span>
                 </span>
-                <StatusBadge status={report.status} size="sm" />
+                <StatusBadge status={report.status} />
               </div>
             </button>
           ))}

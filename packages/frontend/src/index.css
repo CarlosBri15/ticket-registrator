@@ -255,14 +255,16 @@
   .page-subtitle { font-size: 14px; color: var(--fg-secondary); margin: 6px 0 0; font-weight: 500; }
   .page-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
-  /* ── Buttons ─────────────────────────────────────────────────────────────── */
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; border-radius: 9999px; font-size: 13px; font-weight: 500; border: 1px solid transparent; transition: all var(--duration-base) var(--ease-out); white-space: nowrap; }
+  /* ── Buttons ─────────────────────────────────────────────────────────────────
+     Kit shape: slightly rounded rectangles (6px), NOT pills. Sizes scale both
+     padding and corner radius (sm 5px, md 6px, lg 8px). See preview/components-buttons.html. */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; line-height: 1; border: 1px solid transparent; transition: all var(--duration-fast) var(--ease-out); white-space: nowrap; cursor: pointer; }
   .btn:active { transform: scale(0.985); }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn svg { width: 14px; height: 14px; flex-shrink: 0; }
   .btn-primary { background: var(--brand); color: #fff; border-color: rgba(28, 25, 23, 0.2); box-shadow: var(--shadow-button); }
   .btn-primary:hover:not(:disabled) { background: var(--brand-hover); }
-  .btn-secondary { background: #fff; color: var(--fg-primary); border-color: var(--border); box-shadow: var(--shadow-button-secondary); }
+  .btn-secondary { background: #fff; color: var(--fg-primary); border-color: var(--border); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); }
   .btn-secondary:hover:not(:disabled) { background: var(--surface-hover); }
   .btn-outline { background: transparent; color: var(--fg-primary); border-color: var(--border); }
   .btn-outline:hover:not(:disabled) { background: var(--surface-hover); }
@@ -274,8 +276,8 @@
   .btn-danger:hover:not(:disabled) { opacity: 0.9; }
   .btn-accent { background: var(--accent); color: var(--fg-on-accent); }
   .btn-accent:hover:not(:disabled) { background: var(--accent-hover); }
-  .btn-sm { padding: 5px 12px; font-size: 11px; }
-  .btn-lg { padding: 11px 22px; font-size: 14px; }
+  .btn-sm { padding: 6px 12px; font-size: 11px; border-radius: 5px; }
+  .btn-lg { padding: 12px 22px; font-size: 14px; border-radius: 8px; }
   .icon-btn { width: 32px; height: 32px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; color: var(--fg-tertiary); transition: all var(--duration-fast) var(--ease-out); }
   .icon-btn:hover { background: var(--surface-active); color: var(--fg-primary); }
   .icon-btn svg { width: 16px; height: 16px; }
@@ -302,23 +304,20 @@
   .stat-delta.down { color: var(--danger); }
   .stat-currency { font-size: 13px; font-weight: 500; color: var(--fg-tertiary); margin-left: 4px; }
 
-  /* ── Status badge ────────────────────────────────────────────────────────── */
-  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 9999px; font-size: 10px; font-weight: 600; }
-  .badge .dot { width: 5px; height: 5px; border-radius: 50%; }
-  .badge-draft { background: #F5F4F0; color: #78716C; }
-  .badge-draft .dot { background: var(--dot-draft); }
-  .badge-created { background: var(--info-bg); color: var(--info-text); }
-  .badge-created .dot { background: var(--dot-created); }
-  .badge-pending { background: var(--warning-bg); color: var(--warning-text); }
-  .badge-pending .dot { background: var(--dot-pending); }
-  .badge-submitted { background: #FFF7ED; color: #9A3412; }
-  .badge-submitted .dot { background: var(--dot-submitted); }
-  .badge-approved { background: var(--success-bg); color: var(--success-text); }
-  .badge-approved .dot { background: var(--dot-approved); }
-  .badge-paid { background: #ECFDF5; color: #047857; }
-  .badge-paid .dot { background: var(--dot-paid); }
-  .badge-rejected { background: var(--danger-bg); color: var(--danger-text); }
-  .badge-rejected .dot { background: var(--dot-rejected); }
+  /* ── Status — icon glyph + coloured word, no pill, no background. The kit's
+     primary status presentation, used inside list rows, cards, and most table
+     cells. See preview/components-cards.html. ─────────────────────────────── */
+  .status { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 500; line-height: 1; white-space: nowrap; }
+  .status svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .st-draft     { color: #78716C; }
+  .st-created   { color: #1D4ED8; }
+  .st-pending   { color: #D97706; }
+  .st-submitted { color: #2563EB; }
+  .st-approved  { color: #16A34A; }
+  .st-paid      { color: #047857; }
+  .st-rejected  { color: #DC2626; }
+  .st-declined  { color: #DC2626; }
+  .st-review    { color: #7C3AED; }
 
   /* ── List / table rows ───────────────────────────────────────────────────── */
   .list { display: flex; flex-direction: column; }

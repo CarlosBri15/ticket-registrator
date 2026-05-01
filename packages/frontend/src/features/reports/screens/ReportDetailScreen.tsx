@@ -142,7 +142,7 @@ export const ReportDetailScreen = () => {
                 {r.name}
               </h1>
               <div className="pt-1">
-                <StatusBadge status={r.status} size="sm" />
+                <StatusBadge status={r.status} />
               </div>
             </div>
           </div>

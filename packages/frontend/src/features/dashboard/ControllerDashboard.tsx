@@ -160,7 +160,7 @@ const RecentlyProcessed = ({
               onClick={() => navigate(`/reports/${report.id}`)}
               className="group w-full text-left flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] transition-colors"
             >
-              <StatusBadge status={report.status} size="sm" />
+              <StatusBadge status={report.status} />
               <div className="flex-1 min-w-0">
                 <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
                   {report.name}

@@ -63,6 +63,7 @@ describe("index.css — design system contract", () => {
       ".app-content",
       ".sb",
       ".sb-item",
+      ".sb-section",
       ".btn",
       ".btn-primary",
       ".btn-secondary",
@@ -71,17 +72,23 @@ describe("index.css — design system contract", () => {
       ".btn-success",
       ".btn-danger",
       ".btn-accent",
+      ".btn-sm",
+      ".btn-lg",
       ".icon-btn",
       ".input",
       ".field",
       ".card",
       ".stat",
       ".stat-value",
-      ".badge",
-      ".badge-draft",
-      ".badge-pending",
-      ".badge-approved",
-      ".badge-rejected",
+      ".status",
+      ".st-draft",
+      ".st-created",
+      ".st-pending",
+      ".st-submitted",
+      ".st-approved",
+      ".st-paid",
+      ".st-rejected",
+      ".st-declined",
       ".list-row",
       ".list-head",
       ".toolbar",
@@ -97,6 +104,37 @@ describe("index.css — design system contract", () => {
     ])("declares %s", (cls) => {
       const escaped = cls.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       expect(css).toMatch(new RegExp(`${escaped}\\s*{`));
+    });
+  });
+
+  describe("kit geometry — buttons are slightly rounded rectangles, not pills", () => {
+    it(".btn uses 6px border-radius (kit decision: not pill)", () => {
+      // Match `.btn { ... border-radius: 6px ... }` within the same rule.
+      expect(css).toMatch(/\.btn\s*{[^}]*border-radius:\s*6px/);
+    });
+
+    it(".btn-sm uses 5px border-radius", () => {
+      expect(css).toMatch(/\.btn-sm\s*{[^}]*border-radius:\s*5px/);
+    });
+
+    it(".btn-lg uses 8px border-radius", () => {
+      expect(css).toMatch(/\.btn-lg\s*{[^}]*border-radius:\s*8px/);
+    });
+  });
+
+  describe("kit geometry — status (list row pattern)", () => {
+    it(".status uses 13px font with 7px gap (kit list-row spec)", () => {
+      expect(css).toMatch(/\.status\s*{[^}]*font-size:\s*13px/);
+      expect(css).toMatch(/\.status\s*{[^}]*gap:\s*7px/);
+    });
+
+    it(".status svg is sized to 14px", () => {
+      expect(css).toMatch(/\.status\s+svg\s*{[^}]*width:\s*14px/);
+    });
+
+    it("does NOT define legacy .badge primitives (removed — no consumer)", () => {
+      expect(css).not.toMatch(/\.badge\s*{/);
+      expect(css).not.toMatch(/\.badge-approved\s*{/);
     });
   });
 

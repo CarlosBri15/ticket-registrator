@@ -58,7 +58,7 @@ const TicketRow = ({
       </div>
 
       <div className="flex items-center justify-end">
-        <StatusBadge status={ticket.status} size="sm" />
+        <StatusBadge status={ticket.status} />
       </div>
 
       <p className="text-right font-sans-bold text-dark tabular-nums text-[14px]">

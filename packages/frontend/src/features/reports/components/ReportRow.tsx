@@ -59,7 +59,7 @@ const ReportRowContent = ({
 
       {/* Estado */}
       <div className="flex items-center justify-center">
-        <StatusBadge status={report.status} size="sm" />
+        <StatusBadge status={report.status} />
       </div>
 
       {/* Fecha */}

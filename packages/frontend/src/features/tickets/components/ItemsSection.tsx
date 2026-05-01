@@ -149,7 +149,7 @@ export const ItemsSection = ({
                       </div>
                     ) : (
                       <div className="mt-1">
-                        <StatusBadge status={status} size="sm" />
+                        <StatusBadge status={status} />
                       </div>
                     )}
                   </div>
