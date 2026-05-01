@@ -10,12 +10,16 @@ interface UserRowProps {
   rightAction?: React.ReactNode;
 }
 
+/**
+ * Row for the users list — wraps the kit `.list-row` primitive. Hover-only
+ * actions overlay on the right edge to keep the grid layout stable.
+ */
 export const UserRow = memo(({ user, roleName, onClick, rightAction }: UserRowProps) => (
-  <div className="group relative border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] transition-colors duration-100">
+  <div className="relative">
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left grid items-center gap-4 px-4 py-3.5 cursor-pointer"
+      className="list-row group w-full text-left gap-4"
       style={{ gridTemplateColumns: USER_GRID }}
     >
       <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white">
@@ -23,15 +27,13 @@ export const UserRow = memo(({ user, roleName, onClick, rightAction }: UserRowPr
       </div>
 
       <div className="min-w-0">
-        <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
+        <p className="row-name truncate">
           {user.name} {user.surname}
         </p>
-        <p className="font-sans-medium text-dark/50 text-[12px] mt-0.5 truncate leading-none">
-          @{user.username}
-        </p>
+        <p className="row-meta truncate mt-0.5">@{user.username}</p>
       </div>
 
-      <p className="font-sans-medium text-[12px] text-dark/60 truncate">{user.email}</p>
+      <p className="row-meta truncate">{user.email}</p>
 
       <div className="flex items-center justify-end">
         {roleName ? (
@@ -49,7 +51,10 @@ export const UserRow = memo(({ user, roleName, onClick, rightAction }: UserRowPr
     <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center">
       <div className="pointer-events-auto">
         {rightAction ?? (
-          <ChevronRight className="w-4 h-4 text-dark/30 opacity-0 group-hover:opacity-100 transition-opacity duration-100" />
+          <ChevronRight
+            className="row-chev w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity duration-100"
+            aria-hidden={true}
+          />
         )}
       </div>
     </div>

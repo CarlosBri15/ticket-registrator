@@ -153,19 +153,17 @@ const DepartmentRow = ({
   editLabel,
   deleteLabel,
 }: DepartmentRowProps) => (
-  <div className="group relative border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] transition-colors duration-100">
+  <div className="relative">
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left grid items-center gap-4 px-4 py-3.5 cursor-pointer"
+      className="list-row group w-full text-left gap-4"
       style={{ gridTemplateColumns: DEPT_GRID }}
     >
       <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white">
         <Layers className="w-3.5 h-3.5" aria-hidden={true} />
       </div>
-      <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
-        {dept.name}
-      </p>
+      <p className="row-name truncate">{dept.name}</p>
       <div aria-hidden={true} />
       <div aria-hidden={true} />
     </button>
@@ -200,7 +198,7 @@ const DepartmentRow = ({
         )}
       </div>
       {!canEdit && !canDelete && (
-        <ChevronRight className="w-4 h-4 text-dark/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <ChevronRight className="row-chev w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden={true} />
       )}
     </div>
   </div>

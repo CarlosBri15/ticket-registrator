@@ -20,23 +20,17 @@ const OrgRow = ({ org, onClick }: { org: IOrganization; onClick: () => void }) =
   <button
     type="button"
     onClick={onClick}
-    className="group w-full text-left border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] transition-colors duration-100"
+    className="list-row group w-full text-left gap-4"
+    style={{ gridTemplateColumns: ORG_GRID }}
   >
-    <div
-      className="grid items-center gap-4 px-4 py-3.5"
-      style={{ gridTemplateColumns: ORG_GRID }}
-    >
-      <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white">
-        <Building className="w-3.5 h-3.5" aria-hidden={true} />
-      </div>
-      <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
-        {org.name}
-      </p>
-      <p className="text-right font-sans-medium text-[12px] text-dark/55 whitespace-nowrap">
-        {format(new Date(org.createdAt), "dd MMM yyyy", { locale: es })}
-      </p>
-      <ChevronRight className="w-4 h-4 text-dark/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+    <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white">
+      <Building className="w-3.5 h-3.5" aria-hidden={true} />
     </div>
+    <p className="row-name truncate">{org.name}</p>
+    <p className="row-meta text-right whitespace-nowrap">
+      {format(new Date(org.createdAt), "dd MMM yyyy", { locale: es })}
+    </p>
+    <ChevronRight className="row-chev w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden={true} />
   </button>
 );
 

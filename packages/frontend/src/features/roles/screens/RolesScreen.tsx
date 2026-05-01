@@ -34,46 +34,40 @@ const RoleRow = memo(({
   const meta = getHierarchyMeta(role.hierarchy);
 
   return (
-    <div className="group relative border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] transition-colors duration-100">
-      <div
-        className="grid items-center gap-4 px-4 py-3.5"
-        style={{ gridTemplateColumns: ROLE_GRID }}
-      >
-        <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white">
-          <Shield className="w-3.5 h-3.5" aria-hidden={true} />
-        </div>
+    <div
+      className="list-row group gap-4"
+      style={{ gridTemplateColumns: ROLE_GRID }}
+    >
+      <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center text-dark/40 group-hover:bg-white">
+        <Shield className="w-3.5 h-3.5" aria-hidden={true} />
+      </div>
 
-        <div className="min-w-0">
-          <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
-            {role.name}
-          </p>
-          {role.description && (
-            <p className="font-sans-medium text-dark/50 text-[12px] mt-0.5 truncate leading-none">
-              {role.description}
-            </p>
-          )}
-        </div>
+      <div className="min-w-0">
+        <p className="row-name truncate">{role.name}</p>
+        {role.description && (
+          <p className="row-meta truncate mt-0.5">{role.description}</p>
+        )}
+      </div>
 
-        <div className="flex items-center justify-end">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--color-secondary)] text-dark/70 text-[11px] font-sans-semibold whitespace-nowrap group-hover:bg-white">
-            {resolveLabel(meta.labelKey)}
-          </span>
-        </div>
+      <div className="flex items-center justify-end">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--color-secondary)] text-dark/70 text-[11px] font-sans-semibold whitespace-nowrap group-hover:bg-white">
+          {resolveLabel(meta.labelKey)}
+        </span>
+      </div>
 
-        <div className="flex items-center justify-end">
-          {canDelete ? (
-            <button
-              type="button"
-              title={deleteLabel}
-              onClick={() => onDelete(role.id)}
-              className="text-dark/40 hover:text-danger transition-colors p-1 opacity-0 group-hover:opacity-100"
-            >
-              <Trash2 className="w-3.5 h-3.5" aria-hidden={true} />
-            </button>
-          ) : (
-            <ChevronRight className="w-4 h-4 text-dark/30 opacity-0 group-hover:opacity-100 transition-opacity" />
-          )}
-        </div>
+      <div className="flex items-center justify-end">
+        {canDelete ? (
+          <button
+            type="button"
+            title={deleteLabel}
+            onClick={() => onDelete(role.id)}
+            className="text-dark/40 hover:text-danger transition-colors p-1 opacity-0 group-hover:opacity-100"
+          >
+            <Trash2 className="w-3.5 h-3.5" aria-hidden={true} />
+          </button>
+        ) : (
+          <ChevronRight className="row-chev w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden={true} />
+        )}
       </div>
     </div>
   );
