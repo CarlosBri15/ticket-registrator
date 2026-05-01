@@ -5,7 +5,7 @@ import {
   PieChart, Pie, Legend,
 } from "recharts";
 import { BarChart2 } from "lucide-react";
-import { getMonthlyExpenses, getExpensesByType } from "../../../utils/reportAnalytics";
+import { getMonthlyExpenses, getExpensesByType } from "@ticket-registrator/shared";
 import type { IReport } from "@ticket-registrator/shared";
 import { SectionCard } from "../../../components/ui/SectionCard";
 

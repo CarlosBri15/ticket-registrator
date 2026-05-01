@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { User, ChevronRight } from "lucide-react";
 import { type IUser } from "@ticket-registrator/shared";
+import { USER_GRID } from "../../../constants/gridLayouts";
 
 interface UserRowProps {
   user: IUser;
@@ -8,8 +9,6 @@ interface UserRowProps {
   onClick: () => void;
   rightAction?: React.ReactNode;
 }
-
-export const USER_GRID = "32px 1fr 1.2fr 140px 16px";
 
 export const UserRow = memo(({ user, roleName, onClick, rightAction }: UserRowProps) => (
   <div className="group relative border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] transition-colors duration-100">

@@ -7,6 +7,7 @@ import {
   useCompanyScope,
   useListState,
   useModalState,
+  PAGE_SIZE,
   type IDepartment,
 } from "@ticket-registrator/shared";
 import { useTranslation } from "react-i18next";
@@ -14,11 +15,10 @@ import { PageHeader } from "../../../components/ui/PageHeader";
 import { Button } from "../../../components/ui/Button";
 import { Pagination } from "../../../components/ui/Pagination";
 import { SearchInput } from "../../../components/ui/SearchInput";
-import { TableHeader } from "../../../components/ui/TableHeader";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { ResourceListScreen } from "../../../components/ui/ResourceListScreen";
 import { DepartmentModal } from "../components/DepartmentModal";
-
-const DEPT_GRID = "32px 1fr 80px 16px";
+import { DEPT_GRID } from "../../../constants/gridLayouts";
 
 export const DepartmentsScreen = () => {
   const { t } = useTranslation();
@@ -33,11 +33,7 @@ export const DepartmentsScreen = () => {
   const { isOpen: isModalOpen, item: editing, open: openModal, close: closeModal } =
     useModalState<IDepartment>();
 
-  const filtered = departments?.filter(
-    (d) => !search || d.name.toLowerCase().includes(search.toLowerCase()),
-  );
-  const { paginated, totalPages } = paginate(filtered ?? []);
-
+  // ── Pre-list guard: SuperAdmin without an active company can't manage depts ──
   if (!companyId) {
     return (
       <div className="flex flex-col gap-8">
@@ -53,19 +49,19 @@ export const DepartmentsScreen = () => {
 
   const totalDepartments = departments?.length ?? 0;
   const hasAny = totalDepartments > 0;
-  const hasFilteredResults = (filtered?.length ?? 0) > 0;
+
+  const filtered = departments?.filter(
+    (d) => !search || d.name.toLowerCase().includes(search.toLowerCase()),
+  ) ?? [];
+  const { paginated, totalPages } = paginate(filtered);
 
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader
+    <>
+      <ResourceListScreen<IDepartment>
         title={t("departments.title")}
-        stats={
-          hasAny
-            ? [{ label: t("departments.total", "Total"), value: totalDepartments }]
-            : undefined
-        }
-        actions={
-          can("create_departments") && (
+        stats={hasAny ? [{ label: t("departments.total", "Total"), value: totalDepartments }] : undefined}
+        headerActions={
+          can("create_departments") ? (
             <Button
               variant="primary"
               leftIcon={<Plus className="w-3.5 h-3.5" />}
@@ -73,93 +69,56 @@ export const DepartmentsScreen = () => {
             >
               {t("departments.new")}
             </Button>
-          )
+          ) : null
+        }
+        toolbar={
+          hasAny ? (
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder={t("departments.searchPlaceholder")}
+            />
+          ) : null
+        }
+        gridTemplate={DEPT_GRID}
+        columns={[{ label: t("departments.tableName", "Nombre") }, { label: "", align: "right" }]}
+        items={paginated}
+        total={totalDepartments}
+        filteredTotal={filtered.length}
+        isLoading={isLoading}
+        keyOf={(d) => d.id}
+        renderRow={(dept) => (
+          <DepartmentRow
+            dept={dept}
+            onClick={() => navigate(`/departments/${dept.id}`)}
+            canEdit={can("edit_departments")}
+            canDelete={can("delete_departments")}
+            onEdit={() => openModal(dept)}
+            onDelete={() => deleteMutation.mutate(dept.id)}
+            editLabel={t("common.edit", "Editar")}
+            deleteLabel={t("common.delete", "Eliminar")}
+          />
+        )}
+        messages={{
+          emptyTitle: t("departments.empty"),
+          emptyDescription: t("departments.emptyDesc"),
+          noResults: t("common.noResults"),
+          clearFilters: t("trips.filterClearAll"),
+          loading: t("departments.loading"),
+        }}
+        onClearFilters={() => setSearch("")}
+        footer={
+          filtered.length > 0 ? (
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              totalItems={filtered.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          ) : null
         }
       />
-
-      <div className="flex flex-col gap-3">
-        {hasAny && (
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder={t("departments.searchPlaceholder")}
-          />
-        )}
-
-        <div className="w-full">
-          <TableHeader
-            gridTemplate={DEPT_GRID}
-            columns={[{ label: t("departments.tableName", "Nombre") }, { label: "", align: "right" }]}
-          />
-
-          {(() => {
-            if (isLoading) {
-              return (
-                <div className="flex flex-col items-center justify-center py-14 gap-2">
-                  <div className="w-4 h-4 border-2 border-dark/20 border-t-dark/60 rounded-full animate-spin" />
-                  <p className="font-sans-medium text-[13px] text-dark/55">
-                    {t("departments.loading")}
-                  </p>
-                </div>
-              );
-            }
-
-            if (!hasAny) {
-              return (
-                <div className="flex flex-col items-center py-14 gap-2 text-center border-b border-[var(--color-border-main)]">
-                  <p className="font-sans-medium text-[13px] text-dark/55">
-                    {t("departments.empty")}
-                  </p>
-                  <p className="font-sans-normal text-[12px] text-dark/40 max-w-sm">
-                    {t("departments.emptyDesc")}
-                  </p>
-                </div>
-              );
-            }
-
-            if (!hasFilteredResults) {
-              return (
-                <div className="flex flex-col items-center py-14 gap-2 text-center border-b border-[var(--color-border-main)]">
-                  <p className="font-sans-medium text-[13px] text-dark/55">
-                    {t("common.noResults")}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setSearch("")}
-                    className="font-sans-medium text-dark/50 text-[12px] underline underline-offset-2 hover:text-dark transition-colors mt-1"
-                  >
-                    {t("trips.filterClearAll")}
-                  </button>
-                </div>
-              );
-            }
-
-            return paginated.map((dept) => (
-              <DepartmentRow
-                key={dept.id}
-                dept={dept}
-                onClick={() => navigate(`/departments/${dept.id}`)}
-                canEdit={can("edit_departments")}
-                canDelete={can("delete_departments")}
-                onEdit={() => openModal(dept)}
-                onDelete={() => deleteMutation.mutate(dept.id)}
-                editLabel={t("common.edit", "Editar")}
-                deleteLabel={t("common.delete", "Eliminar")}
-              />
-            ));
-          })()}
-        </div>
-
-        {hasFilteredResults && (
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            totalItems={filtered?.length ?? 0}
-            pageSize={10}
-            onPageChange={setPage}
-          />
-        )}
-      </div>
 
       <DepartmentModal
         isOpen={isModalOpen}
@@ -167,7 +126,7 @@ export const DepartmentsScreen = () => {
         companyId={companyId}
         department={editing}
       />
-    </div>
+    </>
   );
 };
 

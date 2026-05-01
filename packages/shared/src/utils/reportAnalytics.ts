@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import type { IReport } from "@ticket-registrator/shared";
+import type { IReport } from "../interfaces/reports/report.interface";
 
 export interface MonthlyExpense {
   month: string;      // "Jan 25"

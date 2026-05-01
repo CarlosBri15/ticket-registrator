@@ -23,7 +23,12 @@ vi.mock('./Button', () => ({
 }));
 
 vi.mock('./Alert', () => ({
-  AlertError: ({ message }: any) => <div data-testid="alert-error">{message}</div>,
+  AlertError: ({ message, onDismiss }: any) => (
+    <div data-testid="alert-error">
+      <span>{message}</span>
+      {onDismiss ? <button onClick={onDismiss} aria-label="Cerrar">×</button> : null}
+    </div>
+  ),
   getApiErrorMessage: (error: any) => error?.message || 'Generic error',
 }));
 
@@ -93,5 +98,40 @@ describe('FormModal', () => {
       </FormModal>
     );
     expect(screen.getByTestId('alert-error')).toHaveTextContent('Fallo fatal');
+  });
+
+  it('forwards onErrorDismiss to the AlertError dismiss button', () => {
+    const onErrorDismiss = vi.fn();
+    render(
+      <FormModal
+        isOpen={true}
+        onClose={mockOnClose}
+        title="Mi Form"
+        onSubmit={mockOnSubmit}
+        submitLabel="Enviar"
+        error={{ message: 'Fallo fatal' }}
+        onErrorDismiss={onErrorDismiss}
+      >
+        <p>Hijo</p>
+      </FormModal>
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }));
+    expect(onErrorDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses custom cancelLabel when provided', () => {
+    render(
+      <FormModal
+        isOpen={true}
+        onClose={mockOnClose}
+        title="Mi Form"
+        onSubmit={mockOnSubmit}
+        submitLabel="Enviar"
+        cancelLabel="Volver"
+      >
+        <p>Hijo</p>
+      </FormModal>
+    );
+    expect(screen.getByRole('button', { name: 'Volver' })).toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { USER_GRID } from "./UserRow";
+import { USER_GRID } from "../../../constants/gridLayouts";
 
 export const UserSkeletonCard = memo(() => (
   <div className="border-b border-[var(--color-border-main)] last:border-b-0">

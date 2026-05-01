@@ -14,6 +14,7 @@ import { format, type Locale } from "date-fns";
 import { type IReport } from "@ticket-registrator/shared";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { tokens } from "../../../styles/theme";
+import { REPORT_GRID } from "../../../constants/gridLayouts";
 
 interface ReportRowProps {
   report: IReport;
@@ -38,7 +39,7 @@ const ReportRowContent = ({
       : "";
 
   return (
-    <div className="w-full grid items-center gap-4 px-4 py-3.5" style={{ gridTemplateColumns: "32px 1fr 120px 148px 100px 16px" }}>
+    <div className="w-full grid items-center gap-4 px-4 py-3.5" style={{ gridTemplateColumns: REPORT_GRID }}>
 
       {/* Icono */}
       <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center">

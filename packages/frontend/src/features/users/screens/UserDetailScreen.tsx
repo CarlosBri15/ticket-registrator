@@ -31,7 +31,7 @@ import {
   filterBySearch,
   filterByStatus,
   filterByDateRange,
-} from "../../../utils/reportAnalytics";
+} from "@ticket-registrator/shared";
 import { BORDER } from "../constants";
 import { useDateLocale } from "../../../hooks/useDateLocale";
 import { useTranslation } from "react-i18next";

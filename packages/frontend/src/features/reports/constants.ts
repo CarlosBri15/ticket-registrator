@@ -8,8 +8,6 @@ export {
   isCurrentReport,
 } from '@ticket-registrator/shared';
 
-export const HISTORY_LIMIT = 5;
-
 // ─── Design tokens (report screens only) ─────────────────────────────────────
 // These are web-only inline-style values — they stay in the frontend.
 

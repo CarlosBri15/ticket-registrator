@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { REPORT_GRID } from "../../constants/gridLayouts";
 
 interface TableHeaderProps {
   columns: {
@@ -10,8 +11,6 @@ interface TableHeaderProps {
   className?: string;
 }
 
-const DEFAULT_GRID = "32px 1fr 120px 148px 100px 16px";
-
 const ALIGN_CLASSES = {
   left: "text-left",
   center: "text-center",
@@ -22,10 +21,10 @@ const ALIGN_CLASSES = {
  * TableHeader — Componente de cabecera de tabla minimalista.
  * Sigue la regla de diseño: sin mayúsculas sostenidas (vía props).
  */
-export const TableHeader = memo(({ 
-  columns, 
-  gridTemplate = DEFAULT_GRID,
-  className = "" 
+export const TableHeader = memo(({
+  columns,
+  gridTemplate = REPORT_GRID,
+  className = ""
 }: TableHeaderProps) => {
   return (
     <div 

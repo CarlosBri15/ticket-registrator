@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Receipt, ChevronRight } from "lucide-react";
-import { useReportsQuery, api, type ITicket } from "@ticket-registrator/shared";
+import { useReportsQuery, api, useGroupedByDate, type ITicket } from "@ticket-registrator/shared";
 import { useQueries } from "@tanstack/react-query";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { DateGroupHeader } from "../../../components/ui/DateGroupHeader";
@@ -8,13 +8,11 @@ import { EmptyState } from "../../../components/ui/EmptyState";
 import { SearchInput } from "../../../components/ui/SearchInput";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { TicketDetailModal } from "../components/TicketDetailModal";
-import { useGroupedByDate } from "../../../hooks/useGroupedByDate";
 import { useDateLocale } from "../../../hooks/useDateLocale";
 import { useTranslation } from "react-i18next";
+import { TICKET_GRID } from "../../../constants/gridLayouts";
 
 type TicketWithReport = ITicket & { reportId: string; reportName: string };
-
-const TICKET_GRID = "32px 1fr 140px 120px 16px";
 
 // ─── Ticket row ───────────────────────────────────────────────────────────────
 

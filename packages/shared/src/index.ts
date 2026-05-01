@@ -57,6 +57,7 @@ export * from './hooks/createCrudMutationHook';
 export * from './hooks/useListState';
 export * from './hooks/useCompanyScope';
 export * from './hooks/useReportFilterState';
+export * from './hooks/useGroupedByDate';
 
 // Shared components (React.Fragment only — compatible with web and mobile)
 export * from './components/PermissionGuard';
@@ -114,6 +115,7 @@ export * from './defaults/default-categories';
 export * from './utils/hierarchy';
 export * from './utils/errorUtils';
 export * from './utils/avatarColor';
+export * from './utils/reportAnalytics';
 
 // Constants
 export * from './constants/hierarchy';

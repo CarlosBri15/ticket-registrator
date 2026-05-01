@@ -1,4 +1,3 @@
-import { describe, it, expect } from "vitest";
 import {
   getMonthlyExpenses,
   getExpensesByType,
@@ -7,7 +6,7 @@ import {
   filterByStatus,
   filterByDateRange,
 } from "./reportAnalytics";
-import type { IReport } from "@ticket-registrator/shared";
+import type { IReport } from "../interfaces/reports/report.interface";
 
 // ---- Helpers ----
 
@@ -21,7 +20,7 @@ const makeReport = (overrides: Partial<IReport>): IReport => ({
   type: "Business Trip",
   requested_amount: 100,
   approved_amount: 0,
-  status: "Created" as any,
+  status: "Created" as IReport["status"],
   createdAt: "2025-01-01T00:00:00Z",
   updatedAt: "2025-01-01T00:00:00Z",
   ...overrides,
@@ -91,7 +90,7 @@ describe("getMonthlyExpenses", () => {
 
   it("treats missing requested_amount as 0", () => {
     const reports = [
-      makeReport({ id: "r1", end_date: "2025-01-01", requested_amount: undefined as any }),
+      makeReport({ id: "r1", end_date: "2025-01-01", requested_amount: undefined as unknown as number }),
     ];
 
     const result = getMonthlyExpenses(reports);
@@ -137,7 +136,7 @@ describe("getExpensesByType", () => {
   it("groups reports with empty type under otherLabel", () => {
     const reports = [
       makeReport({ id: "r1", type: "", requested_amount: 50 }),
-      makeReport({ id: "r2", type: undefined as any, requested_amount: 75 }),
+      makeReport({ id: "r2", type: undefined as unknown as string, requested_amount: 75 }),
     ];
 
     const result = getExpensesByType(reports, "Other");
@@ -167,10 +166,10 @@ describe("getStatusCounts", () => {
 
   it("counts reports by status", () => {
     const reports = [
-      makeReport({ id: "r1", status: "Approved" as any }),
-      makeReport({ id: "r2", status: "Approved" as any }),
-      makeReport({ id: "r3", status: "Submitted" as any }),
-      makeReport({ id: "r4", status: "Created" as any }),
+      makeReport({ id: "r1", status: "Approved" as IReport["status"] }),
+      makeReport({ id: "r2", status: "Approved" as IReport["status"] }),
+      makeReport({ id: "r3", status: "Submitted" as IReport["status"] }),
+      makeReport({ id: "r4", status: "Created" as IReport["status"] }),
     ];
 
     const result = getStatusCounts(reports);
@@ -185,10 +184,10 @@ describe("getStatusCounts", () => {
 
   it("sorts by count descending", () => {
     const reports = [
-      makeReport({ id: "r1", status: "Created" as any }),
-      makeReport({ id: "r2", status: "Approved" as any }),
-      makeReport({ id: "r3", status: "Approved" as any }),
-      makeReport({ id: "r4", status: "Approved" as any }),
+      makeReport({ id: "r1", status: "Created" as IReport["status"] }),
+      makeReport({ id: "r2", status: "Approved" as IReport["status"] }),
+      makeReport({ id: "r3", status: "Approved" as IReport["status"] }),
+      makeReport({ id: "r4", status: "Approved" as IReport["status"] }),
     ];
 
     const result = getStatusCounts(reports);
@@ -235,10 +234,10 @@ describe("filterBySearch", () => {
 
 describe("filterByStatus", () => {
   const reports = [
-    makeReport({ id: "r1", status: "Created" as any }),
-    makeReport({ id: "r2", status: "Submitted" as any }),
-    makeReport({ id: "r3", status: "Approved" as any }),
-    makeReport({ id: "r4", status: "Approved" as any }),
+    makeReport({ id: "r1", status: "Created" as IReport["status"] }),
+    makeReport({ id: "r2", status: "Submitted" as IReport["status"] }),
+    makeReport({ id: "r3", status: "Approved" as IReport["status"] }),
+    makeReport({ id: "r4", status: "Approved" as IReport["status"] }),
   ];
 
   it("returns all reports when status is ALL", () => {
@@ -321,7 +320,7 @@ describe("getMonthlyExpenses — existing bucket with falsy amount", () => {
   it("adds 0 when requested_amount is falsy on a second report in the same month", () => {
     const reports = [
       makeReport({ id: "r1", end_date: "2025-01-01", requested_amount: 100 }),
-      makeReport({ id: "r2", end_date: "2025-01-15", requested_amount: undefined as any }),
+      makeReport({ id: "r2", end_date: "2025-01-15", requested_amount: undefined as unknown as number }),
     ];
     const result = getMonthlyExpenses(reports);
     expect(result).toHaveLength(1);
@@ -334,7 +333,7 @@ describe("getExpensesByType — branch coverage", () => {
   it("adds 0 when requested_amount is falsy on a second report of the same type", () => {
     const reports = [
       makeReport({ id: "r1", type: "Training", requested_amount: 200 }),
-      makeReport({ id: "r2", type: "Training", requested_amount: undefined as any }),
+      makeReport({ id: "r2", type: "Training", requested_amount: undefined as unknown as number }),
     ];
     const result = getExpensesByType(reports);
     expect(result).toHaveLength(1);
@@ -355,7 +354,7 @@ describe("getExpensesByType — branch coverage", () => {
 describe("getStatusCounts — null status", () => {
   it("groups reports with null status under 'Unknown'", () => {
     const reports = [
-      makeReport({ id: "r1", status: null as any }),
+      makeReport({ id: "r1", status: null as unknown as IReport["status"] }),
     ];
     const result = getStatusCounts(reports);
     expect(result).toHaveLength(1);
