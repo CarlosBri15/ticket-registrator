@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next";
 import { Camera, X } from "lucide-react";
 import { useItemApproval } from "../hooks/useItemApproval";
 import { useTicketForm } from "../hooks/useTicketForm";
-import { tokens } from "../../../styles/theme";
 import { ImageSidePanel } from "./ImageSidePanel";
 import { TicketEditForm } from "./TicketEditForm";
 import { ItemsSection } from "./ItemsSection";
@@ -72,8 +71,8 @@ export const TicketDetailModal = ({
   };
 
   const renderCloseBtn = () => (
-    <button type="button" onClick={handleClose} className={tokens.modalClose}>
-      <X className="w-4 h-4" />
+    <button type="button" onClick={handleClose} className="modal-close" aria-label="Cerrar">
+      <X className="w-4 h-4" aria-hidden={true} />
     </button>
   );
 

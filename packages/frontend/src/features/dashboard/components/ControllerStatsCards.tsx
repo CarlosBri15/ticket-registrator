@@ -1,5 +1,4 @@
 import React from "react";
-import { radius } from "../../../styles/theme";
 
 interface WeeklyStatsCardProps {
   title: string;
@@ -22,10 +21,10 @@ export const WeeklyStatsCard = ({ title, count, icon, colorClass, subtitle }: We
     : `bg-white border-slate-200`;
 
   return (
-    <div className={`${radius.card} p-5 flex flex-col gap-3 border shadow-sm ${containerCls}`}>
+    <div className={`rounded-lg p-5 flex flex-col gap-3 border shadow-sm ${containerCls}`}>
       <div className="flex items-start justify-between">
         <p className={`text-[10px] font-semibold uppercase tracking-widest ${labelCls}`}>{title}</p>
-        <div className={`w-8 h-8 ${radius.sm} flex items-center justify-center ${iconBg}`}>
+        <div className={`w-8 h-8 rounded flex items-center justify-center ${iconBg}`}>
           {icon}
         </div>
       </div>
@@ -38,12 +37,12 @@ export const WeeklyStatsCard = ({ title, count, icon, colorClass, subtitle }: We
 };
 
 export const PendingAmountCard = ({ amount }: { amount: number }) => (
-  <div className={`${radius.card} p-5 flex flex-col gap-3 border border-slate-200 bg-white shadow-sm`}>
+  <div className={`rounded-lg p-5 flex flex-col gap-3 border border-slate-200 bg-white shadow-sm`}>
     <div className="flex items-start justify-between">
       <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
         Importe pendiente
       </p>
-      <div className={`w-8 h-8 ${radius.sm} flex items-center justify-center bg-brand/8 text-brand font-bold text-base`}>
+      <div className={`w-8 h-8 rounded flex items-center justify-center bg-brand/8 text-brand font-bold text-base`}>
         €
       </div>
     </div>

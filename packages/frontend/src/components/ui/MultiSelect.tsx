@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 export type { SelectOption } from './Select';
 import type { SelectOption } from './Select';
 import { useDropdown } from '../../hooks/useDropdown';
-import { tokens } from '../../styles/theme';
 import { BaseSelect } from './BaseSelect';
 
 export interface MultiSelectProps {
@@ -140,7 +139,7 @@ export const MultiSelect = ({
               tabIndex={-1}
               onClick={() => handleToggle(opt.value)}
               onMouseDown={(e) => e.preventDefault()}
-              className={`${tokens.selectOption} ${isSelected ? tokens.selectOptionActive : tokens.selectOptionIdle}`}
+              className={`select-option${isSelected ? " is-active" : ""}`}
             >
               <span>{opt.label}</span>
               {isSelected
