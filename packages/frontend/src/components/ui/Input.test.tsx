@@ -23,17 +23,20 @@ describe('Input', () => {
     expect(screen.getByText('Invalid email')).toBeInTheDocument();
   });
 
-  it('applies error styling when error is provided', () => {
+  it('applies the kit .input.is-error modifier when error is provided', () => {
     const { container } = render(<Input label="Email" error="Required" />);
     const input = container.querySelector('input');
-    expect(input?.className).toContain('border-danger');
+    expect(input?.className).toContain('input');
+    expect(input?.className).toContain('is-error');
+    expect(input).toHaveAttribute('aria-invalid', 'true');
   });
 
-  it('applies normal border when no error', () => {
+  it('applies the plain kit .input class when no error', () => {
     const { container } = render(<Input label="Email" />);
     const input = container.querySelector('input');
-    expect(input?.className).toContain('border-[var(--color-border-main)]');
-    expect(input?.className).not.toContain('border-danger');
+    expect(input?.className).toContain('input');
+    expect(input?.className).not.toContain('is-error');
+    expect(input).not.toHaveAttribute('aria-invalid');
   });
 
   it('passes extra props to input', () => {

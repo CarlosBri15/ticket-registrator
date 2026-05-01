@@ -1,19 +1,64 @@
-import type { ComponentProps, ReactNode } from 'react';
-import { tokens } from '../../styles/theme';
+import type { ComponentProps, ReactNode } from "react";
 
-interface ButtonProps extends ComponentProps<'button'> {
+type ButtonVariant =
+  | "primary"
+  | "success"
+  | "secondary"
+  | "danger"
+  | "outline"
+  | "ghost"
+  | "accent"
+  | "ghost-white"
+  | "ghost-danger"
+  | "ghost-brand";
+
+type ButtonSize = "sm" | "md" | "lg" | "icon";
+
+interface ButtonProps extends ComponentProps<"button"> {
   isLoading?: boolean;
-  variant?: 'primary' | 'success' | 'secondary' | 'danger' | 'outline' | 'ghost' | 'ghost-white' | 'ghost-danger' | 'ghost-brand';
-  size?: 'sm' | 'md' | 'lg' | 'icon';
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   children?: ReactNode;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
 }
 
+/**
+ * Variant → kit class mapping. The first 7 entries are direct kit primitives
+ * (`.btn-primary`, `.btn-secondary`, etc.). The last three (`ghost-white`,
+ * `ghost-danger`, `ghost-brand`) are project-specific extensions that the kit
+ * does not define; they piggy-back on `.btn` for shape/typography and add
+ * their own colour utilities.
+ */
+const VARIANT_CLASS: Record<ButtonVariant, string> = {
+  primary: "btn-primary",
+  success: "btn-success",
+  secondary: "btn-secondary",
+  danger: "btn-danger",
+  outline: "btn-outline",
+  ghost: "btn-ghost",
+  accent: "btn-accent",
+  "ghost-white": "bg-white/10 text-white hover:bg-white/20",
+  "ghost-danger": "bg-transparent text-danger hover:bg-danger/5",
+  "ghost-brand": "bg-transparent text-dark/60 hover:bg-dark/5",
+};
+
+/**
+ * Size → kit modifier mapping. `md` is the kit default (no modifier needed).
+ * `icon` is a project-specific 40×40 round button (kit's `.icon-btn` is 32×32
+ * and intended for toolbars, a different use case).
+ */
+const SIZE_CLASS: Record<ButtonSize, string> = {
+  sm: "btn-sm",
+  md: "",
+  lg: "btn-lg",
+  icon: "w-10 h-10 !p-0",
+};
+
 export const Button = ({
   isLoading,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   children,
   leftIcon,
   rightIcon,
@@ -21,60 +66,22 @@ export const Button = ({
   disabled,
   ...props
 }: ButtonProps) => {
-
-  const variants: Record<string, string> = {
-    primary: tokens.buttonPrimary,
-    success: tokens.buttonSuccess,
-    secondary: tokens.buttonSecondary,
-    danger: tokens.buttonDanger,
-    outline: tokens.buttonOutline,
-    ghost: tokens.buttonGhost,
-    "ghost-white": tokens.buttonGhostWhite,
-    "ghost-danger": tokens.buttonGhostDanger,
-    "ghost-brand": tokens.buttonGhostBrand,
-  };
-
-  const softShadows: Record<string, string> = {
-    primary:       '0 1px 4px rgba(0,0,0,0.15)',
-    success:       '0 1px 4px rgba(0,0,0,0.15)',
-    secondary:     '0 1px 3px rgba(0,0,0,0.08)',
-    danger:        '0 1px 4px rgba(0,0,0,0.15)',
-    outline:       'none',
-    ghost:         'none',
-    'ghost-white': 'none',
-    'ghost-danger':'none',
-    'ghost-brand': 'none',
-  };
-
-  const sizes: Record<string, string> = {
-    sm: 'px-3.5 py-1.5 text-[11px] gap-1.5 rounded-full',
-    md: 'px-5 py-2.5 text-sm gap-2 rounded-full',
-    lg: 'px-8 py-3.5 text-base gap-3 rounded-full',
-    icon: 'w-10 h-10 flex items-center justify-center rounded-full p-0',
-  };
-
-  const gapClass = sizes[size].split(' ').find(c => c.startsWith('gap-')) || 'gap-2';
+  const classes = ["btn", VARIANT_CLASS[variant], SIZE_CLASS[size], "relative", className]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <button
-      disabled={isLoading || disabled}
-      className={`${tokens.buttonBase} ${variants[variant]} ${sizes[size]} ${className ?? ''}`}
-      style={{
-        boxShadow: softShadows[variant] ?? 'none',
-        ...props.style,
-      }}
-      {...props}
-    >
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
+    <button disabled={isLoading || disabled} className={classes} {...props}>
+      {isLoading ? (
+        <span className="absolute inset-0 flex items-center justify-center">
+          <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        </span>
+      ) : null}
 
-      <span className={`flex items-center justify-center ${gapClass} ${isLoading ? 'invisible' : ''}`}>
-        {leftIcon && <span className="shrink-0 flex items-center justify-center">{leftIcon}</span>}
+      <span className={`flex items-center justify-center gap-2 ${isLoading ? "invisible" : ""}`}>
+        {leftIcon ? <span className="shrink-0 flex items-center justify-center">{leftIcon}</span> : null}
         {children}
-        {rightIcon && <span className="shrink-0 flex items-center justify-center">{rightIcon}</span>}
+        {rightIcon ? <span className="shrink-0 flex items-center justify-center">{rightIcon}</span> : null}
       </span>
     </button>
   );

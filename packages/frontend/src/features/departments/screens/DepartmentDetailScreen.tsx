@@ -224,7 +224,7 @@ export const DepartmentDetailScreen = () => {
                         )}
                       </p>
                     </div>
-                    <StatusBadge status={report.status} size="sm" />
+                    <StatusBadge status={report.status} />
                   </button>
                 ))}
               </div>

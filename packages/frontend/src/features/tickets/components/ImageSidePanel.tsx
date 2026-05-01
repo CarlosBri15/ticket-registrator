@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { Camera, ExternalLink, Image as ImageIcon, X } from "lucide-react";
-import { tokens } from "../../../styles/theme";
 
 interface ImageSidePanelProps {
   imageUrl?: string;
@@ -21,8 +20,8 @@ export const ImageSidePanel = ({ imageUrl, isLoading, onClose }: ImageSidePanelP
               {t("ticketDetail.imageTitle")}
             </h2>
           </div>
-          <button type="button" onClick={onClose} className={tokens.modalClose}>
-            <X className="w-4 h-4" />
+          <button type="button" onClick={onClose} className="modal-close" aria-label={t("common.close")}>
+            <X className="w-4 h-4" aria-hidden={true} />
           </button>
         </div>
       </div>

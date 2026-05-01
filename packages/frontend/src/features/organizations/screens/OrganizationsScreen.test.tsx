@@ -182,11 +182,11 @@ describe('OrganizationsScreen', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
-  it('closes onboard modal when "Cancelar" is clicked', () => {
+  it('closes onboard modal when cancel is clicked', () => {
     renderScreen();
     fireEvent.click(screen.getByText(/nueva organización/i));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('Cancelar'));
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 

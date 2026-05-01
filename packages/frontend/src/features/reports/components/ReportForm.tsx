@@ -11,7 +11,6 @@ import { Button } from "../../../components/ui/Button";
 import { AlertCircle } from "lucide-react";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { tokens } from "../../../styles/theme";
 import { DatePicker } from "../../../components/ui/DatePicker";
 import { Input } from "../../../components/ui/Input";
 import { ReportTypeSelect } from "./ReportTypeSelect";
@@ -61,8 +60,8 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {apiError && (
-        <div className={`${tokens.alert} ${tokens.alertError}`}>
-          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+        <div className="alert alert-error" role="alert">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden={true} />
           <span className="text-sm font-medium">{apiError}</span>
         </div>
       )}

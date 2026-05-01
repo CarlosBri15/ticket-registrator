@@ -1,11 +1,12 @@
 /**
- * ReportFilterBar — Underline-only minimalist filter bar.
- * Search · Date range · Status dropdown — all with bottom-border only.
+ * ReportFilterBar — kit `.toolbar + .chip + .input-search` pattern.
+ * Search input on the left, date range and status as chip-triggered
+ * popovers, optional clear-all on the right.
  */
 import { useState } from "react";
 import { Search, X, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { STATUS_OPTIONS } from "../constants";
+import { STATUS_OPTIONS } from "@ticket-registrator/shared";
 import { DatePicker } from "../../../components/ui/DatePicker";
 import type { DateRange } from "../../../components/ui/Calendar";
 
@@ -20,9 +21,7 @@ export interface ReportFilterBarProps {
   onClear: () => void;
 }
 
-// Shared underline trigger class — bottom border only, no box, no radius.
-const underlineTrigger =
-  "w-full flex items-center gap-2.5 pb-2 border-b border-[var(--color-border-main)] bg-transparent transition-colors duration-100 focus:outline-none hover:border-dark/40 cursor-pointer";
+const chipTrigger = "chip whitespace-nowrap focus:outline-none";
 
 export const ReportFilterBar = ({
   search, onSearch,
@@ -37,67 +36,69 @@ export const ReportFilterBar = ({
   const statusActive = statusFilter !== "ALL";
 
   return (
-    <div className="flex items-end gap-6">
-
-      {/* Search */}
-      <div className={`flex-1 flex items-center gap-2 pb-2 border-b transition-colors duration-100 ${search ? "border-dark/60" : "border-[var(--color-border-main)]"} focus-within:border-dark/60`}>
-        <Search className="w-3.5 h-3.5 shrink-0 text-dark/35" />
+    <div className="toolbar">
+      {/* ── Search ───────────────────────────────────────────────────────── */}
+      <div className="relative flex-1 max-w-[420px]">
+        <Search
+          className="w-3.5 h-3.5 text-dark/35 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+          aria-hidden={true}
+        />
         <input
           type="text"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           placeholder={t("trips.filterSearch")}
-          className="flex-1 min-w-0 bg-transparent text-[13px] font-sans-medium text-dark placeholder:text-dark/35 placeholder:font-sans-normal focus:outline-none"
+          className="input input-search pl-9 pr-9"
         />
         {search && (
           <button
             type="button"
             onClick={() => onSearch("")}
-            className="text-dark/30 hover:text-dark/60 transition-colors"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-dark/30 hover:text-dark/60 transition-colors"
             aria-label="Clear search"
           >
-            <X className="w-3 h-3" />
+            <X className="w-3 h-3" aria-hidden={true} />
           </button>
         )}
       </div>
 
-      {/* Date Range */}
-      <div className="w-[240px]">
-        <DatePicker
-          mode="range"
-          value={dateRange}
-          onChange={(val) => onDateRange(val as DateRange | null)}
-          placeholder={t("trips.filterPeriod")}
-          triggerClassName={`${underlineTrigger} ${dateRange ? "border-dark/60" : ""}`}
-        />
-      </div>
+      {/* ── Date range (DatePicker styled as chip) ───────────────────────── */}
+      <DatePicker
+        mode="range"
+        value={dateRange}
+        onChange={(val) => onDateRange(val as DateRange | null)}
+        placeholder={t("trips.filterPeriod", "Period")}
+        triggerClassName={`${chipTrigger}${dateRange ? " active" : ""}`}
+      />
 
-      {/* Status */}
+      {/* ── Status chip + popover ────────────────────────────────────────── */}
       <div className="relative">
         <button
           type="button"
           onClick={() => setStatusOpen((o) => !o)}
-          className={`flex items-center gap-1.5 pb-2 border-b transition-colors duration-100 focus:outline-none ${
-            statusActive || statusOpen
-              ? "border-dark/70 text-dark"
-              : "border-[var(--color-border-main)] text-dark/45 hover:border-dark/40 hover:text-dark/70"
-          }`}
+          className={`${chipTrigger}${statusActive || statusOpen ? " active" : ""}`}
+          aria-expanded={statusOpen}
+          aria-haspopup="listbox"
         >
-          <span className={`font-sans-medium text-[13px] whitespace-nowrap ${statusActive ? "text-dark" : ""}`}>
-            {statusLabel}
-          </span>
-          <ChevronDown className={`w-3 h-3 shrink-0 opacity-50 transition-transform duration-150 ${statusOpen ? "rotate-180" : ""}`} />
+          <span>{statusLabel}</span>
+          <ChevronDown
+            className={`w-3 h-3 shrink-0 transition-transform duration-150 ${statusOpen ? "rotate-180" : ""}`}
+            aria-hidden={true}
+          />
         </button>
 
         {statusOpen && (
           <>
             <button
               type="button"
-              className="fixed inset-0 z-10"
+              className="fixed inset-0 z-10 cursor-default"
               onClick={() => setStatusOpen(false)}
               aria-label="Close status filter"
             />
-            <div className="absolute right-0 top-full mt-2 z-20 py-1 min-w-[160px] bg-[var(--color-surface-card)] border border-[var(--color-border-main)] rounded-lg shadow-[0px_8px_24px_rgba(28,25,23,0.08)]">
+            <div
+              role="listbox"
+              className="absolute right-0 top-full mt-2 z-20 py-1 min-w-[160px] bg-[var(--color-surface-card)] border border-[var(--color-border-main)] rounded-lg shadow-[0px_8px_24px_rgba(28,25,23,0.08)]"
+            >
               {STATUS_OPTIONS.map((s, idx) => {
                 const active = statusFilter === s;
                 const label = s === "ALL" ? t("trips.filterAll") : t(`status.${s}`);
@@ -105,14 +106,19 @@ export const ReportFilterBar = ({
                   <button
                     key={s}
                     type="button"
-                    onClick={() => { onStatus(s); setStatusOpen(false); }}
-                    className={`w-full flex items-center justify-between px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-[var(--color-surface)] ${
+                    role="option"
+                    aria-selected={active}
+                    onClick={() => {
+                      onStatus(s);
+                      setStatusOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-[var(--color-surface-hover)] ${
                       idx < STATUS_OPTIONS.length - 1 ? "border-b border-[var(--color-border-main)]/50" : ""
                     } ${active ? "font-sans-semibold text-dark" : "font-sans-medium text-dark/65"}`}
                   >
                     {label}
                     {active && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-dark shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-dark shrink-0" aria-hidden={true} />
                     )}
                   </button>
                 );
@@ -122,18 +128,17 @@ export const ReportFilterBar = ({
         )}
       </div>
 
-      {/* Clear all */}
+      {/* ── Clear all (right-aligned) ────────────────────────────────────── */}
       {hasFilters && (
         <button
           type="button"
           onClick={onClear}
-          className="pb-2 text-[12px] font-sans-medium text-dark/35 hover:text-dark/70 transition-colors whitespace-nowrap border-b border-transparent"
+          className="ml-auto text-[12px] font-sans-medium text-dark/45 hover:text-dark transition-colors whitespace-nowrap"
           aria-label="Clear filters"
         >
           {t("trips.filterClearAll")}
         </button>
       )}
-
     </div>
   );
 };

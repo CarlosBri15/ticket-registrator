@@ -12,12 +12,22 @@ interface FormModalProps {
   size?: "md" | "lg" | "xl";
   onSubmit: React.SubmitEventHandler<HTMLFormElement>;
   submitLabel: string;
+  /** Optional override for the cancel button label (defaults to `common.cancel`). */
+  cancelLabel?: string;
   isPending?: boolean;
   isValid?: boolean;
   error?: unknown;
+  /** When provided, the inline error alert renders a dismiss button that
+   *  invokes this callback (typically `mutation.reset`). */
+  onErrorDismiss?: () => void;
   children: React.ReactNode;
 }
 
+/**
+ * Standard form modal: Modal shell + optional error alert + cancel/submit row.
+ * Used by all "create / edit" feature modals (Department, OnboardOrganization,
+ * CreateUser, EditUser …) so the boilerplate lives in one place.
+ */
 export const FormModal = ({
   isOpen,
   onClose,
@@ -26,9 +36,11 @@ export const FormModal = ({
   size = "md",
   onSubmit,
   submitLabel,
+  cancelLabel,
   isPending = false,
   isValid = true,
   error,
+  onErrorDismiss,
   children,
 }: FormModalProps) => {
   const { t } = useTranslation();
@@ -36,13 +48,15 @@ export const FormModal = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} subtitle={subtitle} size={size}>
       <form onSubmit={onSubmit} className="space-y-4">
-        {error ? <AlertError message={getApiErrorMessage(error)} /> : null}
+        {error ? (
+          <AlertError message={getApiErrorMessage(error)} onDismiss={onErrorDismiss} />
+        ) : null}
 
         {children}
 
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
-            {t("common.cancel")}
+            {cancelLabel ?? t("common.cancel")}
           </Button>
           <Button type="submit" isLoading={isPending} disabled={!isValid} className="flex-1">
             {submitLabel}

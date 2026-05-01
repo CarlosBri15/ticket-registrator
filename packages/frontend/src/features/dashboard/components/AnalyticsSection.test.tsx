@@ -23,14 +23,18 @@ vi.mock('lucide-react', () => ({
   BarChart2: () => <svg data-testid="icon-bar-chart2" />,
 }));
 
-vi.mock('../../../utils/reportAnalytics', () => ({
-  getMonthlyExpenses: vi.fn(),
-  getExpensesByType: vi.fn(),
-}));
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    getMonthlyExpenses: vi.fn(),
+    getExpensesByType: vi.fn(),
+  };
+});
 
 // ─── Imports after mocks ──────────────────────────────────────────────────────
 
-import { getMonthlyExpenses, getExpensesByType } from '../../../utils/reportAnalytics';
+import { getMonthlyExpenses, getExpensesByType } from '@ticket-registrator/shared';
 import { AnalyticsSection } from './AnalyticsSection';
 
 // ─── Setup helpers ────────────────────────────────────────────────────────────

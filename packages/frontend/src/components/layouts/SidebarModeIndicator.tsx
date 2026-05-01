@@ -1,6 +1,5 @@
 import { Globe, Building2, X, Layers } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { transition } from "../../styles/theme";
 
 interface SidebarModeIndicatorProps {
   isGlobalMode: boolean;
@@ -53,7 +52,7 @@ export const SidebarModeIndicator = ({
                 type="button"
                 onClick={onExitCompanyMode}
                 title={t("layout.exitCompanyMode")}
-                className={`w-5 h-5 flex items-center justify-center rounded text-dark/30 hover:bg-dark/8 hover:text-dark/60 ${transition.base} shrink-0`}
+                className={`w-5 h-5 flex items-center justify-center rounded text-dark/30 hover:bg-dark/8 hover:text-dark/60 transition-all duration-100 shrink-0`}
               >
                 <X className="w-3 h-3" />
               </button>
@@ -66,7 +65,7 @@ export const SidebarModeIndicator = ({
             type="button"
             onClick={onExitCompanyMode}
             title={t("layout.exitCompanyMode")}
-            className={`flex items-center justify-center h-8 w-8 rounded-md bg-brand/10 text-dark/50 hover:bg-brand/20 hover:text-dark mx-auto mb-2 ${transition.base} btn-press`}
+            className={`flex items-center justify-center h-8 w-8 rounded-md bg-brand/10 text-dark/50 hover:bg-brand/20 hover:text-dark mx-auto mb-2 transition-all duration-100 btn-press`}
           >
             <Layers className="w-4 h-4" />
           </button>

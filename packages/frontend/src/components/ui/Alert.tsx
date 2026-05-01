@@ -1,11 +1,10 @@
-import { XCircle, CheckCircle2, AlertTriangle, Info, X } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { tokens } from '../../styles/theme';
+import { XCircle, CheckCircle2, AlertTriangle, Info, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 // Re-exported so existing callers (CreateUserModal, FormModal, etc.) keep working.
-export { getApiErrorMessage } from '@ticket-registrator/shared';
+export { getApiErrorMessage } from "@ticket-registrator/shared";
 
-export type AlertVariant = 'error' | 'success' | 'warning' | 'info';
+export type AlertVariant = "error" | "success" | "warning" | "info";
 
 export interface AlertProps {
   variant?: AlertVariant;
@@ -14,39 +13,33 @@ export interface AlertProps {
   className?: string;
 }
 
-const VARIANT_STYLES: Record<AlertVariant, {
-  container: string;
-  Icon: React.FC<{ className?: string; 'aria-hidden'?: boolean }>;
-}> = {
-  error: {
-    container: tokens.alertError,
-    Icon: XCircle,
-  },
-  success: {
-    container: tokens.alertSuccess,
-    Icon: CheckCircle2,
-  },
-  warning: {
-    container: tokens.alertWarning,
-    Icon: AlertTriangle,
-  },
-  info: {
-    container: tokens.alertInfo,
-    Icon: Info,
-  },
+const VARIANT_CLASS: Record<AlertVariant, string> = {
+  error: "alert-error",
+  success: "alert-success",
+  warning: "alert-warning",
+  info: "alert-info",
 };
 
-export const Alert = ({ variant = 'error', message, onDismiss, className = '' }: AlertProps) => {
+const VARIANT_ICON: Record<
+  AlertVariant,
+  React.FC<{ className?: string; "aria-hidden"?: boolean }>
+> = {
+  error: XCircle,
+  success: CheckCircle2,
+  warning: AlertTriangle,
+  info: Info,
+};
+
+/**
+ * Alert — wraps the kit `.alert + .alert-{variant}` primitives. Variant
+ * defaults to `error`; pass `onDismiss` to render a close button.
+ */
+export const Alert = ({ variant = "error", message, onDismiss, className = "" }: AlertProps) => {
   const { t } = useTranslation();
-  const styles = VARIANT_STYLES[variant];
-  const { Icon } = styles;
+  const Icon = VARIANT_ICON[variant];
 
   return (
-    <div
-      role="alert"
-      data-variant={variant}
-      className={`${tokens.alert} ${styles.container} ${className}`}
-    >
+    <div role="alert" data-variant={variant} className={`alert ${VARIANT_CLASS[variant]} ${className}`.trim()}>
       <Icon className="w-4 h-4 shrink-0 mt-0.5" aria-hidden={true} />
       <p className="flex-1 text-sm font-medium">{message}</p>
       {onDismiss && (
@@ -56,7 +49,7 @@ export const Alert = ({ variant = 'error', message, onDismiss, className = '' }:
           aria-label={t("common.close")}
           className="shrink-0 opacity-60 hover:opacity-100 transition-opacity"
         >
-          <X className="w-4 h-4" />
+          <X className="w-4 h-4" aria-hidden={true} />
         </button>
       )}
     </div>
@@ -64,7 +57,6 @@ export const Alert = ({ variant = 'error', message, onDismiss, className = '' }:
 };
 
 /** Convenience alias — renders an error Alert. */
-export const AlertError = (props: Omit<AlertProps, 'variant'>) => (
+export const AlertError = (props: Omit<AlertProps, "variant">) => (
   <Alert variant="error" {...props} />
 );
-

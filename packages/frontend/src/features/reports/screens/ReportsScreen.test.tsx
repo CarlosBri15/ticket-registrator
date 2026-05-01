@@ -66,11 +66,11 @@ vi.mock('../components/ReportSkeletonCard', () => ({
   ReportSkeletonCard: () => <div data-testid="skeleton" />,
 }));
 
-vi.mock('../components/ReportEmptyState', () => ({
-  ReportEmptyState: ({ title, onAction, actionLabel }: any) => (
+vi.mock('../../../components/ui/EmptyState', () => ({
+  EmptyState: ({ title, action }: any) => (
     <div data-testid="empty-state">
       <p>{title}</p>
-      {onAction && actionLabel && <button onClick={onAction}>{actionLabel}</button>}
+      {action}
     </div>
   ),
 }));

@@ -15,7 +15,7 @@ describe('UserSkeletonCard', () => {
 
   it('uses the same grid template as UserRow for visual continuity', () => {
     const { container } = render(<UserSkeletonCard />);
-    const grid = container.querySelector('.grid') as HTMLElement;
-    expect(grid.style.gridTemplateColumns).toContain('32px');
+    const row = container.querySelector('.list-row') as HTMLElement;
+    expect(row.style.gridTemplateColumns).toContain('32px');
   });
 });

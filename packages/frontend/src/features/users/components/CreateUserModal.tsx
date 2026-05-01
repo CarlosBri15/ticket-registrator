@@ -5,15 +5,12 @@ import {
   AUTHORITY_LEVELS,
   type IRole,
 } from "@ticket-registrator/shared";
-import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
-import { Modal } from "../../../components/ui/Modal";
-import { AlertError, getApiErrorMessage } from "../../../components/ui/Alert";
+import { FormModal } from "../../../components/ui/FormModal";
+import { AlertError } from "../../../components/ui/Alert";
 import { RoleSelect } from "../../roles/components/RoleSelect";
 import { OrgSelect } from "../../organizations/components/OrgSelect";
 import { DepartmentMultiSelect } from "../../departments/components/DepartmentMultiSelect";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface CreateUserModalProps {
   isOpen: boolean;
@@ -21,8 +18,6 @@ interface CreateUserModalProps {
   /** null when the creator is a SuperAdmin (must pick an org). */
   companyId: string | null;
 }
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export const CreateUserModal = ({ isOpen, onClose, companyId }: CreateUserModalProps) => {
   const { t } = useTranslation();
@@ -68,7 +63,7 @@ export const CreateUserModal = ({ isOpen, onClose, companyId }: CreateUserModalP
 
   const orgMissing = isCreatorSuperAdmin && !!form.roleId && !isTargetSuperAdmin && !form.orgId;
 
-  const handleSubmit = (e: React.BaseSyntheticEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordMismatch || orgMissing) return;
 
@@ -87,90 +82,81 @@ export const CreateUserModal = ({ isOpen, onClose, companyId }: CreateUserModalP
     mutation.mutate(payload);
   };
 
+  const isValid =
+    !!form.name && !!form.email && !!form.roleId && !passwordMismatch && !orgMissing;
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={t("users.newUser")} subtitle={t("users.createUserSubtitle")}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {mutation.error && (
-          <AlertError
-            message={getApiErrorMessage(mutation.error)}
-            onDismiss={() => mutation.reset()}
-          />
-        )}
+    <FormModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t("users.newUser")}
+      subtitle={t("users.createUserSubtitle")}
+      onSubmit={handleSubmit}
+      submitLabel={t("users.createUserBtn")}
+      isPending={mutation.isPending}
+      isValid={isValid}
+      error={mutation.error}
+      onErrorDismiss={() => mutation.reset()}
+    >
+      <div className="grid grid-cols-2 gap-4">
+        <Input label={`${t("users.fieldName")} *`} value={form.name} onChange={set("name")}
+          placeholder="Carlos" required />
+        <Input label={`${t("users.fieldSurname")} *`} value={form.surname} onChange={set("surname")}
+          placeholder="García" required />
+      </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Input label={`${t("users.fieldName")} *`} value={form.name} onChange={set("name")}
-            placeholder="Carlos" required />
-          <Input label={`${t("users.fieldSurname")} *`} value={form.surname} onChange={set("surname")}
-            placeholder="García" required />
-        </div>
+      <Input label={`${t("users.fieldEmail")} *`} type="email" value={form.email}
+        onChange={set("email")} placeholder="carlos@empresa.com" required />
 
-        <Input label={`${t("users.fieldEmail")} *`} type="email" value={form.email}
-          onChange={set("email")} placeholder="carlos@empresa.com" required />
+      <Input label={`${t("users.fieldUsername")} *`} value={form.username}
+        onChange={set("username")} placeholder="cgarcia" required />
 
-        <Input label={`${t("users.fieldUsername")} *`} value={form.username}
-          onChange={set("username")} placeholder="cgarcia" required />
+      <div className="grid grid-cols-2 gap-4">
+        <Input label={`${t("users.fieldPassword")} *`} type="password" value={form.password}
+          onChange={set("password")} placeholder="••••••••" required />
+        <Input label={`${t("users.fieldConfirmPassword")} *`} type="password"
+          value={form.confirmPassword} onChange={set("confirmPassword")} placeholder="••••••••" required />
+      </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Input label={`${t("users.fieldPassword")} *`} type="password" value={form.password}
-            onChange={set("password")} placeholder="••••••••" required />
-          <Input label={`${t("users.fieldConfirmPassword")} *`} type="password"
-            value={form.confirmPassword} onChange={set("confirmPassword")} placeholder="••••••••" required />
-        </div>
+      <RoleSelect
+        id="user-role"
+        companyId={effectiveCompanyId}
+        value={form.roleId}
+        onChange={(v: string, role: IRole | undefined) => {
+          reset();
+          setForm((p) => ({
+            ...p,
+            roleId: v,
+            selectedRole: role ?? null,
+            orgId: role && role.hierarchy >= AUTHORITY_LEVELS.GLOBAL ? "" : p.orgId,
+          }));
+        }}
+        required
+      />
 
-        <RoleSelect
-          id="user-role"
-          companyId={effectiveCompanyId}
-          value={form.roleId}
-          onChange={(v: string, role: IRole | undefined) => {
-            reset();
-            setForm((p) => ({
-              ...p,
-              roleId: v,
-              selectedRole: role ?? null,
-              orgId: role && role.hierarchy >= AUTHORITY_LEVELS.GLOBAL ? "" : p.orgId,
-            }));
-          }}
+      {/* Org selector — appears after role is chosen, only when role is not SuperAdmin */}
+      {isCreatorSuperAdmin && form.roleId && !isTargetSuperAdmin && (
+        <OrgSelect
+          id="user-org"
+          value={form.orgId}
+          onChange={(v: string) => { reset(); setForm((p) => ({ ...p, orgId: v })); }}
           required
         />
+      )}
 
-        {/* Org selector — appears after role is chosen, only when role is not SuperAdmin */}
-        {isCreatorSuperAdmin && form.roleId && !isTargetSuperAdmin && (
-          <OrgSelect
-            id="user-org"
-            value={form.orgId}
-            onChange={(v: string) => { reset(); setForm((p) => ({ ...p, orgId: v })); }}
-            required
-          />
-        )}
+      {/* Department multiselect — shown when role is not SuperAdmin and companyId is available */}
+      {!isTargetSuperAdmin && (isCreatorSuperAdmin ? form.orgId : companyId) && (
+        <DepartmentMultiSelect
+          id="user-departments"
+          companyId={isCreatorSuperAdmin ? form.orgId : companyId}
+          value={form.departmentIds}
+          onChange={(ids: string[]) => setForm((p) => ({ ...p, departmentIds: ids }))}
+        />
+      )}
 
-        {/* Department multiselect — shown when role is not SuperAdmin and companyId is available */}
-        {!isTargetSuperAdmin && (isCreatorSuperAdmin ? form.orgId : companyId) && (
-          <DepartmentMultiSelect
-            id="user-departments"
-            companyId={isCreatorSuperAdmin ? form.orgId : companyId}
-            value={form.departmentIds}
-            onChange={(ids: string[]) => setForm((p) => ({ ...p, departmentIds: ids }))}
-          />
-        )}
-
-        {passwordMismatch && (
-          <AlertError message={t("users.passwordMismatch")} />
-        )}
-
-        <div className="flex gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
-            {t("common.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            isLoading={mutation.isPending}
-            disabled={!form.name || !form.email || !form.roleId || passwordMismatch || orgMissing}
-            className="flex-1"
-          >
-            {t("users.createUserBtn")}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+      {passwordMismatch && (
+        <AlertError message={t("users.passwordMismatch")} />
+      )}
+    </FormModal>
   );
 };

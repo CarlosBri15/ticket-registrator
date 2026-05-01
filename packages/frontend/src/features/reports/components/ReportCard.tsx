@@ -53,7 +53,7 @@ export const ReportCard = memo(({
       </span>
 
       <span className="text-dark/20 shrink-0 select-none">·</span>
-      <StatusBadge status={report.status} size="sm" />
+      <StatusBadge status={report.status} />
 
       <span className="text-dark/20 shrink-0 select-none">·</span>
       <span className="font-sans-bold text-dark text-[14px] tabular-nums shrink-0">

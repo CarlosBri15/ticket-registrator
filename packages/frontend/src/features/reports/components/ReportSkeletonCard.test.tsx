@@ -13,9 +13,10 @@ describe('ReportSkeletonCard', () => {
     expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
-  it('renders six placeholder bars matching the row layout', () => {
+  it('uses the same grid template as ReportRow for visual continuity', () => {
     const { container } = render(<ReportSkeletonCard />);
-    const bars = container.querySelectorAll('div.bg-dark\\/6');
-    expect(bars.length).toBe(6);
+    const row = container.querySelector('.list-row') as HTMLElement;
+    expect(row).not.toBeNull();
+    expect(row.style.gridTemplateColumns).toContain('32px');
   });
 });

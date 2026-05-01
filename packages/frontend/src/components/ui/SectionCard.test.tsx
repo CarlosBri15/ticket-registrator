@@ -41,14 +41,23 @@ describe('SectionCard', () => {
     expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
   });
 
-  it('omits internal padding when padded={false}', () => {
+  it('applies the kit .card class on the root section', () => {
+    const { container } = render(
+      <SectionCard>
+        <p>x</p>
+      </SectionCard>,
+    );
+    expect(container.querySelector('section')?.className).toMatch(/\bcard\b/);
+  });
+
+  it('drops .card padding when padded={false}', () => {
     const { container } = render(
       <SectionCard padded={false}>
         <p>x</p>
       </SectionCard>,
     );
     const section = container.querySelector('section');
-    expect(section?.className).not.toMatch(/\bp-5\b/);
+    expect(section?.className).toContain('!p-0');
   });
 
   it('forwards extra className', () => {

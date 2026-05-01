@@ -15,7 +15,6 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { tokens } from '../../styles/theme';
 export interface DateRange {
   start: Date | null;
   end: Date | null;
@@ -67,7 +66,7 @@ export const Calendar = ({
       <div className="flex items-center justify-between px-2 mb-4">
         <button
           onClick={prevMonth}
-          className={`${tokens.buttonGhost} p-2 rounded-xl !shadow-none hover:bg-zinc-100`}
+          className={`btn btn-ghost p-2 rounded-xl !shadow-none`}
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -76,7 +75,7 @@ export const Calendar = ({
         </span>
         <button
           onClick={nextMonth}
-          className={`${tokens.buttonGhost} p-2 rounded-xl !shadow-none hover:bg-zinc-100`}
+          className={`btn btn-ghost p-2 rounded-xl !shadow-none`}
         >
           <ChevronRight className="w-5 h-5" />
         </button>

@@ -6,6 +6,7 @@ import { useDateLocale } from '../../../hooks/useDateLocale';
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { TableHeader } from "../../../components/ui/TableHeader";
+import { TICKETS_TABLE_GRID } from "../../../constants/gridLayouts";
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
@@ -21,8 +22,7 @@ const TicketRowContent = ({
   const isCard = ticket.payment_type?.toLowerCase().includes('card') || ticket.payment_type?.toLowerCase().includes('tarjeta');
   const PaymentIcon = isCard ? CreditCard : Banknote;
 
-  // Grid matching the TableHeader: 32px 1fr 100px 120px 120px 100px 16px
-  const gridStyle = { gridTemplateColumns: "32px 1fr 100px 120px 120px 100px 16px" };
+  const gridStyle = { gridTemplateColumns: TICKETS_TABLE_GRID };
 
   return (
     <div className="w-full grid items-center gap-4 px-4 py-3.5" style={gridStyle}>

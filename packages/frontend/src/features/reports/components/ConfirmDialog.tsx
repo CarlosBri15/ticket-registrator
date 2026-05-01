@@ -1,6 +1,5 @@
 import { cloneElement, type ReactElement } from "react";
 import { Button } from "../../../components/ui/Button";
-import { tokens } from "../../../styles/theme";
 
 interface ConfirmDialogProps {
   icon: React.ReactNode;
@@ -34,16 +33,16 @@ export const ConfirmDialog = ({
   const iconBorderColor = isDestructive ? 'border-[#DC2626]' : isPrimary ? 'border-[#1E3A8A]' : 'border-[#059669]';
 
   return (
-    <div className={tokens.modalOverlay}>
+    <div className="modal-overlay">
       <button
         type="button"
-        className={tokens.modalBackdrop}
+        className="modal-backdrop"
         onClick={onCancel}
         aria-label="Close dialog"
       />
-      
+
       <div className="relative z-[101] w-full max-w-sm px-4 flex items-center justify-center min-h-screen sm:min-h-0">
-        <div className={`${tokens.card} overflow-hidden shadow-hard-lg w-full`}>
+        <div className="card !p-0 overflow-hidden shadow-[var(--shadow-modal)] w-full">
           <div className="p-8 flex flex-col items-center text-center gap-4">
             <div
               className={`w-16 h-16 ${iconBgClass} border-2 ${iconBorderColor} rounded-2xl flex items-center justify-center shadow-hard-sm`}

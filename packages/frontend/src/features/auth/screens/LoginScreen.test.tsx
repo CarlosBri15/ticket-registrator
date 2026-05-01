@@ -27,11 +27,14 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('lucide-react', () => ({
-  Scan: () => null,
-  ShieldCheck: () => null,
-  Sparkles: () => null,
-}));
+vi.mock('lucide-react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('lucide-react')>();
+  return {
+    ...actual,
+    ShieldCheck: () => null,
+    Sparkles: () => null,
+  };
+});
 
 vi.mock('../../../api/client', () => ({
   tokenProvider: { setToken: vi.fn() },
