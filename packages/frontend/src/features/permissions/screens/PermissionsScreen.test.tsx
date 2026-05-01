@@ -69,7 +69,8 @@ describe('PermissionsScreen', () => {
 
   it('shows "Selecciona un rol" prompt when no role selected', () => {
     renderScreen();
-    expect(screen.getByText(/selecciona un rol para ver sus permisos/i)).toBeInTheDocument();
+    expect(screen.getByText(/selecciona un rol/i)).toBeInTheDocument();
+    expect(screen.getByText(/elige un rol de la lista/i)).toBeInTheDocument();
   });
 
   it('shows "no hay roles" when roles list is empty', () => {

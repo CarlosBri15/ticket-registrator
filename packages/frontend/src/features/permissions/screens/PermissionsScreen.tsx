@@ -9,12 +9,15 @@ import {
   useUnassignPermissionMutation,
   usePermissions,
   useScope,
+  useScopeContext,
   type IRole,
   type IPermission,
 } from "@ticket-registrator/shared";
-import { useScopeContext } from "@ticket-registrator/shared";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { Alert } from "../../../components/ui/Alert";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { Toggle } from "../../../components/ui/Toggle";
 
 // ─── Permission categories & labels ─────────────────────────────────────────
 
@@ -49,54 +52,7 @@ const PERM_LABELS: Record<string, string> = {
   edit_company: "Editar empresa",      delete_company: "Eliminar empresa",
 };
 
-// ─── Permission Toggle ───────────────────────────────────────────────────────
-
-const PermissionToggle = ({
-  permission,
-  isOn,
-  isLoading,
-  canManage,
-  onToggle,
-}: {
-  permission: IPermission;
-  isOn: boolean;
-  isLoading: boolean;
-  canManage: boolean;
-  onToggle: (permission: IPermission, newValue: boolean) => void;
-}) => (
-  <button
-    type="button"
-    onClick={() => canManage && !isLoading && onToggle(permission, !isOn)}
-    disabled={!canManage || isLoading}
-    className={`flex items-center justify-between w-full px-3 py-2.5 rounded-md transition-colors ${
-      isOn ? "bg-[var(--color-secondary)]" : "hover:bg-[var(--color-secondary)]"
-    } ${!canManage || isLoading ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
-  >
-    <span className={`text-[13px] font-sans-medium ${isOn ? "text-dark" : "text-dark/60"}`}>
-      {PERM_LABELS[permission.name] ?? permission.name}
-    </span>
-
-    <div className="shrink-0 ml-3">
-      {isLoading ? (
-        <Loader2 className="w-4 h-4 text-dark/50 animate-spin" />
-      ) : (
-        <div
-          className={`w-9 h-5 rounded-full transition-colors relative ${
-            isOn ? "bg-dark" : "bg-dark/15"
-          }`}
-        >
-          <div
-            className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${
-              isOn ? "left-4" : "left-0.5"
-            }`}
-          />
-        </div>
-      )}
-    </div>
-  </button>
-);
-
-// ─── Role selector ───────────────────────────────────────────────────────────
+// ─── Role selector item ──────────────────────────────────────────────────────
 
 const RoleItem = ({
   role,
@@ -151,7 +107,7 @@ export const PermissionsScreen = () => {
   let companyId: string | undefined;
   if (isGlobal) {
     companyId = activeCompanyId ?? undefined;
-  } else if (scope && typeof scope === 'object' && 'companyId' in scope) {
+  } else if (scope && typeof scope === "object" && "companyId" in scope) {
     companyId = (scope as { companyId?: string | null }).companyId ?? undefined;
   } else {
     companyId = undefined;
@@ -211,15 +167,11 @@ export const PermissionsScreen = () => {
     return (
       <div className="flex flex-col gap-8">
         <PageHeader title="Gestión de Permisos" />
-        <div className="flex flex-col items-center py-14 gap-2 text-center">
-          <Lock className="w-4 h-4 text-dark/25" aria-hidden={true} />
-          <p className="font-sans-medium text-[13px] text-dark/55">
-            Selecciona una organización
-          </p>
-          <p className="font-sans-normal text-[12px] text-dark/40 max-w-sm">
-            Para gestionar permisos, selecciona primero una organización desde el panel de Organizaciones.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Lock className="w-4 h-4" aria-hidden={true} />}
+          title="Selecciona una organización"
+          description="Para gestionar permisos, selecciona primero una organización desde el panel de Organizaciones."
+        />
       </div>
     );
   }
@@ -232,46 +184,21 @@ export const PermissionsScreen = () => {
       />
 
       {!canManage && (
-        <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-amber-50 border border-amber-100">
-          <Lock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" aria-hidden={true} />
-          <p className="text-[13px] font-sans-medium text-amber-800">
-            Solo puedes ver los permisos. Necesitas el permiso{" "}
-            <strong className="font-sans-bold">manage_permissions</strong> para modificarlos.
-          </p>
-        </div>
+        <Alert
+          variant="warning"
+          message="Solo puedes ver los permisos. Necesitas el permiso manage_permissions para modificarlos."
+        />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
         {/* Roles list */}
         <SectionCard title="Roles">
-          {(() => {
-            if (loadingRoles) {
-              return (
-                <div className="flex justify-center py-6">
-                  <div className="w-4 h-4 border-2 border-dark/20 border-t-dark/60 rounded-full animate-spin" />
-                </div>
-              );
-            }
-            if (!roles || roles.length === 0) {
-              return (
-                <p className="text-[13px] font-sans-medium text-dark/55 text-center py-6">
-                  No hay roles disponibles.
-                </p>
-              );
-            }
-            return (
-              <div className="flex flex-col gap-2">
-                {roles.map((role) => (
-                  <RoleItem
-                    key={role.id}
-                    role={role}
-                    isSelected={selectedRoleId === role.id}
-                    onSelect={() => setSelectedRoleId(role.id)}
-                  />
-                ))}
-              </div>
-            );
-          })()}
+          <RolesList
+            isLoading={loadingRoles}
+            roles={roles}
+            selectedRoleId={selectedRoleId}
+            onSelect={setSelectedRoleId}
+          />
         </SectionCard>
 
         {/* Permission grid */}
@@ -317,13 +244,13 @@ export const PermissionsScreen = () => {
                       <SectionCard key={cat.label} title={cat.label} padded={false}>
                         <div className="flex flex-col gap-1 px-3 pb-3">
                           {catPerms.map((perm) => (
-                            <PermissionToggle
+                            <Toggle
                               key={perm.id}
-                              permission={perm}
+                              label={PERM_LABELS[perm.name] ?? perm.name}
                               isOn={assignedIds.has(perm.id)}
                               isLoading={pendingPermId === perm.id}
-                              canManage={canManage}
-                              onToggle={handleToggle}
+                              disabled={!canManage}
+                              onChange={(next) => handleToggle(perm, next)}
                             />
                           ))}
                         </div>
@@ -334,15 +261,56 @@ export const PermissionsScreen = () => {
               )}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 gap-2 text-center rounded-lg border border-dashed border-[var(--color-border-main)] bg-[var(--color-surface-card)]">
-              <Shield className="w-4 h-4 text-dark/25" aria-hidden={true} />
-              <p className="text-[13px] font-sans-medium text-dark/55">
-                Selecciona un rol para ver sus permisos
-              </p>
-            </div>
+            <EmptyState
+              icon={<Shield className="w-4 h-4" aria-hidden={true} />}
+              title="Selecciona un rol"
+              description="Elige un rol de la lista para ver y gestionar sus permisos."
+              className="border border-dashed border-[var(--color-border-main)] rounded-lg bg-[var(--color-surface-card)]"
+            />
           )}
         </div>
       </div>
+    </div>
+  );
+};
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+const RolesList = ({
+  isLoading,
+  roles,
+  selectedRoleId,
+  onSelect,
+}: {
+  isLoading: boolean;
+  roles: IRole[] | undefined;
+  selectedRoleId: string | null;
+  onSelect: (id: string) => void;
+}) => {
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-6">
+        <div className="w-4 h-4 border-2 border-dark/20 border-t-dark/60 rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (!roles || roles.length === 0) {
+    return (
+      <p className="text-[13px] font-sans-medium text-dark/55 text-center py-6">
+        No hay roles disponibles.
+      </p>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      {roles.map((role) => (
+        <RoleItem
+          key={role.id}
+          role={role}
+          isSelected={selectedRoleId === role.id}
+          onSelect={() => onSelect(role.id)}
+        />
+      ))}
     </div>
   );
 };

@@ -150,6 +150,7 @@
   --danger: #DC2626;
   --danger-bg: #FFF1F2;
   --danger-text: #BE123C;
+  --danger-border: rgba(220, 38, 38, 0.18);
   --info: #2563EB;
   --info-bg: #EFF6FF;
   --info-text: #1D4ED8;
@@ -305,6 +306,18 @@
   .select-option { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; font-size: 14px; font-weight: 500; color: var(--fg-primary); cursor: pointer; width: 100%; text-align: left; transition: background var(--duration-fast) var(--ease-out); }
   .select-option:hover:not(.is-active) { background: var(--surface-hover); }
   .select-option.is-active { background: rgba(28, 25, 23, 0.06); font-weight: 600; }
+
+  /* ── Toggle (switch) ─────────────────────────────────────────────────────── */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 6px; width: 100%; text-align: left; transition: background var(--duration-fast) var(--ease-out); cursor: pointer; }
+  .toggle-row:hover:not(:disabled) { background: var(--surface-hover); }
+  .toggle-row.is-on { background: var(--surface-active); }
+  .toggle-row:disabled { opacity: 0.6; cursor: not-allowed; }
+  .toggle-row-label { font-size: 13px; font-weight: 500; color: var(--fg-secondary); }
+  .toggle-row.is-on .toggle-row-label { color: var(--fg-primary); }
+  .toggle-track { position: relative; width: 36px; height: 20px; border-radius: 9999px; background: rgba(28, 25, 23, 0.18); transition: background var(--duration-fast) var(--ease-out); flex-shrink: 0; }
+  .toggle-track.is-on { background: var(--brand); }
+  .toggle-thumb { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 9999px; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18); transition: left var(--duration-fast) var(--ease-out); }
+  .toggle-track.is-on .toggle-thumb { left: 18px; }
 
   /* ── Cards ───────────────────────────────────────────────────────────────── */
   .card { background: var(--surface-card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; }

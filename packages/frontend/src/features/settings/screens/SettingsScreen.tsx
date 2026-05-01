@@ -156,7 +156,10 @@ export const SettingsScreen = () => {
                 </p>
               </div>
               {saveOk && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-[11px] font-sans-semibold">
+                <span
+                  role="status"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--success-bg)] text-[var(--success-text)] text-[11px] font-sans-semibold"
+                >
                   <Check className="w-3 h-3" aria-hidden={true} />
                   {t("settings.updateSuccess")}
                 </span>
@@ -212,6 +215,7 @@ export const SettingsScreen = () => {
               <button
                 key={lang.code}
                 type="button"
+                aria-pressed={isActive}
                 onClick={() => i18n.changeLanguage(lang.code)}
                 className={`w-full flex items-center justify-between p-3 rounded-md border transition-colors duration-100 ${
                   isActive
@@ -241,9 +245,9 @@ export const SettingsScreen = () => {
       <button
         type="button"
         onClick={handleLogout}
-        className="w-full flex items-center gap-3 px-5 py-4 rounded-lg border border-red-100 bg-red-50/50 text-danger hover:bg-red-50 transition-colors"
+        className="w-full flex items-center gap-3 px-5 py-4 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-bg)] text-[var(--danger-text)] hover:brightness-95 transition-[filter] cursor-pointer"
       >
-        <div className="w-9 h-9 rounded-md bg-red-100 flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-md bg-white/60 flex items-center justify-center shrink-0">
           <LogOut className="w-4 h-4" aria-hidden={true} />
         </div>
         <div className="text-left">
