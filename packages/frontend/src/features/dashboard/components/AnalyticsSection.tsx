@@ -9,10 +9,10 @@ import { getMonthlyExpenses, getExpensesByType } from "@ticket-registrator/share
 import type { IReport } from "@ticket-registrator/shared";
 import { SectionCard } from "../../../components/ui/SectionCard";
 
-export const CHART_COLORS = ["#1C1917", "#6B6560", "#A09A95", "#1A6A40", "#8A5C0A", "#4A47A0"];
+const CHART_COLORS = ["#1C1917", "#6B6560", "#A09A95", "#1A6A40", "#8A5C0A", "#4A47A0"];
 
-export const LegendFormatter = (value: string) => (
-  <span style={{ fontSize: 11, fontWeight: 600, color: "#6B6560" }}>
+const renderLegendLabel = (value: string) => (
+  <span className="text-[11px] font-semibold text-stone-600">
     {value.length > 18 ? value.substring(0, 16) + "…" : value}
   </span>
 );
@@ -99,9 +99,9 @@ export const AnalyticsSection = memo(({ reports }: { reports: IReport[] }) => {
                 />
                 <Tooltip
                   contentStyle={tooltipStyle}
-                  formatter={(value: any) => [`${Number(value).toFixed(2)}`, t("analytics.totalAmount")]}
+                  formatter={(value) => [`${Number(value ?? 0).toFixed(2)}`, t("analytics.totalAmount")]}
                 />
-                <Legend iconType="circle" iconSize={8} formatter={LegendFormatter} />
+                <Legend iconType="circle" iconSize={8} formatter={renderLegendLabel} />
               </PieChart>
             </ResponsiveContainer>
           ) : (
