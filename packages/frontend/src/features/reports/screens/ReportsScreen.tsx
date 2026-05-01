@@ -4,7 +4,7 @@ import {
   useReportsPaginatedQuery,
   useReportFilterState,
 } from "@ticket-registrator/shared";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Modal } from "../../../components/ui/Modal";
@@ -12,12 +12,12 @@ import { Button } from "../../../components/ui/Button";
 import { Pagination } from "../../../components/ui/Pagination";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { TableHeader } from "../../../components/ui/TableHeader";
+import { EmptyState } from "../../../components/ui/EmptyState";
 import { ReportForm } from "../components/ReportForm";
 import { ReportCard } from "../components/ReportCard";
 import { ReportRowItem } from "../components/ReportRow";
 import { ReportFilterBar } from "../components/ReportFilterBar";
 import { ReportSkeletonCard } from "../components/ReportSkeletonCard";
-import { ReportEmptyState } from "../components/ReportEmptyState";
 import { ACTIVE_STATUSES, isCurrentReport } from "../constants";
 import { useDateLocale } from "../../../hooks/useDateLocale";
 
@@ -103,11 +103,19 @@ export const ReportsScreen = () => {
 
       {/* ── Empty state ── */}
       {!isLoading && !hasAnyReports && (
-        <ReportEmptyState
+        <EmptyState
+          icon={<FileText className="w-4 h-4" aria-hidden={true} />}
           title={t("trips.noTickets")}
           description={t("trips.primerViajeDesc")}
-          onAction={() => setIsModalOpen(true)}
-          actionLabel={t("home.createFirst")}
+          action={
+            <Button
+              variant="primary"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              onClick={() => setIsModalOpen(true)}
+            >
+              {t("home.createFirst")}
+            </Button>
+          }
         />
       )}
 
