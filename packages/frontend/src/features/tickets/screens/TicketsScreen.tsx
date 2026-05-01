@@ -153,6 +153,7 @@ export const AllTicketsScreen = () => {
     <div className="flex flex-col gap-8">
       <PageHeader
         title={t("ticketsPage.title")}
+        subtitle={t("ticketsPage.desc")}
         stats={hasAnyTickets ? [{ label: t("ticketsPage.title"), value: totalTickets }] : undefined}
       />
 

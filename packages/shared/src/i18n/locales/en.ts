@@ -247,6 +247,7 @@ export default {
   },
   trips: {
     title: "Reports",
+    subtitle: "Expense reports across your organization.",
     new: "New",
     newTripTitle: "New Report",
     nameLabel: "Report Name",
