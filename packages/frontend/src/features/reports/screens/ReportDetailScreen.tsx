@@ -9,6 +9,9 @@ import { TicketUploadModal } from "../../tickets/components/TicketUploadModal";
 import { TicketDetailModal } from "../../tickets/components/TicketDetailModal";
 import { TicketsTable } from "../../tickets/components/TicketsTable";
 import { Button } from "../../../components/ui/Button";
+import { Alert } from "../../../components/ui/Alert";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { SectionCard } from "../../../components/ui/SectionCard";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import {
   useReportQuery, useTicketsQuery, usePermissions, type ITicket,
@@ -105,18 +108,17 @@ export const ReportDetailScreen = () => {
 
   if (isError || !r) {
     return (
-      <div className="h-[60vh] flex flex-col items-center justify-center gap-3 px-6">
-        <div className="w-full max-w-sm rounded-lg border border-[var(--color-border-main)] bg-white shadow-sm overflow-hidden">
-          <div className="flex flex-col items-center text-center p-8 gap-3">
-            <div className="w-10 h-10 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-danger" />
-            </div>
-            <p className="font-sans-semibold text-dark text-[15px]">{t("reportDetail.errorLoading")}</p>
-            <p className="font-sans-normal text-dark/50 text-[13px]">{t("reportDetail.errorDesc")}</p>
-            <Button variant="secondary" onClick={() => navigate("/reports")}>{t("common.cancel")}</Button>
-          </div>
-        </div>
-      </div>
+      <EmptyState
+        icon={<AlertTriangle className="w-4 h-4 text-danger" aria-hidden={true} />}
+        title={t("reportDetail.errorLoading")}
+        description={t("reportDetail.errorDesc")}
+        action={
+          <Button variant="secondary" onClick={() => navigate("/reports")}>
+            {t("common.cancel")}
+          </Button>
+        }
+        className="min-h-[60vh] justify-center"
+      />
     );
   }
 
@@ -233,12 +235,10 @@ export const ReportDetailScreen = () => {
       <div className="flex flex-col gap-10">
 
         {isSubmitted && !canApprove && (
-          <div className="flex items-center gap-2.5 px-4 py-3 bg-amber-50 border border-amber-100 rounded-lg">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <p className="font-sans-medium text-amber-700 text-[13px]">
-              {t("reportDetail.submittedReview")} — {t("reportDetail.reviewTimeframe")}
-            </p>
-          </div>
+          <Alert
+            variant="warning"
+            message={`${t("reportDetail.submittedReview")} — ${t("reportDetail.reviewTimeframe")}`}
+          />
         )}
 
         {/* ── Analytics Section ── */}
@@ -249,11 +249,7 @@ export const ReportDetailScreen = () => {
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Category Donut */}
-              <div className="flex flex-col gap-4 p-5 rounded-lg border border-[var(--color-border-main)] bg-white h-[280px]">
-                <p className="text-[12px] font-sans-bold text-dark/70">
-                  {t("analytics.expensesByType") ?? "Gasto por categoría"}
-                </p>
+              <SectionCard title={t("analytics.expensesByType")} className="h-[280px]">
                 <div className="flex-1 flex items-center justify-center">
                   <DonutChart
                     data={categoryData}
@@ -262,13 +258,9 @@ export const ReportDetailScreen = () => {
                     centerLabel={report?.currency ?? ""}
                   />
                 </div>
-              </div>
+              </SectionCard>
 
-              {/* Trend Chart */}
-              <div className="flex flex-col gap-4 p-5 rounded-lg border border-[var(--color-border-main)] bg-white h-[280px]">
-                <p className="text-[12px] font-sans-bold text-dark/70">
-                  {t("analytics.dailyExpensesTrend") ?? "Evolución diaria"}
-                </p>
+              <SectionCard title={t("analytics.dailyExpensesTrend")} className="h-[280px]">
                 <div className="flex-1">
                   <AreaTrendChart
                     data={trendData}
@@ -276,7 +268,7 @@ export const ReportDetailScreen = () => {
                     currency={report?.currency ?? ""}
                   />
                 </div>
-              </div>
+              </SectionCard>
             </div>
           </section>
         )}
