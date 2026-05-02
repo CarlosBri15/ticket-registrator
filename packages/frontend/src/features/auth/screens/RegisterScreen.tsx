@@ -1,12 +1,16 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
-import { registerSchema, type RegisterSchema, useRegisterMutation } from "@ticket-registrator/shared";
+import {
+  registerSchema,
+  type RegisterSchema,
+  useRegisterMutation,
+  getApiErrorMessage,
+} from "@ticket-registrator/shared";
 import { Input } from "../../../components/ui/Input";
 import { Button } from "../../../components/ui/Button";
 import { Sparkles, PieChart, TrendingUp, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
 
 export const RegisterForm = () => {
     const { t } = useTranslation();
@@ -33,7 +37,7 @@ export const RegisterForm = () => {
         mutate(data);
     };
 
-    const serverErrorMessage = isError ? (error as AxiosError<{ message: string }>)?.response?.data?.message || t('common.error') : null;
+    const serverErrorMessage = isError ? getApiErrorMessage(error, t('common.error')) : null;
 
     return (
         <div className="min-h-screen w-full grid lg:grid-cols-2 bg-surface">
