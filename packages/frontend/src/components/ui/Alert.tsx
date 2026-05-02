@@ -1,8 +1,9 @@
 import { XCircle, CheckCircle2, AlertTriangle, Info, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-// Re-exported so existing callers (CreateUserModal, FormModal, etc.) keep working.
-export { getApiErrorMessage } from "@ticket-registrator/shared";
+// Note: `getApiErrorMessage` lives in `@ticket-registrator/shared` and must be
+// imported from there directly. The legacy re-export from this file was
+// removed in Frente 5.4 to satisfy `react-refresh/only-export-components`.
 
 export type AlertVariant = "error" | "success" | "warning" | "info";
 

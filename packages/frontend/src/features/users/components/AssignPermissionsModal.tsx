@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   useAllPermissionsQuery,
   useRolePermissionsQuery,
@@ -39,13 +39,18 @@ export const AssignPermissionsModal = ({
   const assignMutation = useAssignPermissionMutation();
   const unassignMutation = useUnassignPermissionMutation();
 
-  const [localAssigned, setLocalAssigned] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (assignedPermissions) {
-      setLocalAssigned(new Set(assignedPermissions.map((p) => p.id)));
-    }
-  }, [assignedPermissions]);
+  // Sync local Set<string> with the fetched permissions using a derived-state
+  // pattern (no effect): when the upstream array reference changes, snapshot
+  // its ids into local state once. The user can then toggle freely without
+  // immediate persistence.
+  const [localAssigned, setLocalAssigned] = useState<Set<string>>(() =>
+    new Set(assignedPermissions?.map((p) => p.id) ?? []),
+  );
+  const [prevAssignedRef, setPrevAssignedRef] = useState(assignedPermissions);
+  if (prevAssignedRef !== assignedPermissions) {
+    setPrevAssignedRef(assignedPermissions);
+    setLocalAssigned(new Set(assignedPermissions?.map((p) => p.id) ?? []));
+  }
 
   const isLoading = loadingAll || loadingAssigned;
   const isSaving = assignMutation.isPending || unassignMutation.isPending;

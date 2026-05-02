@@ -34,7 +34,7 @@ const ARCHITECTURE_GUARD_RULES = {
 }
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'eslint-report.json', 'eslint-summary.mjs']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -49,6 +49,17 @@ export default defineConfig([
     },
     rules: {
       ...ARCHITECTURE_GUARD_RULES,
+    },
+  },
+  // Test files are allowed to use `any` for mock parameter types — typing every
+  // vi.fn() argument fully would not catch real bugs and would force callers
+  // to import private mock-shape interfaces. We keep the rule as a `warn` so
+  // it stays visible during code review but does not block CI/pre-commit.
+  // Product code (everything outside *.{test,spec}.tsx?) remains strict.
+  {
+    files: ['**/*.{test,spec}.{ts,tsx}', 'src/test/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
 ])

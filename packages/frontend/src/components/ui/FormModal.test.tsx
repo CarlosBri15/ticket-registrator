@@ -29,8 +29,15 @@ vi.mock('./Alert', () => ({
       {onDismiss ? <button onClick={onDismiss} aria-label="Cerrar">×</button> : null}
     </div>
   ),
-  getApiErrorMessage: (error: any) => error?.message || 'Generic error',
 }));
+
+vi.mock('@ticket-registrator/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ticket-registrator/shared')>();
+  return {
+    ...actual,
+    getApiErrorMessage: (error: any) => error?.message || 'Generic error',
+  };
+});
 
 describe('FormModal', () => {
   const mockOnClose = vi.fn();

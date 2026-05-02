@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import {
   useReportsQuery,
   useReportsPaginatedQuery,
@@ -38,9 +38,15 @@ export const ReportsScreen = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
+  // Reset to page 1 when filters change — derived state pattern (no effect).
+  // dateRange is a fresh object on every render, so we serialise it for stable
+  // comparison.
+  const filtersKey = `${search}|${statusFilter}|${dateRange?.start?.toISOString() ?? ""}|${dateRange?.end?.toISOString() ?? ""}`;
+  const [prevFiltersKey, setPrevFiltersKey] = useState(filtersKey);
+  if (prevFiltersKey !== filtersKey) {
+    setPrevFiltersKey(filtersKey);
     setPage(1);
-  }, [search, statusFilter, dateRange]);
+  }
 
   const { data: allReports, isLoading: isLoadingCurrent } = useReportsQuery();
 
@@ -140,7 +146,11 @@ export const ReportsScreen = () => {
             {t("trips.title")}
           </p>
 
-          {!isLoading && hasAnyReports && (
+          {hasAnyReports && (
+            // Render the filter bar regardless of `isLoading` — unmounting it
+            // during the in-flight pagination fetch caused the search input to
+            // lose focus on every keystroke (filter change → setPage(1) →
+            // refetch → !isLoading=false → <ReportFilterBar/> remount).
             <ReportFilterBar
               search={search}
               onSearch={setSearch}
@@ -183,7 +193,11 @@ export const ReportsScreen = () => {
             )}
 
             {!isLoading && listReports.length === 0 && (
-              <div className="flex flex-col items-center py-14 gap-2 text-center border-b border-[var(--color-border-main)]">
+              // min-h matches roughly 3 list rows so the empty state slot has
+              // a similar visual footprint to a populated list — avoids the
+              // abrupt layout collapse when a search filter goes from "has
+              // matches" to "no matches".
+              <div className="flex flex-col items-center justify-center min-h-[260px] gap-2 text-center border-b border-[var(--color-border-main)]">
                 <Search className="w-4 h-4 text-dark/25 mb-1" />
                 <p className="font-sans-medium text-[13px] text-dark/55">
                   {t("trips.noResultsFilter")}

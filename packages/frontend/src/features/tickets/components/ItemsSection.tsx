@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { 
+import {
   Utensils, Plane, Car, Save,
-  Computer, Briefcase, Gift, Train, Box, 
+  Computer, Briefcase, Gift, Train, Box,
   MapPin, Landmark, Heart, Fuel, FileText,
-  Tag, Receipt
+  Tag, Receipt,
+  type LucideIcon,
 } from "lucide-react";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 import type { ITicket, IItem } from "@ticket-registrator/shared";
@@ -19,7 +20,7 @@ interface ItemsSectionProps {
   isSaving: boolean;
 }
 
-const CATEGORY_ICONS: Record<string, any> = {
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
   'Airfare': Plane,
   'Marketing': Tag,
   'Booking Fees': Receipt,

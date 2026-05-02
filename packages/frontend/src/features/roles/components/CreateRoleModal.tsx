@@ -3,25 +3,13 @@ import { useTranslation } from "react-i18next";
 import {
   useRolesQuery,
   useCreateRoleMutation,
+  getApiErrorMessage,
 } from "@ticket-registrator/shared";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Modal } from "../../../components/ui/Modal";
-import { AlertError, getApiErrorMessage } from "../../../components/ui/Alert";
-
-// ─── Hierarchy helpers ────────────────────────────────────────────────────────
-
-// System role names are universal; only "Empleado" uses a translation key.
-const HIERARCHY_LEVELS = [
-  { min: 100, labelKey: "SuperAdmin",          color: "bg-purple-50 text-purple-700" },
-  { min: 99,  labelKey: "Admin",               color: "bg-blue-50 text-blue-700" },
-  { min: 50,  labelKey: "Manager",             color: "bg-amber-50 text-amber-700" },
-  { min: 40,  labelKey: "Controller",          color: "bg-emerald-50 text-emerald-700" },
-  { min: 1,   labelKey: "roles.levelEmployee", color: "bg-[var(--color-secondary)] text-dark/70" },
-] as const;
-
-export const getHierarchyMeta = (h: number) =>
-  HIERARCHY_LEVELS.find((l) => h >= l.min) ?? HIERARCHY_LEVELS[4];
+import { AlertError } from "../../../components/ui/Alert";
+import { getHierarchyMeta } from "./hierarchyMeta";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
