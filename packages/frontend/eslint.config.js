@@ -34,7 +34,7 @@ const ARCHITECTURE_GUARD_RULES = {
 }
 
 export default defineConfig([
-  globalIgnores(['dist', 'eslint-report.json', 'eslint-summary.mjs']),
+  globalIgnores(['dist', 'coverage', 'eslint-report.json', 'eslint-summary.mjs']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
