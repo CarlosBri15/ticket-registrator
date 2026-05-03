@@ -15,6 +15,7 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { SeedModule } from './seed/seed.module';
 import { CryptoModule } from './crypto/crypto.module';
 import { CategoriesModule } from './categories/categories.module';
+import { PoliciesModule } from './policies/policies.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { CategoriesModule } from './categories/categories.module';
     PermissionsModule,
     SeedModule,
     CategoriesModule,
+    PoliciesModule,
   ],
 })
 export class AppModule { }

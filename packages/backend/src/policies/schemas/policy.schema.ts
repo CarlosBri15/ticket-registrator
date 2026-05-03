@@ -1,4 +1,5 @@
 import { pgTable, uuid, text, timestamp, index, integer, customType } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { companies } from '../../organization/schema/organization.schema';
 
 // Exported for testing coverage
@@ -28,5 +29,7 @@ export const policyChunks = pgTable('policy_chunks', {
 }, (table) => ({
   // HNSW index is the standard for fast vector similarity search in pgvector
   embeddingIndex: index('embedding_idx').using('hnsw', table.embedding.op('vector_cosine_ops')),
+  // GIN Index for blazing fast Keyword/Full-Text search
+  textSearchIndex: index('text_search_idx').using('gin', sql`to_tsvector('simple', ${table.content})`),
   companyIndex: index('policy_company_idx').on(table.companyId),
 }));
