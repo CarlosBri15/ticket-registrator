@@ -65,7 +65,7 @@ export const PhysicalReceiptCard = ({
         </div>
 
         <div className="pt-4 flex justify-between items-center">
-          <StatusBadge status={ticket.status} size="sm" />
+          <StatusBadge status={ticket.status} />
           {ticket.expense_type && (
             <span className="text-[10px] font-sans-bold text-dark/40 bg-dark/5 px-2 py-1 rounded-md">
               {ticket.expense_type}

@@ -1,7 +1,6 @@
 import { Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useDropdown } from '../../hooks/useDropdown';
-import { tokens } from '../../styles/theme';
 import { BaseSelect } from './BaseSelect';
 
 export interface SelectOption {
@@ -99,7 +98,7 @@ export const Select = ({
               tabIndex={-1}
               onClick={() => handleSelect(opt.value)}
               onMouseDown={(e) => e.preventDefault()}
-              className={`${tokens.selectOption} ${isSelected ? tokens.selectOptionActive : tokens.selectOptionIdle}`}
+              className={`select-option${isSelected ? " is-active" : ""}`}
             >
               <span>{opt.label}</span>
               {isSelected && <Check className="w-4 h-4 shrink-0" aria-hidden={true} />}

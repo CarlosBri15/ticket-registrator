@@ -1,46 +1,57 @@
-/**
- * StatusBadge — Web version.
- *
- * Pill sin dot. Colores cálidos/muted que encajan con el estilo
- * blanco-crema-grafito. Las definiciones de color son web-only;
- * mobile mantiene su propio sistema en shared/statusColors.
- */
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
+import type { ReactNode } from "react";
+import {
+  Check,
+  Clock,
+  X,
+  Send,
+  Wallet,
+  Pencil,
+  FilePlus,
+} from "lucide-react";
 
 interface StatusBadgeProps {
   status: string;
-  size?: 'sm' | 'md';
 }
 
-// Paleta warm-muted para el web. No tocar shared/statusColors (mobile).
-const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
-  DRAFT:     { bg: '#F2F0ED', color: '#6B6560' },
-  CREATED:   { bg: '#EEEDF8', color: '#4A47A0' },
-  PENDING:   { bg: '#FEF9EC', color: '#8A5C0A' },
-  SUBMITTED: { bg: '#FEF3E8', color: '#8A4810' },
-  APPROVED:  { bg: '#EDFAF3', color: '#1A6A40' },
-  PAID:      { bg: '#E8FAF0', color: '#1A6040' },
-  REJECTED:  { bg: '#FDF0EF', color: '#A03A3A' },
-  DECLINED:  { bg: '#FDF0EF', color: '#A03A3A' },
+interface StatusConfig {
+  className: string;
+  icon: ReactNode;
+}
+
+const ICON_CLASS = "w-3.5 h-3.5 shrink-0";
+
+/**
+ * status enum (uppercase) → kit `.st-*` colour class + lucide icon. Matches the
+ * inline status pattern from `preview/components-cards.html` (icon + coloured
+ * word, no pill, no background) — appropriate for dense list rows.
+ */
+const STATUS_CONFIG: Record<string, StatusConfig> = {
+  DRAFT:     { className: "st-draft",     icon: <Pencil   className={ICON_CLASS} /> },
+  CREATED:   { className: "st-created",   icon: <FilePlus className={ICON_CLASS} /> },
+  PENDING:   { className: "st-pending",   icon: <Clock    className={ICON_CLASS} /> },
+  SUBMITTED: { className: "st-submitted", icon: <Send     className={ICON_CLASS} /> },
+  APPROVED:  { className: "st-approved",  icon: <Check    className={ICON_CLASS} /> },
+  PAID:      { className: "st-paid",      icon: <Wallet   className={ICON_CLASS} /> },
+  REJECTED:  { className: "st-rejected",  icon: <X        className={ICON_CLASS} /> },
+  DECLINED:  { className: "st-declined",  icon: <X        className={ICON_CLASS} /> },
 };
 
-const FALLBACK = STATUS_STYLES.DRAFT;
+const FALLBACK: StatusConfig = STATUS_CONFIG.DRAFT;
 
-export const StatusBadge = ({ status, size = 'sm' }: StatusBadgeProps) => {
+/**
+ * Inline status indicator — lucide icon + colour-coded text, no background.
+ * Uses the kit `.status .st-*` primitives. The mobile app keeps its own status
+ * rendering in `packages/shared/statusColors`; this component is web-only.
+ */
+export const StatusBadge = ({ status }: StatusBadgeProps) => {
   const { t } = useTranslation();
-  const key    = status.toUpperCase();
-  const style  = STATUS_STYLES[key] ?? FALLBACK;
+  const key = status.toUpperCase();
+  const config = STATUS_CONFIG[key] ?? FALLBACK;
 
   return (
-    <span
-      className="inline-flex items-center font-sans-medium whitespace-nowrap rounded-md"
-      style={{
-        backgroundColor: style.bg,
-        color:           style.color,
-        fontSize:        size === 'sm' ? 11 : 12,
-        padding:         size === 'sm' ? '2px 7px' : '3px 8px',
-      }}
-    >
+    <span className={`status ${config.className}`}>
+      {config.icon}
       {t(`status.${key}`, { defaultValue: key })}
     </span>
   );

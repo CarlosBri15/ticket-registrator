@@ -1,29 +1,35 @@
-import type { ComponentProps } from 'react';
-import { tokens } from '../../styles/theme';
+import type { ComponentProps } from "react";
 
-interface InputProps extends ComponentProps<'input'> {
+interface InputProps extends ComponentProps<"input"> {
   label: string;
   error?: string;
 }
 
-export const Input = ({ label, error, className, ...props }: InputProps) => {
+/**
+ * Form input — wraps the kit `.field + .field-label + .input` primitives.
+ * Renders an error message via `.field-error` when provided.
+ */
+export const Input = ({ label, error, className, id, ...props }: InputProps) => {
+  const errorId = error && id ? `${id}-error` : undefined;
+
   return (
-    <div className="w-full">
-      <label className={tokens.inputLabel}>
-        {label}
-      </label>
+    <div className="field">
+      {label && (
+        <label htmlFor={id} className="field-label">
+          {label}
+        </label>
+      )}
 
       <input
+        id={id}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={errorId}
         {...props}
-        className={`
-          ${tokens.input}
-          ${error ? tokens.inputError : ''}
-          ${className ?? ''}
-        `}
+        className={["input", error ? "is-error" : "", className ?? ""].filter(Boolean).join(" ")}
       />
 
       {error && (
-        <p className={tokens.inputErrorMsg}>
+        <p id={errorId} className="field-error">
           {error}
         </p>
       )}

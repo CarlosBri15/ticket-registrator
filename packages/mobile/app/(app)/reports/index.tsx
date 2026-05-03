@@ -35,8 +35,7 @@ import { ReportsFilterPanel } from '../../../src/components/features/ReportsFilt
 import { useReportsScreen } from '../../../src/hooks/useReportsScreen';
 import { getDateLocale } from '../../../src/utils/date';
 import { reportIcon } from '@ticket-registrator/shared/assets';
-
-const HISTORY_LIMIT = 5;
+import { HISTORY_LIMIT } from '@ticket-registrator/shared';
 
 export default function ReportsScreen() {
   const { t } = useTranslation();

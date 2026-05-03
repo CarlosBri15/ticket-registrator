@@ -1,20 +1,19 @@
 import { type ReactNode, useEffect } from "react";
 import { X } from "lucide-react";
-import { tokens } from "../../styles/theme";
 
-type ModalSize = 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+type ModalSize = "md" | "lg" | "xl" | "2xl" | "3xl";
 
 // Pixel widths matching Tailwind's max-w-* breakpoints
 const MAIN_WIDTHS: Record<ModalSize, number> = {
-  md:    544,   // max-w-xl
-  lg:    640,   // max-w-2xl
-  xl:    768,   // max-w-3xl
-  '2xl': 896,   // max-w-4xl
-  '3xl': 960,   // slightly less than max-w-5xl to leave breathing room
+  md: 544,
+  lg: 640,
+  xl: 768,
+  "2xl": 896,
+  "3xl": 960,
 };
 
 const SIDE_PANEL_W = 380;
-const SIDE_GAP     = 16;
+const SIDE_GAP = 16;
 
 interface ModalProps {
   isOpen: boolean;
@@ -37,6 +36,11 @@ interface ModalProps {
   sidePanelBg?: string;
 }
 
+/**
+ * Modal shell — wraps the kit `.modal-overlay/.modal-backdrop/.modal-container/
+ * .modal-header/.modal-title/.modal-subtitle/.modal-body/.modal-close`
+ * primitives. Optional side panel slides in beside the main panel.
+ */
 export const Modal = ({
   isOpen,
   onClose,
@@ -44,11 +48,11 @@ export const Modal = ({
   subtitle,
   icon,
   children,
-  size = 'md',
+  size = "md",
   actions,
   hideDefaultClose = false,
   sidePanel,
-  sidePanelBg = 'var(--color-surface)',
+  sidePanelBg = "var(--color-surface)",
 }: ModalProps) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -69,43 +73,37 @@ export const Modal = ({
   if (!isOpen) return null;
 
   const hasSidePanel = Boolean(sidePanel);
-  const mainW        = MAIN_WIDTHS[size];
-  const containerW   = hasSidePanel ? mainW + SIDE_GAP + SIDE_PANEL_W : mainW;
+  const mainW = MAIN_WIDTHS[size];
+  const containerW = hasSidePanel ? mainW + SIDE_GAP + SIDE_PANEL_W : mainW;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6">
-      {/* Backdrop */}
+    <div className="modal-overlay">
       <button
         type="button"
-        className="absolute inset-0 bg-dark/50 backdrop-blur-sm animate-in fade-in duration-200 w-full h-full border-none outline-none"
+        className="modal-backdrop animate-in fade-in duration-200"
         onClick={onClose}
         aria-label="Cerrar modal"
       />
 
-      {/*
-        Container: width transitions when sidePanel opens/closes.
-        Centered via parent flex justify-center → main panel shifts left automatically.
-      */}
       <div
         className="relative flex items-stretch gap-4"
         style={{
           width: `min(${containerW}px, calc(100vw - 48px))`,
-          transition: 'width 300ms ease-in-out',
+          transition: "width 300ms ease-in-out",
         }}
       >
         {/* ── Main panel ──────────────────────────────────────────────── */}
         <div
-          className={`${tokens.modalContainer} flex flex-col shrink-0`}
+          className="modal-container flex flex-col shrink-0 animate-in fade-in slide-in-from-bottom-4 duration-200"
           style={{ width: `min(${mainW}px, 100%)` }}
         >
-          {/* Header */}
-          <div className={tokens.modalHeader}>
+          <div className="modal-header">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 {icon && <div className="shrink-0">{icon}</div>}
                 <div className="min-w-0">
-                  <h2 className={tokens.modalTitle}>{title}</h2>
-                  {subtitle && <p className={tokens.modalSubtitle}>{subtitle}</p>}
+                  <h2 className="modal-title">{title}</h2>
+                  {subtitle && <p className="modal-subtitle">{subtitle}</p>}
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -114,24 +112,23 @@ export const Modal = ({
                   <button
                     type="button"
                     onClick={onClose}
-                    className={tokens.modalClose}
+                    className="modal-close"
                     aria-label="Cerrar"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-4 h-4" aria-hidden={true} />
                   </button>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Body */}
-          <div className={tokens.modalBody}>{children}</div>
+          <div className="modal-body">{children}</div>
         </div>
 
         {/* ── Side panel ──────────────────────────────────────────────── */}
         {hasSidePanel && (
           <div
-            className="hidden sm:flex flex-col shrink-0 rounded-lg border-2 border-border-main shadow-hard-lg overflow-hidden animate-in slide-in-from-right duration-300"
+            className="hidden sm:flex flex-col shrink-0 rounded-lg border border-[var(--color-border-main)] shadow-[var(--shadow-modal)] overflow-hidden animate-in slide-in-from-right duration-300"
             style={{
               width: SIDE_PANEL_W,
               backgroundColor: sidePanelBg,
