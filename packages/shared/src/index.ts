@@ -123,3 +123,6 @@ export * from './constants/cache';
 export * from './constants/pagination';
 export * from './constants/i18n';
 export * from './constants/statuses';
+
+// Policies
+export * from './schemas/policies/createPolicy.schema';
