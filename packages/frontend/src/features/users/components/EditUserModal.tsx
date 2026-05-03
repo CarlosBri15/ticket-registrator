@@ -3,24 +3,19 @@ import {
   useUpdateUserMutation,
   type IUser,
 } from "@ticket-registrator/shared";
-import { Modal } from "../../../components/ui/Modal";
 import { Input } from "../../../components/ui/Input";
-import { Button } from "../../../components/ui/Button";
-import { AlertError, getApiErrorMessage } from "../../../components/ui/Alert";
+import { FormModal } from "../../../components/ui/FormModal";
 import { RoleSelect } from "../../roles/components/RoleSelect";
 import { DepartmentMultiSelect } from "../../departments/components/DepartmentMultiSelect";
 
-export const EditUserModal = ({
-  isOpen,
-  onClose,
-  user,
-  companyId,
-}: {
+interface EditUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: IUser;
   companyId: string | null;
-}) => {
+}
+
+export const EditUserModal = ({ isOpen, onClose, user, companyId }: EditUserModalProps) => {
   const mutation = useUpdateUserMutation({ onSuccess: onClose });
 
   const [form, setForm] = useState({
@@ -42,7 +37,7 @@ export const EditUserModal = ({
     [], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
-  const handleSubmit = (e: React.BaseSyntheticEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     mutation.mutate({
       id: user.id,
@@ -57,84 +52,51 @@ export const EditUserModal = ({
     });
   };
 
+  const isValid =
+    !!form.name && !!form.surname && !!form.email && !!form.username && !!form.roleId;
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Editar Usuario">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {mutation.error && (
-          <AlertError
-            message={getApiErrorMessage(mutation.error)}
-            onDismiss={() => mutation.reset()}
-          />
-        )}
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            label="Nombre *"
-            value={form.name}
-            onChange={set("name")}
-            placeholder="Carlos"
-            required
-          />
-          <Input
-            label="Apellido *"
-            value={form.surname}
-            onChange={set("surname")}
-            placeholder="García"
-            required
-          />
-        </div>
-        <Input
-          label="Email *"
-          type="email"
-          value={form.email}
-          onChange={set("email")}
-          placeholder="carlos@empresa.com"
-          required
-        />
-        <Input
-          label="Usuario *"
-          value={form.username}
-          onChange={set("username")}
-          placeholder="cgarcia"
-          required
-        />
+    <FormModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Editar Usuario"
+      onSubmit={handleSubmit}
+      submitLabel="Guardar cambios"
+      cancelLabel="Cancelar"
+      isPending={mutation.isPending}
+      isValid={isValid}
+      error={mutation.error}
+      onErrorDismiss={() => mutation.reset()}
+    >
+      <div className="grid grid-cols-2 gap-4">
+        <Input label="Nombre *" value={form.name} onChange={set("name")} placeholder="Carlos" required />
+        <Input label="Apellido *" value={form.surname} onChange={set("surname")} placeholder="García" required />
+      </div>
+      <Input label="Email *" type="email" value={form.email} onChange={set("email")} placeholder="carlos@empresa.com" required />
+      <Input label="Usuario *" value={form.username} onChange={set("username")} placeholder="cgarcia" required />
 
-        <RoleSelect
-          id="edit-user-role"
+      <RoleSelect
+        id="edit-user-role"
+        companyId={companyId}
+        value={form.roleId}
+        onChange={(v: string) => {
+          reset();
+          setForm((p) => ({ ...p, roleId: v }));
+        }}
+        required
+      />
+
+      {companyId !== null && (
+        <DepartmentMultiSelect
+          id="edit-user-departments"
           companyId={companyId}
-          value={form.roleId}
-          onChange={(v: string) => {
+          value={form.departmentIds}
+          onChange={(ids: string[]) => {
             reset();
-            setForm((p) => ({ ...p, roleId: v }));
+            setForm((p) => ({ ...p, departmentIds: ids }));
           }}
-          required
         />
-
-        {companyId !== null && (
-          <DepartmentMultiSelect
-            id="edit-user-departments"
-            companyId={companyId}
-            value={form.departmentIds}
-            onChange={(ids: string[]) => {
-              reset();
-              setForm((p) => ({ ...p, departmentIds: ids }));
-            }}
-          />
-        )}
-
-        <div className="flex gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            isLoading={mutation.isPending}
-            disabled={!form.name || !form.surname || !form.email || !form.username || !form.roleId}
-            className="flex-1"
-          >
-            Guardar cambios
-          </Button>
-        </div>
-      </form>
-    </Modal>
+      )}
+    </FormModal>
   );
 };

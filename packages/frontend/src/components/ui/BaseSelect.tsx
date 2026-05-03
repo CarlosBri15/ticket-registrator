@@ -1,7 +1,6 @@
-import { createPortal } from 'react-dom';
-import { ChevronDown, Loader2 } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { tokens } from '../../styles/theme';
+import { createPortal } from "react-dom";
+import { ChevronDown, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export interface BaseSelectProps {
   label?: string;
@@ -12,7 +11,7 @@ export interface BaseSelectProps {
   id: string;
   displayValue: string | null;
   placeholder?: string;
-  emptyI18nKey: 'ui.selectOption' | 'ui.selectOptions';
+  emptyI18nKey: "ui.selectOption" | "ui.selectOptions";
   open: boolean;
   onToggle: () => void;
   triggerRef: React.RefObject<HTMLButtonElement | null>;
@@ -25,6 +24,12 @@ export interface BaseSelectProps {
   children: React.ReactNode;
 }
 
+/**
+ * Headless-style select shell built on top of the kit `.field +
+ * .select-trigger + .select-dropdown` primitives. Accessibility (native
+ * `<select>` mirror + keyboard navigation) is delegated to the caller via
+ * `nativeSelect` and `handleKeyDown` props.
+ */
 export const BaseSelect = ({
   label,
   required,
@@ -48,17 +53,12 @@ export const BaseSelect = ({
 }: BaseSelectProps) => {
   const { t } = useTranslation();
   const isPlaceholder = displayValue === null;
-
-  const triggerClasses = [
-    tokens.selectTrigger,
-    open ? tokens.selectTriggerFocus : '',
-    error ? tokens.inputError : '',
-  ].join(' ');
+  const errorId = error ? `${id}-error` : undefined;
 
   return (
-    <div className="w-full" ref={containerRef}>
+    <div className="field" ref={containerRef}>
       {label && (
-        <label htmlFor={id} className={tokens.inputLabel}>
+        <label htmlFor={id} className="field-label">
           {label}
           {required && <span className="text-danger ml-0.5">*</span>}
         </label>
@@ -76,18 +76,28 @@ export const BaseSelect = ({
           disabled={disabled || isLoading}
           onClick={onToggle}
           onKeyDown={handleKeyDown}
-          className={triggerClasses}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={errorId}
+          className={[
+            "select-trigger",
+            open ? "is-open" : "",
+            error ? "is-error" : "",
+          ].filter(Boolean).join(" ")}
         >
-          <span className={isPlaceholder ? 'text-slate-400 font-normal' : 'text-dark'}>
+          <span className={isPlaceholder ? "text-dark/40 font-sans-normal" : "text-dark"}>
             {isLoading
-              ? t('ui.loading')
+              ? t("ui.loading")
               : (displayValue ?? placeholder ?? t(emptyI18nKey))}
           </span>
-          <span className="shrink-0 ml-2 text-slate-400">
-            {isLoading
-              ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden={true} />
-              : <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} aria-hidden={true} />
-            }
+          <span className="shrink-0 ml-2 text-dark/40">
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden={true} />
+            ) : (
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                aria-hidden={true}
+              />
+            )}
           </span>
         </button>
 
@@ -98,7 +108,7 @@ export const BaseSelect = ({
             aria-hidden="true"
             data-listbox={id}
             style={dropdownStyle}
-            className={tokens.selectDropdown}
+            className="select-dropdown"
           >
             {children}
           </div>,
@@ -106,7 +116,11 @@ export const BaseSelect = ({
         )}
       </div>
 
-      {error && <p className={tokens.inputErrorMsg}>{error}</p>}
+      {error && (
+        <p id={errorId} className="field-error">
+          {error}
+        </p>
+      )}
     </div>
   );
 };

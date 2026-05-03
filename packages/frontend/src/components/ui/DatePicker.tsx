@@ -1,28 +1,29 @@
-import { createPortal } from 'react-dom';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { useTranslation } from 'react-i18next';
-import { Calendar } from './Calendar';
-import type { DateRange } from './Calendar';
-import { useDropdown } from '../../hooks/useDropdown';
-import { tokens } from '../../styles/theme';
-import { Calendar as CalendarIcon, ChevronDown, X } from 'lucide-react';
+import { createPortal } from "react-dom";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
+import { Calendar } from "./Calendar";
+import type { DateRange } from "./Calendar";
+import { useDropdown } from "../../hooks/useDropdown";
+import { Calendar as CalendarIcon, ChevronDown, X } from "lucide-react";
 
 interface DatePickerProps {
   label?: string;
   placeholder?: string;
-  mode?: 'single' | 'range';
+  mode?: "single" | "range";
   value?: Date | DateRange | null;
   onChange?: (date: Date | DateRange | null) => void;
   error?: string;
   disabled?: boolean;
+  /** When provided, replaces the default `.select-trigger` styling on the
+   *  trigger button (used by ReportFilterBar to render the trigger as a chip). */
   triggerClassName?: string;
 }
 
 export const DatePicker = ({
   label,
   placeholder,
-  mode = 'single',
+  mode = "single",
   value,
   onChange,
   error,
@@ -41,8 +42,7 @@ export const DatePicker = ({
 
   const getDisplayValue = () => {
     if (!value) return null;
-
-    if (mode === 'single') {
+    if (mode === "single") {
       const dateValue = value instanceof Date ? value : null;
       if (dateValue && !Number.isNaN(dateValue.getTime())) {
         return format(dateValue, "d 'de' MMMM, yyyy", { locale: es });
@@ -52,18 +52,19 @@ export const DatePicker = ({
     const range = value as DateRange;
     if (!range.start) return null;
     if (!range.end) return format(range.start, "d 'de' MMMM", { locale: es });
-    return `${format(range.start, 'd MMM')} - ${format(range.end, 'd MMM, yyyy')}`;
+    return `${format(range.start, "d MMM")} - ${format(range.end, "d MMM, yyyy")}`;
   };
 
   const displayValue = getDisplayValue();
+  const errorId = error && label ? `datepicker-${label.toLowerCase()}-error` : undefined;
+
+  const triggerClass = triggerClassName
+    ? `${triggerClassName}${error ? " is-error" : ""}`
+    : ["select-trigger", open ? "is-open" : "", error ? "is-error" : ""].filter(Boolean).join(" ");
 
   return (
-    <div className="w-full" ref={containerRef}>
-      {label && (
-        <label className={tokens.inputLabel}>
-          {label}
-        </label>
-      )}
+    <div className="field" ref={containerRef}>
+      {label && <label className="field-label">{label}</label>}
 
       <div className="relative">
         <button
@@ -72,15 +73,19 @@ export const DatePicker = ({
           disabled={disabled}
           onClick={() => setOpen(!open)}
           onKeyDown={handleKeyDown}
-          className={
-            triggerClassName
-              ? `${triggerClassName} ${error ? tokens.inputError : ''}`
-              : `${tokens.selectTrigger} ${error ? tokens.inputError : ''} ${open ? tokens.selectTriggerFocus : 'flex items-center gap-3'}`
-          }
+          aria-invalid={error ? true : undefined}
+          aria-describedby={errorId}
+          className={triggerClass}
         >
-          <CalendarIcon className="w-4 h-4 text-dark/40" />
-          <span className={`flex-1 truncate text-[13px] ${!displayValue ? 'text-dark/40 font-sans-normal' : 'text-dark font-sans-medium'}`}>
-            {displayValue || placeholder || (mode === 'range' ? t('ui.selectDateRange') : t('ui.selectDate'))}
+          <CalendarIcon className="w-4 h-4 text-dark/40 shrink-0" aria-hidden={true} />
+          <span
+            className={`flex-1 truncate text-[13px] ${
+              !displayValue ? "text-dark/40 font-sans-normal" : "text-dark font-sans-medium"
+            }`}
+          >
+            {displayValue ||
+              placeholder ||
+              (mode === "range" ? t("ui.selectDateRange") : t("ui.selectDate"))}
           </span>
           <div className="flex items-center gap-2">
             {displayValue && !disabled && (
@@ -91,11 +96,17 @@ export const DatePicker = ({
                   onChange?.(null);
                 }}
                 className="p-1 hover:bg-dark/5 rounded-md transition-colors"
+                aria-label={t("common.close")}
               >
-                <X className="w-3 h-3 text-dark/40" />
+                <X className="w-3 h-3 text-dark/40" aria-hidden={true} />
               </button>
             )}
-            <ChevronDown className={`w-4 h-4 text-dark/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              className={`w-4 h-4 text-dark/40 transition-transform duration-200 ${
+                open ? "rotate-180" : ""
+              }`}
+              aria-hidden={true}
+            />
           </div>
         </button>
 
@@ -110,19 +121,19 @@ export const DatePicker = ({
               value={value}
               onChange={(v) => {
                 onChange?.(v);
-                if (mode === 'single' || (mode === 'range' && (v as DateRange).end)) {
+                if (mode === "single" || (mode === "range" && (v as DateRange).end)) {
                   setOpen(false);
                 }
               }}
               className="w-full max-w-[320px]"
             />
           </div>,
-          document.body
+          document.body,
         )}
       </div>
 
       {error && (
-        <p className={tokens.inputErrorMsg}>
+        <p id={errorId} className="field-error">
           {error}
         </p>
       )}

@@ -47,8 +47,8 @@ describe('Modal', () => {
 
   it('calls onClose when backdrop is clicked', () => {
     const { container } = render(<Modal {...defaultProps} />);
-    // Backdrop is the absolute div with onClick
-    const backdrop = container.querySelector('.absolute.inset-0');
+    const backdrop = container.querySelector('.modal-backdrop');
+    expect(backdrop).not.toBeNull();
     fireEvent.click(backdrop!);
     expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
   });

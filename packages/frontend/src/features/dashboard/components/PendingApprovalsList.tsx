@@ -83,7 +83,7 @@ export const PendingApprovalsList = ({
                     </p>
                   </div>
                 )}
-                <StatusBadge status={report.status} size="sm" />
+                <StatusBadge status={report.status} />
                 <ChevronRight className="w-4 h-4 text-dark/30 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </button>

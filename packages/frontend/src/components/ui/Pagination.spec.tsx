@@ -13,6 +13,7 @@ vi.mock("react-i18next", () => ({
         "pagination.to": "to",
         "pagination.of": "of",
         "pagination.results": "results",
+        "pagination.page": "Page",
       };
       return map[key] ?? key;
     },
@@ -103,7 +104,7 @@ describe("Pagination", () => {
   it("renders all page numbers when totalPages <= 7", () => {
     render(<Pagination {...defaultProps} page={1} totalPages={7} totalItems={70} />);
     for (let i = 1; i <= 7; i++) {
-      expect(screen.getByRole("button", { name: String(i) })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: `Page ${i}` })).toBeInTheDocument();
     }
   });
 
@@ -115,14 +116,15 @@ describe("Pagination", () => {
 
   it("always shows first and last page button when totalPages > 7", () => {
     render(<Pagination {...defaultProps} page={5} totalPages={10} totalItems={100} />);
-    expect(screen.getByRole("button", { name: "1" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "10" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Page 1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Page 10" })).toBeInTheDocument();
   });
 
-  it("highlights the current page button", () => {
+  it("highlights the current page button with kit brand fill + aria-current", () => {
     render(<Pagination {...defaultProps} page={3} totalPages={5} />);
-    const activeBtn = screen.getByRole("button", { name: "3" });
-    expect(activeBtn.className).toContain("bg-[var(--color-dark)]");
+    const activeBtn = screen.getByRole("button", { name: "Page 3" });
+    expect(activeBtn.className).toContain("bg-brand");
     expect(activeBtn.className).toContain("text-white");
+    expect(activeBtn).toHaveAttribute("aria-current", "page");
   });
 });

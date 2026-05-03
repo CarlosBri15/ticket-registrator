@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+/** @jest-environment jsdom */
 import { renderHook } from '@testing-library/react';
 import { useGroupedByDate } from './useGroupedByDate';
 

@@ -31,8 +31,7 @@ import {
   filterBySearch,
   filterByStatus,
   filterByDateRange,
-} from "../../../utils/reportAnalytics";
-import { BORDER } from "../constants";
+} from "@ticket-registrator/shared";
 import { useDateLocale } from "../../../hooks/useDateLocale";
 import { useTranslation } from "react-i18next";
 
@@ -162,8 +161,7 @@ export const UserDetailScreen = () => {
         <div className="flex items-center gap-2 md:gap-3 min-w-0">
           <button
             onClick={() => navigate("/users")}
-            className="font-space-bold text-dark/30 hover:text-dark transition-colors shrink-0"
-            style={{ fontSize: 24, letterSpacing: "0.5px" }}
+            className="font-space-bold text-2xl tracking-[0.5px] text-dark/30 hover:text-dark transition-colors shrink-0"
           >
             {t("users.title")}
           </button>
@@ -171,7 +169,7 @@ export const UserDetailScreen = () => {
           <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-dark/20 shrink-0" />
 
           <div className="flex items-center gap-3 min-w-0">
-            <h1 className="font-space-bold text-dark truncate" style={{ fontSize: 24, letterSpacing: "0.5px" }}>
+            <h1 className="font-space-bold text-2xl tracking-[0.5px] text-dark truncate">
               {user?.name} {user?.surname}
             </h1>
           </div>
@@ -253,7 +251,7 @@ export const UserDetailScreen = () => {
           </div>
 
           {/* ── Separator ── */}
-          <div className="hidden lg:block self-stretch" style={{ width: 2, backgroundColor: BORDER }} />
+          <div className="hidden lg:block self-stretch w-0.5 bg-[var(--color-border-main)]" />
 
           {/* ────── SIDEBAR COLUMN ────── */}
           <aside className="px-8 md:px-10 py-7 space-y-6">

@@ -123,9 +123,9 @@ describe('Select', () => {
   it('marks the currently selected option with custom selected state in dropdown', () => {
     render(<Select label="Rol" options={defaultOptions} value="admin" />);
     fireEvent.click(screen.getByTestId('select-trigger'));
-    // We check the custom background class instead of aria-selected for the portal
-    expect(screen.getByTestId('select-option-admin').className).toContain('bg-brand/10');
-    expect(screen.getByTestId('select-option-employee').className).not.toContain('bg-brand/10');
+    // We check the kit `.is-active` modifier on the option button.
+    expect(screen.getByTestId('select-option-admin').className).toContain('is-active');
+    expect(screen.getByTestId('select-option-employee').className).not.toContain('is-active');
     // Also verify the native select value
     expect(screen.getByRole('combobox')).toHaveValue('admin');
   });
@@ -190,11 +190,10 @@ describe('Select', () => {
 
   // ── Error ──────────────────────────────────────────────────────────────────
 
-  it('renders error message and applies style to trigger', () => {
+  it('renders error message and applies the kit .is-error modifier to the trigger', () => {
     render(<Select label="Rol" options={defaultOptions} error="Campo requerido" />);
     expect(screen.getByText('Campo requerido')).toBeInTheDocument();
-    // The visual trigger should show the error state class
-    expect(screen.getByTestId('select-trigger').className).toContain('border-danger');
+    expect(screen.getByTestId('select-trigger').className).toContain('is-error');
   });
 
   it('does not render error when error prop is absent', () => {

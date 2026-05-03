@@ -53,6 +53,20 @@ describe('SidebarNav', () => {
     expect(screen.getByText('layout.permissions')).toBeInTheDocument();
   });
 
+  it('renders section titles when expanded', () => {
+    renderNav();
+    expect(screen.getByText('layout.sectionPrincipal')).toBeInTheDocument();
+    expect(screen.getByText('layout.management')).toBeInTheDocument();
+    expect(screen.getByText('layout.sectionAdmin')).toBeInTheDocument();
+  });
+
+  it('hides section titles when collapsed', () => {
+    renderNav({ isCollapsed: true });
+    expect(screen.queryByText('layout.sectionPrincipal')).not.toBeInTheDocument();
+    expect(screen.queryByText('layout.management')).not.toBeInTheDocument();
+    expect(screen.queryByText('layout.sectionAdmin')).not.toBeInTheDocument();
+  });
+
   it('hides company-scoped items when in global mode', () => {
     renderNav({ isGlobalMode: true });
     expect(screen.queryByText('layout.reports')).not.toBeInTheDocument();
@@ -88,12 +102,28 @@ describe('SidebarNav', () => {
     expect(onNavClick).toHaveBeenCalled();
   });
 
-  it('renders no labels in collapsed mode (only icons + tooltips)', () => {
+  it('renders no inline labels in collapsed mode (only icons + tooltips)', () => {
     const { container } = renderNav({ isCollapsed: true });
-    // Tooltips with labels have opacity-0 + group-hover:opacity-100; the visible label spans should be missing.
-    const visibleLabel = Array.from(container.querySelectorAll('span')).find(
-      (s) => s.textContent === 'layout.dashboard' && !s.className.includes('opacity-0'),
+    // Inline labels are <span class="truncate ..."> — those should not be rendered when collapsed.
+    const inlineLabel = Array.from(container.querySelectorAll('span.truncate')).find(
+      (s) => s.textContent === 'layout.dashboard',
     );
-    expect(visibleLabel).toBeUndefined();
+    expect(inlineLabel).toBeUndefined();
+  });
+
+  it('uses the kit .sb-item class on each nav entry', () => {
+    const { container } = renderNav();
+    const items = container.querySelectorAll('.sb-item');
+    expect(items.length).toBeGreaterThan(0);
+  });
+
+  it('marks the active route with .active modifier', () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={['/home']}>
+        <SidebarNav isCollapsed={false} isGlobalMode={false} onNavClick={vi.fn()} />
+      </MemoryRouter>,
+    );
+    const active = container.querySelector('.sb-item.active');
+    expect(active).not.toBeNull();
   });
 });

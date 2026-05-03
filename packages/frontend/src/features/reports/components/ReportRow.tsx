@@ -1,19 +1,17 @@
 /**
- * ReportRow — Fila de reporte minimalista.
+ * ReportRow — single source for a report list row, used both standalone
+ * and inside paginated lists. Renders the kit `.list-row` primitive
+ * (bordered card with 6px margin-bottom + grid columns from REPORT_GRID).
  *
- * Sin avatar: el nombre arranca directo en px-4 y coincide exactamente
- * con la cabecera "Nombre" de TableHeader.
- *
- * Exports:
- *  - ReportRow     → standalone con wrapper propio.
- *  - ReportRowItem → fila pura, para el listado paginado.
+ * `ReportRowItem` is kept as an alias for callers that imported the old
+ * "compact variant" name; both render identically.
  */
 import { memo } from "react";
 import { ChevronRight, FileText } from "lucide-react";
 import { format, type Locale } from "date-fns";
 import { type IReport } from "@ticket-registrator/shared";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
-import { tokens } from "../../../styles/theme";
+import { REPORT_GRID } from "../../../constants/gridLayouts";
 
 interface ReportRowProps {
   report: IReport;
@@ -21,10 +19,7 @@ interface ReportRowProps {
   dateLocale: Locale;
 }
 
-const ReportRowContent = ({
-  report,
-  dateLocale,
-}: Pick<ReportRowProps, "report" | "dateLocale">) => {
+export const ReportRow = memo(({ report, onClick, dateLocale }: ReportRowProps) => {
   const amount = (report.approved_amount ?? report.requested_amount ?? 0).toLocaleString();
 
   const dateStart = format(
@@ -38,68 +33,44 @@ const ReportRowContent = ({
       : "";
 
   return (
-    <div className="w-full grid items-center gap-4 px-4 py-3.5" style={{ gridTemplateColumns: "32px 1fr 120px 148px 100px 16px" }}>
-
-      {/* Icono */}
+    <button
+      type="button"
+      onClick={onClick}
+      className="list-row group w-full text-left gap-4"
+      style={{ gridTemplateColumns: REPORT_GRID }}
+    >
       <div className="w-8 h-8 rounded-md bg-[var(--color-secondary)] border border-[var(--color-border-main)] flex items-center justify-center">
-        <FileText className="w-3.5 h-3.5 text-dark/40" />
+        <FileText className="w-3.5 h-3.5 text-dark/40" aria-hidden={true} />
       </div>
 
-      {/* Nombre + Tipo */}
       <div className="min-w-0">
-        <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
-          {report.name}
-        </p>
+        <p className="row-name truncate">{report.name}</p>
         {report.type && (
-          <p className="font-sans-medium text-dark/50 text-[12px] mt-0.5 truncate leading-none">
-            {report.type}
-          </p>
+          <p className="row-meta truncate mt-0.5">{report.type}</p>
         )}
       </div>
 
-      {/* Estado */}
       <div className="flex items-center justify-center">
-        <StatusBadge status={report.status} size="sm" />
+        <StatusBadge status={report.status} />
       </div>
 
-      {/* Fecha */}
-      <p className="font-sans-medium text-[12px] text-dark/60 text-center whitespace-nowrap">
+      <p className="row-meta text-center whitespace-nowrap">
         {dateStart}{dateEnd}
       </p>
 
-      {/* Importe */}
-      <p className="font-sans-bold text-dark tabular-nums text-right text-[14px]">
+      <p className="row-num text-right">
         {amount}
-        {report.currency && (
-          <span className="font-sans-medium ml-1 text-dark/50 text-[11px]">
-            {report.currency}
-          </span>
-        )}
+        {report.currency && <span className="cur">{report.currency}</span>}
       </p>
 
-      {/* Chevron — solo en hover */}
-      <ChevronRight className="w-4 h-4 text-dark/30 opacity-0 group-hover:opacity-100 transition-opacity duration-100" />
-
-    </div>
+      <ChevronRight
+        className="row-chev w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity duration-100"
+        aria-hidden={true}
+      />
+    </button>
   );
-};
+});
 
-export const ReportRow = memo(({ report, onClick, dateLocale }: ReportRowProps) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`group w-full text-left ${tokens.card} overflow-hidden cursor-pointer hover:bg-[var(--color-secondary)] transition-colors duration-100`}
-  >
-    <ReportRowContent report={report} dateLocale={dateLocale} />
-  </button>
-));
-
-export const ReportRowItem = memo(({ report, onClick, dateLocale }: ReportRowProps) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="group w-full text-left border-b border-[var(--color-border-main)] last:border-b-0 hover:bg-[var(--color-secondary)] cursor-pointer transition-colors duration-100"
-  >
-    <ReportRowContent report={report} dateLocale={dateLocale} />
-  </button>
-));
+/** @deprecated Use `ReportRow`. Kept as alias for callers that imported the
+ *  old "compact list" variant — both render identically now. */
+export const ReportRowItem = ReportRow;

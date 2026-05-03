@@ -40,10 +40,12 @@ export const Pagination = ({
 
       {/* Resumen */}
       <p className="text-[12px] font-sans-medium text-dark/45">
-        <span className="font-sans-semibold text-dark/65">{from}–{to}</span>
-        {" "}de{" "}
-        <span className="font-sans-semibold text-dark/65">{totalItems}</span>
-        {" "}resultados
+        <span className="font-sans-semibold text-dark/65">
+          {from}–{to}
+        </span>{" "}
+        {t("pagination.of")}{" "}
+        <span className="font-sans-semibold text-dark/65">{totalItems}</span>{" "}
+        {t("pagination.results")}
       </p>
 
       {/* Controles */}
@@ -52,7 +54,7 @@ export const Pagination = ({
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-sans-medium text-dark/50 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-dark/5 hover:text-dark transition-colors duration-100"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-sans-medium text-dark/50 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--surface-active)] hover:text-dark transition-colors duration-100"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
           {t("pagination.previous")}
@@ -71,10 +73,12 @@ export const Pagination = ({
               <button
                 key={p}
                 onClick={() => onPageChange(p)}
+                aria-current={p === page ? "page" : undefined}
+                aria-label={`${t("pagination.page")} ${p}`}
                 className={`w-8 h-8 rounded-full text-[12px] font-sans-semibold transition-colors duration-100 ${
                   p === page
-                    ? "bg-[var(--color-dark)] text-white"
-                    : "text-dark/45 hover:bg-dark/5 hover:text-dark"
+                    ? "bg-brand text-white"
+                    : "text-dark/45 hover:bg-[var(--surface-active)] hover:text-dark"
                 }`}
               >
                 {p}
@@ -86,7 +90,7 @@ export const Pagination = ({
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-sans-medium text-dark/50 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-dark/5 hover:text-dark transition-colors duration-100"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-sans-medium text-dark/50 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--surface-active)] hover:text-dark transition-colors duration-100"
         >
           {t("pagination.next")}
           <ChevronRight className="w-3.5 h-3.5" />
