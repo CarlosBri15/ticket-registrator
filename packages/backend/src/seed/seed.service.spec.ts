@@ -5,7 +5,11 @@ import { RolesRepository } from '../roles/roles.repository';
 import { PermissionsService } from '../permissions/permissions.service';
 import { CategoriesRepository } from '../categories/categories.repository';
 import { DB_CONNECTION } from '../db/db.module';
-import { Roles } from '@ticket-registrator/shared';
+import { DEFAULT_CATEGORIES, Roles } from '@ticket-registrator/shared';
+
+const AIRFARE_DESCRIPTION = DEFAULT_CATEGORIES.find((c) => c.name === 'Airfare')!.description;
+const AIRFARE_COLOR = '#5E81A8';
+const AIRFARE_ICON = 'Plane';
 
 describe('SeedService', () => {
   let service: SeedService;
@@ -117,6 +121,72 @@ describe('SeedService', () => {
       await service.seedUnassignedDepartment();
 
       expect(mockDb.insert).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('seedDefaultCategories', () => {
+    it('creates each system category with its color and icon when none exist', async () => {
+      mockCategoriesRepository.findAllSystemCategories.mockResolvedValue([]);
+
+      const result = await service.seedDefaultCategories();
+
+      expect(mockCategoriesRepository.create).toHaveBeenCalledTimes(DEFAULT_CATEGORIES.length);
+      expect(mockCategoriesRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Airfare',
+          description: AIRFARE_DESCRIPTION,
+          color: AIRFARE_COLOR,
+          icon: AIRFARE_ICON,
+          organizationId: null,
+          isSystem: true,
+        }),
+      );
+      expect(mockCategoriesRepository.update).not.toHaveBeenCalled();
+      expect(result.message).toContain(`${DEFAULT_CATEGORIES.length} system categories`);
+    });
+
+    it('updates an existing system category when its icon differs from the seed', async () => {
+      mockCategoriesRepository.findAllSystemCategories.mockResolvedValue([
+        {
+          id: 'airfare-id',
+          name: 'Airfare',
+          description: AIRFARE_DESCRIPTION,
+          color: AIRFARE_COLOR,
+          icon: null,
+          isSystem: true,
+        },
+      ]);
+
+      await service.seedDefaultCategories();
+
+      expect(mockCategoriesRepository.update).toHaveBeenCalledWith('airfare-id', {
+        description: AIRFARE_DESCRIPTION,
+        color: AIRFARE_COLOR,
+        icon: AIRFARE_ICON,
+      });
+      expect(mockCategoriesRepository.create).not.toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Airfare' }),
+      );
+    });
+
+    it('does not update when description, color and icon all match the seed', async () => {
+      mockCategoriesRepository.findAllSystemCategories.mockResolvedValue([
+        {
+          id: 'airfare-id',
+          name: 'Airfare',
+          description: AIRFARE_DESCRIPTION,
+          color: AIRFARE_COLOR,
+          icon: AIRFARE_ICON,
+          isSystem: true,
+        },
+      ]);
+
+      await service.seedDefaultCategories();
+
+      expect(mockCategoriesRepository.update).not.toHaveBeenCalledWith(
+        'airfare-id',
+        expect.anything(),
+      );
     });
   });
 

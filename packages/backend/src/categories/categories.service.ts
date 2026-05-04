@@ -13,6 +13,7 @@ export class CategoriesService {
       name: dto.name,
       description: dto.description,
       color: dto.color ?? null,
+      icon: dto.icon ?? null,
       organizationId: dto.organizationId ?? null,
       isSystem: false,
     });
@@ -38,6 +39,7 @@ export class CategoriesService {
       name: dto.name,
       description: dto.description,
       color: dto.color,
+      icon: dto.icon,
       organizationId: dto.organizationId,
     });
   }
@@ -66,6 +68,7 @@ export class CategoriesService {
       name: cat.name,
       description: cat.description,
       color: cat.color,
+      icon: cat.icon,
       organizationId: organizationId,
       isSystem: false,
     }));
