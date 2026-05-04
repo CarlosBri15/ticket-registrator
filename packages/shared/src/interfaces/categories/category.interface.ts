@@ -3,6 +3,7 @@ export interface ICategory {
     name: string;
     description: string;
     color: string | null;
+    icon: string | null;
     organizationId: string | null;
     isSystem: boolean;
     createdAt: Date;

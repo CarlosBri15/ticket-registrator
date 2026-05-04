@@ -16,6 +16,7 @@ export const categories = pgTable('categories', {
     onDelete: 'cascade',
   }),
   color: varchar('color', { length: 7 }),
+  icon: varchar('icon', { length: 32 }),
   isSystem: boolean('is_system').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
