@@ -29,6 +29,7 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
     useReportQuery: vi.fn(),
     useTicketsQuery: vi.fn(),
     usePermissions: vi.fn(),
+    useUserQuery: vi.fn(() => ({ data: { id: 'me' } })),
   };
 });
 

@@ -26,10 +26,11 @@ vi.mock('../hooks/useItemApproval', () => ({
   useItemApproval: () => ({
     pendingApprovals: new Map(),
     pendingRejections: new Set(),
-    handleApprove: vi.fn(),
-    handleReject: vi.fn(),
-    handleSave: vi.fn(),
-    hasChanges: false,
+    approve: vi.fn(),
+    reject: vi.fn(),
+    save: vi.fn(),
+    reset: vi.fn(),
+    hasItemChanges: false,
     isSaving: false,
     getItemStatus: () => 'PENDING',
   }),
@@ -39,40 +40,43 @@ vi.mock('../hooks/useTicketForm', () => ({
   useTicketForm: () => ({
     isEditing: false,
     setIsEditing: vi.fn(),
-    form: {},
-    onSubmit: vi.fn(),
+    formData: {},
+    handleChange: vi.fn(),
+    startEdit: vi.fn(),
+    cancelEdit: vi.fn(),
+    save: vi.fn(),
     isSaving: false,
   }),
 }));
 
-vi.mock('../../../components/ui/Modal', () => ({
-  Modal: ({ isOpen, children, title }: any) =>
+vi.mock('../../../components/ui/Drawer', () => ({
+  Drawer: ({ isOpen, children, leftSidePanel }: any) =>
     isOpen ? (
-      <div role="dialog" aria-label={title}>
-        <h2>{title}</h2>
+      <div role="dialog" aria-label="ticket-drawer">
+        {leftSidePanel}
         {children}
       </div>
     ) : null,
 }));
 
 vi.mock('./ImageSidePanel', () => ({
-  ImageSidePanel: ({ isOpen }: any) =>
-    isOpen ? <div data-testid="image-panel" /> : null,
+  ImageSidePanel: () => <div data-testid="image-panel" />,
 }));
 
 vi.mock('./TicketEditForm', () => ({
   TicketEditForm: () => <div data-testid="edit-form" />,
 }));
 
-vi.mock('./ItemsSection', () => ({
-  ItemsSection: () => <div data-testid="items-section" />,
-}));
-
-vi.mock('./PhysicalReceiptCard', () => ({
-  PhysicalReceiptCard: () => <div data-testid="physical-receipt" />,
+vi.mock('./TicketCraftedSheet', () => ({
+  TicketCraftedSheet: ({ onToggleImage }: any) => (
+    <div data-testid="crafted-sheet">
+      <button data-testid="toggle-image" onClick={onToggleImage} />
+    </div>
+  ),
 }));
 
 import { useTicketImageQuery } from '@ticket-registrator/shared';
+import { fireEvent } from '@testing-library/react';
 
 const TICKET = {
   id: 't1',
@@ -116,7 +120,7 @@ describe('TicketDetailModal', () => {
     expect(container.querySelector('[role="dialog"]')).not.toBeInTheDocument();
   });
 
-  it('renders the modal with the ticket sections when open', () => {
+  it('renders the drawer with the crafted sheet when open', () => {
     render(
       <TicketDetailModal
         isOpen
@@ -126,7 +130,7 @@ describe('TicketDetailModal', () => {
       />,
     );
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByTestId('items-section')).toBeInTheDocument();
+    expect(screen.getByTestId('crafted-sheet')).toBeInTheDocument();
   });
 
   it('passes the editable flag through without crashing when set', () => {
@@ -142,7 +146,7 @@ describe('TicketDetailModal', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
-  it('renders without an image panel until the trigger is clicked', () => {
+  it('renders without an image panel until the toggle is invoked', () => {
     render(
       <TicketDetailModal
         isOpen
@@ -152,5 +156,19 @@ describe('TicketDetailModal', () => {
       />,
     );
     expect(screen.queryByTestId('image-panel')).not.toBeInTheDocument();
+  });
+
+  it('mounts the image side panel when the sheet toggles it on', () => {
+    render(
+      <TicketDetailModal
+        isOpen
+        onClose={() => {}}
+        ticket={TICKET}
+        reportId="r1"
+      />,
+    );
+    expect(screen.queryByTestId('image-panel')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('toggle-image'));
+    expect(screen.getByTestId('image-panel')).toBeInTheDocument();
   });
 });

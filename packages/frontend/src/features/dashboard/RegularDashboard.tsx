@@ -193,7 +193,7 @@ export const RegularDashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
-          variant="primary"
+          tone="brand"
           title={t("home.pendingReimbursement")}
           value={`${amounts.pending.toFixed(2)} €`}
           icon={<Wallet className="w-4 h-4" />}

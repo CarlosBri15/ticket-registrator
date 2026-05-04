@@ -121,7 +121,7 @@ export const SuperAdminGlobalDashboard = () => {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="global-stats">
         <StatCard
-          variant="primary"
+          tone="brand"
           title={t("layout.organizations")}
           value={orgsCount}
           icon={<Globe className="w-4 h-4" aria-hidden={true} />}
@@ -129,6 +129,7 @@ export const SuperAdminGlobalDashboard = () => {
         />
 
         <StatCard
+          tone="accent"
           title={t("dashboard.totalUsers")}
           value={usersCount}
           icon={<Users className="w-4 h-4" aria-hidden={true} />}

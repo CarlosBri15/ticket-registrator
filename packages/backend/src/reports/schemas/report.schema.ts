@@ -1,7 +1,7 @@
 import { pgTable, uuid, varchar, timestamp, real } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { users } from '../../users/schemas/user.schema';
-import { tickets } from '../../tickets/schemas/ticket.schema';
+import { users, type User } from '../../users/schemas/user.schema';
+import { tickets, type TicketWithItems } from '../../tickets/schemas/ticket.schema';
 import { ticketHistories } from '../../history/history.schema';
 import { ReportStatus } from '@ticket-registrator/shared';
 
@@ -38,5 +38,6 @@ export type Report = typeof reports.$inferSelect;
 export type InsertReport = typeof reports.$inferInsert;
 
 export type ReportWithTickets = Report & {
-  tickets?: (typeof tickets.$inferSelect)[];
+  user?: User | null;
+  tickets?: TicketWithItems[];
 };

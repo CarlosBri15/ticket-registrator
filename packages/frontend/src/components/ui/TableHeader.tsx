@@ -27,8 +27,8 @@ export const TableHeader = memo(({
   className = ""
 }: TableHeaderProps) => {
   return (
-    <div 
-      className={`grid items-center gap-4 px-4 py-2.5 bg-white border-b border-[var(--color-border-main)] ${className}`}
+    <div
+      className={`list-head gap-4 ${className}`}
       style={{ gridTemplateColumns: gridTemplate }}
     >
       {/* Primer espacio para el icono de la fila (coincide con el primer 32px del grid) */}

@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+export type StatTone = "neutral" | "brand" | "accent" | "clay" | "sage";
+
 interface StatDelta {
   value: ReactNode;
   direction?: "up" | "down";
@@ -14,16 +16,29 @@ interface StatProps {
   delta?: StatDelta;
   /** Optional icon shown to the left of the label. */
   icon?: ReactNode;
+  /**
+   * Chromatic v2 saturated tone. Default `neutral` keeps the white card.
+   * Use `brand`/`accent`/`clay`/`sage` to fill the tile with a categorical hue.
+   */
+  tone?: StatTone;
   className?: string;
 }
+
+const TONE_CLASS: Record<StatTone, string> = {
+  neutral: "",
+  brand: "stat--tone-brand",
+  accent: "stat--tone-accent",
+  clay: "stat--tone-clay",
+  sage: "stat--tone-sage",
+};
 
 /**
  * 4-up KPI tile. Wraps the kit `.stat` primitive with a typed React API so
  * callers do not have to remember class names. Numeric values automatically
  * pick up `tabular-nums` from `.stat-value`.
  */
-export const Stat = ({ label, value, currency, delta, icon, className }: StatProps) => (
-  <div className={`stat ${className ?? ""}`.trim()}>
+export const Stat = ({ label, value, currency, delta, icon, tone = "neutral", className }: StatProps) => (
+  <div className={`stat ${TONE_CLASS[tone]} ${className ?? ""}`.trim().replace(/\s+/g, " ")}>
     <div className="stat-label">
       {icon}
       <span>{label}</span>

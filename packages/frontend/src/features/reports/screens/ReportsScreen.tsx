@@ -3,6 +3,7 @@ import {
   useReportsQuery,
   useReportsPaginatedQuery,
   useReportFilterState,
+  useScope,
 } from "@ticket-registrator/shared";
 import { Plus, Search, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +21,7 @@ import { ReportFilterBar } from "../components/ReportFilterBar";
 import { ReportSkeletonCard } from "../components/ReportSkeletonCard";
 import { ACTIVE_STATUSES, isCurrentReport } from "../constants";
 import { useDateLocale } from "../../../hooks/useDateLocale";
+import { REPORT_GRID, REPORT_GRID_WITH_OWNER } from "../../../constants/gridLayouts";
 
 const PAGE_SIZE = 5;
 
@@ -27,6 +29,9 @@ export const ReportsScreen = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dateLocale = useDateLocale();
+  const { isSelf } = useScope();
+  const showOwner = !isSelf;
+  const tableGrid = showOwner ? REPORT_GRID_WITH_OWNER : REPORT_GRID;
 
   const {
     search, setSearch,
@@ -163,13 +168,15 @@ export const ReportsScreen = () => {
             />
           )}
 
-          <div className="w-full">
+          <div className="w-full rounded-[14px] border border-[var(--color-border-main)] bg-surface-card-soft overflow-hidden">
             <TableHeader
+              gridTemplate={tableGrid}
               columns={[
                 { label: t("reports.tableName") },
-                { label: t("reports.tableStatus"), align: "center" },
-                { label: t("reports.tableDates"), align: "center" },
-                { label: t("reports.tableAmount"), align: "right" },
+                ...(showOwner ? [{ label: t("reports.tableOwner") }] : []),
+                { label: t("reports.tableStatus"), align: "center" as const },
+                { label: t("reports.tableDates"), align: "center" as const },
+                { label: t("reports.tableAmount"), align: "right" as const },
               ]}
             />
 
@@ -188,6 +195,7 @@ export const ReportsScreen = () => {
                   report={r}
                   onClick={() => navigate(`/reports/${r.id}`)}
                   dateLocale={dateLocale}
+                  showOwner={showOwner}
                 />
               ))
             )}

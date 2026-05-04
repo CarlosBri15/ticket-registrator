@@ -15,6 +15,7 @@ export const categories = pgTable('categories', {
   organizationId: uuid('organization_id').references(() => companies.id, {
     onDelete: 'cascade',
   }),
+  color: varchar('color', { length: 7 }),
   isSystem: boolean('is_system').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

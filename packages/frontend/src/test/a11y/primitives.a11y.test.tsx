@@ -14,6 +14,7 @@ import { MemoryRouter } from 'react-router-dom';
 
 import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
+import { CategoryMixBar } from '../../components/ui/CategoryMixBar';
 import { ChartSkeleton } from '../../components/ui/ChartSkeleton';
 import { Chip } from '../../components/ui/Chip';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -171,6 +172,18 @@ describe('a11y smoke — kit primitives', () => {
   it('Toggle (on, loading)', async () => {
     const { container } = render(
       <Toggle label="Activo" isOn={true} onChange={() => {}} isLoading />,
+    );
+    await expectNoA11yViolations(container);
+  });
+
+  it('renders CategoryMixBar with multiple segments', async () => {
+    const { container } = render(
+      <CategoryMixBar
+        segments={[
+          { categoryId: 'a', categoryName: 'Meals', categoryColor: '#F5C842', amount: 60, percentage: 60 },
+          { categoryId: 'b', categoryName: 'Lodging', categoryColor: '#8A5E89', amount: 40, percentage: 40 },
+        ]}
+      />,
     );
     await expectNoA11yViolations(container);
   });
