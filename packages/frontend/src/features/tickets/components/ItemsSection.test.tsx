@@ -116,4 +116,26 @@ describe('ItemsSection', () => {
     render(<ItemsSection ticket={ticket} {...baseProps} />);
     expect(screen.getByText('—')).toBeInTheDocument();
   });
+
+  it('renders a colored dot using the item categoryColor in ledger variant', () => {
+    const ticket = buildTicket([
+      { id: 'i1', name: 'Coffee', amount: 5, status: 'Pending', categoryColor: 'rgb(255, 0, 0)' },
+    ]);
+    const { container } = render(
+      <ItemsSection ticket={ticket} {...baseProps} variant="ledger" />,
+    );
+    const dot = container.querySelector('.sheet-item-dot') as HTMLSpanElement | null;
+    expect(dot).not.toBeNull();
+    expect(dot!.style.backgroundColor).toBe('rgb(255, 0, 0)');
+  });
+
+  it('renders the dotted leader span between name and amount in ledger variant', () => {
+    const ticket = buildTicket([
+      { id: 'i1', name: 'Coffee', amount: 5, status: 'Pending' },
+    ]);
+    const { container } = render(
+      <ItemsSection ticket={ticket} {...baseProps} variant="ledger" />,
+    );
+    expect(container.querySelector('.sheet-item-leader')).not.toBeNull();
+  });
 });

@@ -18,6 +18,7 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
     useReportsQuery: vi.fn(),
     useReportsPaginatedQuery: vi.fn(),
     useReportFilterState: vi.fn(),
+    useScope: vi.fn(),
   };
 });
 
@@ -111,6 +112,7 @@ import {
   useReportsQuery,
   useReportsPaginatedQuery,
   useReportFilterState,
+  useScope,
 } from '@ticket-registrator/shared';
 import { ReportsScreen } from './ReportsScreen';
 
@@ -160,6 +162,7 @@ const setupMocks = (opts: {
     isLoading: opts.loadingList ?? false,
   });
   (useReportFilterState as ReturnType<typeof vi.fn>).mockReturnValue(mockFilterState(opts.filter));
+  (useScope as ReturnType<typeof vi.fn>).mockReturnValue({ isSelf: true });
 };
 
 const renderScreen = () =>

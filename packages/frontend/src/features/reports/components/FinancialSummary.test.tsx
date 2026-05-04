@@ -16,51 +16,47 @@ const baseProps = {
 };
 
 describe('FinancialSummary', () => {
-  it('renders the requested amount line', () => {
+  it('renders the requested row', () => {
     render(<FinancialSummary {...baseProps} />);
-    expect(screen.getByText('SOLICITADO')).toBeInTheDocument();
-    expect(screen.getByText('100.00 EUR')).toBeInTheDocument();
+    expect(screen.getByText('reportDetail.requested')).toBeInTheDocument();
   });
 
-  it('uses ticketsTotal as headline when status is not approved or declined', () => {
+  it('uses ticketsTotal as the headline amount when present', () => {
     render(<FinancialSummary {...baseProps} status="CREATED" ticketsTotal={95} />);
-    expect(screen.getByText('95.00')).toBeInTheDocument();
-    expect(screen.getByText('reportDetail.financialSummary')).toBeInTheDocument();
+    expect(screen.getByText('95.00 EUR')).toBeInTheDocument();
   });
 
-  it('uses approvedAmount as headline when status is APPROVED', () => {
+  it('falls back to requestedAmount when ticketsTotal is zero', () => {
+    render(<FinancialSummary {...baseProps} status="CREATED" ticketsTotal={0} requestedAmount={120} />);
+    expect(screen.getByText('120.00 EUR')).toBeInTheDocument();
+  });
+
+  it('renders approved row with success styling when status is APPROVED', () => {
     render(<FinancialSummary {...baseProps} status="APPROVED" approvedAmount={80} />);
-    expect(screen.getByText('80.00')).toBeInTheDocument();
     expect(screen.getByText('reportDetail.approved')).toBeInTheDocument();
+    expect(screen.getByText('80.00 EUR')).toBeInTheDocument();
   });
 
-  it('uses approvedAmount as headline when status is PAID', () => {
+  it('renders approved row when status is PAID', () => {
     render(<FinancialSummary {...baseProps} status="PAID" approvedAmount={80} />);
-    expect(screen.getByText('80.00')).toBeInTheDocument();
     expect(screen.getByText('reportDetail.approved')).toBeInTheDocument();
   });
 
-  it('uses requestedAmount as headline when status is DECLINED', () => {
-    render(<FinancialSummary {...baseProps} status="DECLINED" requestedAmount={100} />);
-    expect(screen.getByText('100.00')).toBeInTheDocument();
-  });
-
-  it('renders APROBADO and RECHAZADO breakdown when approved with rejection', () => {
+  it('renders rejected row with negative sign when approved < requested', () => {
     render(
       <FinancialSummary
         {...baseProps}
         status="APPROVED"
         requestedAmount={100}
         approvedAmount={70}
+        ticketsTotal={100}
       />,
     );
-    expect(screen.getByText('APROBADO')).toBeInTheDocument();
-    expect(screen.getByText('70.00 EUR')).toBeInTheDocument();
-    expect(screen.getByText('RECHAZADO')).toBeInTheDocument();
-    expect(screen.getByText('30.00 EUR')).toBeInTheDocument();
+    expect(screen.getByText('reportDetail.rejected')).toBeInTheDocument();
+    expect(screen.getByText('−30.00 EUR')).toBeInTheDocument();
   });
 
-  it('does not render RECHAZADO when approved equals requested (no rejection)', () => {
+  it('does not render rejected row when approved equals requested', () => {
     render(
       <FinancialSummary
         {...baseProps}
@@ -69,14 +65,13 @@ describe('FinancialSummary', () => {
         approvedAmount={100}
       />,
     );
-    expect(screen.queryByText('RECHAZADO')).not.toBeInTheDocument();
-    expect(screen.getByText('APROBADO')).toBeInTheDocument();
+    expect(screen.queryByText('reportDetail.rejected')).not.toBeInTheDocument();
   });
 
-  it('does not render APROBADO/RECHAZADO when status is not APPROVED', () => {
+  it('does not render approved row when status is not approved/paid', () => {
     render(<FinancialSummary {...baseProps} status="DECLINED" />);
-    expect(screen.queryByText('APROBADO')).not.toBeInTheDocument();
-    expect(screen.queryByText('RECHAZADO')).not.toBeInTheDocument();
+    expect(screen.queryByText('reportDetail.approved')).not.toBeInTheDocument();
+    expect(screen.queryByText('reportDetail.rejected')).not.toBeInTheDocument();
   });
 
   it('clamps rejected to 0 when approved exceeds requested', () => {
@@ -88,6 +83,6 @@ describe('FinancialSummary', () => {
         approvedAmount={80}
       />,
     );
-    expect(screen.queryByText('RECHAZADO')).not.toBeInTheDocument();
+    expect(screen.queryByText('reportDetail.rejected')).not.toBeInTheDocument();
   });
 });

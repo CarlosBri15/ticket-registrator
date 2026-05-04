@@ -9,8 +9,8 @@ import {
   type LoginSchema,
   useLoginMutation,
   type ILoginResponse,
+  getApiErrorMessage,
 } from "@ticket-registrator/shared";
-import { AxiosError } from "axios";
 import { Button } from "../../../components/ui/Button";
 import { AlertError } from "../../../components/ui/Alert";
 import { tokenProvider } from "../../../api/client";
@@ -45,9 +45,7 @@ export const LoginForm = () => {
 
   const onSubmit = (data: LoginSchema) => mutate(data);
 
-  const serverErrorMessage = isError
-    ? (error as AxiosError<{ message: string }>)?.response?.data?.message ?? t("common.error")
-    : undefined;
+  const serverErrorMessage = isError ? getApiErrorMessage(error, t("common.error")) : undefined;
 
   return (
     <div className="login-shell">

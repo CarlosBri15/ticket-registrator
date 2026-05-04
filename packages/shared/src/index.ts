@@ -14,6 +14,7 @@ export * from './schemas/users/createUser.schema';
 
 // Reports
 export * from './interfaces/reports/report.interface';
+export * from './interfaces/reports/report-category-mix.interface';
 export * from './interfaces/reports/reportPagination.interface';
 export * from './schemas/reports/createReport.schema';
 export * from './schemas/reports/updateReport.schema';
@@ -21,9 +22,6 @@ export * from './schemas/reports/updateReport.schema';
 
 // Tickets
 export * from './interfaces/tickets/ticket.interface';
-export * from './interfaces/categories/category.interface';
-export * from './schemas/categories/createCategory.schema';
-export * from './schemas/categories/updateCategory.schema';
 export * from './interfaces/categories/category.interface';
 export * from './schemas/categories/createCategory.schema';
 export * from './schemas/categories/updateCategory.schema';
@@ -116,6 +114,7 @@ export * from './utils/hierarchy';
 export * from './utils/errorUtils';
 export * from './utils/avatarColor';
 export * from './utils/reportAnalytics';
+export * from './utils/categoryMix';
 
 // Constants
 export * from './constants/hierarchy';

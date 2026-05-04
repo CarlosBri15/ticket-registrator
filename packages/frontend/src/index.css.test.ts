@@ -14,9 +14,9 @@ describe("index.css — design system contract", () => {
       ["--accent-hover", "#E8B82A"],
       ["--accent-faint", "#FDF7E1"],
       ["--fg-primary", "#1C1917"],
-      ["--surface", "#FFFFFF"],
+      ["--surface", "#FFFDF8"],
       ["--surface-sunken", "#F7F6F3"],
-      ["--surface-sidebar", "#F5F4F0"],
+      ["--surface-sidebar", "#1C1917"],
       ["--border", "#E5E4E0"],
       ["--success", "#16A34A"],
       ["--success-bg", "#F0FDF4"],
@@ -95,6 +95,9 @@ describe("index.css — design system contract", () => {
       ".select-trigger",
       ".select-dropdown",
       ".select-option",
+      ".toggle-row",
+      ".toggle-track",
+      ".toggle-thumb",
       ".stat",
       ".stat-value",
       ".status",
@@ -124,18 +127,17 @@ describe("index.css — design system contract", () => {
     });
   });
 
-  describe("kit geometry — buttons are slightly rounded rectangles, not pills", () => {
-    it(".btn uses 6px border-radius (kit decision: not pill)", () => {
-      // Match `.btn { ... border-radius: 6px ... }` within the same rule.
-      expect(css).toMatch(/\.btn\s*{[^}]*border-radius:\s*6px/);
+  describe("kit geometry — buttons are pills (Chromatic v2)", () => {
+    it(".btn uses 9999px border-radius (Chromatic v2 pill)", () => {
+      expect(css).toMatch(/\.btn\s*{[^}]*border-radius:\s*9999px/);
     });
 
-    it(".btn-sm uses 5px border-radius", () => {
-      expect(css).toMatch(/\.btn-sm\s*{[^}]*border-radius:\s*5px/);
+    it(".btn-sm uses 9999px border-radius", () => {
+      expect(css).toMatch(/\.btn-sm\s*{[^}]*border-radius:\s*9999px/);
     });
 
-    it(".btn-lg uses 8px border-radius", () => {
-      expect(css).toMatch(/\.btn-lg\s*{[^}]*border-radius:\s*8px/);
+    it(".btn-lg uses 9999px border-radius", () => {
+      expect(css).toMatch(/\.btn-lg\s*{[^}]*border-radius:\s*9999px/);
     });
   });
 

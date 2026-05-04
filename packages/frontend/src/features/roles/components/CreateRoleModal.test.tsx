@@ -19,6 +19,7 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
     ...actual,
     useRolesQuery: vi.fn(),
     useCreateRoleMutation: vi.fn(),
+    getApiErrorMessage: () => 'API Error',
   };
 });
 
@@ -35,7 +36,6 @@ vi.mock('../../../components/ui/Modal', () => ({
 
 vi.mock('../../../components/ui/Alert', () => ({
   AlertError: ({ message }: any) => <div role="alert">{message}</div>,
-  getApiErrorMessage: () => 'API Error',
 }));
 
 import { useRolesQuery, useCreateRoleMutation } from '@ticket-registrator/shared';

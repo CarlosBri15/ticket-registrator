@@ -8,5 +8,6 @@ export interface IItem {
   status: ItemStatusType;
   categoryId: string | null;
   categoryName?: string | null;
+  categoryColor?: string | null;
 }
 

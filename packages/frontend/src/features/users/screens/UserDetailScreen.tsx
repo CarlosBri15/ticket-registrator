@@ -21,6 +21,7 @@ import {
 } from "@ticket-registrator/shared";
 import { EditUserModal } from "../components/EditUserModal";
 import { Button } from "../../../components/ui/Button";
+import { EmptyState } from "../../../components/ui/EmptyState";
 import { ReportRow } from "../../reports/components/ReportRow";
 import { ReportCard } from "../../reports/components/ReportCard";
 import { ReportFilterBar } from "../../reports/components/ReportFilterBar";
@@ -113,18 +114,21 @@ export const UserDetailScreen = () => {
   // ── Not Found ─────────────────────────────────────────────────────────────
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
-        <User className="w-14 h-14 text-slate-200 mb-4" />
-        <h2 className="text-xl font-space-bold text-dark mb-2">Usuario no encontrado</h2>
-        <p className="text-dark/40 font-space mb-6">El usuario que buscas no existe o fue eliminado.</p>
-        <Button
-          variant="secondary"
-          onClick={() => navigate("/users")}
-          leftIcon={<ArrowLeft className="w-4 h-4" />}
-        >
-          Volver a Usuarios
-        </Button>
-      </div>
+      <EmptyState
+        icon={<User className="w-4 h-4" aria-hidden={true} />}
+        title="Usuario no encontrado"
+        description="El usuario que buscas no existe o fue eliminado."
+        action={
+          <Button
+            variant="secondary"
+            onClick={() => navigate("/users")}
+            leftIcon={<ArrowLeft className="w-4 h-4" />}
+          >
+            Volver a Usuarios
+          </Button>
+        }
+        className="min-h-[60vh] justify-center"
+      />
     );
   }
 
@@ -230,18 +234,18 @@ export const UserDetailScreen = () => {
 
               <div className="space-y-2.5">
                 {historyReports.length === 0 ? (
-                  <div className="flex flex-col items-center py-12 gap-2 text-center border border-[var(--color-border-main)] rounded-lg bg-[var(--color-surface-card)]">
-                    <Plane className="w-4 h-4 text-dark/25" aria-hidden={true} />
-                    <p className="font-sans-medium text-[13px] text-dark/55">
-                      {t("users.noHistory", "Sin historial registrado")}
-                    </p>
-                  </div>
+                  <EmptyState
+                    icon={<Plane className="w-4 h-4" aria-hidden={true} />}
+                    title={t("users.noHistory", "Sin historial registrado")}
+                    description={t("users.noHistoryDesc", "Este usuario no tiene reportes anteriores.")}
+                    className="card !py-12"
+                  />
                 ) : (
                   historyReports.map((report) => (
-                    <ReportRow 
-                      key={report.id} 
-                      report={report} 
-                      onClick={() => navigate(`/reports/${report.id}`)} 
+                    <ReportRow
+                      key={report.id}
+                      report={report}
+                      onClick={() => navigate(`/reports/${report.id}`)}
                       dateLocale={dateLocale}
                     />
                   ))

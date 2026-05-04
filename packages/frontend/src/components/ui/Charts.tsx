@@ -70,20 +70,24 @@ const CustomTooltip = ({ active, payload, label, prefix = "", suffix = "" }: Too
 // ─── Donut Chart ──────────────────────────────────────────────────────────────
 
 interface DonutChartProps {
-  data: { name: string; value: number }[];
+  data: { name: string; value: number; color?: string | null }[];
   centerLabel?: string;
   centerValue?: string;
   height?: number;
+  showLegend?: boolean;
 }
 
-export const DonutChart = memo(({ data, centerLabel, centerValue, height = 240 }: DonutChartProps) => {
+const FALLBACK_SEGMENT = "var(--color-stone-400)";
+
+export const DonutChart = memo(({ data, centerLabel, centerValue, height = 240, showLegend = false }: DonutChartProps) => {
+  const total = data.reduce((sum, d) => sum + (d.value ?? 0), 0);
   const coloredData = data.map((entry, index) => ({
     ...entry,
-    fill: CHART_COLORS[index % CHART_COLORS.length],
+    fill: entry.color ?? CHART_COLORS[index % CHART_COLORS.length],
   }));
 
-  return (
-    <div className="relative w-full" style={{ height }}>
+  const chart = (
+    <div className="relative" style={{ height, width: "100%" }}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -98,7 +102,6 @@ export const DonutChart = memo(({ data, centerLabel, centerValue, height = 240 }
         </PieChart>
       </ResponsiveContainer>
 
-      {/* Center Label */}
       {(centerLabel || centerValue) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           {centerValue && (
@@ -107,12 +110,39 @@ export const DonutChart = memo(({ data, centerLabel, centerValue, height = 240 }
             </span>
           )}
           {centerLabel && (
-            <span className="text-[10px] font-sans-medium text-dark/40 uppercase tracking-wider mt-1">
+            <span className="text-[10px] font-sans-medium text-dark/40 mt-1">
               {centerLabel}
             </span>
           )}
         </div>
       )}
+    </div>
+  );
+
+  if (!showLegend) return <div className="w-full">{chart}</div>;
+
+  return (
+    <div className="flex flex-col md:flex-row items-center gap-4 w-full">
+      <div className="md:flex-1 w-full">{chart}</div>
+      <ul className="flex flex-col gap-1.5 md:flex-1 w-full max-h-[220px] overflow-y-auto pr-1">
+        {coloredData.map((d) => {
+          const pct = total > 0 ? Math.round((d.value / total) * 1000) / 10 : 0;
+          return (
+            <li
+              key={d.name}
+              className="flex items-center gap-2 text-[12px] font-sans-medium text-dark/80"
+            >
+              <span
+                className="w-2.5 h-2.5 rounded-sm shrink-0"
+                style={{ backgroundColor: d.color ?? FALLBACK_SEGMENT }}
+                aria-hidden={true}
+              />
+              <span className="truncate flex-1">{d.name}</span>
+              <span className="text-dark/45 tabular-nums shrink-0">{pct}%</span>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 });

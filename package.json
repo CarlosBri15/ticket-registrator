@@ -16,19 +16,23 @@
     "build:shared": "npm run build -w @ticket-registrator/shared",
     "dev:backend": "npm run start:dev -w backend",
     "dev:frontend": "npm run dev -w frontend",
-    "build:all": "npm run build -w @ticket-registrator/shared && npm run build -w backend && npm run build -w frontend"
+    "build:all": "npm run build -w @ticket-registrator/shared && npm run build -w backend && npm run build -w frontend",
+    "prepare": "husky"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "expo": "~54.0.33",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-native": "0.81.5",
-    "expo": "~54.0.33"
+    "react-native": "0.81.5"
   },
   "overrides": {
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native-web": "0.21.2"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
   }
 }

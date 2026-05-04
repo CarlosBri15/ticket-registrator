@@ -38,25 +38,25 @@ describe('StatCard', () => {
     });
   });
 
-  describe('primary variant', () => {
+  describe('brand tone', () => {
     it('renders title and value', () => {
-      render(<StatCard title="Budget" value="$1,000" icon={icon} variant="primary" />);
+      render(<StatCard title="Budget" value="$1,000" icon={icon} tone="brand" />);
       expect(screen.getByText('Budget')).toBeInTheDocument();
       expect(screen.getByText('$1,000')).toBeInTheDocument();
     });
 
     it('renders trend with trendUp styling', () => {
-      render(<StatCard title="Budget" value="$1k" icon={icon} variant="primary" trend="+5%" trendUp />);
+      render(<StatCard title="Budget" value="$1k" icon={icon} tone="brand" trend="+5%" trendUp />);
       expect(screen.getByText('+5%')).toBeInTheDocument();
     });
 
     it('renders trend with trendDown styling', () => {
-      render(<StatCard title="Budget" value="$1k" icon={icon} variant="primary" trend="-3%" trendUp={false} />);
+      render(<StatCard title="Budget" value="$1k" icon={icon} tone="brand" trend="-3%" trendUp={false} />);
       expect(screen.getByText('-3%')).toBeInTheDocument();
     });
 
     it('renders subtitle', () => {
-      render(<StatCard title="Budget" value="$1k" icon={icon} variant="primary" subtitle="Q1" />);
+      render(<StatCard title="Budget" value="$1k" icon={icon} tone="brand" subtitle="Q1" />);
       expect(screen.getByText('Q1')).toBeInTheDocument();
     });
   });

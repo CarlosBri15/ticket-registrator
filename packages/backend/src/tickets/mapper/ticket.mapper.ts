@@ -33,7 +33,8 @@ export const mapTicketToITicket = (ticketDoc: TicketWithItems,): ITicket => ({
       currency: item.currency,
       status: item.status,
       categoryId: item.categoryId,
-      categoryName: item.category?.name
+      categoryName: item.category?.name,
+      categoryColor: item.category?.color ?? null,
     })) ?? [],
   createdAt: ticketDoc.createdAt?.toISOString() ?? new Date().toISOString(),
   updatedAt: ticketDoc.updatedAt?.toISOString() ?? new Date().toISOString(),

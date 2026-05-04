@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from "react";
+import { memo, useState } from "react";
 import { Shield, Plus, Trash2, ChevronRight } from "lucide-react";
 import {
   useRolesQuery,
@@ -15,7 +15,8 @@ import { PageHeader } from "../../../components/ui/PageHeader";
 import { Button } from "../../../components/ui/Button";
 import { Pagination } from "../../../components/ui/Pagination";
 import { ResourceListScreen } from "../../../components/ui/ResourceListScreen";
-import { CreateRoleModal, getHierarchyMeta } from "../components/CreateRoleModal";
+import { CreateRoleModal } from "../components/CreateRoleModal";
+import { getHierarchyMeta } from "../components/hierarchyMeta";
 import { ROLE_GRID } from "../../../constants/gridLayouts";
 
 const RoleRow = memo(({
@@ -88,9 +89,14 @@ export const RolesScreen = () => {
   const isLoading = loadingCompany || loadingSystem;
   const roles = companyId ? companyRoles : systemRoles;
 
-  useEffect(() => {
+  // Reset pagination when the active scope changes — derived state pattern
+  // (https://react.dev/learn/you-might-not-need-an-effect#resetting-all-state-when-a-prop-changes)
+  // avoids a redundant render that `useEffect` would cause.
+  const [prevCompanyId, setPrevCompanyId] = useState(companyId);
+  if (prevCompanyId !== companyId) {
+    setPrevCompanyId(companyId);
     setPage(1);
-  }, [companyId]);
+  }
 
   // ── Pre-list guard: scope without an org and no global view ──────────────
   if (!companyId && !isGlobal) {

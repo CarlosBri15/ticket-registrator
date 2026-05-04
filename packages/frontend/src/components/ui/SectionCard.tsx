@@ -31,7 +31,7 @@ export const SectionCard = ({
       {(title || action) && (
         <div className="flex items-center justify-between gap-3">
           {title && (
-            <p className="text-[12px] font-sans-bold text-dark/70 uppercase tracking-wide">
+            <p className="text-[14px] font-sans-bold text-dark tracking-tight">
               {title}
             </p>
           )}
