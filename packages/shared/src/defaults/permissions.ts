@@ -53,6 +53,12 @@ export const permissions = {
   EDIT_CATEGORIES: 'edit_categories',
   DELETE_CATEGORIES: 'delete_categories',
 
+  // Policies
+  VIEW_POLICIES: 'view_policies',
+  CREATE_POLICIES: 'create_policies',
+  EDIT_POLICIES: 'edit_policies',
+  DELETE_POLICIES: 'delete_policies',
+
   // Special
   CREATE_ADMINS: 'create_admins', // Might keep this for specific security check
 } as const;

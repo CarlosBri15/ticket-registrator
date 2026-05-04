@@ -1,0 +1,1 @@
+CREATE INDEX "text_search_idx" ON "policy_chunks" USING gin (to_tsvector('english', "content"));
