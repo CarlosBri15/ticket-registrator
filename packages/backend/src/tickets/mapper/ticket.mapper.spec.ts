@@ -126,7 +126,27 @@ describe('mapTicketToITicket', () => {
       status: ItemStatus.PENDING,
       categoryId: 'cat-1',
       categoryName: 'Travel',
+      categoryColor: null,
     });
+  });
+
+  it('should propagate category.color when present', () => {
+    const items = [
+      {
+        id: 'item-1',
+        ticketId: 'ticket-1',
+        name: 'Lunch',
+        amount: 12,
+        currency: 'EUR',
+        status: ItemStatus.PENDING,
+        categoryId: 'cat-1',
+        category: { id: 'cat-1', name: 'Meals', color: '#F5C842' },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+    const result = mapTicketToITicket({ ...baseTicket, items } as any);
+    expect(result.items![0].categoryColor).toBe('#F5C842');
   });
 
   it('should map multiple items correctly', () => {

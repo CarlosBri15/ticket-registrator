@@ -72,4 +72,92 @@ describe('mapReportToIReport', () => {
     expect(result).not.toHaveProperty('requestedAmount');
     expect(result).not.toHaveProperty('approvedAmount');
   });
+
+  describe('userName / userSurname propagation', () => {
+    it('returns null on both when user relation absent', () => {
+      const result = mapReportToIReport(baseReport);
+      expect(result.userName).toBeNull();
+      expect(result.userSurname).toBeNull();
+    });
+
+    it('mirrors users.name and users.surname when user is loaded', () => {
+      const result = mapReportToIReport({
+        ...baseReport,
+        user: { name: 'Carlos', surname: 'Briasco' },
+      });
+      expect(result.userName).toBe('Carlos');
+      expect(result.userSurname).toBe('Briasco');
+    });
+
+    it('falls back to null for user.name/surname when DB has nulls', () => {
+      const result = mapReportToIReport({
+        ...baseReport,
+        user: { name: null, surname: null },
+      });
+      expect(result.userName).toBeNull();
+      expect(result.userSurname).toBeNull();
+    });
+  });
+
+  describe('categoryMix aggregation', () => {
+    it('is empty when no tickets', () => {
+      const result = mapReportToIReport(baseReport);
+      expect(result.categoryMix).toEqual([]);
+    });
+
+    it('is empty when items have zero amount', () => {
+      const result = mapReportToIReport({
+        ...baseReport,
+        tickets: [
+          {
+            items: [
+              { categoryId: 'c1', amount: 0, category: { name: 'Meals', color: '#F5C842' } },
+            ],
+          },
+        ],
+      });
+      expect(result.categoryMix).toEqual([]);
+    });
+
+    it('groups by categoryId, sorts by amount desc, computes percentage', () => {
+      const result = mapReportToIReport({
+        ...baseReport,
+        tickets: [
+          {
+            items: [
+              { categoryId: 'c1', amount: 30, category: { name: 'Meals', color: '#F5C842' } },
+              { categoryId: 'c2', amount: 70, category: { name: 'Lodging', color: '#8A5E89' } },
+            ],
+          },
+          {
+            items: [
+              { categoryId: 'c1', amount: 20, category: { name: 'Meals', color: '#F5C842' } },
+            ],
+          },
+        ],
+      });
+      expect(result.categoryMix).toEqual([
+        { categoryId: 'c2', categoryName: 'Lodging', categoryColor: '#8A5E89', amount: 70, percentage: 58.3 },
+        { categoryId: 'c1', categoryName: 'Meals', categoryColor: '#F5C842', amount: 50, percentage: 41.7 },
+      ]);
+    });
+
+    it('uses null categoryId/Color and "Uncategorized" name when item has no category', () => {
+      const result = mapReportToIReport({
+        ...baseReport,
+        tickets: [
+          {
+            items: [
+              { categoryId: null, amount: 40, category: null },
+              { categoryId: 'c1', amount: 60, category: { name: 'Meals', color: '#F5C842' } },
+            ],
+          },
+        ],
+      });
+      expect(result.categoryMix).toEqual([
+        { categoryId: 'c1', categoryName: 'Meals', categoryColor: '#F5C842', amount: 60, percentage: 60 },
+        { categoryId: null, categoryName: 'Uncategorized', categoryColor: null, amount: 40, percentage: 40 },
+      ]);
+    });
+  });
 });

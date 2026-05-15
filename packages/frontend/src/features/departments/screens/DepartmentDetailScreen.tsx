@@ -16,6 +16,7 @@ import { PageHeader } from "../../../components/ui/PageHeader";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { Button } from "../../../components/ui/Button";
+import { EmptyState } from "../../../components/ui/EmptyState";
 import { DepartmentModal } from "../components/DepartmentModal";
 
 export const DepartmentDetailScreen = () => {
@@ -67,12 +68,16 @@ export const DepartmentDetailScreen = () => {
           title={t("departments.title", "Departamentos")}
           back={{ label: t("departments.title", "Departamentos"), onClick: () => navigate("/departments") }}
         />
-        <div className="flex flex-col items-center py-14 gap-2 text-center">
-          <Layers className="w-4 h-4 text-dark/25" aria-hidden={true} />
-          <p className="font-sans-medium text-[13px] text-dark/55">
-            {t("departments.notFound", "Departamento no encontrado")}
-          </p>
-        </div>
+        <EmptyState
+          icon={<Layers className="w-4 h-4" aria-hidden={true} />}
+          title={t("departments.notFound", "Departamento no encontrado")}
+          description={t("departments.notFoundDesc", "El departamento que buscas no existe o fue eliminado.")}
+          action={
+            <Button variant="secondary" onClick={() => navigate("/departments")}>
+              {t("departments.title", "Departamentos")}
+            </Button>
+          }
+        />
       </div>
     );
   }

@@ -52,7 +52,8 @@ describe('DonutChart', () => {
 
   it('respects custom height prop', () => {
     const { container } = render(<DonutChart data={data} height={300} />);
-    expect((container.firstChild as HTMLElement).style.height).toBe('300px');
+    const heightedNode = container.querySelector('[style*="height"]') as HTMLElement | null;
+    expect(heightedNode?.style.height).toBe('300px');
   });
 });
 

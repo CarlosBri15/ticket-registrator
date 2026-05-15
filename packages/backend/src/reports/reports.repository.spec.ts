@@ -89,34 +89,61 @@ describe('ReportsRepository', () => {
   });
 
   describe('findWithFilters', () => {
-    it('should call db.select and return data with total', async () => {
-      const mockRow = { report: { id: 'r1', name: 'Trip' } };
-      const countRow = { count: '2' };
+    const buildIdsChain = (rows: { id: string }[]) => {
+      const chain: any = {};
+      chain.from = jest.fn().mockReturnValue(chain);
+      chain.innerJoin = jest.fn().mockReturnValue(chain);
+      chain.where = jest.fn().mockReturnValue(chain);
+      chain.orderBy = jest.fn().mockReturnValue(chain);
+      chain.limit = jest.fn().mockReturnValue(chain);
+      chain.offset = jest.fn().mockResolvedValue(rows);
+      return chain;
+    };
 
+    const buildCountChain = (countValue: string) => {
+      const chain: any = {};
+      chain.from = jest.fn().mockReturnValue(chain);
+      chain.innerJoin = jest.fn().mockReturnValue(chain);
+      chain.where = jest.fn().mockResolvedValue([{ count: countValue }]);
+      return chain;
+    };
+
+    it('returns enriched rows in id-order with total', async () => {
       let selectCall = 0;
       dbMock.select.mockImplementation(() => {
         selectCall++;
-        if (selectCall === 1) {
-          const chain: any = {};
-          chain.from = jest.fn().mockReturnValue(chain);
-          chain.innerJoin = jest.fn().mockReturnValue(chain);
-          chain.where = jest.fn().mockReturnValue(chain);
-          chain.orderBy = jest.fn().mockReturnValue(chain);
-          chain.limit = jest.fn().mockReturnValue(chain);
-          chain.offset = jest.fn().mockResolvedValue([mockRow]);
-          return chain;
-        } else {
-          const chain: any = {};
-          chain.from = jest.fn().mockReturnValue(chain);
-          chain.innerJoin = jest.fn().mockReturnValue(chain);
-          chain.where = jest.fn().mockResolvedValue([countRow]);
-          return chain;
-        }
+        if (selectCall === 1) return buildIdsChain([{ id: 'r1' }, { id: 'r2' }]);
+        return buildCountChain('2');
+      });
+      dbMock.query.reports.findMany.mockResolvedValue([
+        { id: 'r2', name: 'Second' },
+        { id: 'r1', name: 'First' },
+      ]);
+
+      const result = await repository.findWithFilters({ where: {} as any });
+
+      expect(result.total).toBe(2);
+      expect(result.data.map((r: any) => r.id)).toEqual(['r1', 'r2']);
+      expect(dbMock.query.reports.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          with: expect.objectContaining({ user: true }),
+        }),
+      );
+    });
+
+    it('skips the relational query when no rows match', async () => {
+      let selectCall = 0;
+      dbMock.select.mockImplementation(() => {
+        selectCall++;
+        if (selectCall === 1) return buildIdsChain([]);
+        return buildCountChain('0');
       });
 
       const result = await repository.findWithFilters({ where: {} as any });
-      expect(result.data).toHaveLength(1);
-      expect(result.total).toBe(2);
+
+      expect(result.data).toEqual([]);
+      expect(result.total).toBe(0);
+      expect(dbMock.query.reports.findMany).not.toHaveBeenCalled();
     });
   });
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { Suspense, useState, useMemo } from "react";
 import { Plus, Users, Globe } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { StatCard } from "../../components/ui/StatCard";
@@ -14,8 +14,8 @@ import { countCreatedThisMonth, buildMonthlyGrowth } from "./utils";
 import { useDashboardHelpers } from "./hooks/useDashboardHelpers";
 import { EmptyOrgsCard } from "./components/EmptyOrgsCard";
 import { LargestOrgCard } from "./components/LargestOrgCard";
-import { OrgGrowthChart } from "./components/OrgGrowthChart";
-import { OrgDistributionChart } from "./components/OrgDistributionChart";
+import { OrgGrowthChart, OrgDistributionChart } from "./components/LazyDashboardCharts";
+import { ChartSkeleton } from "../../components/ui/ChartSkeleton";
 import { OrganizationsSection } from "./components/OrganizationsSection";
 
 export const SuperAdminGlobalDashboard = () => {
@@ -121,7 +121,7 @@ export const SuperAdminGlobalDashboard = () => {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="global-stats">
         <StatCard
-          variant="primary"
+          tone="brand"
           title={t("layout.organizations")}
           value={orgsCount}
           icon={<Globe className="w-4 h-4" aria-hidden={true} />}
@@ -129,6 +129,7 @@ export const SuperAdminGlobalDashboard = () => {
         />
 
         <StatCard
+          tone="accent"
           title={t("dashboard.totalUsers")}
           value={usersCount}
           icon={<Users className="w-4 h-4" aria-hidden={true} />}
@@ -150,8 +151,12 @@ export const SuperAdminGlobalDashboard = () => {
       ) : (
         orgs && orgs.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-testid="global-charts">
-            <OrgGrowthChart data={orgGrowthData} />
-            <OrgDistributionChart data={distributionData} />
+            <Suspense fallback={<ChartSkeleton height={192} />}>
+              <OrgGrowthChart data={orgGrowthData} />
+            </Suspense>
+            <Suspense fallback={<ChartSkeleton height={192} />}>
+              <OrgDistributionChart data={distributionData} />
+            </Suspense>
           </div>
         )
       )}

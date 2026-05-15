@@ -1,8 +1,9 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import {
   useReportsQuery,
   useReportsPaginatedQuery,
   useReportFilterState,
+  useScope,
 } from "@ticket-registrator/shared";
 import { Plus, Search, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +21,7 @@ import { ReportFilterBar } from "../components/ReportFilterBar";
 import { ReportSkeletonCard } from "../components/ReportSkeletonCard";
 import { ACTIVE_STATUSES, isCurrentReport } from "../constants";
 import { useDateLocale } from "../../../hooks/useDateLocale";
+import { REPORT_GRID, REPORT_GRID_WITH_OWNER } from "../../../constants/gridLayouts";
 
 const PAGE_SIZE = 5;
 
@@ -27,6 +29,9 @@ export const ReportsScreen = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dateLocale = useDateLocale();
+  const { isSelf } = useScope();
+  const showOwner = !isSelf;
+  const tableGrid = showOwner ? REPORT_GRID_WITH_OWNER : REPORT_GRID;
 
   const {
     search, setSearch,
@@ -38,9 +43,15 @@ export const ReportsScreen = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
+  // Reset to page 1 when filters change — derived state pattern (no effect).
+  // dateRange is a fresh object on every render, so we serialise it for stable
+  // comparison.
+  const filtersKey = `${search}|${statusFilter}|${dateRange?.start?.toISOString() ?? ""}|${dateRange?.end?.toISOString() ?? ""}`;
+  const [prevFiltersKey, setPrevFiltersKey] = useState(filtersKey);
+  if (prevFiltersKey !== filtersKey) {
+    setPrevFiltersKey(filtersKey);
     setPage(1);
-  }, [search, statusFilter, dateRange]);
+  }
 
   const { data: allReports, isLoading: isLoadingCurrent } = useReportsQuery();
 
@@ -140,7 +151,11 @@ export const ReportsScreen = () => {
             {t("trips.title")}
           </p>
 
-          {!isLoading && hasAnyReports && (
+          {hasAnyReports && (
+            // Render the filter bar regardless of `isLoading` — unmounting it
+            // during the in-flight pagination fetch caused the search input to
+            // lose focus on every keystroke (filter change → setPage(1) →
+            // refetch → !isLoading=false → <ReportFilterBar/> remount).
             <ReportFilterBar
               search={search}
               onSearch={setSearch}
@@ -153,13 +168,15 @@ export const ReportsScreen = () => {
             />
           )}
 
-          <div className="w-full">
+          <div className="w-full rounded-[14px] border border-[var(--color-border-main)] bg-surface-card-soft overflow-hidden">
             <TableHeader
+              gridTemplate={tableGrid}
               columns={[
                 { label: t("reports.tableName") },
-                { label: t("reports.tableStatus"), align: "center" },
-                { label: t("reports.tableDates"), align: "center" },
-                { label: t("reports.tableAmount"), align: "right" },
+                ...(showOwner ? [{ label: t("reports.tableOwner") }] : []),
+                { label: t("reports.tableStatus"), align: "center" as const },
+                { label: t("reports.tableDates"), align: "center" as const },
+                { label: t("reports.tableAmount"), align: "right" as const },
               ]}
             />
 
@@ -178,12 +195,17 @@ export const ReportsScreen = () => {
                   report={r}
                   onClick={() => navigate(`/reports/${r.id}`)}
                   dateLocale={dateLocale}
+                  showOwner={showOwner}
                 />
               ))
             )}
 
             {!isLoading && listReports.length === 0 && (
-              <div className="flex flex-col items-center py-14 gap-2 text-center border-b border-[var(--color-border-main)]">
+              // min-h matches roughly 3 list rows so the empty state slot has
+              // a similar visual footprint to a populated list — avoids the
+              // abrupt layout collapse when a search filter goes from "has
+              // matches" to "no matches".
+              <div className="flex flex-col items-center justify-center min-h-[260px] gap-2 text-center border-b border-[var(--color-border-main)]">
                 <Search className="w-4 h-4 text-dark/25 mb-1" />
                 <p className="font-sans-medium text-[13px] text-dark/55">
                   {t("trips.noResultsFilter")}

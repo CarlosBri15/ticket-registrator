@@ -9,8 +9,11 @@
  * the chevron / hover affordance.
  */
 
-/** Reports list — 6 columns: icon, name+type, status, dates, amount, chevron. */
+/** Reports list — 6 columns: icon, name+type+mix, status, dates, amount, chevron. */
 export const REPORT_GRID = "32px 1fr 120px 148px 100px 16px";
+
+/** Reports list with owner — 7 columns: icon, name+type+mix, owner, status, dates, amount, chevron. */
+export const REPORT_GRID_WITH_OWNER = "32px 1fr 140px 120px 148px 100px 16px";
 
 /** Tickets list — 5 columns: icon, name+report, status, payment, chevron. */
 export const TICKET_GRID = "32px 1fr 140px 120px 16px";

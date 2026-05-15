@@ -1,4 +1,4 @@
-import { getApiErrorMessage } from './errorUtils';
+import { DEFAULT_API_ERROR_MESSAGE, getApiErrorMessage } from './errorUtils';
 
 describe('errorUtils', () => {
   describe('getApiErrorMessage', () => {
@@ -24,6 +24,21 @@ describe('errorUtils', () => {
     it('should return default message if no response data', () => {
       const error = { response: {} };
       expect(getApiErrorMessage(error)).toBe('Unexpected error. Please try again.');
+    });
+
+    it('exposes the default message constant', () => {
+      expect(DEFAULT_API_ERROR_MESSAGE).toBe('Unexpected error. Please try again.');
+    });
+
+    it('uses the provided fallback when API has no parseable message', () => {
+      expect(getApiErrorMessage(null, 'Translated fallback')).toBe('Translated fallback');
+      expect(getApiErrorMessage({ response: { data: {} } }, 'translated')).toBe('translated');
+      expect(getApiErrorMessage({ response: {} }, 'translated')).toBe('translated');
+    });
+
+    it('still returns the API message when present, ignoring the fallback', () => {
+      const error = { response: { data: { message: 'Real error from API' } } };
+      expect(getApiErrorMessage(error, 'translated')).toBe('Real error from API');
     });
   });
 });

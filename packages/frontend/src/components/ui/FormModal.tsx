@@ -2,7 +2,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Modal } from "./Modal";
 import { Button } from "./Button";
-import { AlertError, getApiErrorMessage } from "./Alert";
+import { AlertError } from "./Alert";
+import { getApiErrorMessage } from "@ticket-registrator/shared";
 
 interface FormModalProps {
   isOpen: boolean;

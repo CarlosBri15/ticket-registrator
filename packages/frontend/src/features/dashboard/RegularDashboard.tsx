@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import {
   Plus, TrendingUp, Users, CheckCircle, Wallet,
   FileText,
@@ -19,7 +19,8 @@ import { getReportsSummary, getAmountsSummary } from "./utils";
 import { CompanyModeBanner } from "./components/CompanyModeBanner";
 import { PendingApprovalsList } from "./components/PendingApprovalsList";
 import { QuickActionsGrid } from "./components/QuickActionsGrid";
-import { AnalyticsSection } from "./components/AnalyticsSection";
+import { AnalyticsSection } from "./components/LazyDashboardCharts";
+import { ChartSkeleton } from "../../components/ui/ChartSkeleton";
 import { DashboardSkeleton } from "./components/DashboardSkeleton";
 import { DashboardHero } from "./components/DashboardHero";
 import { PendingStatsCard } from "./components/PendingStatsCard";
@@ -192,7 +193,7 @@ export const RegularDashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
-          variant="primary"
+          tone="brand"
           title={t("home.pendingReimbursement")}
           value={`${amounts.pending.toFixed(2)} €`}
           icon={<Wallet className="w-4 h-4" />}
@@ -234,7 +235,11 @@ export const RegularDashboard = () => {
       </div>
 
       {showManagementLinks && <QuickActionsGrid navigate={navigate} can={can} />}
-      {reports && reports.length > 0 && <AnalyticsSection reports={reports} />}
+      {reports && reports.length > 0 && (
+        <Suspense fallback={<ChartSkeleton height={220} />}>
+          <AnalyticsSection reports={reports} />
+        </Suspense>
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreateReportSchema, ReportPaginationParams } from '../index';
 import { api } from '../api/clientContainer';
 
@@ -13,6 +13,12 @@ export const useReportsPaginatedQuery = (params: ReportPaginationParams) => {
     return useQuery({
         queryKey: ['reports', 'paginated', params],
         queryFn: () => api.reports().getPaginated(params),
+        // Keep the previous page's rows visible while a new query is in flight.
+        // Without this, every filter/page change re-renders skeletons + an
+        // "empty state" flash when the new search returns 0 results, which
+        // looks like a layout jump in the UI. See:
+        // https://tanstack.com/query/v5/docs/framework/react/guides/paginated-queries
+        placeholderData: keepPreviousData,
     });
 };
 

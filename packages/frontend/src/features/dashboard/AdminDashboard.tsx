@@ -87,13 +87,14 @@ export const AdminDashboard = () => {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="admin-stats">
         <StatCard
-          variant="primary"
+          tone="brand"
           title={t("layout.users")}
           value={String(users?.length ?? 0)}
           icon={<Users className="w-4 h-4" aria-hidden={true} />}
           subtitle={t("home.teamMembers")}
         />
         <StatCard
+          tone="accent"
           title={t("layout.departments")}
           value={String(departments?.length ?? 0)}
           icon={<Building2 className="w-4 h-4" aria-hidden={true} />}
@@ -101,6 +102,7 @@ export const AdminDashboard = () => {
         />
         <PendingStatsCard count={pendingReports.length} />
         <StatCard
+          tone="sage"
           title={t("home.activeTrips")}
           value={String(activeTripsCount)}
           icon={<TrendingUp className="w-4 h-4" aria-hidden={true} />}

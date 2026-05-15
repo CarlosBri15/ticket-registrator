@@ -56,6 +56,8 @@ describe('CategoriesService', () => {
       expect(mockRepository.create).toHaveBeenCalledWith({
         name: dto.name,
         description: dto.description,
+        color: null,
+        icon: null,
         organizationId: dto.organizationId,
         isSystem: false,
       });
@@ -96,6 +98,8 @@ describe('CategoriesService', () => {
       expect(mockRepository.update).toHaveBeenCalledWith(id, {
         name: dto.name,
         description: dto.description,
+        color: dto.color,
+        icon: dto.icon,
         organizationId: dto.organizationId,
       });
     });
@@ -136,8 +140,8 @@ describe('CategoriesService', () => {
     it('should copy system categories to organization', async () => {
       const orgId = 'org-uuid';
       const systemCats = [
-        { name: 'Cat 1', description: 'Desc 1', isSystem: true },
-        { name: 'Cat 2', description: 'Desc 2', isSystem: true },
+        { name: 'Cat 1', description: 'Desc 1', color: '#5E81A8', icon: 'Plane', isSystem: true },
+        { name: 'Cat 2', description: 'Desc 2', color: null, icon: null, isSystem: true },
       ];
       mockRepository.findAllSystemCategories.mockResolvedValue(systemCats);
       mockRepository.createMany.mockResolvedValue([]);
@@ -148,12 +152,16 @@ describe('CategoriesService', () => {
         {
           name: 'Cat 1',
           description: 'Desc 1',
+          color: '#5E81A8',
+          icon: 'Plane',
           organizationId: orgId,
           isSystem: false,
         },
         {
           name: 'Cat 2',
           description: 'Desc 2',
+          color: null,
+          icon: null,
           organizationId: orgId,
           isSystem: false,
         },
@@ -163,8 +171,8 @@ describe('CategoriesService', () => {
     it('should copy selected system categories', async () => {
       const orgId = 'org-uuid';
       const systemCats = [
-        { name: 'Cat 1', description: 'Desc 1', isSystem: true },
-        { name: 'Cat 2', description: 'Desc 2', isSystem: true },
+        { name: 'Cat 1', description: 'Desc 1', color: '#5E81A8', icon: 'Plane', isSystem: true },
+        { name: 'Cat 2', description: 'Desc 2', color: null, icon: null, isSystem: true },
       ];
       mockRepository.findAllSystemCategories.mockResolvedValue(systemCats);
       mockRepository.createMany.mockResolvedValue([]);
@@ -175,6 +183,8 @@ describe('CategoriesService', () => {
         {
           name: 'Cat 1',
           description: 'Desc 1',
+          color: '#5E81A8',
+          icon: 'Plane',
           organizationId: orgId,
           isSystem: false,
         },
@@ -184,8 +194,8 @@ describe('CategoriesService', () => {
     it('should return empty array if no categories match', async () => {
       const orgId = 'org-uuid';
       const systemCats = [
-        { name: 'Cat 1', description: 'Desc 1', isSystem: true },
-        { name: 'Cat 2', description: 'Desc 2', isSystem: true },
+        { name: 'Cat 1', description: 'Desc 1', color: '#5E81A8', icon: 'Plane', isSystem: true },
+        { name: 'Cat 2', description: 'Desc 2', color: null, icon: null, isSystem: true },
       ];
       mockRepository.findAllSystemCategories.mockResolvedValue(systemCats);
 

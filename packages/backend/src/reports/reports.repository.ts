@@ -2,8 +2,8 @@ import { Injectable, Inject } from '@nestjs/common';
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, and, or, lte, gte, count, desc, SQL, isNull } from 'drizzle-orm';
-import { Report } from './schemas/report.schema';
+import { eq, and, or, lte, gte, count, desc, SQL, isNull, inArray } from 'drizzle-orm';
+import { Report, ReportWithTickets } from './schemas/report.schema';
 
 @Injectable()
 export class ReportsRepository {
@@ -34,11 +34,11 @@ export class ReportsRepository {
     limit?: number;
     offset?: number;
     orderBy?: SQL | SQL[];
-  }) {
+  }): Promise<{ data: ReportWithTickets[]; total: number }> {
     const { where, limit, offset, orderBy } = filters;
 
-    const results = await this.db
-      .select({ report: schema.reports })
+    const idRows = await this.db
+      .select({ id: schema.reports.id })
       .from(schema.reports)
       .innerJoin(schema.users, eq(schema.reports.userId, schema.users.id))
       .where(where)
@@ -50,16 +50,42 @@ export class ReportsRepository {
       .limit(limit || 10)
       .offset(offset || 0);
 
+    const ids = idRows.map((r) => r.id);
+
     const countRes = await this.db
       .select({ count: count() })
       .from(schema.reports)
       .innerJoin(schema.users, eq(schema.reports.userId, schema.users.id))
       .where(where);
+    const total = Number(countRes[0]?.count ?? 0);
 
-    return {
-      data: results.map((row) => row.report),
-      total: Number(countRes[0]?.count ?? 0),
-    };
+    if (ids.length === 0) return { data: [], total };
+
+    const enriched = await this.db.query.reports.findMany({
+      where: inArray(schema.reports.id, ids),
+      with: {
+        user: true,
+        tickets: {
+          with: {
+            items: {
+              with: {
+                category: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const byId = new Map<string, ReportWithTickets>(
+      enriched.map((r) => [r.id, r as ReportWithTickets]),
+    );
+    const data: ReportWithTickets[] = ids.flatMap((id) => {
+      const row = byId.get(id);
+      return row ? [row] : [];
+    });
+
+    return { data, total };
   }
 
   async findByUserId(userId: string): Promise<Report[]> {

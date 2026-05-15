@@ -12,6 +12,8 @@ export class CategoriesService {
     return this.categoriesRepository.create({
       name: dto.name,
       description: dto.description,
+      color: dto.color ?? null,
+      icon: dto.icon ?? null,
       organizationId: dto.organizationId ?? null,
       isSystem: false,
     });
@@ -36,6 +38,8 @@ export class CategoriesService {
     return this.categoriesRepository.update(id, {
       name: dto.name,
       description: dto.description,
+      color: dto.color,
+      icon: dto.icon,
       organizationId: dto.organizationId,
     });
   }
@@ -63,6 +67,8 @@ export class CategoriesService {
     const newCategories = categoriesToCopy.map((cat) => ({
       name: cat.name,
       description: cat.description,
+      color: cat.color,
+      icon: cat.icon,
       organizationId: organizationId,
       isSystem: false,
     }));

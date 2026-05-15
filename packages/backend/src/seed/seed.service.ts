@@ -183,6 +183,56 @@ export class SeedService implements OnApplicationBootstrap {
   }
 
   async seedDefaultCategories() {
+    const SYSTEM_CATEGORY_COLORS: Record<string, string | null> = {
+      Airfare: '#5E81A8',
+      'Booking Fees': '#A09778',
+      'Car Rental': '#C98A6B',
+      'Company Car': '#A06045',
+      Computer: '#708090',
+      'Consulting Services': '#A07E8A',
+      Donations: '#5C8A6E',
+      Facility: '#3D6B52',
+      Fees: '#8C7E6B',
+      'Fuel For Mileage': '#C9A53A',
+      Gas: '#6B7E45',
+      Gifts: '#4A8074',
+      'Ground Transportation': '#B66B4A',
+      'Legal Services': '#4A6B8A',
+      Lodging: '#8A5E89',
+      'Lodging Tax': '#6B4A6A',
+      Marketing: '#A06882',
+      Meals: '#F5C842',
+      'Mileage Reimbursement': '#B8A05A',
+      Miscellaneous: '#7A6E5C',
+      'Office Supplies': '#8A8B3A',
+      Train: '#8B5034',
+    };
+
+    const SYSTEM_CATEGORY_ICONS: Record<string, string | null> = {
+      Airfare: 'Plane',
+      'Booking Fees': 'Receipt',
+      'Car Rental': 'Car',
+      'Company Car': 'CarFront',
+      Computer: 'Laptop',
+      'Consulting Services': 'Briefcase',
+      Donations: 'Heart',
+      Facility: 'Building2',
+      Fees: 'CreditCard',
+      'Fuel For Mileage': 'Fuel',
+      Gas: 'Fuel',
+      Gifts: 'Gift',
+      'Ground Transportation': 'Bus',
+      'Legal Services': 'Scale',
+      Lodging: 'Hotel',
+      'Lodging Tax': 'ReceiptText',
+      Marketing: 'Megaphone',
+      Meals: 'Utensils',
+      'Mileage Reimbursement': 'Route',
+      Miscellaneous: 'Package',
+      'Office Supplies': 'Paperclip',
+      Train: 'TrainFront',
+    };
+
     const existingCategories =
       await this.categoriesRepository.findAllSystemCategories();
     const existingMap = new Map(existingCategories.map((c) => [c.name, c]));
@@ -192,11 +242,19 @@ export class SeedService implements OnApplicationBootstrap {
 
     for (const cat of DEFAULT_CATEGORIES) {
       const existing = existingMap.get(cat.name);
+      const color = SYSTEM_CATEGORY_COLORS[cat.name] ?? null;
+      const icon = SYSTEM_CATEGORY_ICONS[cat.name] ?? null;
 
       if (existing) {
-        if (existing.description !== cat.description) {
+        if (
+          existing.description !== cat.description ||
+          existing.color !== color ||
+          existing.icon !== icon
+        ) {
           await this.categoriesRepository.update(existing.id, {
             description: cat.description,
+            color,
+            icon,
           });
           updatedCount++;
         }
@@ -206,6 +264,8 @@ export class SeedService implements OnApplicationBootstrap {
           description: cat.description,
           organizationId: null,
           isSystem: true,
+          color,
+          icon,
         });
         seededCount++;
       }

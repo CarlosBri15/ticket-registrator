@@ -1,11 +1,12 @@
 import { memo, useMemo } from "react";
 import { format, type Locale } from 'date-fns';
 import { CreditCard, Banknote, FileText, ChevronRight } from 'lucide-react';
-import { type ITicket } from '@ticket-registrator/shared';
+import { type ITicket, buildCategoryMixFromItems } from '@ticket-registrator/shared';
 import { useDateLocale } from '../../../hooks/useDateLocale';
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { TableHeader } from "../../../components/ui/TableHeader";
+import { CategoryMixBar } from "../../../components/ui/CategoryMixBar";
 import { TICKETS_TABLE_GRID } from "../../../constants/gridLayouts";
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
@@ -24,6 +25,8 @@ const TicketRowContent = ({
 
   const gridStyle = { gridTemplateColumns: TICKETS_TABLE_GRID };
 
+  const mix = buildCategoryMixFromItems(ticket.items, t("reports.uncategorized"));
+
   return (
     <div className="w-full grid items-center gap-4 px-4 py-3.5" style={gridStyle}>
       {/* Icono */}
@@ -32,13 +35,16 @@ const TicketRowContent = ({
       </div>
 
       {/* Establecimiento */}
-      <div className="min-w-0 text-left">
-        <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
-          {ticket.location_name ?? t("reportDetail.noTicketName")}
-        </p>
-        <p className="font-sans-medium text-dark/40 text-[11px] mt-0.5 truncate leading-none">
-          {ticket.items?.length ?? 0} {t("reportDetail.items")}
-        </p>
+      <div className="min-w-0 text-left flex flex-col gap-1.5">
+        <div>
+          <p className="font-sans-semibold text-dark text-[14px] truncate leading-snug">
+            {ticket.location_name ?? t("reportDetail.noTicketName")}
+          </p>
+          <p className="font-sans-medium text-dark/40 text-[11px] mt-0.5 truncate leading-none">
+            {ticket.items?.length ?? 0} {t("reportDetail.items")}
+          </p>
+        </div>
+        <CategoryMixBar segments={mix} />
       </div>
 
       {/* Pago */}

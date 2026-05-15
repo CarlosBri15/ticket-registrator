@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { Alert, AlertError, getApiErrorMessage, type AlertVariant } from './Alert';
+import { Alert, AlertError, type AlertVariant } from './Alert';
+import { getApiErrorMessage } from '@ticket-registrator/shared';
 
 vi.mock('lucide-react', () => ({
   XCircle:      ({ className }: any) => <svg data-testid="icon-xcircle"      className={className} />,

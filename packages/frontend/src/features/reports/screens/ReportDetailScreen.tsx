@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { Suspense, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Send, Trash2, ThumbsUp, ThumbsDown,
@@ -9,15 +9,22 @@ import { TicketUploadModal } from "../../tickets/components/TicketUploadModal";
 import { TicketDetailModal } from "../../tickets/components/TicketDetailModal";
 import { TicketsTable } from "../../tickets/components/TicketsTable";
 import { Button } from "../../../components/ui/Button";
+import { Alert } from "../../../components/ui/Alert";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { SectionCard } from "../../../components/ui/SectionCard";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { FinancialSummary } from "../components/FinancialSummary";
+import { ReportTimeline } from "../components/ReportTimeline";
 import {
-  useReportQuery, useTicketsQuery, usePermissions, type ITicket,
+  useReportQuery, useTicketsQuery, usePermissions, useUserQuery,
+  buildCategoryMixFromItems, type ITicket,
 } from "@ticket-registrator/shared";
 import { format, eachDayOfInterval, isSameDay } from "date-fns";
 import { useDateLocale } from "../../../hooks/useDateLocale";
 import { useReportDetailActions } from "../hooks/useReportDetailActions";
 import { useTranslation } from "react-i18next";
-import { DonutChart, AreaTrendChart } from "../../../components/ui/Charts";
+import { DonutChart, AreaTrendChart } from "../../../components/ui/LazyCharts";
+import { ChartSkeleton } from "../../../components/ui/ChartSkeleton";
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
@@ -33,28 +40,29 @@ export const ReportDetailScreen = () => {
 
   const { data: report, isLoading, isError } = useReportQuery(id);
   const { data: tickets, isLoading: isLoadingTickets } = useTicketsQuery(id!);
+  const { data: currentUser } = useUserQuery();
 
   const actions = useReportDetailActions(id!);
   const dateLocale = useDateLocale();
 
   const r = report;
   const tk = tickets;
+  const showOwner = !!r && !!currentUser && r.user_id !== currentUser.id;
+  const ownerName = [r?.userName, r?.userSurname]
+    .filter((p): p is string => Boolean(p && p.trim().length > 0))
+    .join(" ");
 
   // ── Data Processing for Charts ─────────────────────────────────────────────
 
   const categoryData = useMemo(() => {
     if (!tk || tk.length === 0) return [];
-    const counts: Record<string, number> = {};
-    for (const ticket of tk) {
-      if (!ticket.items?.length) continue;
-      for (const item of ticket.items) {
-        const cat = item.categoryName ?? t("trips.typeOther");
-        counts[cat] = (counts[cat] ?? 0) + (item.amount ?? 0);
-      }
-    }
-    return Object.entries(counts)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
+    const allItems = tk.flatMap((ticket) => ticket.items ?? []);
+    const mix = buildCategoryMixFromItems(allItems, t("reports.uncategorized"));
+    return mix.map((m) => ({
+      name: m.categoryName,
+      value: m.amount,
+      color: m.categoryColor,
+    }));
   }, [tk, t]);
 
   const trendData = useMemo(() => {
@@ -77,6 +85,8 @@ export const ReportDetailScreen = () => {
       return [];
     }
   }, [tk, r, dateLocale]);
+
+  const sideCardClass = "!bg-surface-card-soft";
 
   const isEditable = r && ["CREATED", "DRAFT"].includes(r.status.toUpperCase());
   const isSubmitted = r?.status.toUpperCase() === "SUBMITTED";
@@ -105,18 +115,17 @@ export const ReportDetailScreen = () => {
 
   if (isError || !r) {
     return (
-      <div className="h-[60vh] flex flex-col items-center justify-center gap-3 px-6">
-        <div className="w-full max-w-sm rounded-lg border border-[var(--color-border-main)] bg-white shadow-sm overflow-hidden">
-          <div className="flex flex-col items-center text-center p-8 gap-3">
-            <div className="w-10 h-10 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-danger" />
-            </div>
-            <p className="font-sans-semibold text-dark text-[15px]">{t("reportDetail.errorLoading")}</p>
-            <p className="font-sans-normal text-dark/50 text-[13px]">{t("reportDetail.errorDesc")}</p>
-            <Button variant="secondary" onClick={() => navigate("/reports")}>{t("common.cancel")}</Button>
-          </div>
-        </div>
-      </div>
+      <EmptyState
+        icon={<AlertTriangle className="w-4 h-4 text-danger" aria-hidden={true} />}
+        title={t("reportDetail.errorLoading")}
+        description={t("reportDetail.errorDesc")}
+        action={
+          <Button variant="secondary" onClick={() => navigate("/reports")}>
+            {t("common.cancel")}
+          </Button>
+        }
+        className="min-h-[60vh] justify-center"
+      />
     );
   }
 
@@ -145,6 +154,12 @@ export const ReportDetailScreen = () => {
                 <StatusBadge status={r.status} />
               </div>
             </div>
+
+            {showOwner && ownerName && (
+              <p className="text-[14px] font-sans-medium text-dark/55 leading-none">
+                {t("reportDetail.by")} <span className="text-dark/80">{ownerName}</span>
+              </p>
+            )}
           </div>
 
 
@@ -230,90 +245,92 @@ export const ReportDetailScreen = () => {
       </div>
 
       {/* ── Content ── */}
-      <div className="flex flex-col gap-10">
+      <div className="flex flex-col gap-6">
 
         {isSubmitted && !canApprove && (
-          <div className="flex items-center gap-2.5 px-4 py-3 bg-amber-50 border border-amber-100 rounded-lg">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <p className="font-sans-medium text-amber-700 text-[13px]">
-              {t("reportDetail.submittedReview")} — {t("reportDetail.reviewTimeframe")}
-            </p>
-          </div>
+          <Alert
+            variant="warning"
+            message={`${t("reportDetail.submittedReview")} — ${t("reportDetail.reviewTimeframe")}`}
+          />
         )}
 
-        {/* ── Analytics Section ── */}
-        {tk && tk.length > 0 && categoryData.length > 0 && (
-          <section className="flex flex-col gap-6">
-            <p className="text-[11px] font-sans-semibold text-dark/45">
-              {t("analytics.title") ?? "Análisis"}
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Category Donut */}
-              <div className="flex flex-col gap-4 p-5 rounded-lg border border-[var(--color-border-main)] bg-white h-[280px]">
-                <p className="text-[12px] font-sans-bold text-dark/70">
-                  {t("analytics.expensesByType") ?? "Gasto por categoría"}
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 items-start">
+          <section className="flex flex-col gap-3 min-w-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <p className="text-[11px] font-sans-semibold text-dark/45">
+                  {t("layout.allTickets")}
                 </p>
-                <div className="flex-1 flex items-center justify-center">
-                  <DonutChart
-                    data={categoryData}
-                    height={200}
-                    centerValue={report?.requested_amount?.toLocaleString() ?? ticketsTotal.toLocaleString()}
-                    centerLabel={report?.currency ?? ""}
-                  />
-                </div>
+                {tk && tk.length > 0 && (
+                  <span className="px-1.2 py-0.2 rounded bg-dark/5 text-dark/40 text-[10px] font-sans-bold tabular-nums">
+                    {tk.length}
+                  </span>
+                )}
               </div>
 
-              {/* Trend Chart */}
-              <div className="flex flex-col gap-4 p-5 rounded-lg border border-[var(--color-border-main)] bg-white h-[280px]">
-                <p className="text-[12px] font-sans-bold text-dark/70">
-                  {t("analytics.dailyExpensesTrend") ?? "Evolución diaria"}
-                </p>
-                <div className="flex-1">
-                  <AreaTrendChart
-                    data={trendData}
-                    height={180}
-                    currency={report?.currency ?? ""}
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <p className="text-[11px] font-sans-semibold text-dark/45">
-                {t("layout.allTickets")}
-              </p>
-              {tk && tk.length > 0 && (
-                <span className="px-1.2 py-0.2 rounded bg-dark/5 text-dark/40 text-[10px] font-sans-bold tabular-nums">
-                  {tk.length}
-                </span>
+              {isEditable && (tk?.length ?? 0) > 0 && (
+                <Button
+                  variant="primary"
+                  leftIcon={<Plus className="w-3.5 h-3.5" />}
+                  size="md"
+                  onClick={() => setIsUploadModalOpen(true)}
+                >
+                  {t("reportDetail.addTicket")}
+                </Button>
               )}
             </div>
 
-            {isEditable && (tk?.length ?? 0) > 0 && (
-              <Button
-                variant="primary"
-                leftIcon={<Plus className="w-3.5 h-3.5" />}
-                size="md"
-                onClick={() => setIsUploadModalOpen(true)}
-              >
-                {t("reportDetail.addTicket")}
-              </Button>
-            )}
-          </div>
+            <div className="w-full rounded-[14px] border border-[var(--color-border-main)] bg-surface-card-soft overflow-hidden">
+              <TicketsTable
+                tickets={tk ?? []}
+                isLoading={isLoadingTickets}
+                onTicketClick={(ticket) => { setSelectedTicket(ticket); setIsDetailModalOpen(true); }}
+              />
+            </div>
+          </section>
 
-          <div className="w-full">
-            <TicketsTable
-              tickets={tk ?? []}
-              isLoading={isLoadingTickets}
-              onTicketClick={(ticket) => { setSelectedTicket(ticket); setIsDetailModalOpen(true); }}
-            />
-          </div>
-        </section>
+          <aside className="flex flex-col gap-4 min-w-0">
+            <SectionCard title={t("reportDetail.financialSummary")} className={sideCardClass}>
+              <FinancialSummary
+                status={r.status}
+                currency={r.currency ?? ""}
+                requestedAmount={r.requested_amount ?? 0}
+                approvedAmount={r.approved_amount ?? 0}
+                ticketsTotal={ticketsTotal}
+              />
+            </SectionCard>
+
+            {tk && tk.length > 0 && categoryData.length > 0 && (
+              <>
+                <SectionCard title={t("analytics.expensesByType")} className={sideCardClass}>
+                  <Suspense fallback={<ChartSkeleton height={220} />}>
+                    <DonutChart
+                      data={categoryData}
+                      height={220}
+                      centerValue={report?.requested_amount?.toLocaleString() ?? ticketsTotal.toLocaleString()}
+                      centerLabel={report?.currency ?? ""}
+                      showLegend
+                    />
+                  </Suspense>
+                </SectionCard>
+
+                <SectionCard title={t("analytics.dailyExpensesTrend")} className={sideCardClass}>
+                  <Suspense fallback={<ChartSkeleton height={180} />}>
+                    <AreaTrendChart
+                      data={trendData}
+                      height={180}
+                      currency={report?.currency ?? ""}
+                    />
+                  </Suspense>
+                </SectionCard>
+              </>
+            )}
+
+            <SectionCard title={t("reportDetail.timeline")} className={sideCardClass}>
+              <ReportTimeline />
+            </SectionCard>
+          </aside>
+        </div>
       </div>
 
       {/* ── Dialogs ── */}

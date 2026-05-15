@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Building, Trash2 } from "lucide-react";
+import { Building, Trash2, AlertTriangle } from "lucide-react";
 import {
   useOrganizationQuery,
   useDeleteOrganizationMutation,
@@ -12,10 +12,11 @@ import {
   useScopeContext,
   type IDepartment,
 } from "@ticket-registrator/shared";
-import { Modal } from "../../../components/ui/Modal";
 import { Button } from "../../../components/ui/Button";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { ConfirmDialog } from "../../reports/components/ConfirmDialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CreateUserModal } from "../../users/components/CreateUserModal";
@@ -35,36 +36,6 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "users", label: "Usuarios" },
   { id: "roles", label: "Roles" },
 ];
-
-const DeleteConfirmModal = ({
-  isOpen,
-  orgName,
-  onClose,
-  onConfirm,
-}: {
-  isOpen: boolean;
-  orgName: string;
-  onClose: () => void;
-  onConfirm: () => void;
-}) => (
-  <Modal isOpen={isOpen} onClose={onClose} title="¿Eliminar organización?">
-    <div className="flex flex-col gap-4">
-      <p className="text-[13px] font-sans-normal text-dark/70">
-        Esta acción eliminará permanentemente{" "}
-        <span className="font-sans-bold text-dark">{orgName}</span> y todos sus datos. No se puede
-        deshacer.
-      </p>
-      <div className="flex gap-3 pt-2">
-        <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
-          Cancelar
-        </Button>
-        <Button type="button" variant="danger" onClick={onConfirm} className="flex-1">
-          Eliminar
-        </Button>
-      </div>
-    </div>
-  </Modal>
-);
 
 export const OrganizationDetailScreen = () => {
   const { id } = useParams<{ id: string }>();
@@ -137,22 +108,16 @@ export const OrganizationDetailScreen = () => {
           title="Organizaciones"
           back={{ label: "Organizaciones", onClick: () => navigate("/organizations") }}
         />
-        <div className="flex flex-col items-center py-14 gap-2 text-center">
-          <Building className="w-4 h-4 text-dark/25" aria-hidden={true} />
-          <p className="font-sans-medium text-[13px] text-dark/55">
-            Organización no encontrada
-          </p>
-          <p className="font-sans-normal text-[12px] text-dark/40 max-w-sm">
-            La organización que buscas no existe o fue eliminada.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate("/organizations")}
-            className="font-sans-medium text-dark/50 text-[12px] underline underline-offset-2 hover:text-dark transition-colors mt-2"
-          >
-            Volver a Organizaciones
-          </button>
-        </div>
+        <EmptyState
+          icon={<Building className="w-4 h-4" aria-hidden={true} />}
+          title="Organización no encontrada"
+          description="La organización que buscas no existe o fue eliminada."
+          action={
+            <Button variant="secondary" onClick={() => navigate("/organizations")}>
+              Volver a Organizaciones
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -190,8 +155,8 @@ export const OrganizationDetailScreen = () => {
         }
       />
 
-      <div className="rounded-lg border border-[var(--color-border-main)] bg-[var(--color-surface-card)] overflow-hidden">
-        <div className="flex border-b border-[var(--color-border-main)] gap-6 px-5">
+      <div className="flex flex-col gap-5">
+        <div className="tabs" role="tablist">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             const count = tabCounts[tab.id];
@@ -199,12 +164,10 @@ export const OrganizationDetailScreen = () => {
               <button
                 key={tab.id}
                 type="button"
+                role="tab"
+                aria-selected={isActive}
                 onClick={() => setActiveTab(tab.id)}
-                className={`pb-3 pt-3.5 text-[13px] font-sans-semibold transition-colors flex items-center gap-2 ${
-                  isActive
-                    ? "border-b-2 border-dark text-dark -mb-px"
-                    : "text-dark/45 hover:text-dark/70"
-                }`}
+                className={`tab${isActive ? " active" : ""} flex items-center gap-2`}
               >
                 {tab.label}
                 {count !== undefined && (
@@ -221,7 +184,7 @@ export const OrganizationDetailScreen = () => {
           })}
         </div>
 
-        <div className="p-5">
+        <div role="tabpanel">
           {activeTab === "overview" && <OverviewTab org={org} />}
 
           {activeTab === "departments" && (
@@ -322,15 +285,22 @@ export const OrganizationDetailScreen = () => {
         />
       )}
 
-      <DeleteConfirmModal
-        isOpen={isDeleteConfirmOpen}
-        orgName={org.name}
-        onClose={() => setIsDeleteConfirmOpen(false)}
-        onConfirm={() => {
-          deleteMutation.mutate(org.id);
-          setIsDeleteConfirmOpen(false);
-        }}
-      />
+      {isDeleteConfirmOpen && (
+        <ConfirmDialog
+          icon={<AlertTriangle />}
+          title="¿Eliminar organización?"
+          description={`Esta acción eliminará permanentemente "${org.name}" y todos sus datos. No se puede deshacer.`}
+          onCancel={() => setIsDeleteConfirmOpen(false)}
+          onConfirm={() => {
+            deleteMutation.mutate(org.id);
+            setIsDeleteConfirmOpen(false);
+          }}
+          confirmLabel="Eliminar"
+          cancelLabel="Cancelar"
+          confirmVariant="danger"
+          isLoading={deleteMutation.isPending}
+        />
+      )}
     </div>
   );
 };

@@ -26,7 +26,7 @@ COPY package*.json ./
 COPY packages/backend/package*.json ./packages/backend/
 COPY packages/shared/package*.json ./packages/shared/
 
-RUN npm install --omit=dev
+RUN npm install --omit=dev --ignore-scripts
 
 COPY --from=builder /app/packages/backend/dist ./packages/backend/dist
 COPY --from=builder /app/packages/backend/drizzle ./packages/backend/drizzle

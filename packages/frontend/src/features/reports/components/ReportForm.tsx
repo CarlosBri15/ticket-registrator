@@ -6,10 +6,10 @@ import {
   createReportSchema,
   type CreateReportSchema,
   useCreateReportMutation,
+  getApiErrorMessage,
 } from "@ticket-registrator/shared";
 import { Button } from "../../../components/ui/Button";
 import { AlertCircle } from "lucide-react";
-import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { DatePicker } from "../../../components/ui/DatePicker";
 import { Input } from "../../../components/ui/Input";
@@ -30,9 +30,8 @@ export const ReportForm = ({ onSuccess, onCancel }: ReportFormProps) => {
       setApiError(null);
       onSuccess();
     },
-    onError: (error: AxiosError<{ message: string }>) => {
-      const message = error?.response?.data?.message || t("trips.createError");
-      setApiError(message);
+    onError: (error: unknown) => {
+      setApiError(getApiErrorMessage(error, t("trips.createError")));
     },
   });
 
