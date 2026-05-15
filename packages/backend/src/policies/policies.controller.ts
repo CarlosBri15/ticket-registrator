@@ -36,4 +36,25 @@ export class PoliciesController {
       ...result,
     };
   }
+
+  @Post('test-chunking')
+  @UseInterceptors(FileInterceptor('file'))
+  async testChunking(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded.');
+    }
+
+    // Step 1: extract one Document per page
+    const pageDocuments = await this.policiesService.extractTextFromFile(file.buffer, file.mimetype);
+    // Step 2: semantic chunk across all pages
+    const chunks = await this.policiesService.chunkDocuments(pageDocuments);
+
+    return {
+      message: 'Successfully parsed and chunked document (Testing Only)',
+      totalChunks: chunks.length,
+      chunks: chunks,
+      // Combine all page markdown so the caller can inspect the raw extraction
+      rawExtractedMarkdown: pageDocuments.map((d) => d.pageContent).join('\n\n---\n\n'),
+    };
+  }
 }

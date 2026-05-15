@@ -1,6 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PoliciesController } from './policies.controller';
 import { PoliciesService } from './policies.service';
+
+jest.mock('pdf.js-extract', () => ({
+  PDFExtract: jest.fn().mockImplementation(() => ({
+    extractBuffer: jest.fn(),
+  })),
+}));
 import { BadRequestException } from '@nestjs/common';
 import { IngestPolicyDto } from './dto/ingest-document.dto';
 

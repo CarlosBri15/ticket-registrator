@@ -3,9 +3,19 @@ import { sql } from 'drizzle-orm';
 import { companies } from '../../organization/schema/organization.schema';
 
 // Exported for testing coverage
-export const vector = customType<{ data: number[] }>({
+export const vector = customType<{ data: number[]; driverData: string }>({
   dataType() {
     return 'vector(768)';
+  },
+  toDriver(value: number[]): string {
+    return JSON.stringify(value);
+  },
+  fromDriver(value: string): number[] {
+    // Sometimes postgres returns it as a string "[1,2,3]", sometimes as an array
+    if (typeof value === 'string') {
+      return JSON.parse(value);
+    }
+    return value;
   },
 });
 

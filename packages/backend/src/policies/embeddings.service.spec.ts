@@ -17,6 +17,7 @@ jest.mock('@google/generative-ai', () => {
         getGenerativeModel: mockGetGenerativeModel,
       };
     }),
+    TaskType: { RETRIEVAL_DOCUMENT: 'RETRIEVAL_DOCUMENT' },
   };
 });
 
@@ -49,19 +50,23 @@ describe('EmbeddingsService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('generateEmbedding', () => {
+  describe('embedDocument', () => {
     it('should generate an embedding for text', async () => {
       const text = 'test content';
-      const result = await service.generateEmbedding(text);
+      const result = await service.embedDocument(text);
 
-      expect(mockGetGenerativeModel).toHaveBeenCalledWith({ model: 'text-embedding-004' });
-      expect(mockEmbedContent).toHaveBeenCalledWith(text);
+      expect(mockGetGenerativeModel).toHaveBeenCalledWith({ model: 'gemini-embedding-2' });
+      expect(mockEmbedContent).toHaveBeenCalledWith({
+        content: { parts: [{ text }] },
+        taskType: 'RETRIEVAL_DOCUMENT',
+        outputDimensionality: 768,
+      });
       expect(result).toEqual([0.1, 0.2, 0.3]);
     });
 
     it('should throw error if embedding generation fails', async () => {
       mockEmbedContent.mockRejectedValueOnce(new Error('API Error'));
-      await expect(service.generateEmbedding('test content')).rejects.toThrow('Failed to generate embedding');
+      await expect(service.embedDocument('test content')).rejects.toThrow('Failed to generate document embedding');
     });
   });
 });
