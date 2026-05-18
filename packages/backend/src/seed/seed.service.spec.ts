@@ -7,7 +7,9 @@ import { CategoriesRepository } from '../categories/categories.repository';
 import { DB_CONNECTION } from '../db/db.module';
 import { DEFAULT_CATEGORIES, Roles } from '@ticket-registrator/shared';
 
-const AIRFARE_DESCRIPTION = DEFAULT_CATEGORIES.find((c) => c.name === 'Airfare')!.description;
+const AIRFARE_DESCRIPTION = DEFAULT_CATEGORIES.find(
+  (c) => c.name === 'Airfare',
+)!.description;
 const AIRFARE_COLOR = '#5E81A8';
 const AIRFARE_ICON = 'Plane';
 
@@ -43,7 +45,9 @@ describe('SeedService', () => {
     };
 
     mockPermissionsService = {
-      seedDefaultPermissions: jest.fn().mockResolvedValue({ message: 'Seeded' }),
+      seedDefaultPermissions: jest
+        .fn()
+        .mockResolvedValue({ message: 'Seeded' }),
     };
 
     mockCategoriesRepository = {
@@ -97,12 +101,20 @@ describe('SeedService', () => {
 
   describe('seedDefaultRolePermissions', () => {
     it('should skip if all permissions are already seeded', async () => {
-      mockRolesRepository.findAllSystemRoles.mockResolvedValue([{ name: Roles.ADMIN, id: 'r1' }]);
-      mockRolesRepository.findAllPermissions.mockResolvedValue([{ name: 'perm1', id: 'p1' }]);
-      mockRolesRepository.findAllRolePermissions.mockResolvedValue([{ roleId: 'r1', permissionId: 'p1' }]);
+      mockRolesRepository.findAllSystemRoles.mockResolvedValue([
+        { name: Roles.ADMIN, id: 'r1' },
+      ]);
+      mockRolesRepository.findAllPermissions.mockResolvedValue([
+        { name: 'perm1', id: 'p1' },
+      ]);
+      mockRolesRepository.findAllRolePermissions.mockResolvedValue([
+        { roleId: 'r1', permissionId: 'p1' },
+      ]);
 
       const result = await service.seedDefaultRolePermissions();
-      expect(result.message).toBe('All default role-permissions already seeded');
+      expect(result.message).toBe(
+        'All default role-permissions already seeded',
+      );
     });
   });
 
@@ -130,7 +142,9 @@ describe('SeedService', () => {
 
       const result = await service.seedDefaultCategories();
 
-      expect(mockCategoriesRepository.create).toHaveBeenCalledTimes(DEFAULT_CATEGORIES.length);
+      expect(mockCategoriesRepository.create).toHaveBeenCalledTimes(
+        DEFAULT_CATEGORIES.length,
+      );
       expect(mockCategoriesRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Airfare',
@@ -142,7 +156,9 @@ describe('SeedService', () => {
         }),
       );
       expect(mockCategoriesRepository.update).not.toHaveBeenCalled();
-      expect(result.message).toContain(`${DEFAULT_CATEGORIES.length} system categories`);
+      expect(result.message).toContain(
+        `${DEFAULT_CATEGORIES.length} system categories`,
+      );
     });
 
     it('updates an existing system category when its icon differs from the seed', async () => {
@@ -159,11 +175,14 @@ describe('SeedService', () => {
 
       await service.seedDefaultCategories();
 
-      expect(mockCategoriesRepository.update).toHaveBeenCalledWith('airfare-id', {
-        description: AIRFARE_DESCRIPTION,
-        color: AIRFARE_COLOR,
-        icon: AIRFARE_ICON,
-      });
+      expect(mockCategoriesRepository.update).toHaveBeenCalledWith(
+        'airfare-id',
+        {
+          description: AIRFARE_DESCRIPTION,
+          color: AIRFARE_COLOR,
+          icon: AIRFARE_ICON,
+        },
+      );
       expect(mockCategoriesRepository.create).not.toHaveBeenCalledWith(
         expect.objectContaining({ name: 'Airfare' }),
       );
@@ -215,7 +234,9 @@ describe('SeedService', () => {
 
       await (service as any).seedSuperAdmin();
 
-      expect(loggerSpy).toHaveBeenCalledWith('SuperAdmin role not found in database!');
+      expect(loggerSpy).toHaveBeenCalledWith(
+        'SuperAdmin role not found in database!',
+      );
     });
   });
 });

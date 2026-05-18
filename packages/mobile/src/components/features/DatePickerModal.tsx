@@ -12,18 +12,13 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { 
-  IconX, 
-  IconChevronLeft, 
-  IconChevronRight, 
-  IconCalendar 
-} from '@tabler/icons-react-native';
 import {
-  PixelCard,
-  DARK,
-  CARD_BG,
-  colors,
-} from '../ui/PixelCard';
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+} from 'lucide-react-native';
+import { colors } from '../../constants/theme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -107,18 +102,17 @@ export function DatePickerModal({
     return base ? base.getMonth() : today.getMonth();
   });
 
-  // In range mode, track if next tap is start or end
   const [pickingEnd, setPickingEnd] = useState(false);
 
   const cells = buildGrid(viewYear, viewMonth);
 
   const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
-    else setViewMonth(m => m - 1);
+    if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
+    else setViewMonth((m) => m - 1);
   };
   const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
-    else setViewMonth(m => m + 1);
+    if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); }
+    else setViewMonth((m) => m + 1);
   };
 
   const handleDayPress = (date: Date) => {
@@ -127,7 +121,6 @@ export function DatePickerModal({
       onClose();
       return;
     }
-    // Range mode
     if (!pickingEnd || !startDate) {
       onRangeSelect?.(date, null);
       setPickingEnd(true);
@@ -166,75 +159,76 @@ export function DatePickerModal({
       </TouchableWithoutFeedback>
 
       <View style={styles.sheet}>
-        {/* Handle */}
         <View style={styles.handle} />
 
-        {/* Header */}
         <View style={styles.sheetHeader}>
           <Text style={styles.sheetTitle}>{displayTitle}</Text>
-          <PixelCard bg={colors.danger} shadowOffset={3} radius={8} onPress={onClose}>
-            <View style={styles.closeBtnInner}>
-              <IconX size={15} color="white" />
-            </View>
-          </PixelCard>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="close"
+            onPress={onClose}
+            style={styles.closeBtn}
+            activeOpacity={0.7}
+          >
+            <X size={16} color={colors.fgSecondary} strokeWidth={2} />
+          </TouchableOpacity>
         </View>
 
-        {/* Range step indicator */}
-        {rangeMode && (
+        {rangeMode ? (
           <View style={styles.stepRow}>
-            <PixelCard
-              bg={pickingEnd ? CARD_BG : colors.brand}
-              shadowOffset={3}
-              active={!pickingEnd}
-              style={styles.stepCard}
+            <TouchableOpacity
+              style={[styles.stepBtn, !pickingEnd && styles.stepBtnActive]}
+              onPress={() => setPickingEnd(false)}
+              activeOpacity={0.8}
             >
-              <View style={styles.stepInner}>
-                <Text style={[styles.stepText, !pickingEnd && styles.stepTextActive]}>
-                  Inicio
-                </Text>
-              </View>
-            </PixelCard>
+              <Text style={[styles.stepText, !pickingEnd && styles.stepTextActive]}>
+                Inicio
+              </Text>
+            </TouchableOpacity>
             <View style={styles.stepLine} />
-            <PixelCard
-              bg={pickingEnd ? colors.brand : CARD_BG}
-              shadowOffset={3}
-              active={pickingEnd}
-              style={styles.stepCard}
+            <TouchableOpacity
+              style={[styles.stepBtn, pickingEnd && styles.stepBtnActive]}
+              onPress={() => setPickingEnd(true)}
+              activeOpacity={0.8}
+              disabled={!startDate}
             >
-              <View style={styles.stepInner}>
-                <Text style={[styles.stepText, pickingEnd && styles.stepTextActive]}>
-                  Fin
-                </Text>
-              </View>
-            </PixelCard>
+              <Text style={[styles.stepText, pickingEnd && styles.stepTextActive]}>
+                Fin
+              </Text>
+            </TouchableOpacity>
           </View>
-        )}
+        ) : null}
 
-        {/* Month nav */}
         <View style={styles.monthNav}>
-          <PixelCard shadowOffset={3} radius={8} onPress={prevMonth}>
-            <View style={styles.monthNavBtnInner}>
-              <IconChevronLeft size={20} color={DARK} />
-            </View>
-          </PixelCard>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="previous month"
+            onPress={prevMonth}
+            style={styles.monthNavBtn}
+            activeOpacity={0.7}
+          >
+            <ChevronLeft size={18} color={colors.dark} strokeWidth={2} />
+          </TouchableOpacity>
           <Text style={styles.monthLabel}>
             {MONTH_NAMES[viewMonth]} {viewYear}
           </Text>
-          <PixelCard shadowOffset={3} radius={8} onPress={nextMonth}>
-            <View style={styles.monthNavBtnInner}>
-              <IconChevronRight size={20} color={DARK} />
-            </View>
-          </PixelCard>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="next month"
+            onPress={nextMonth}
+            style={styles.monthNavBtn}
+            activeOpacity={0.7}
+          >
+            <ChevronRight size={18} color={colors.dark} strokeWidth={2} />
+          </TouchableOpacity>
         </View>
 
-        {/* Day headers */}
         <View style={styles.weekRow}>
-          {DAYS_SHORT.map(d => (
+          {DAYS_SHORT.map((d) => (
             <Text key={d} style={styles.weekDay}>{d}</Text>
           ))}
         </View>
 
-        {/* Grid */}
         <View style={styles.grid}>
           {cells.map(({ date, otherMonth }) => {
             const { isStart, isEnd, inRange, isToday } = getDayStyle(date);
@@ -242,26 +236,26 @@ export function DatePickerModal({
 
             return (
               <View key={date.toISOString()} style={styles.cellWrap}>
-                {/* Range strip */}
-                {inRange && <View style={styles.rangeStrip} />}
-                {/* Caps for range */}
-                {isStart && endDate && <View style={styles.rangeCapRight} />}
-                {isEnd && startDate && <View style={styles.rangeCapLeft} />}
+                {inRange ? <View style={styles.rangeStrip} /> : null}
+                {isStart && endDate ? <View style={styles.rangeCapRight} /> : null}
+                {isEnd && startDate ? <View style={styles.rangeCapLeft} /> : null}
 
                 <TouchableOpacity
                   onPress={() => !otherMonth && handleDayPress(date)}
-                  activeOpacity={otherMonth ? 1 : 0.75}
+                  activeOpacity={otherMonth ? 1 : 0.7}
                   style={[
                     styles.cell,
                     isSelected && styles.cellSelected,
                     isToday && !isSelected && styles.cellToday,
                   ]}
                 >
-                  <Text style={[
-                    styles.cellText,
-                    otherMonth && styles.cellTextOther,
-                    isSelected && styles.cellTextSelected,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.cellText,
+                      otherMonth && styles.cellTextOther,
+                      isSelected && styles.cellTextSelected,
+                    ]}
+                  >
                     {date.getDate()}
                   </Text>
                 </TouchableOpacity>
@@ -270,14 +264,15 @@ export function DatePickerModal({
           })}
         </View>
 
-        {/* Today shortcut */}
         <View style={styles.todayWrap}>
-          <PixelCard bg={CARD_BG} shadowOffset={3} onPress={() => handleDayPress(today)}>
-            <View style={styles.todayInner}>
-              <IconCalendar size={14} color={DARK} />
-              <Text style={styles.todayText}>Ir a hoy</Text>
-            </View>
-          </PixelCard>
+          <TouchableOpacity
+            onPress={() => handleDayPress(today)}
+            activeOpacity={0.8}
+            style={styles.todayBtn}
+          >
+            <Calendar size={14} color={colors.dark} strokeWidth={2} />
+            <Text style={styles.todayText}>Ir a hoy</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -291,108 +286,108 @@ const CELL_SIZE = 44;
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: colors.overlayStrong,
   },
   sheet: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: CARD_BG,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    paddingBottom: 40,
-    maxHeight: SCREEN_HEIGHT * 0.85,
+    backgroundColor: colors.surfaceCard,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 32,
+    maxHeight: SCREEN_HEIGHT * 0.88,
   },
   handle: {
-    width: 48,
-    height: 6,
-    backgroundColor: DARK,
+    width: 36,
+    height: 4,
+    backgroundColor: colors.overlayMedium,
     alignSelf: 'center',
-    marginTop: 14,
-    marginBottom: 0,
+    marginTop: 10,
+    marginBottom: 2,
+    borderRadius: 9999,
   },
 
-  // Header
   sheetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingTop: 10,
+    paddingTop: 14,
     paddingBottom: 12,
-    borderBottomWidth: 4,
-    borderBottomColor: DARK,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   sheetTitle: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 20,
-    color: DARK,
-    letterSpacing: 0.3,
+    fontFamily: 'Manrope-Bold',
+    fontSize: 18,
+    color: colors.dark,
+    letterSpacing: -0.2,
   },
-  closeBtnInner: {
-    width: 34,
-    height: 34,
+  closeBtn: {
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 9999,
   },
 
-  // Step indicator (range mode)
   stepRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 0,
+    paddingTop: 14,
   },
-  stepCard: {
+  stepBtn: {
     flex: 1,
-  },
-  stepInner: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
+    paddingVertical: 9,
+    borderRadius: 9999,
+    backgroundColor: colors.surfaceSunken,
+  },
+  stepBtnActive: {
+    backgroundColor: colors.brand,
   },
   stepText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 11,
-    color: DARK,
-    letterSpacing: 0.2,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 12,
+    color: colors.fgSecondary,
   },
   stepTextActive: {
-    color: 'white',
+    color: colors.fgOnBrand,
   },
   stepLine: {
-    width: 20,
-    height: 4,
-    backgroundColor: DARK,
+    width: 12,
+    height: 1,
+    backgroundColor: colors.border,
   },
 
-  // Month nav
   monthNav: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 6,
   },
-  monthNavBtnInner: {
-    width: 34,
-    height: 34,
+  monthNavBtn: {
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 9999,
   },
   monthLabel: {
-    fontFamily: 'SpaceGrotesk-Bold',
+    fontFamily: 'Manrope-SemiBold',
     fontSize: 14,
-    color: DARK,
-    letterSpacing: 0.5,
+    color: colors.dark,
+    letterSpacing: -0.1,
   },
 
-  // Day headers
   weekRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -401,12 +396,11 @@ const styles = StyleSheet.create({
   weekDay: {
     flex: 1,
     textAlign: 'center',
-    fontFamily: 'SpaceGrotesk-Bold',
+    fontFamily: 'Manrope-SemiBold',
     fontSize: 11,
-    color: `${DARK}40`,
+    color: colors.fgTertiary,
   },
 
-  // Grid
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -425,7 +419,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 32,
-    backgroundColor: `${colors.brand}15`,
+    backgroundColor: colors.overlayLight,
   },
   rangeCapRight: {
     position: 'absolute',
@@ -433,7 +427,7 @@ const styles = StyleSheet.create({
     width: '50%',
     height: 32,
     top: (CELL_SIZE - 32) / 2,
-    backgroundColor: `${colors.brand}15`,
+    backgroundColor: colors.overlayLight,
   },
   rangeCapLeft: {
     position: 'absolute',
@@ -441,54 +435,54 @@ const styles = StyleSheet.create({
     width: '50%',
     height: 32,
     top: (CELL_SIZE - 32) / 2,
-    backgroundColor: `${colors.brand}15`,
+    backgroundColor: colors.overlayLight,
   },
   cell: {
-    width: 34,
-    height: 34,
-    borderRadius: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
   },
   cellSelected: {
     backgroundColor: colors.brand,
-    borderWidth: 2,
-    borderColor: DARK,
   },
   cellToday: {
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: colors.brand,
   },
   cellText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 14,
-    color: DARK,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 13,
+    color: colors.dark,
   },
   cellTextOther: {
-    color: `${DARK}15`,
-    fontFamily: 'SpaceGrotesk-Medium',
+    color: colors.overlayMedium,
+    fontFamily: 'Manrope-Medium',
   },
   cellTextSelected: {
-    color: 'white',
+    color: colors.fgOnBrand,
   },
 
-  // Today shortcut
   todayWrap: {
     alignSelf: 'center',
     marginTop: 12,
   },
-  todayInner: {
+  todayBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceCard,
   },
   todayText: {
-    fontFamily: 'SpaceGrotesk-Bold',
+    fontFamily: 'Manrope-SemiBold',
     fontSize: 12,
-    color: DARK,
-    letterSpacing: 0.2,
+    color: colors.dark,
   },
 });

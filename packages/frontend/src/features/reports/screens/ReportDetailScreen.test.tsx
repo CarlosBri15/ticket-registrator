@@ -35,22 +35,24 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
 
 vi.mock('../hooks/useReportDetailActions', () => ({
   useReportDetailActions: () => ({
-    handleSubmit: vi.fn(),
-    handleApprove: vi.fn(),
-    handleReject: vi.fn(),
-    handleDelete: vi.fn(),
+    // Modal visibility
+    submitConfirm: false,
+    setSubmitConfirm: vi.fn(),
+    deleteConfirm: false,
+    setDeleteConfirm: vi.fn(),
+    approveConfirm: false,
+    setApproveConfirm: vi.fn(),
+    declineConfirm: false,
+    setDeclineConfirm: vi.fn(),
+    // Mutation state
     isSubmitting: false,
-    isApproving: false,
-    isRejecting: false,
     isDeleting: false,
-    rejectReason: '',
-    setRejectReason: vi.fn(),
-    isRejectModalOpen: false,
-    openRejectModal: vi.fn(),
-    closeRejectModal: vi.fn(),
-    isDeleteConfirmOpen: false,
-    openDeleteConfirm: vi.fn(),
-    closeDeleteConfirm: vi.fn(),
+    isUpdatingStatus: false,
+    // Handlers
+    handleSubmit: vi.fn(),
+    handleDelete: vi.fn(),
+    handleApprove: vi.fn(),
+    handleDecline: vi.fn(),
   }),
 }));
 
@@ -83,8 +85,7 @@ vi.mock('../../../components/ui/StatusBadge', () => ({
 }));
 
 vi.mock('../components/ConfirmDialog', () => ({
-  ConfirmDialog: ({ isOpen }: any) =>
-    isOpen ? <div data-testid="confirm-dialog" /> : null,
+  ConfirmDialog: ({ title }: any) => <div data-testid="confirm-dialog">{title}</div>,
 }));
 
 import {
@@ -190,5 +191,115 @@ describe('ReportDetailScreen', () => {
   it('does not render charts when there are no tickets', () => {
     renderScreen();
     expect(screen.queryByTestId('donut')).not.toBeInTheDocument();
+  });
+
+  // ── New header behaviour tests ─────────────────────────────────────────────
+
+  it('renders the headline amount and currency in the header', () => {
+    // REPORT has requested_amount=500, currency='EUR', status=CREATED (not approved)
+    // headlineAmount = ticketsTotal(0) || requested_amount(500) = 500
+    renderScreen();
+    // toLocaleString() of 500 → '500' (no tickets so ticketsTotal is 0, fallback to requested_amount)
+    expect(screen.getByText('500')).toBeInTheDocument();
+    // Currency label rendered separately as a <span>
+    const currencyNodes = screen.getAllByText('EUR');
+    expect(currencyNodes.length).toBeGreaterThan(0);
+  });
+
+  it('renders the "rejected" line when report is approved and approved_amount < requested_amount', () => {
+    setupMocks({
+      useReportQuery: {
+        data: {
+          ...REPORT,
+          status: 'APPROVED',
+          requested_amount: 1000,
+          approved_amount: 800,
+        },
+        isLoading: false,
+        isError: false,
+      },
+      useTicketsQuery: { data: [], isLoading: false },
+    });
+    renderScreen();
+    // rejected = 1000 - 800 = 200; label key is 'reportDetail.rejected'.
+    // Multiple elements may match (header span + FinancialSummary dt), so use getAllByText.
+    const rejectedNodes = screen.getAllByText(/reportDetail\.rejected/i);
+    expect(rejectedNodes.length).toBeGreaterThan(0);
+    // The header span includes the full text 'reportDetail.rejected · 200 EUR'
+    const headerSpan = rejectedNodes.find(
+      (el) => el.tagName.toLowerCase() === 'span',
+    );
+    expect(headerSpan).toBeInTheDocument();
+    expect(headerSpan?.textContent).toMatch(/200/);
+  });
+
+  it('does NOT render the "rejected" line when approved_amount equals requested_amount', () => {
+    setupMocks({
+      useReportQuery: {
+        data: {
+          ...REPORT,
+          status: 'APPROVED',
+          requested_amount: 500,
+          approved_amount: 500,
+        },
+        isLoading: false,
+        isError: false,
+      },
+      useTicketsQuery: { data: [], isLoading: false },
+    });
+    renderScreen();
+    expect(screen.queryByText(/reportDetail\.rejected/i)).not.toBeInTheDocument();
+  });
+
+  it('renders ticket count in the meta-row via layout.allTickets label', () => {
+    setupMocks({
+      useTicketsQuery: {
+        data: [
+          { id: 't1', amount: 100, items: [] },
+          { id: 't2', amount: 50, items: [] },
+          { id: 't3', amount: 75, items: [] },
+        ],
+        isLoading: false,
+      },
+    });
+    renderScreen();
+    // Both the meta-row MetaItem and the section heading use 'layout.allTickets' as label.
+    const labels = screen.getAllByText('layout.allTickets');
+    expect(labels.length).toBeGreaterThanOrEqual(1);
+    // The MetaItem value span (tabular-nums class) must contain '3'.
+    // Multiple '3' nodes may exist (section badge), so check the tabular-nums spans.
+    const tabularSpans = document
+      .querySelectorAll('span.tabular-nums');
+    const countSpan = Array.from(tabularSpans).find(
+      (el) => el.textContent?.trim() === '3',
+    );
+    expect(countSpan).toBeInTheDocument();
+  });
+
+  it('renders the reportDetail.totalRequested label in the header for non-approved reports', () => {
+    renderScreen();
+    // When not approved, the label span shows only 'reportDetail.totalRequested'
+    expect(screen.getByText('reportDetail.totalRequested')).toBeInTheDocument();
+  });
+
+  it('renders the approved label prefix when report is approved', () => {
+    setupMocks({
+      useReportQuery: {
+        data: {
+          ...REPORT,
+          status: 'APPROVED',
+          requested_amount: 500,
+          approved_amount: 500,
+        },
+        isLoading: false,
+        isError: false,
+      },
+      useTicketsQuery: { data: [], isLoading: false },
+    });
+    renderScreen();
+    // When approved, label = 'reportDetail.approved · reportDetail.totalRequested'
+    expect(
+      screen.getByText('reportDetail.approved · reportDetail.totalRequested'),
+    ).toBeInTheDocument();
   });
 });

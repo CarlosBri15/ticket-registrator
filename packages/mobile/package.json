@@ -14,9 +14,8 @@
   },
   "scheme": "ticket-registrator",
   "dependencies": {
-    "@expo-google-fonts/space-grotesk": "^0.4.1",
+    "@expo-google-fonts/manrope": "^0.4.1",
     "@expo/vector-icons": "^15.0.3",
-    "@tabler/icons-react-native": "^3.41.1",
     "@tanstack/react-query": "^5.90.20",
     "@ticket-registrator/shared": "*",
     "axios": "^1.13.4",

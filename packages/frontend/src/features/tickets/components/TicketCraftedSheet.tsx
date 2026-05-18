@@ -22,12 +22,12 @@ interface TicketCraftedSheetProps {
   onClose: () => void;
   onEdit?: () => void;
   isEditable?: boolean;
-  // Item approval wiring
+  // Item approval wiring — clicks persist immediately, no save step.
   getItemStatus: (item: IItem) => string;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
-  onSaveItems: () => void;
-  hasItemChanges: boolean;
+  onApproveAll?: () => void;
+  onRejectAll?: () => void;
   isSavingItems: boolean;
 }
 
@@ -48,8 +48,8 @@ export const TicketCraftedSheet = ({
   getItemStatus,
   onApprove,
   onReject,
-  onSaveItems,
-  hasItemChanges,
+  onApproveAll,
+  onRejectAll,
   isSavingItems,
 }: TicketCraftedSheetProps) => {
   const { t } = useTranslation();
@@ -222,8 +222,8 @@ export const TicketCraftedSheet = ({
             getItemStatus={getItemStatus}
             onApprove={onApprove}
             onReject={onReject}
-            onSave={onSaveItems}
-            hasChanges={hasItemChanges}
+            onApproveAll={onApproveAll}
+            onRejectAll={onRejectAll}
             isSaving={isSavingItems}
             variant="ledger"
           />

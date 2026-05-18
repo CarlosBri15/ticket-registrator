@@ -9,28 +9,22 @@ import {
 } from 'react-native';
 import { useState, useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { 
-  IconPlus, 
-  IconSend, 
-  IconSearch, 
-  IconClock, 
-  IconChevronDown, 
-  IconChevronUp 
-} from '@tabler/icons-react-native';
+import {
+  Plus,
+  Send,
+  Search,
+  Clock,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
-import {
-  PixelCard,
-  DARK,
-  CARD_BG,
-  SCREEN_BG,
-  BORDER_WIDTH,
-  colors,
-} from '../../../src/components/ui/PixelCard';
+import { Card } from '../../../src/components/ui/Card';
 import { HeroReportCard, PendingReportCard, HistoryRow } from '../../../src/components/features/ReportListItem';
 import { EmptyState } from '../../../src/components/ui/EmptyState';
 import { ReportsFilterPanel } from '../../../src/components/features/ReportsFilterPanel';
+import { colors } from '../../../src/constants/theme';
 
 import { useReportsScreen } from '../../../src/hooks/useReportsScreen';
 import { getDateLocale } from '../../../src/utils/date';
@@ -46,7 +40,7 @@ export default function ReportsScreen() {
   useFocusEffect(
     useCallback(() => {
       setIsCreating(false);
-    }, [])
+    }, []),
   );
 
   const {
@@ -76,28 +70,30 @@ export default function ReportsScreen() {
 
   return (
     <View style={s.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor={CARD_BG} />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surfaceCard} />
+      <View style={{ height: insets.top, backgroundColor: colors.surfaceCard }} />
 
-      {/* Rellena el área del notch/status bar con el color del header */}
-      <View style={{ height: insets.top, backgroundColor: CARD_BG }} />
-
-      {/* ── Header ── */}
-      <View style={s.header}>
-        <Text style={s.headerTitle}>{t('trips.title')}</Text>
-        <PixelCard
-          bg={colors.brand}
-          shadowOffset={3}
-          radius={8}
-          active={isCreating}
+      {/* ── Page header (kit `.page-head`) ── */}
+      <View style={s.pageHead}>
+        <View style={s.pageHeadText}>
+          <Text style={s.pageTitle}>{t('trips.title')}</Text>
+          <Text style={s.pageSubtitle}>
+            {reports?.length ?? 0} reportes · {filteredPending.length} por enviar
+          </Text>
+        </View>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="create report"
           onPress={() => { setIsCreating(true); router.push('/(app)/reports/create'); }}
+          activeOpacity={0.85}
+          disabled={isCreating}
+          style={[s.pageHeadBtn, isCreating && { opacity: 0.6 }]}
         >
-          <View style={s.headerBtn}>
-            <IconPlus size={20} color="white" />
-          </View>
-        </PixelCard>
+          <Plus size={16} color={colors.fgOnBrand} strokeWidth={2} />
+          <Text style={s.pageHeadBtnText}>Nuevo</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* ── Filtros — fuera del scroll, chrome fijo ── */}
       <ReportsFilterPanel
         search={search} onSearch={setSearch}
         startDate={startDate} onStartDate={setStartDate}
@@ -116,9 +112,7 @@ export default function ReportsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />
         }
       >
-
-        {/* ── Sin reportes en absoluto ── */}
-        {!isLoading && !reports?.length && (
+        {!isLoading && !reports?.length ? (
           <EmptyState
             icon={reportIcon}
             title={t('trips.noTickets')}
@@ -126,10 +120,9 @@ export default function ReportsScreen() {
             buttonLabel={t('home.createFirst')}
             onButtonPress={() => router.push('/(app)/reports/create')}
           />
-        )}
+        ) : null}
 
-        {/* ── Reporte activo ── */}
-        {currentReport && (
+        {currentReport ? (
           <View style={s.section}>
             <HeroReportCard
               report={currentReport}
@@ -137,65 +130,62 @@ export default function ReportsScreen() {
               dateLocale={dateLocale}
             />
           </View>
-        )}
+        ) : null}
 
-        {/* ── Por enviar ── */}
-        {(filteredPending.length > 0 ||
-          (!isLoading && !currentReport && (reports?.length ?? 0) > 0)) && (
-            <View style={s.section}>
-              <View style={s.sectionHeader}>
-                <IconSend size={11} color={DARK} />
-                <Text style={s.sectionTitle}>Por enviar</Text>
-                {filteredPending.length > 0 && (
-                  <View style={s.countPill}>
-                    <Text style={s.countPillText}>{filteredPending.length}</Text>
-                  </View>
-                )}
-              </View>
-
-              {(() => {
-                if (filteredPending.length > 0) {
-                  return filteredPending.map(r => (
-                    <PendingReportCard
-                      key={r.id}
-                      report={r}
-                      onPress={() => router.push(`/(app)/reports/${r.id}`)}
-                      dateLocale={dateLocale}
-                    />
-                  ));
-                }
-                if (hasActiveFilters) {
-                  return (
-                    <PixelCard bg={CARD_BG} shadowOffset={3}>
-                      <View style={s.emptySmallInner}>
-                        <IconSearch size={22} color={`${DARK}40`} />
-                        <Text style={s.emptySmallText}>{t('trips.noResultsFilter')}</Text>
-                        <TouchableOpacity onPress={clearFilters}>
-                          <Text style={s.clearBtn}>{t('trips.filterClearAll')}</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </PixelCard>
-                  );
-                }
-                return (
-                  <EmptyState
-                    icon={reportIcon}
-                    title={t('trips.noActiveTrips')}
-                    description={t('trips.primerViajeDesc')}
-                    buttonLabel={t('home.createFirst')}
-                    onButtonPress={() => router.push('/(app)/reports/create')}
-                  />
-                );
-              })()}
-            </View>
-          )}
-
-
-        {/* ── Historial — últimos 5 ── */}
-        {filteredCompleted.length > 0 && (
+        {(filteredPending.length > 0
+          || (!isLoading && !currentReport && (reports?.length ?? 0) > 0)) ? (
           <View style={s.section}>
             <View style={s.sectionHeader}>
-              <IconClock size={11} color={DARK} />
+              <Send size={12} color={colors.fgSecondary} strokeWidth={2} />
+              <Text style={s.sectionTitle}>Por enviar</Text>
+              {filteredPending.length > 0 ? (
+                <View style={s.countPill}>
+                  <Text style={s.countPillText}>{filteredPending.length}</Text>
+                </View>
+              ) : null}
+            </View>
+
+            {(() => {
+              if (filteredPending.length > 0) {
+                return filteredPending.map((r) => (
+                  <PendingReportCard
+                    key={r.id}
+                    report={r}
+                    onPress={() => router.push(`/(app)/reports/${r.id}`)}
+                    dateLocale={dateLocale}
+                  />
+                ));
+              }
+              if (hasActiveFilters) {
+                return (
+                  <Card>
+                    <View style={s.emptySmallInner}>
+                      <Search size={22} color={colors.fgQuaternary} strokeWidth={2} />
+                      <Text style={s.emptySmallText}>{t('trips.noResultsFilter')}</Text>
+                      <TouchableOpacity onPress={clearFilters}>
+                        <Text style={s.clearBtn}>{t('trips.filterClearAll')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </Card>
+                );
+              }
+              return (
+                <EmptyState
+                  icon={reportIcon}
+                  title={t('trips.noActiveTrips')}
+                  description={t('trips.primerViajeDesc')}
+                  buttonLabel={t('home.createFirst')}
+                  onButtonPress={() => router.push('/(app)/reports/create')}
+                />
+              );
+            })()}
+          </View>
+        ) : null}
+
+        {filteredCompleted.length > 0 ? (
+          <View style={s.section}>
+            <View style={s.sectionHeader}>
+              <Clock size={12} color={colors.fgSecondary} strokeWidth={2} />
               <Text style={s.sectionTitle}>{t('trips.history')}</Text>
               <View style={s.countPill}>
                 <Text style={s.countPillText}>{filteredCompleted.length}</Text>
@@ -209,98 +199,115 @@ export default function ReportsScreen() {
                 dateLocale={dateLocale}
               />
             ))}
-            {hiddenCount > 0 && !showAllHistory && (
+            {hiddenCount > 0 && !showAllHistory ? (
               <TouchableOpacity
                 onPress={() => setShowAllHistory(true)}
                 style={s.seeAllBtn}
+                activeOpacity={0.85}
               >
                 <Text style={s.seeAllText}>Ver todos</Text>
                 <View style={s.seeAllBadge}>
                   <Text style={s.seeAllBadgeText}>+{hiddenCount}</Text>
                 </View>
-                <IconChevronDown size={13} color={DARK} />
+                <ChevronDown size={14} color={colors.dark} strokeWidth={2} />
               </TouchableOpacity>
-            )}
-            {showAllHistory && filteredCompleted.length > HISTORY_LIMIT && (
+            ) : null}
+            {showAllHistory && filteredCompleted.length > HISTORY_LIMIT ? (
               <TouchableOpacity
                 onPress={() => setShowAllHistory(false)}
                 style={s.seeAllBtn}
+                activeOpacity={0.85}
               >
                 <Text style={s.seeAllText}>Ver menos</Text>
-                <IconChevronUp size={13} color={DARK} />
+                <ChevronUp size={14} color={colors.dark} strokeWidth={2} />
               </TouchableOpacity>
-            )}
+            ) : null}
           </View>
-        )}
+        ) : null}
       </ScrollView>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: SCREEN_BG },
+  screen: { flex: 1, backgroundColor: colors.surface },
 
-  header: {
+  pageHead: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    paddingHorizontal: 22,
+    paddingTop: 14,
+    paddingBottom: 18,
+    gap: 12,
+  },
+  pageHeadText: { flex: 1, minWidth: 0 },
+  pageTitle: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 34,
+    color: colors.dark,
+    letterSpacing: -1,
+    lineHeight: 36,
+  },
+  pageSubtitle: {
+    fontFamily: 'Manrope-Medium',
+    fontSize: 13,
+    color: colors.fgSecondary,
+    marginTop: 6,
+  },
+  pageHeadBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 10,
-    paddingBottom: 12,
-    backgroundColor: CARD_BG,
-    borderBottomWidth: 4,
-    borderBottomColor: DARK,
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    backgroundColor: colors.brand,
+    borderRadius: 9999,
   },
-  headerTitle: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 24,
-    color: DARK,
-    letterSpacing: 0.5,
-  },
-  headerBtn: {
-    width: 34,
-    height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
+  pageHeadBtnText: {
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 12,
+    color: colors.fgOnBrand,
   },
 
   scroll: { padding: 20, paddingBottom: 120 },
 
-  section: { marginBottom: 32 },
+  section: { marginBottom: 28 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
   sectionTitle: {
     flex: 1,
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 12,
-    color: DARK,
-    letterSpacing: 0.3,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 13,
+    color: colors.dark,
+    letterSpacing: -0.1,
   },
   countPill: {
-    backgroundColor: CARD_BG,
+    backgroundColor: colors.surfaceSunken,
     paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderWidth: BORDER_WIDTH,
-    borderColor: DARK,
-    borderRadius: 6,
+    paddingVertical: 2,
+    borderRadius: 9999,
   },
   countPillText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 10,
-    color: DARK,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 11,
+    color: colors.dark,
   },
 
-  emptySmallInner: { alignItems: 'center', paddingVertical: 26, paddingHorizontal: 20, gap: 10 },
+  emptySmallInner: {
+    alignItems: 'center',
+    paddingVertical: 26,
+    paddingHorizontal: 20,
+    gap: 10,
+  },
   emptySmallText: {
-    fontFamily: 'SpaceGrotesk-SemiBold',
-    fontSize: 12,
-    color: `${DARK}70`,
-    letterSpacing: 0.2,
+    fontFamily: 'Manrope-Medium',
+    fontSize: 13,
+    color: colors.fgSecondary,
   },
   clearBtn: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 12,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 13,
     color: colors.brand,
-    letterSpacing: 0.2,
   },
 
   seeAllBtn: {
@@ -309,25 +316,24 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 14,
-    borderTopWidth: BORDER_WIDTH,
-    borderTopColor: `${DARK}12`,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
     marginTop: 4,
   },
   seeAllText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 12,
-    color: DARK,
-    letterSpacing: 0.3,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 13,
+    color: colors.dark,
   },
   seeAllBadge: {
-    backgroundColor: DARK,
-    borderRadius: 4,
-    paddingHorizontal: 6,
+    backgroundColor: colors.brand,
+    borderRadius: 9999,
+    paddingHorizontal: 8,
     paddingVertical: 2,
   },
   seeAllBadgeText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 9,
-    color: CARD_BG,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 10,
+    color: colors.fgOnBrand,
   },
 });

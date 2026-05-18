@@ -56,8 +56,15 @@ export const OrganizationsScreen = () => {
     <>
       <ResourceListScreen<IOrganization>
         title="Organizaciones"
-        subtitle="Gestión global de todas las organizaciones."
-        stats={hasAny ? [{ label: "Total", value: totalOrgs }] : undefined}
+        stats={
+          hasAny
+            ? [{
+                label: "Total",
+                value: totalOrgs,
+                icon: <Building className="w-4 h-4" aria-hidden={true} />,
+              }]
+            : undefined
+        }
         headerActions={
           can("create_company") ? (
             <Button

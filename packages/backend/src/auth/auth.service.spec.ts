@@ -55,7 +55,7 @@ describe('AuthService', () => {
       usersServiceMock.findByEmail.mockResolvedValue(mockUser);
       cryptoServiceMock.comparePassword.mockResolvedValue(true);
 
-      const result = await service.login(loginDto as any);
+      const result = await service.login(loginDto);
       expect(result.access_token).toBe('mock-jwt-token');
       expect(jwtServiceMock.sign).toHaveBeenCalledWith(
         expect.objectContaining({ sub: 'user-1', username: 'john' }),
@@ -81,7 +81,7 @@ describe('AuthService', () => {
       usersServiceMock.findByEmail.mockResolvedValue(mockUser);
       cryptoServiceMock.comparePassword.mockResolvedValue(true);
 
-      await service.login(loginDto as any);
+      await service.login(loginDto);
 
       expect(jwtServiceMock.sign).toHaveBeenCalledWith({
         sub: 'user-1',
@@ -100,7 +100,7 @@ describe('AuthService', () => {
       });
       cryptoServiceMock.comparePassword.mockResolvedValue(true);
 
-      const result = await service.login(loginDto as any);
+      const result = await service.login(loginDto);
       expect(result.access_token).toBe('mock-jwt-token');
     });
 
@@ -111,7 +111,7 @@ describe('AuthService', () => {
       });
       cryptoServiceMock.comparePassword.mockResolvedValue(true);
 
-      const result = await service.login(loginDto as any);
+      const result = await service.login(loginDto);
       expect(result.access_token).toBe('mock-jwt-token');
       expect(jwtServiceMock.sign).toHaveBeenCalledWith(
         expect.objectContaining({ departmentIds: [] }),

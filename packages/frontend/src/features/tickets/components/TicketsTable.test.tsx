@@ -58,12 +58,12 @@ describe('TicketsTable', () => {
     expect(screen.getByText('reportDetail.noTicketName')).toBeInTheDocument();
   });
 
-  it('renders the payment type label when present', () => {
+  it('does not render the payment column (removed from the supervisor table)', () => {
     render(<TicketsTable tickets={[buildTicket({ payment_type: 'Tarjeta' })]} />);
-    expect(screen.getByText('Tarjeta')).toBeInTheDocument();
+    expect(screen.queryByText('Tarjeta')).not.toBeInTheDocument();
   });
 
-  it('renders em dashes when payment_type, amount, dates are missing', () => {
+  it('renders em dashes when amount and dates are missing', () => {
     render(
       <TicketsTable
         tickets={[

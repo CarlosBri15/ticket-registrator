@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TicketsController } from './tickets.controller';
 import { TicketsService } from './tickets.service';
-import { TicketStatus } from '@ticket-registrator/shared';
+import { TicketStatus, ItemStatus } from '@ticket-registrator/shared';
 import { RolesService } from '../roles/roles.service';
 import { Reflector } from '@nestjs/core';
 
@@ -17,6 +17,8 @@ describe('TicketsController', () => {
       findOne: jest.fn(),
       update: jest.fn(),
       updateStatus: jest.fn(),
+      updateItemStatus: jest.fn(),
+      updateAllItemsStatus: jest.fn(),
       remove: jest.fn(),
       hardDelete: jest.fn(),
       getTicketImageUrl: jest.fn(),
@@ -130,6 +132,54 @@ describe('TicketsController', () => {
     });
   });
 
+  describe('updateItemStatus', () => {
+    it('should call service.updateItemStatus with correct arguments', async () => {
+      const requester = { id: 'user-1' } as any;
+      const dto = { status: ItemStatus.APPROVED } as any;
+      serviceMock.updateItemStatus.mockResolvedValue({ id: 'ticket-1' });
+
+      const result = await controller.updateItemStatus(
+        requester,
+        'report-1',
+        'ticket-1',
+        'item-1',
+        dto,
+      );
+
+      expect(serviceMock.updateItemStatus).toHaveBeenCalledWith(
+        requester,
+        'report-1',
+        'ticket-1',
+        'item-1',
+        dto,
+      );
+      expect(result.id).toBe('ticket-1');
+    });
+  });
+
+  describe('updateAllItemsStatus', () => {
+    it('should call service.updateAllItemsStatus with correct arguments', async () => {
+      const requester = { id: 'user-1' } as any;
+      const dto = { status: ItemStatus.REJECTED } as any;
+      serviceMock.updateAllItemsStatus.mockResolvedValue({ id: 'ticket-1' });
+
+      const result = await controller.updateAllItemsStatus(
+        requester,
+        'report-1',
+        'ticket-1',
+        dto,
+      );
+
+      expect(serviceMock.updateAllItemsStatus).toHaveBeenCalledWith(
+        requester,
+        'report-1',
+        'ticket-1',
+        dto,
+      );
+      expect(result.id).toBe('ticket-1');
+    });
+  });
+
   describe('remove', () => {
     it('should call service.remove', async () => {
       const requester = { id: 'user-1' } as any;
@@ -165,7 +215,6 @@ describe('TicketsController', () => {
   });
 
   describe('getImage', () => {
-
     it('should call service.getTicketImageUrl', async () => {
       const requester = { id: 'user-1' } as any;
       serviceMock.getTicketImageUrl.mockResolvedValue({

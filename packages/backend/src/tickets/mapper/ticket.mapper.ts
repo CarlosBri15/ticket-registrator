@@ -5,7 +5,7 @@ import {
   TicketLifecycleType,
 } from '@ticket-registrator/shared';
 
-export const mapTicketToITicket = (ticketDoc: TicketWithItems,): ITicket => ({
+export const mapTicketToITicket = (ticketDoc: TicketWithItems): ITicket => ({
   id: ticketDoc.id,
   report_id: ticketDoc.reportId,
   status: ticketDoc.status as TicketStatusType,
@@ -17,6 +17,7 @@ export const mapTicketToITicket = (ticketDoc: TicketWithItems,): ITicket => ({
   location_name: ticketDoc.locationName,
   location_address: ticketDoc.locationAddress,
   amount: ticketDoc.amount,
+  approved_amount: ticketDoc.approvedAmount ?? 0,
   currency: ticketDoc.currency,
   converted_amount: ticketDoc.convertedAmount,
   converted_currency: ticketDoc.convertedCurrency,
@@ -35,6 +36,7 @@ export const mapTicketToITicket = (ticketDoc: TicketWithItems,): ITicket => ({
       categoryId: item.categoryId,
       categoryName: item.category?.name,
       categoryColor: item.category?.color ?? null,
+      categoryIcon: item.category?.icon ?? null,
     })) ?? [],
   createdAt: ticketDoc.createdAt?.toISOString() ?? new Date().toISOString(),
   updatedAt: ticketDoc.updatedAt?.toISOString() ?? new Date().toISOString(),

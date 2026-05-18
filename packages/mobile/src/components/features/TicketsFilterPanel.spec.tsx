@@ -1,18 +1,18 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 
-jest.mock('@tabler/icons-react-native', () => {
+jest.mock('lucide-react-native', () => {
   const React = require('react');
   const { Text } = require('react-native');
   const stub = (name: string) => () => React.createElement(Text, null, `icon-${name}`);
   return {
-    IconSearch: stub('search'),
-    IconX: stub('x'),
-    IconFileDescription: stub('file-desc'),
-    IconUpload: stub('upload'),
-    IconFolder: stub('folder'),
-    IconChevronDown: stub('chevron-down'),
-    IconCheck: stub('check'),
+    Search: stub('search'),
+    X: stub('x'),
+    FileText: stub('file-desc'),
+    Upload: stub('upload'),
+    Folder: stub('folder'),
+    ChevronDown: stub('chevron-down'),
+    Check: stub('check'),
   };
 });
 
@@ -63,21 +63,19 @@ describe('TicketsFilterPanel', () => {
     expect(onSearch).toHaveBeenCalledWith('test');
   });
 
-  it('clear button is invisible when hasFilters is false', () => {
-    const { UNSAFE_getAllByType } = render(<TicketsFilterPanel {...BASE_PROPS} hasFilters={false} />);
-    const { TouchableOpacity } = require('react-native');
-    const clearBtn = UNSAFE_getAllByType(TouchableOpacity).find(
-      (t: any) => t.props.style?.opacity === 0
+  it('does not render clear button when hasFilters is false', () => {
+    const { queryByLabelText } = render(
+      <TicketsFilterPanel {...BASE_PROPS} hasFilters={false} />,
     );
-    expect(clearBtn).toBeTruthy();
+    expect(queryByLabelText('clear filters')).toBeNull();
   });
 
   it('clear button is visible and calls onClear when hasFilters is true', () => {
     const onClear = jest.fn();
-    const { getByText } = render(
-      <TicketsFilterPanel {...BASE_PROPS} hasFilters={true} onClear={onClear} />
+    const { getByLabelText } = render(
+      <TicketsFilterPanel {...BASE_PROPS} hasFilters={true} onClear={onClear} />,
     );
-    fireEvent.press(getByText('icon-x'));
+    fireEvent.press(getByLabelText('clear filters'));
     expect(onClear).toHaveBeenCalled();
   });
 

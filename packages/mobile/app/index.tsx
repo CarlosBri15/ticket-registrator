@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { tokenProvider, initApi } from '../src/api/client';
+import { colors } from '../src/constants/theme';
 
 export default function Index() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function Index() {
 
   return (
     <View className="flex-1 justify-center items-center bg-surface">
-      <ActivityIndicator size="large" color="#336b87" />
+      <ActivityIndicator size="large" color={colors.brand} />
     </View>
   );
 }

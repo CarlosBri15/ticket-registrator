@@ -65,4 +65,39 @@ describe('useReportFilterState', () => {
     act(() => { result.current.setShowAllHistory(false); });
     expect(result.current.showAllHistory).toBe(false);
   });
+
+  describe('defaultStatusFilter option', () => {
+    it('initializes statusFilter to the provided default', () => {
+      const { result } = renderHook(() =>
+        useReportFilterState({ defaultStatusFilter: 'Submitted' }),
+      );
+      expect(result.current.statusFilter).toBe('Submitted');
+      expect(result.current.hasActiveFilters).toBe(false);
+    });
+
+    it('hasActiveFilters is false while statusFilter equals the custom default', () => {
+      const { result } = renderHook(() =>
+        useReportFilterState({ defaultStatusFilter: 'Submitted' }),
+      );
+      // Even though the value is not "ALL", it equals the default → neutral.
+      expect(result.current.hasActiveFilters).toBe(false);
+    });
+
+    it('hasActiveFilters is true when statusFilter diverges from the custom default', () => {
+      const { result } = renderHook(() =>
+        useReportFilterState({ defaultStatusFilter: 'Submitted' }),
+      );
+      act(() => { result.current.setStatusFilter('APPROVED'); });
+      expect(result.current.hasActiveFilters).toBe(true);
+    });
+
+    it('clearFilters resets statusFilter back to the custom default', () => {
+      const { result } = renderHook(() =>
+        useReportFilterState({ defaultStatusFilter: 'Submitted' }),
+      );
+      act(() => { result.current.setStatusFilter('APPROVED'); });
+      act(() => { result.current.clearFilters(); });
+      expect(result.current.statusFilter).toBe('Submitted');
+    });
+  });
 });

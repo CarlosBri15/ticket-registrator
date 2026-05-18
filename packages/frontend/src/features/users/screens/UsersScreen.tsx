@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Users } from "lucide-react";
 import {
   useUsersQuery,
   useRolesQuery,
@@ -65,7 +65,11 @@ export const UsersScreen = () => {
   const hasAnyUsers = totalUsers > 0;
 
   const stats = useMemo(
-    () => [{ label: t("users.totalUsers", "Total"), value: totalUsers }],
+    () => [{
+      label: t("users.totalUsers", "Total"),
+      value: totalUsers,
+      icon: <Users className="w-4 h-4" aria-hidden={true} />,
+    }],
     [totalUsers, t],
   );
 

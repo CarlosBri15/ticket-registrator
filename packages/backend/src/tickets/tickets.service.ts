@@ -25,6 +25,7 @@ import { ReportNotFoundException } from '../reports/exceptions/reports.exception
 import {
   UpdateTicketFieldsDto,
   UpdateTicketStatusDto,
+  UpdateItemStatusDto,
 } from './dto/update-ticket-user.dto';
 import * as schema from '../db/schema';
 import { Ticket, InsertTicket, TicketWithItems } from './schemas/ticket.schema';
@@ -42,7 +43,7 @@ export class TicketsService {
     private readonly geminiService: GeminiService,
     private readonly storageService: StorageService,
     private readonly cryptoService: CryptoService,
-  ) { }
+  ) {}
 
   async create(
     requester: UserPayload,
@@ -89,7 +90,9 @@ export class TicketsService {
         if (oldRatioStr && newRatioStr) {
           // New format: Check aspect ratio first (tolerance 5%)
           if (
-            Math.abs(Number.parseFloat(oldRatioStr) - Number.parseFloat(newRatioStr)) > 0.05
+            Math.abs(
+              Number.parseFloat(oldRatioStr) - Number.parseFloat(newRatioStr),
+            ) > 0.05
           )
             continue;
 
@@ -187,7 +190,7 @@ export class TicketsService {
         buffer: compressedBuffer,
         mimetype: 'image/webp',
         originalname: `${originalName}.webp`,
-      } as Express.Multer.File;
+      };
     }
 
     const imageIdentifier = await this.storageService.uploadFile(uploadFile);
@@ -233,7 +236,8 @@ export class TicketsService {
     const fullTicket = (await this.ticketsRepository.findById(ticket.id)) as
       | TicketWithItems
       | undefined;
-    if (fullTicket?.reportId !== reportId) throw new TicketNotFoundException(ticket.id);
+    if (fullTicket?.reportId !== reportId)
+      throw new TicketNotFoundException(ticket.id);
     return mapTicketToITicket(fullTicket);
   }
 
@@ -309,6 +313,83 @@ export class TicketsService {
     this.logger.log(`Ticket updated: ${ticketId} by user ${requester.id}`);
 
     // Refresh to get items
+    return this.findOne(requester, reportId, ticketId);
+  }
+
+  /**
+   * Per-item supervisor decision: toggles a single item between APPROVED /
+   * REJECTED / PENDING / PARTIALLY_APPROVED without touching any other item,
+   * ticket field or report state. Only callable while the parent report is
+   * SUBMITTED — the supervisor's review window.
+   *
+   * Bypasses the destructive `update(items)` flow that delete-and-reinserts
+   * the whole items array (and reset every status to PENDING in the process).
+   */
+  async updateItemStatus(
+    requester: UserPayload,
+    reportId: string,
+    ticketId: string,
+    itemId: string,
+    dto: UpdateItemStatusDto,
+  ): Promise<ITicket> {
+    const report = await this.getReportOrThrow(reportId);
+    if (report.status !== ReportStatus.SUBMITTED) {
+      throw new TicketStatusConflictException(
+        'Items can only be reviewed while the report is submitted',
+      );
+    }
+
+    const currentTicket = await this.ticketsRepository.findById(ticketId);
+    if (currentTicket?.reportId !== reportId) {
+      throw new TicketNotFoundException(ticketId);
+    }
+
+    const updated = await this.ticketsRepository.updateItemStatus(
+      ticketId,
+      itemId,
+      dto.status,
+    );
+    if (!updated) {
+      // Either the item id doesn't exist or it belongs to a different ticket.
+      throw new TicketNotFoundException(itemId);
+    }
+
+    this.logger.log(
+      `Item status updated: ${itemId} on ticket ${ticketId} to ${dto.status} by user ${requester.id}`,
+    );
+
+    return this.findOne(requester, reportId, ticketId);
+  }
+
+  /**
+   * Bulk supervisor decision: marks every item of the ticket with the given
+   * status in a single transaction. Used by the "Approve all" / "Reject all"
+   * shortcut buttons in the ticket detail modal — saves N round-trips.
+   */
+  async updateAllItemsStatus(
+    requester: UserPayload,
+    reportId: string,
+    ticketId: string,
+    dto: UpdateItemStatusDto,
+  ): Promise<ITicket> {
+    const report = await this.getReportOrThrow(reportId);
+    if (report.status !== ReportStatus.SUBMITTED) {
+      throw new TicketStatusConflictException(
+        'Items can only be reviewed while the report is submitted',
+      );
+    }
+
+    const currentTicket = await this.ticketsRepository.findById(ticketId);
+    if (currentTicket?.reportId !== reportId) {
+      throw new TicketNotFoundException(ticketId);
+    }
+
+    await this.ticketsRepository.updateAllItemsStatus(ticketId, dto.status);
+
+    this.logger.log(
+      `All items on ticket ${ticketId} bulk-set to ${dto.status} by user ${requester.id}`,
+    );
+
     return this.findOne(requester, reportId, ticketId);
   }
 
@@ -473,26 +554,26 @@ export class TicketsService {
       updateKey: keyof InsertTicket;
       meaningful: boolean;
     }> = [
-        { dtoKey: 'payment_type', updateKey: 'paymentType', meaningful: true },
-        { dtoKey: 'location_name', updateKey: 'locationName', meaningful: true },
-        {
-          dtoKey: 'location_address',
-          updateKey: 'locationAddress',
-          meaningful: true,
-        },
-        { dtoKey: 'amount', updateKey: 'amount', meaningful: true },
-        { dtoKey: 'currency', updateKey: 'currency', meaningful: true },
-        {
-          dtoKey: 'cgs_bucket_link_justification',
-          updateKey: 'cgsBucketLinkJustification',
-          meaningful: false,
-        },
-        {
-          dtoKey: 'last_four_digits',
-          updateKey: 'lastFourDigits',
-          meaningful: false,
-        },
-      ];
+      { dtoKey: 'payment_type', updateKey: 'paymentType', meaningful: true },
+      { dtoKey: 'location_name', updateKey: 'locationName', meaningful: true },
+      {
+        dtoKey: 'location_address',
+        updateKey: 'locationAddress',
+        meaningful: true,
+      },
+      { dtoKey: 'amount', updateKey: 'amount', meaningful: true },
+      { dtoKey: 'currency', updateKey: 'currency', meaningful: true },
+      {
+        dtoKey: 'cgs_bucket_link_justification',
+        updateKey: 'cgsBucketLinkJustification',
+        meaningful: false,
+      },
+      {
+        dtoKey: 'last_four_digits',
+        updateKey: 'lastFourDigits',
+        meaningful: false,
+      },
+    ];
 
     for (const mapping of fieldsMapping) {
       if (dto[mapping.dtoKey] !== undefined) {

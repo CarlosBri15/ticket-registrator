@@ -13,7 +13,10 @@ import Animated, {
   SharedValue,
 } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { PixelCard, DARK, CARD_BG } from '../ui/PixelCard';
+import { Card } from '../ui/Card';
+import { colors } from '../../constants/theme';
+
+const DARK = colors.dark;
 
 const AnimatedG = Animated.createAnimatedComponent(G);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -80,7 +83,7 @@ export const ScanningOverlay = ({ visible }: ScanningOverlayProps) => {
 
   return (
     <View style={s.overlay}>
-      <PixelCard bg={CARD_BG} shadowOffset={6} style={s.card}>
+      <Card style={s.card}>
         <View style={s.inner}>
           <Svg width={128} height={128} viewBox="0 0 32 32">
             <Path
@@ -111,7 +114,7 @@ export const ScanningOverlay = ({ visible }: ScanningOverlayProps) => {
           <Text style={s.title}>{t('reportDetail.scanTicket')}</Text>
           <Text style={s.subtitle}>Extrayendo información...</Text>
         </View>
-      </PixelCard>
+      </Card>
     </View>
   );
 };
@@ -133,15 +136,15 @@ const s = StyleSheet.create({
     gap: 10,
   },
   title: {
-    fontFamily: 'SpaceGrotesk-Bold',
+    fontFamily: 'Manrope-Bold',
     fontSize: 18,
     color: DARK,
     letterSpacing: -0.3,
     marginTop: 4,
   },
   subtitle: {
-    fontFamily: 'SpaceGrotesk-Medium',
-    fontSize: 12,
-    color: `${DARK}60`,
+    fontFamily: 'Manrope-Medium',
+    fontSize: 13,
+    color: colors.fgSecondary,
   },
 });

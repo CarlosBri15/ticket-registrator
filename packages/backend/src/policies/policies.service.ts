@@ -19,10 +19,12 @@ export class PoliciesService {
     companyId: string,
     name: string,
   ) {
-    this.logger.log(`Starting ingestion for policy: ${name} (Company: ${companyId})`);
+    this.logger.log(
+      `Starting ingestion for policy: ${name} (Company: ${companyId})`,
+    );
 
     // STEP 1: Extract Text
-    let text = await this.extractTextFromFile(fileBuffer, mimetype);
+    const text = await this.extractTextFromFile(fileBuffer, mimetype);
 
     // OPTIONAL CLEANUP: Remove common noise like repetitive page headers if needed
     // text = text.replace(/some_regex/g, '');
@@ -32,14 +34,19 @@ export class PoliciesService {
 
     // STEP 3: Generate Embeddings
     this.logger.log(`Generating embeddings for ${rawChunks.length} chunks...`);
-    const chunksWithEmbeddings: { content: string; embedding: number[]; chunkIndex: number }[] = [];
-    
+    const chunksWithEmbeddings: {
+      content: string;
+      embedding: number[];
+      chunkIndex: number;
+    }[] = [];
+
     for (let i = 0; i < rawChunks.length; i++) {
       const chunkText = rawChunks[i];
       // Note: In production you could use Promise.all to do this concurrently
       // but Gemini Flash/Embedding API has rate limits, so sequential is safer for now.
-      const embedding = await this.embeddingsService.generateEmbedding(chunkText);
-      
+      const embedding =
+        await this.embeddingsService.generateEmbedding(chunkText);
+
       chunksWithEmbeddings.push({
         content: chunkText,
         embedding: embedding,
@@ -48,7 +55,9 @@ export class PoliciesService {
     }
 
     // STEP 4: Save to Database
-    this.logger.log(`Saving policy and ${chunksWithEmbeddings.length} chunks to database...`);
+    this.logger.log(
+      `Saving policy and ${chunksWithEmbeddings.length} chunks to database...`,
+    );
     const savedPolicy = await this.policiesRepository.savePolicyAndChunks(
       companyId,
       name,
@@ -63,7 +72,10 @@ export class PoliciesService {
   }
 
   //STEP 1: Parse the incoming document (PDF or raw text) into a single string.
-  async extractTextFromFile(fileBuffer: Buffer, mimetype: string): Promise<string> {
+  async extractTextFromFile(
+    fileBuffer: Buffer,
+    mimetype: string,
+  ): Promise<string> {
     if (mimetype === 'application/pdf') {
       try {
         const data = await (pdfParse as any)(fileBuffer);
@@ -73,13 +85,13 @@ export class PoliciesService {
         throw new Error('Failed to parse PDF document');
       }
     }
-    
+
     // Fallback to UTF-8 text parsing for md, txt, csv, etc.
     return fileBuffer.toString('utf8');
   }
 
-    //STEP 2: Chunk the extracted text using semantic structural chunking.
-    //We use a fixed token limit (500-800) but respect paragraph and sentence boundaries.
+  //STEP 2: Chunk the extracted text using semantic structural chunking.
+  //We use a fixed token limit (500-800) but respect paragraph and sentence boundaries.
   async chunkText(text: string): Promise<string[]> {
     // 800 tokens is roughly 3200 characters (assuming ~4 chars per token)
     // We'll set chunk size to 3200 characters and overlap to 400 characters (100 tokens)

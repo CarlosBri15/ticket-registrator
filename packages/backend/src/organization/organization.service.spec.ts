@@ -153,11 +153,7 @@ describe('OrganizationService', () => {
     it('should return existing organization if dto has no name', async () => {
       (repositoryMock.findById as jest.Mock).mockResolvedValue(mockCompany);
 
-      const result = await service.update(
-        globalRequester,
-        'company-1',
-        {} as any,
-      );
+      const result = await service.update(globalRequester, 'company-1', {});
 
       expect(repositoryMock.update).not.toHaveBeenCalled();
       expect(result.name).toBe('Acme Corp');

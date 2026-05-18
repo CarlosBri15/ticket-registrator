@@ -8,17 +8,17 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-// Mock Tabler icons to check for name in tests if needed
-jest.mock('@tabler/icons-react-native', () => {
+// Mock lucide icons to check for presence by label in tests
+jest.mock('lucide-react-native', () => {
   const { Text } = require('react-native');
   return {
-    IconSearch: () => <Text>icon-search</Text>,
-    IconX: () => <Text>icon-x</Text>,
-    IconCalendar: () => <Text>icon-calendar</Text>,
-    IconChevronDown: () => <Text>icon-chevron-down</Text>,
-    IconChevronLeft: () => <Text>icon-chevron-left</Text>,
-    IconChevronRight: () => <Text>icon-chevron-right</Text>,
-    IconCheck: () => <Text>icon-check</Text>,
+    Search: () => <Text>icon-search</Text>,
+    X: () => <Text>icon-x</Text>,
+    Calendar: () => <Text>icon-calendar</Text>,
+    ChevronDown: () => <Text>icon-chevron-down</Text>,
+    ChevronLeft: () => <Text>icon-chevron-left</Text>,
+    ChevronRight: () => <Text>icon-chevron-right</Text>,
+    Check: () => <Text>icon-check</Text>,
   };
 });
 
@@ -52,22 +52,19 @@ describe('ReportsFilterPanel', () => {
   });
 
   it('shows clear button only when hasFilters is true', () => {
-    const { TouchableOpacity } = require('react-native');
-    const { UNSAFE_getAllByType } = render(<ReportsFilterPanel {...defaultProps} hasFilters={true} />);
-    const clearBtn = UNSAFE_getAllByType(TouchableOpacity).find(t => t.props.style?.opacity === 1);
-    expect(clearBtn).toBeTruthy();
+    const withFilters = render(<ReportsFilterPanel {...defaultProps} hasFilters={true} />);
+    expect(withFilters.queryByLabelText('clear filters')).toBeTruthy();
 
-    const { UNSAFE_getAllByType: getAllNoFilters } = render(<ReportsFilterPanel {...defaultProps} hasFilters={false} />);
-    const clearBtnNoFilters = getAllNoFilters(TouchableOpacity).find(t => t.props.style?.opacity === 0);
-    expect(clearBtnNoFilters).toBeTruthy();
+    const noFilters = render(<ReportsFilterPanel {...defaultProps} hasFilters={false} />);
+    expect(noFilters.queryByLabelText('clear filters')).toBeNull();
   });
 
   it('calls onClear when clear button is pressed', () => {
     const onClear = jest.fn();
-    const { getByText } = render(
+    const { getByLabelText } = render(
       <ReportsFilterPanel {...defaultProps} hasFilters={true} onClear={onClear} />
     );
-    fireEvent.press(getByText('icon-x'));
+    fireEvent.press(getByLabelText('clear filters'));
     expect(onClear).toHaveBeenCalled();
   });
 

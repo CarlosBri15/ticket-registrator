@@ -1,7 +1,10 @@
 import { pgTable, uuid, varchar, timestamp, real } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { users, type User } from '../../users/schemas/user.schema';
-import { tickets, type TicketWithItems } from '../../tickets/schemas/ticket.schema';
+import {
+  tickets,
+  type TicketWithItems,
+} from '../../tickets/schemas/ticket.schema';
 import { ticketHistories } from '../../history/history.schema';
 import { ReportStatus } from '@ticket-registrator/shared';
 

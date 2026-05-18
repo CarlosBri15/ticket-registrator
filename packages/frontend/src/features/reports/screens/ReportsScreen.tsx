@@ -4,8 +4,11 @@ import {
   useReportsPaginatedQuery,
   useReportFilterState,
   useScope,
+  useUserQuery,
+  AUTHORITY_LEVELS,
+  ReportStatus,
 } from "@ticket-registrator/shared";
-import { Plus, Search, FileText } from "lucide-react";
+import { Plus, Search, FileText, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Modal } from "../../../components/ui/Modal";
@@ -30,15 +33,26 @@ export const ReportsScreen = () => {
   const navigate = useNavigate();
   const dateLocale = useDateLocale();
   const { isSelf } = useScope();
+  const { data: currentUser } = useUserQuery();
   const showOwner = !isSelf;
   const tableGrid = showOwner ? REPORT_GRID_WITH_OWNER : REPORT_GRID;
+
+  // Supervisors (Manager, Controller) never create their own reports — they
+  // only review subordinates'. Landing them on the SUBMITTED queue mirrors
+  // that workflow. Admin / SuperAdmin keep the unfiltered "ALL" default since
+  // they're auditors and should see every status without an explicit filter.
+  const isSupervisor =
+    !!currentUser &&
+    currentUser.hierarchy >= AUTHORITY_LEVELS.DEPARTMENT &&
+    currentUser.hierarchy < AUTHORITY_LEVELS.COMPANY;
+  const defaultStatusFilter = isSupervisor ? ReportStatus.SUBMITTED : "ALL";
 
   const {
     search, setSearch,
     statusFilter, setStatusFilter,
     dateRange, setDateRange,
     hasActiveFilters, clearFilters,
-  } = useReportFilterState();
+  } = useReportFilterState({ defaultStatusFilter });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [page, setPage] = useState(1);
@@ -55,10 +69,18 @@ export const ReportsScreen = () => {
 
   const { data: allReports, isLoading: isLoadingCurrent } = useReportsQuery();
 
-  const currentReport = useMemo(
-    () => allReports?.find((r) => ACTIVE_STATUSES.has(r.status.toUpperCase()) && isCurrentReport(r)) ?? null,
-    [allReports],
-  );
+  // The "active report" hero is the user's own in-progress draft. Only
+  // Employees create reports — for any role above (Manager, Controller, Admin,
+  // SuperAdmin) the hero is hidden, since they only supervise/audit and the
+  // active reports in `allReports` belong to other users.
+  const currentReport = useMemo(() => {
+    if (!isSelf) return null;
+    return (
+      allReports?.find(
+        (r) => ACTIVE_STATUSES.has(r.status.toUpperCase()) && isCurrentReport(r),
+      ) ?? null
+    );
+  }, [allReports, isSelf]);
 
   const paginationParams = useMemo(() => ({
     page,
@@ -83,8 +105,20 @@ export const ReportsScreen = () => {
 
   const stats = useMemo(() => {
     if (isLoading || !hasAnyReports) return undefined;
-    const items = [{ label: t("trips.total", "Total"), value: totalItems }];
-    if (currentReport) items.push({ label: t("home.activeTrip"), value: 1 });
+    const items = [
+      {
+        label: t("trips.total", "Total"),
+        value: totalItems,
+        icon: <FileText className="w-4 h-4" aria-hidden={true} />,
+      },
+    ];
+    if (currentReport) {
+      items.push({
+        label: t("home.activeTrip"),
+        value: 1,
+        icon: <Activity className="w-4 h-4" aria-hidden={true} />,
+      });
+    }
     return items;
   }, [isLoading, hasAnyReports, totalItems, currentReport, t]);
 
@@ -92,7 +126,6 @@ export const ReportsScreen = () => {
     <div className="flex flex-col gap-8">
       <PageHeader
         title={t("trips.title")}
-        subtitle={t("trips.subtitle")}
         stats={stats}
         actions={
           <Button

@@ -78,7 +78,7 @@ describe('PermissionsService', () => {
       repository.findByName.mockResolvedValue(undefined);
       repository.create.mockResolvedValue({ id: '1', name: 'p1' } as any);
 
-      await service.create({ name: 'p1', description: 'd' } as any, requester);
+      await service.create({ name: 'p1', description: 'd' }, requester);
       expect(repository.create).toHaveBeenCalled();
     });
 
@@ -100,7 +100,7 @@ describe('PermissionsService', () => {
       repository.findById.mockResolvedValue({ id: '1', name: 'old' } as any);
       repository.update.mockResolvedValue({ id: '1', name: 'new' } as any);
 
-      await service.update('1', { name: 'new' } as any, requester);
+      await service.update('1', { name: 'new' }, requester);
       expect(repository.update).toHaveBeenCalled();
     });
   });
@@ -132,7 +132,7 @@ describe('PermissionsService', () => {
       repository.assignToRole.mockResolvedValue({ id: 'm1' } as any);
 
       await service.assignToRole(
-        { roleId: 'r1', permissionId: 'p1' } as any,
+        { roleId: 'r1', permissionId: 'p1' },
         requester,
       );
       expect(repository.assignToRole).toHaveBeenCalled();

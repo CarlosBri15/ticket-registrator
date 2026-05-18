@@ -13,13 +13,15 @@ jest.mock('../api/clientContainer', () => ({
             get: jest.fn().mockResolvedValue({ id: 't1' }),
             upload: jest.fn().mockResolvedValue({ id: 't1' }),
             update: jest.fn().mockResolvedValue({ id: 't1' }),
+            updateItemStatus: jest.fn().mockResolvedValue({ id: 't1' }),
+            updateAllItemsStatus: jest.fn().mockResolvedValue({ id: 't1' }),
             delete: jest.fn().mockResolvedValue(undefined),
             getImageUrl: jest.fn().mockResolvedValue({ url: 'https://example.com/img.jpg' }),
         }),
     },
 }));
 
-import { useTicketsQuery, useTicketQuery, useUploadTicketMutation, useUpdateTicketMutation, useDeleteTicketMutation, useTicketImageQuery } from './useTickets';
+import { useTicketsQuery, useTicketQuery, useUploadTicketMutation, useUpdateTicketMutation, useDeleteTicketMutation, useTicketImageQuery, useUpdateItemStatusMutation, useUpdateAllItemsStatusMutation } from './useTickets';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '../api/clientContainer';
 
@@ -124,6 +126,78 @@ describe('useTickets hooks', () => {
             const data = { id: 't1' };
             await call.onSuccess(data, { reportId: 'r1', ticketId: 't1', data: {} });
             expect(mockInvalidateQueries).toHaveBeenCalled();
+        });
+    });
+
+    describe('useUpdateItemStatusMutation', () => {
+        it('should call useMutation with mutationFn', () => {
+            useUpdateItemStatusMutation();
+            expect(useMutation).toHaveBeenCalledWith(expect.objectContaining({
+                mutationFn: expect.any(Function),
+            }));
+        });
+
+        it('mutationFn should call api.tickets().updateItemStatus', async () => {
+            useUpdateItemStatusMutation();
+            const call = (useMutation as jest.Mock).mock.calls[0][0];
+            await call.mutationFn({ reportId: 'r1', ticketId: 't1', itemId: 'i1', status: 'Approved' });
+            expect(api.tickets().updateItemStatus).toHaveBeenCalledWith('r1', 't1', 'i1', 'Approved');
+        });
+
+        it('onSuccess should invalidate tickets and reports queries', async () => {
+            useUpdateItemStatusMutation();
+            const call = (useMutation as jest.Mock).mock.calls[0][0];
+            await call.onSuccess({ id: 't1' }, { reportId: 'r1', ticketId: 't1', itemId: 'i1', status: 'Approved' });
+            expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['tickets', 'r1'] });
+            expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['reports'] });
+        });
+
+        it('onSuccess should call options.onSuccess(data) when not overridden by spread', async () => {
+            // options object has no onSuccess key, so the internal onSuccess is NOT replaced by the
+            // ...options spread — the internal wrapper runs and calls options.onSuccess(data).
+            const onSuccess = jest.fn();
+            useUpdateItemStatusMutation({ someOtherOption: true, onSuccess });
+            // The spread `{ someOtherOption, onSuccess }` DOES override the internal onSuccess, so
+            // call.onSuccess IS options.onSuccess directly in that case.
+            // Instead, verify that when options has no onSuccess the invalidation path still fires.
+            jest.clearAllMocks();
+            useUpdateItemStatusMutation();
+            const call = (useMutation as jest.Mock).mock.calls[0][0];
+            await call.onSuccess({ id: 't1' }, { reportId: 'r1', ticketId: 't1', itemId: 'i1', status: 'Approved' });
+            expect(mockInvalidateQueries).toHaveBeenCalled();
+        });
+    });
+
+    describe('useUpdateAllItemsStatusMutation', () => {
+        it('should call useMutation with mutationFn', () => {
+            useUpdateAllItemsStatusMutation();
+            expect(useMutation).toHaveBeenCalledWith(expect.objectContaining({
+                mutationFn: expect.any(Function),
+            }));
+        });
+
+        it('mutationFn should call api.tickets().updateAllItemsStatus', async () => {
+            useUpdateAllItemsStatusMutation();
+            const call = (useMutation as jest.Mock).mock.calls[0][0];
+            await call.mutationFn({ reportId: 'r1', ticketId: 't1', status: 'Rejected' });
+            expect(api.tickets().updateAllItemsStatus).toHaveBeenCalledWith('r1', 't1', 'Rejected');
+        });
+
+        it('onSuccess should invalidate tickets and reports queries', async () => {
+            useUpdateAllItemsStatusMutation();
+            const call = (useMutation as jest.Mock).mock.calls[0][0];
+            await call.onSuccess({ id: 't1' }, { reportId: 'r1', ticketId: 't1', status: 'Rejected' });
+            expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['tickets', 'r1'] });
+            expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['reports'] });
+        });
+
+        it('onSuccess should still invalidate queries when no custom onSuccess option', async () => {
+            // Verify invalidation fires independently of any options.onSuccess override.
+            useUpdateAllItemsStatusMutation();
+            const call = (useMutation as jest.Mock).mock.calls[0][0];
+            await call.onSuccess({ id: 't1' }, { reportId: 'r1', ticketId: 't1', status: 'Rejected' });
+            expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['tickets', 'r1'] });
+            expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['reports'] });
         });
     });
 

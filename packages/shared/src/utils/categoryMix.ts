@@ -13,6 +13,7 @@ export const buildCategoryMixFromItems = (
         categoryId: string | null;
         categoryName: string;
         categoryColor: string | null;
+        categoryIcon: string | null;
         amount: number;
     };
 
@@ -35,6 +36,7 @@ export const buildCategoryMixFromItems = (
             categoryId: item.categoryId ?? null,
             categoryName: item.categoryName ?? uncategorizedLabel,
             categoryColor: item.categoryColor ?? null,
+            categoryIcon: item.categoryIcon ?? null,
             amount,
         });
     }

@@ -13,7 +13,11 @@ export class PoliciesRepository {
   async savePolicyAndChunks(
     companyId: string,
     name: string,
-    chunksWithEmbeddings: { content: string; embedding: number[]; chunkIndex: number }[],
+    chunksWithEmbeddings: {
+      content: string;
+      embedding: number[];
+      chunkIndex: number;
+    }[],
   ) {
     return await this.db.transaction(async (tx) => {
       // 1. Insert the master policy record

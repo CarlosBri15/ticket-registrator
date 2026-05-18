@@ -2,7 +2,18 @@ import { Injectable, Inject } from '@nestjs/common';
 import { DB_CONNECTION } from '../db/db.module';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
-import { eq, and, or, lte, gte, count, desc, SQL, isNull, inArray } from 'drizzle-orm';
+import {
+  eq,
+  and,
+  or,
+  lte,
+  gte,
+  count,
+  desc,
+  SQL,
+  isNull,
+  inArray,
+} from 'drizzle-orm';
 import { Report, ReportWithTickets } from './schemas/report.schema';
 
 @Injectable()
@@ -12,7 +23,7 @@ export class ReportsRepository {
     private readonly db: PostgresJsDatabase<typeof schema>,
   ) {}
 
-  async findById(id: string): Promise<Report | undefined> {
+  async findById(id: string): Promise<ReportWithTickets | undefined> {
     return this.db.query.reports.findFirst({
       where: and(eq(schema.reports.id, id), isNull(schema.reports.deletedAt)),
       with: {
@@ -22,6 +33,11 @@ export class ReportsRepository {
               with: {
                 category: true,
               },
+              // Stable item order so per-item approve/reject doesn't reshuffle.
+              orderBy: (items, { asc }) => [
+                asc(items.createdAt),
+                asc(items.id),
+              ],
             },
           },
         },
@@ -71,6 +87,10 @@ export class ReportsRepository {
               with: {
                 category: true,
               },
+              orderBy: (items, { asc }) => [
+                asc(items.createdAt),
+                asc(items.id),
+              ],
             },
           },
         },
@@ -162,7 +182,7 @@ export class ReportsRepository {
   ): Promise<T> {
     // A cast to any is often needed here for Drizzle's internal transaction context matching NestJS wrappers,
     // but at least the callback itself is strictly typed for the caller.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    return this.db.transaction(callback as any);
+
+    return this.db.transaction(callback);
   }
 }

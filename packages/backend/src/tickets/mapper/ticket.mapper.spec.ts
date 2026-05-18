@@ -39,7 +39,7 @@ describe('mapTicketToITicket', () => {
   };
 
   it('should map all scalar fields correctly', () => {
-    const result = mapTicketToITicket({ ...baseTicket, items: [] } as any);
+    const result = mapTicketToITicket({ ...baseTicket, items: [] });
 
     expect(result.id).toBe('ticket-1');
     expect(result.report_id).toBe('report-1');
@@ -58,7 +58,7 @@ describe('mapTicketToITicket', () => {
   });
 
   it('should convert date to ISO string', () => {
-    const result = mapTicketToITicket({ ...baseTicket, items: [] } as any);
+    const result = mapTicketToITicket({ ...baseTicket, items: [] });
     expect(result.date).toBe(now.toISOString());
   });
 
@@ -67,7 +67,7 @@ describe('mapTicketToITicket', () => {
       ...baseTicket,
       date: null,
       items: [],
-    } as any);
+    });
     expect(result.date).toBeNull();
   });
 
@@ -76,7 +76,7 @@ describe('mapTicketToITicket', () => {
       ...baseTicket,
       llmComment: 'No se pudo detectar el importe total',
       items: [],
-    } as any);
+    });
     expect(result.llm_comment).toBe('No se pudo detectar el importe total');
   });
 
@@ -85,17 +85,17 @@ describe('mapTicketToITicket', () => {
       ...baseTicket,
       llmComment: null,
       items: [],
-    } as any);
+    });
     expect(result.llm_comment).toBeNull();
   });
 
   it('should convert createdAt to ISO string', () => {
-    const result = mapTicketToITicket({ ...baseTicket, items: [] } as any);
+    const result = mapTicketToITicket({ ...baseTicket, items: [] });
     expect(result.createdAt).toBe(now.toISOString());
   });
 
   it('should convert updatedAt to ISO string', () => {
-    const result = mapTicketToITicket({ ...baseTicket, items: [] } as any);
+    const result = mapTicketToITicket({ ...baseTicket, items: [] });
     expect(result.updatedAt).toBe(now.toISOString());
   });
 
@@ -127,6 +127,7 @@ describe('mapTicketToITicket', () => {
       categoryId: 'cat-1',
       categoryName: 'Travel',
       categoryColor: null,
+      categoryIcon: null,
     });
   });
 
@@ -186,7 +187,7 @@ describe('mapTicketToITicket', () => {
   });
 
   it('should not expose internal DB fields (reportId, cgsBucketLink as camelCase)', () => {
-    const result = mapTicketToITicket({ ...baseTicket, items: [] } as any);
+    const result = mapTicketToITicket({ ...baseTicket, items: [] });
     expect(result).not.toHaveProperty('reportId');
     expect(result).not.toHaveProperty('cgsBucketLink');
     expect(result).not.toHaveProperty('paymentType');

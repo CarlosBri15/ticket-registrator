@@ -115,6 +115,7 @@ export * from './utils/errorUtils';
 export * from './utils/avatarColor';
 export * from './utils/reportAnalytics';
 export * from './utils/categoryMix';
+export * from './utils/categoryIconNames';
 
 // Constants
 export * from './constants/hierarchy';

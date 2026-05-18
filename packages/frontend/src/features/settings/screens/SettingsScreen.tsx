@@ -69,7 +69,7 @@ export const SettingsScreen = () => {
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col gap-8">
-      <PageHeader title={t("settings.title")} subtitle={t("settings.languageDesc")} />
+      <PageHeader title={t("settings.title")} />
 
       {/* Profile */}
       <SectionCard

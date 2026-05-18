@@ -112,7 +112,8 @@ describe('ReportsRepository', () => {
       let selectCall = 0;
       dbMock.select.mockImplementation(() => {
         selectCall++;
-        if (selectCall === 1) return buildIdsChain([{ id: 'r1' }, { id: 'r2' }]);
+        if (selectCall === 1)
+          return buildIdsChain([{ id: 'r1' }, { id: 'r2' }]);
         return buildCountChain('2');
       });
       dbMock.query.reports.findMany.mockResolvedValue([

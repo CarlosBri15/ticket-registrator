@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 
-jest.mock('@tabler/icons-react-native', () => {
+jest.mock('lucide-react-native', () => {
   const React = require('react');
   const { View } = require('react-native');
   const stub = (name: string) => {
@@ -10,10 +10,10 @@ jest.mock('@tabler/icons-react-native', () => {
     return C;
   };
   return {
-    IconX: stub('x'),
-    IconChevronLeft: stub('chevron-left'),
-    IconChevronRight: stub('chevron-right'),
-    IconCalendar: stub('calendar'),
+    X: stub('x'),
+    ChevronLeft: stub('chevron-left'),
+    ChevronRight: stub('chevron-right'),
+    Calendar: stub('calendar'),
   };
 });
 

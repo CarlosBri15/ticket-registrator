@@ -161,9 +161,11 @@ export default {
     declineReport: "Decline Report",
     deleteReport: "Delete report",
     digitalizeDesc: "Upload your receipts or invoices. Our AI will extract the data and validate the expense according to company policies.",
+    confirmFinishReview: "You're about to finish the review and return it to the user. Confirm the decisions taken on the items?",
     errorDesc: "We could not find the requested information.",
     errorLoading: "Error loading report",
     estimatedReimbursement: "Estimated reimbursement",
+    finishReview: "Finish review",
     financialSummary: "Financial Summary",
     inReview: "In Review",
     items: "Items",
@@ -265,7 +267,6 @@ export default {
   },
   trips: {
     title: "Reports",
-    subtitle: "Expense reports across your organization.",
     new: "New",
     newTripTitle: "New Report",
     nameLabel: "Report Name",
@@ -350,6 +351,8 @@ export default {
     merchant: "Merchant",
     payment: "Payment",
     uploadedOn: "Uploaded on",
+    approveAll: "Approve all",
+    rejectAll: "Reject all",
   },
   layout: {
     menu: "Main Menu",
@@ -437,8 +440,7 @@ export default {
     pendingAmount: "pending",
   },
   ticketsPage: {
-    title: "All Tickets",
-    desc: "Complete listing of all your expense tickets.",
+    title: "Tickets",
     noTickets: "No tickets",
     noTicketsDesc: "Upload expense tickets from your reports to see them listed here.",
     noResults: "No results",

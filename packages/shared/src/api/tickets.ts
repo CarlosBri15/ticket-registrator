@@ -22,6 +22,39 @@ export const ticketsApi = (client: AxiosInstance) => ({
         const response = await client.patch<ITicket>(`/reports/${reportId}/tickets/${ticketId}`, data);
         return response.data;
     },
+    /**
+     * Supervisor review action: updates a single item's status (Approved /
+     * Rejected / Pending / Partially_approved) without touching siblings nor
+     * the rest of the ticket. Backed by `PATCH /tickets/:id/items/:itemId/status`.
+     */
+    updateItemStatus: async (
+        reportId: string,
+        ticketId: string,
+        itemId: string,
+        status: string,
+    ): Promise<ITicket> => {
+        const response = await client.patch<ITicket>(
+            `/reports/${reportId}/tickets/${ticketId}/items/${itemId}/status`,
+            { status },
+        );
+        return response.data;
+    },
+    /**
+     * Bulk supervisor review action: marks every item of the ticket with the
+     * same status in a single transaction. Backs the "Approve all" / "Reject
+     * all" shortcut buttons.
+     */
+    updateAllItemsStatus: async (
+        reportId: string,
+        ticketId: string,
+        status: string,
+    ): Promise<ITicket> => {
+        const response = await client.patch<ITicket>(
+            `/reports/${reportId}/tickets/${ticketId}/items/status`,
+            { status },
+        );
+        return response.data;
+    },
     delete: async (reportId: string, ticketId: string): Promise<void> => {
         await client.delete(`/reports/${reportId}/tickets/${ticketId}`);
     },

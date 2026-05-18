@@ -161,7 +161,7 @@ describe('UsersRepository', () => {
   describe('transaction', () => {
     it('should call db.transaction', async () => {
       const cb = async () => {};
-      await repository.transaction(cb as any);
+      await repository.transaction(cb);
       expect(dbMock.transaction).toHaveBeenCalledWith(cb);
     });
   });

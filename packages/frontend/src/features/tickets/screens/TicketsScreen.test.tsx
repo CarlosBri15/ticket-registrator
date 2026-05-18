@@ -181,7 +181,7 @@ describe('AllTicketsScreen', () => {
     expect(screen.getByText('ticketsPage.noResults')).toBeInTheDocument();
   });
 
-  it('renders ticket without amount as "---"', () => {
+  it('renders ticket without amount with an em dash', () => {
     (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
       data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05' }],
       isLoading: false,
@@ -191,10 +191,11 @@ describe('AllTicketsScreen', () => {
       isLoading: false,
     }]);
     renderScreen();
-    expect(screen.getByText('---')).toBeInTheDocument();
+    // Multiple cells may render the em dash (amount + payment + dates) — assert at least one.
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
   });
 
-  it('renders ticket without location_name as "Ticket"', () => {
+  it('renders fallback name when location_name is missing', () => {
     (useReportsQuery as ReturnType<typeof vi.fn>).mockReturnValue({
       data: [{ id: 'r1', name: 'Viaje Madrid', status: 'CREATED', start_date: '2024-01-01', end_date: '2024-01-05' }],
       isLoading: false,
@@ -204,6 +205,6 @@ describe('AllTicketsScreen', () => {
       isLoading: false,
     }]);
     renderScreen();
-    expect(screen.getByText('Ticket')).toBeInTheDocument();
+    expect(screen.getByText('reportDetail.noTicketName')).toBeInTheDocument();
   });
 });

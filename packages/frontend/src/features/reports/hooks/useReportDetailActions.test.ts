@@ -65,8 +65,7 @@ describe('useReportDetailActions', () => {
     const { result } = renderHook(() => useReportDetailActions('r1'));
     expect(result.current.submitConfirm).toBe(false);
     expect(result.current.deleteConfirm).toBe(false);
-    expect(result.current.approveConfirm).toBe(false);
-    expect(result.current.declineConfirm).toBe(false);
+    expect(result.current.finishReviewConfirm).toBe(false);
   });
 
   it('exposes pending flags from mutations', () => {
@@ -77,7 +76,7 @@ describe('useReportDetailActions', () => {
     const { result } = renderHook(() => useReportDetailActions('r1'));
     expect(result.current.isSubmitting).toBe(true);
     expect(result.current.isDeleting).toBe(true);
-    expect(result.current.isUpdatingStatus).toBe(true);
+    expect(result.current.isFinishingReview).toBe(true);
   });
 
   it('toggles modal flags via setters', () => {
@@ -90,11 +89,8 @@ describe('useReportDetailActions', () => {
     act(() => result.current.setDeleteConfirm(true));
     expect(result.current.deleteConfirm).toBe(true);
 
-    act(() => result.current.setApproveConfirm(true));
-    expect(result.current.approveConfirm).toBe(true);
-
-    act(() => result.current.setDeclineConfirm(true));
-    expect(result.current.declineConfirm).toBe(true);
+    act(() => result.current.setFinishReviewConfirm(true));
+    expect(result.current.finishReviewConfirm).toBe(true);
   });
 
   it('handleSubmit fires submit mutation with the reportId', () => {
@@ -111,18 +107,11 @@ describe('useReportDetailActions', () => {
     expect(deleteMutate).toHaveBeenCalledWith('r2');
   });
 
-  it('handleApprove fires updateStatus mutation with APPROVED status', () => {
+  it('handleFinishReview fires updateStatus with APPROVED — backend will recompute amounts from item statuses', () => {
     const { updateStatusMutate } = setupMutations();
     const { result } = renderHook(() => useReportDetailActions('r3'));
-    act(() => result.current.handleApprove());
+    act(() => result.current.handleFinishReview());
     expect(updateStatusMutate).toHaveBeenCalledWith({ id: 'r3', status: ReportStatus.APPROVED });
-  });
-
-  it('handleDecline fires updateStatus mutation with DECLINED status', () => {
-    const { updateStatusMutate } = setupMutations();
-    const { result } = renderHook(() => useReportDetailActions('r4'));
-    act(() => result.current.handleDecline());
-    expect(updateStatusMutate).toHaveBeenCalledWith({ id: 'r4', status: ReportStatus.DECLINED });
   });
 
   it('closes submit dialog on submit success', () => {
@@ -134,18 +123,13 @@ describe('useReportDetailActions', () => {
     expect(result.current.submitConfirm).toBe(false);
   });
 
-  it('closes approve and decline dialogs on update success', () => {
+  it('closes finish-review dialog on update success', () => {
     const { triggerUpdateSuccess } = setupMutations();
     const { result } = renderHook(() => useReportDetailActions('r1'));
-    act(() => {
-      result.current.setApproveConfirm(true);
-      result.current.setDeclineConfirm(true);
-    });
-    expect(result.current.approveConfirm).toBe(true);
-    expect(result.current.declineConfirm).toBe(true);
+    act(() => result.current.setFinishReviewConfirm(true));
+    expect(result.current.finishReviewConfirm).toBe(true);
     act(() => triggerUpdateSuccess());
-    expect(result.current.approveConfirm).toBe(false);
-    expect(result.current.declineConfirm).toBe(false);
+    expect(result.current.finishReviewConfirm).toBe(false);
   });
 
   it('navigates to /reports on delete success', () => {

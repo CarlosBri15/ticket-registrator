@@ -19,18 +19,14 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
   return {
     ...actual,
     useTicketImageQuery: vi.fn(),
+    useUserQuery: vi.fn(() => ({ data: { hierarchy: 0 } })),
   };
 });
 
 vi.mock('../hooks/useItemApproval', () => ({
   useItemApproval: () => ({
-    pendingApprovals: new Map(),
-    pendingRejections: new Set(),
     approve: vi.fn(),
     reject: vi.fn(),
-    save: vi.fn(),
-    reset: vi.fn(),
-    hasItemChanges: false,
     isSaving: false,
     getItemStatus: () => 'PENDING',
   }),

@@ -1,8 +1,6 @@
 /**
- * ReportsFilterPanel — chrome fijo entre el header y el scroll.
- *
- * Fila 1: búsqueda por nombre
- * Fila 2: pills de fecha inicio · fin · estado
+ * ReportsFilterPanel — chrome bar (search + chip filters) above the reports list.
+ * Kit-aligned: pill chips, sunken search, sentence case, no hard shadows.
  */
 import { useState } from 'react';
 import {
@@ -10,22 +8,19 @@ import {
   Modal, FlatList, TouchableWithoutFeedback,
   StyleSheet, Dimensions,
 } from 'react-native';
-import { 
-  IconSearch, 
-  IconX, 
-  IconCalendar, 
-  IconChevronDown, 
-  IconCheck 
-} from '@tabler/icons-react-native';
+import {
+  Search,
+  X,
+  Calendar,
+  ChevronDown,
+  Check,
+} from 'lucide-react-native';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import { PixelCard, DARK, CARD_BG, BORDER_WIDTH, RADIUS, colors } from '../ui/PixelCard';
+import { colors } from '../../constants/theme';
 import { DatePickerModal } from './DatePickerModal';
 
-const { width: SCREEN_W, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const SHADOW = 3;
-// Ancho del slot: (pantalla - padding 40 - 2 gaps de 6) / 3 pills
-const PILL_W = Math.floor((SCREEN_W - 40 - 12) / 3);
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const STATUS_OPTIONS = ['ALL', 'CREATED', 'SUBMITTED', 'APPROVED', 'DECLINED'] as const;
 type Picking = 'start' | 'end' | null;
 
@@ -41,6 +36,22 @@ interface Props {
   hasFilters: boolean;
   onClear: () => void;
 }
+
+interface ChipProps {
+  active: boolean;
+  onPress: () => void;
+  children: React.ReactNode;
+}
+
+const Chip = ({ active, onPress, children }: ChipProps) => (
+  <TouchableOpacity
+    onPress={onPress}
+    activeOpacity={0.8}
+    style={[s.chip, active && s.chipActive]}
+  >
+    <View style={s.chipInner}>{children}</View>
+  </TouchableOpacity>
+);
 
 export function ReportsFilterPanel({
   search, onSearch,
@@ -68,88 +79,54 @@ export function ReportsFilterPanel({
 
   return (
     <View style={s.wrapper}>
-
-      {/* ── Fila 1: búsqueda ── */}
+      {/* ── Row 1: search ── */}
       <View style={s.searchRow}>
-        <IconSearch size={16} color={DARK} />
+        <Search size={16} color={colors.fgSecondary} strokeWidth={2} />
         <TextInput
           style={s.searchInput}
           value={search}
           onChangeText={onSearch}
           placeholder={t('trips.filterSearch')}
-          placeholderTextColor={`${DARK}45`}
+          placeholderTextColor={colors.fgQuaternary}
           returnKeyType="search"
         />
-        <TouchableOpacity
-          onPress={onClear}
-          disabled={!hasFilters}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={{ opacity: hasFilters ? 1 : 0 }}
-        >
-          <IconX size={20} color={colors.danger} />
-        </TouchableOpacity>
+        {hasFilters ? (
+          <TouchableOpacity
+            onPress={onClear}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityLabel="clear filters"
+          >
+            <X size={18} color={colors.fgSecondary} strokeWidth={2} />
+          </TouchableOpacity>
+        ) : null}
       </View>
 
-      {/* ── Fila 2: pills de filtro ── */}
-      <View style={s.pillsRow}>
+      {/* ── Row 2: chip filters ── */}
+      <View style={s.chipsRow}>
+        <Chip active={!!startDate} onPress={() => setPicking('start')}>
+          <Calendar size={12} color={startDate ? colors.fgOnBrand : colors.dark} strokeWidth={2} />
+          <Text style={[s.chipText, startDate && s.chipTextActive]} numberOfLines={1}>
+            {fmt(startDate) ?? t('trips.startLabel')}
+          </Text>
+        </Chip>
 
-        {/* Fecha inicio */}
-        <PixelCard
-          bg={startDate ? colors.brand : CARD_BG}
-          shadowOffset={SHADOW}
-          radius={6}
-          active={!!startDate || picking === 'start'}
-          onPress={() => setPicking('start')}
-          style={{ width: PILL_W }}
-        >
-          <View style={s.pillContent}>
-            <IconCalendar size={12} color={startDate ? '#fff' : DARK} />
-            <Text style={[s.pillText, startDate && s.pillTextActive]} numberOfLines={1}>
-              {fmt(startDate) ?? t('trips.startLabel')}
-            </Text>
-          </View>
-        </PixelCard>
+        <Chip active={!!endDate} onPress={() => setPicking('end')}>
+          <Calendar size={12} color={endDate ? colors.fgOnBrand : colors.dark} strokeWidth={2} />
+          <Text style={[s.chipText, endDate && s.chipTextActive]} numberOfLines={1}>
+            {fmt(endDate) ?? t('trips.endLabel')}
+          </Text>
+        </Chip>
 
-        {/* Fecha fin */}
-        <PixelCard
-          bg={endDate ? colors.brand : CARD_BG}
-          shadowOffset={SHADOW}
-          radius={6}
-          active={!!endDate || picking === 'end'}
-          onPress={() => setPicking('end')}
-          style={{ width: PILL_W }}
-        >
-          <View style={s.pillContent}>
-            <IconCalendar size={12} color={endDate ? '#fff' : DARK} />
-            <Text style={[s.pillText, endDate && s.pillTextActive]} numberOfLines={1}>
-              {fmt(endDate) ?? t('trips.endLabel')}
-            </Text>
-          </View>
-        </PixelCard>
-
-        {/* Estado */}
-        <PixelCard
-          bg={statusActive ? colors.brand : CARD_BG}
-          shadowOffset={SHADOW}
-          radius={6}
-          active={statusActive || statusOpen}
-          onPress={() => setStatusOpen(true)}
-          style={{ width: PILL_W }}
-        >
-          <View style={s.pillContent}>
-            <Text style={[s.pillText, statusActive && s.pillTextActive]} numberOfLines={1}>
-              {statusLabel}
-            </Text>
-            <IconChevronDown size={12} color={statusActive ? '#fff' : DARK} />
-          </View>
-        </PixelCard>
-
+        <Chip active={statusActive} onPress={() => setStatusOpen(true)}>
+          <Text style={[s.chipText, statusActive && s.chipTextActive]} numberOfLines={1}>
+            {statusLabel}
+          </Text>
+          <ChevronDown size={12} color={statusActive ? colors.fgOnBrand : colors.dark} strokeWidth={2} />
+        </Chip>
       </View>
 
-      {/* Cierre zona chrome */}
       <View style={s.bottomBorder} />
 
-      {/* ── Date picker ── */}
       <DatePickerModal
         visible={picking !== null}
         onClose={() => setPicking(null)}
@@ -158,7 +135,6 @@ export function ReportsFilterPanel({
         title={picking === 'start' ? t('trips.startLabel') : t('trips.endLabel')}
       />
 
-      {/* ── Status bottom sheet ── */}
       <Modal
         visible={statusOpen}
         transparent
@@ -173,15 +149,19 @@ export function ReportsFilterPanel({
           <View style={s.sheetHandle} />
           <View style={s.sheetHeader}>
             <Text style={s.sheetTitle}>Estado</Text>
-            <PixelCard bg={colors.danger} shadowOffset={3} radius={8} onPress={() => setStatusOpen(false)}>
-              <View style={s.sheetCloseBtnInner}>
-                <IconX size={15} color="white" />
-              </View>
-            </PixelCard>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="close"
+              onPress={() => setStatusOpen(false)}
+              style={s.sheetCloseBtn}
+              activeOpacity={0.7}
+            >
+              <X size={16} color={colors.fgSecondary} strokeWidth={2} />
+            </TouchableOpacity>
           </View>
           <FlatList
             data={STATUS_OPTIONS}
-            keyExtractor={item => item}
+            keyExtractor={(item) => item}
             contentContainerStyle={s.listContent}
             renderItem={({ item, index }) => {
               const active = statusFilter === item;
@@ -189,18 +169,14 @@ export function ReportsFilterPanel({
               return (
                 <TouchableOpacity
                   onPress={() => { onStatus(item); setStatusOpen(false); }}
-                  activeOpacity={0.75}
+                  activeOpacity={0.7}
                   style={[
                     s.option,
                     index < STATUS_OPTIONS.length - 1 && s.optionBorder,
                   ]}
                 >
                   <Text style={[s.optionText, active && s.optionTextSelected]}>{label}</Text>
-                  {active && (
-                    <View style={s.checkBox}>
-                      <IconCheck size={13} color="white" />
-                    </View>
-                  )}
+                  {active ? <Check size={16} color={colors.brand} strokeWidth={2} /> : null}
                 </TouchableOpacity>
               );
             }}
@@ -213,132 +189,139 @@ export function ReportsFilterPanel({
 
 const s = StyleSheet.create({
   wrapper: {
-    backgroundColor: CARD_BG,
+    backgroundColor: colors.surface,
   },
 
-  // ── Fila 1: búsqueda
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 10,
+    backgroundColor: colors.surfaceSunken,
+    borderRadius: 6,
+    marginHorizontal: 20,
+    marginTop: 12,
   },
   searchInput: {
     flex: 1,
-    fontFamily: 'SpaceGrotesk-SemiBold',
+    fontFamily: 'Manrope-Medium',
     fontSize: 14,
-    color: DARK,
+    color: colors.dark,
   },
 
-  // ── Fila 2: pills
-  pillsRow: {
+  chipsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     paddingHorizontal: 20,
-    paddingBottom: 12,
-    gap: 6,
+    paddingTop: 12,
+    paddingBottom: 14,
+    gap: 8,
   },
-  pillContent: {
+  chip: {
+    flex: 1,
+    minWidth: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceCard,
+  },
+  chipInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
   },
-  pillText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 11,
-    color: DARK,
-    letterSpacing: 0.2,
+  chipActive: {
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
   },
-  pillTextActive: {
-    color: '#fff',
+  chipText: {
+    fontFamily: 'Manrope-Medium',
+    fontSize: 12,
+    color: colors.fgSecondary,
+    flexShrink: 1,
+  },
+  chipTextActive: {
+    color: colors.fgOnBrand,
   },
 
   bottomBorder: {
-    height: 4,
-    backgroundColor: DARK,
+    height: 1,
+    backgroundColor: colors.border,
   },
 
-  // ── Bottom sheet
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: colors.overlayStrong,
   },
   sheet: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: CARD_BG,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    maxHeight: SCREEN_HEIGHT * 0.5,
-    paddingBottom: 32,
+    backgroundColor: colors.surfaceCard,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: SCREEN_HEIGHT * 0.55,
+    paddingBottom: 24,
   },
   sheetHandle: {
-    width: 48,
-    height: 6,
-    backgroundColor: DARK,
+    width: 36,
+    height: 4,
+    backgroundColor: colors.overlayMedium,
     alignSelf: 'center',
-    marginTop: 14,
+    marginTop: 10,
+    borderRadius: 9999,
   },
   sheetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 4,
-    borderBottomColor: DARK,
+    paddingTop: 14,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   sheetTitle: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 20,
-    color: DARK,
-    letterSpacing: 0.3,
+    fontFamily: 'Manrope-Bold',
+    fontSize: 18,
+    color: colors.dark,
+    letterSpacing: -0.2,
   },
-  sheetCloseBtnInner: {
-    width: 34,
-    height: 34,
+  sheetCloseBtn: {
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 9999,
   },
   listContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingHorizontal: 12,
+    paddingTop: 6,
   },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 6,
   },
   optionBorder: {
-    borderBottomWidth: BORDER_WIDTH,
-    borderBottomColor: `${DARK}10`,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   optionText: {
-    fontFamily: 'SpaceGrotesk-Medium',
-    fontSize: 15,
-    color: DARK,
+    fontFamily: 'Manrope-Medium',
+    fontSize: 14,
+    color: colors.dark,
   },
   optionTextSelected: {
-    fontFamily: 'SpaceGrotesk-Bold',
+    fontFamily: 'Manrope-SemiBold',
     color: colors.brand,
-  },
-  checkBox: {
-    width: 22,
-    height: 22,
-    borderRadius: RADIUS - 4,
-    backgroundColor: colors.brand,
-    borderWidth: BORDER_WIDTH,
-    borderColor: DARK,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

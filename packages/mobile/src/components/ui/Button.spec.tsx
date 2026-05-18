@@ -2,6 +2,7 @@ import React from 'react';
 import { Text } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { Button } from './Button';
+import { colors } from '../../constants/theme';
 
 describe('Button', () => {
   // ── Rendering ──────────────────────────────────────────────────────────────
@@ -52,9 +53,7 @@ describe('Button', () => {
   });
 
   it('is disabled when isLoading=true', () => {
-    const { UNSAFE_getAllByType } = render(
-      <Button isLoading>Loading</Button>,
-    );
+    const { UNSAFE_getAllByType } = render(<Button isLoading>Loading</Button>);
     const { TouchableOpacity } = require('react-native');
     const touchable = UNSAFE_getAllByType(TouchableOpacity)[0];
     expect(touchable.props.disabled).toBe(true);
@@ -62,7 +61,7 @@ describe('Button', () => {
 
   // ── Variants ───────────────────────────────────────────────────────────────
 
-  it.each(['primary', 'secondary', 'outline', 'ghost', 'accent'] as const)(
+  it.each(['primary', 'secondary', 'outline', 'ghost', 'accent', 'danger'] as const)(
     'renders "%s" variant without crashing',
     (variant) => {
       const { getByText } = render(<Button variant={variant}>Button</Button>);
@@ -75,18 +74,22 @@ describe('Button', () => {
     expect(getByText('Default')).toBeTruthy();
   });
 
-  it('outline/ghost variants show brand-colored ActivityIndicator', () => {
-    const { UNSAFE_getAllByType } = render(<Button variant="outline" isLoading>x</Button>);
+  it('outline variant shows brand-coloured ActivityIndicator', () => {
+    const { UNSAFE_getAllByType } = render(
+      <Button variant="outline" isLoading>x</Button>,
+    );
     const { ActivityIndicator } = require('react-native');
     const ai = UNSAFE_getAllByType(ActivityIndicator)[0];
-    expect(ai.props.color).toBe('#336b87');
+    expect(ai.props.color).toBe(colors.brand);
   });
 
   it('primary variant shows white ActivityIndicator', () => {
-    const { UNSAFE_getAllByType } = render(<Button variant="primary" isLoading>x</Button>);
+    const { UNSAFE_getAllByType } = render(
+      <Button variant="primary" isLoading>x</Button>,
+    );
     const { ActivityIndicator } = require('react-native');
     const ai = UNSAFE_getAllByType(ActivityIndicator)[0];
-    expect(ai.props.color).toBe('#ffffff');
+    expect(ai.props.color).toBe(colors.fgOnBrand);
   });
 
   // ── Sizes ──────────────────────────────────────────────────────────────────

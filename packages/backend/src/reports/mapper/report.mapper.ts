@@ -18,6 +18,7 @@ const buildCategoryMix = (
     categoryId: string | null;
     categoryName: string;
     categoryColor: string | null;
+    categoryIcon: string | null;
     amount: number;
   };
 
@@ -42,6 +43,7 @@ const buildCategoryMix = (
         categoryId: item.categoryId ?? null,
         categoryName: item.category?.name ?? 'Uncategorized',
         categoryColor: item.category?.color ?? null,
+        categoryIcon: item.category?.icon ?? null,
         amount,
       });
     }

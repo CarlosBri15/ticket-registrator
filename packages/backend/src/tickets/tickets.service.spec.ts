@@ -46,6 +46,8 @@ describe('TicketsService', () => {
       findSemanticDuplicate: jest.fn(),
       create: jest.fn(),
       updateWithHistory: jest.fn(),
+      updateItemStatus: jest.fn(),
+      updateAllItemsStatus: jest.fn(),
       softDelete: jest.fn(),
       hardDelete: jest.fn(),
     };
@@ -452,6 +454,33 @@ describe('TicketsService', () => {
       expect(ticketsRepositoryMock.create).toHaveBeenCalled();
     });
 
+    it('should throw TicketNotFoundException when created ticket has mismatched reportId (race condition)', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport);
+      ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
+      ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
+      storageServiceMock.uploadFile.mockResolvedValue('link');
+      geminiServiceMock.extractReceipt.mockResolvedValue({
+        items: [],
+        total: 10,
+      });
+      cryptoServiceMock.generatePerceptualHash.mockResolvedValue('hash|1.0');
+      cryptoServiceMock.calculateHammingDistance.mockReturnValue(100);
+      ticketsRepositoryMock.create.mockResolvedValue({ id: 'ticket-1' });
+      // findById returns a ticket that belongs to a DIFFERENT report
+      ticketsRepositoryMock.findById.mockResolvedValue({
+        id: 'ticket-1',
+        reportId: 'different-report',
+      });
+
+      await expect(
+        service.create(requester, 'report-1', {
+          buffer: Buffer.from('f'),
+          originalname: 'test.jpg',
+          mimetype: 'image/jpeg',
+        } as any),
+      ).rejects.toThrow(TicketNotFoundException);
+    });
+
     it('should handle undefined gemini items and missing fields', async () => {
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
       ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
@@ -814,19 +843,29 @@ describe('TicketsService', () => {
 
   describe('hardDelete', () => {
     it('should hard delete ticket and remove GCS file', async () => {
-      const ticketWithImage = { ...mockTicket, items: [], cgsBucketLink: 'test-image.webp' };
+      const ticketWithImage = {
+        ...mockTicket,
+        items: [],
+        cgsBucketLink: 'test-image.webp',
+      };
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
       ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsRepositoryMock.findById.mockResolvedValue(ticketWithImage);
 
       await service.hardDelete(requester, 'report-1', 'ticket-1');
 
-      expect(storageServiceMock.removeFile).toHaveBeenCalledWith('test-image.webp');
+      expect(storageServiceMock.removeFile).toHaveBeenCalledWith(
+        'test-image.webp',
+      );
       expect(ticketsRepositoryMock.hardDelete).toHaveBeenCalledWith('ticket-1');
     });
 
     it('should hard delete ticket even if GCS file removal fails', async () => {
-      const ticketWithImage = { ...mockTicket, items: [], cgsBucketLink: 'test-image.webp' };
+      const ticketWithImage = {
+        ...mockTicket,
+        items: [],
+        cgsBucketLink: 'test-image.webp',
+      };
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
       ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsRepositoryMock.findById.mockResolvedValue(ticketWithImage);
@@ -895,6 +934,139 @@ describe('TicketsService', () => {
       await expect(service.findAll(requester, 'report-1')).rejects.toThrow(
         TicketUnauthorizedException,
       );
+    });
+  });
+
+  describe('updateItemStatus', () => {
+    const submittedReport = {
+      ...mockReport,
+      status: ReportStatus.SUBMITTED,
+    };
+
+    it('happy path: delegates to repository and returns refreshed ticket', async () => {
+      // findById is called twice: once for the belongs-to-report check,
+      // once inside findOne at the end of the method.
+      reportsRepositoryMock.findById.mockResolvedValue(submittedReport);
+      ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
+      ticketsRepositoryMock.updateItemStatus.mockResolvedValue({ id: 'item-1' });
+      ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
+
+      const dto = { status: ItemStatus.APPROVED } as any;
+      const result = await service.updateItemStatus(
+        requester,
+        'report-1',
+        'ticket-1',
+        'item-1',
+        dto,
+      );
+      expect(ticketsRepositoryMock.updateItemStatus).toHaveBeenCalledWith(
+        'ticket-1',
+        'item-1',
+        ItemStatus.APPROVED,
+      );
+      expect(result.id).toBe('ticket-1');
+    });
+
+    it('throws TicketStatusConflictException when report is not SUBMITTED', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport); // CREATED status
+      const dto = { status: ItemStatus.APPROVED } as any;
+
+      await expect(
+        service.updateItemStatus(requester, 'report-1', 'ticket-1', 'item-1', dto),
+      ).rejects.toThrow(TicketStatusConflictException);
+    });
+
+    it('throws TicketNotFoundException when ticket does not belong to the report', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(submittedReport);
+      ticketsRepositoryMock.findById.mockResolvedValue({
+        ...mockTicket,
+        reportId: 'other-report',
+      });
+      const dto = { status: ItemStatus.APPROVED } as any;
+
+      await expect(
+        service.updateItemStatus(requester, 'report-1', 'ticket-1', 'item-1', dto),
+      ).rejects.toThrow(TicketNotFoundException);
+    });
+
+    it('throws TicketNotFoundException when ticket is not found', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(submittedReport);
+      ticketsRepositoryMock.findById.mockResolvedValue(undefined);
+      const dto = { status: ItemStatus.APPROVED } as any;
+
+      await expect(
+        service.updateItemStatus(requester, 'report-1', 'ticket-1', 'item-1', dto),
+      ).rejects.toThrow(TicketNotFoundException);
+    });
+
+    it('throws TicketNotFoundException(itemId) when repository returns undefined for item', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(submittedReport);
+      ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
+      ticketsRepositoryMock.updateItemStatus.mockResolvedValue(undefined);
+      const dto = { status: ItemStatus.APPROVED } as any;
+
+      await expect(
+        service.updateItemStatus(requester, 'report-1', 'ticket-1', 'item-1', dto),
+      ).rejects.toThrow(TicketNotFoundException);
+    });
+  });
+
+  describe('updateAllItemsStatus', () => {
+    const submittedReport = {
+      ...mockReport,
+      status: ReportStatus.SUBMITTED,
+    };
+
+    it('happy path: delegates bulk update to repository and returns refreshed ticket', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(submittedReport);
+      ticketsRepositoryMock.findById.mockResolvedValue(mockTicket);
+      ticketsRepositoryMock.updateAllItemsStatus.mockResolvedValue(mockTicket);
+      ticketsAuthMock.validateCanViewReport.mockResolvedValue(true);
+
+      const dto = { status: ItemStatus.APPROVED } as any;
+      const result = await service.updateAllItemsStatus(
+        requester,
+        'report-1',
+        'ticket-1',
+        dto,
+      );
+      expect(ticketsRepositoryMock.updateAllItemsStatus).toHaveBeenCalledWith(
+        'ticket-1',
+        ItemStatus.APPROVED,
+      );
+      expect(result.id).toBe('ticket-1');
+    });
+
+    it('throws TicketStatusConflictException when report is not SUBMITTED', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(mockReport); // CREATED
+      const dto = { status: ItemStatus.APPROVED } as any;
+
+      await expect(
+        service.updateAllItemsStatus(requester, 'report-1', 'ticket-1', dto),
+      ).rejects.toThrow(TicketStatusConflictException);
+    });
+
+    it('throws TicketNotFoundException when ticket does not belong to the report', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(submittedReport);
+      ticketsRepositoryMock.findById.mockResolvedValue({
+        ...mockTicket,
+        reportId: 'other-report',
+      });
+      const dto = { status: ItemStatus.APPROVED } as any;
+
+      await expect(
+        service.updateAllItemsStatus(requester, 'report-1', 'ticket-1', dto),
+      ).rejects.toThrow(TicketNotFoundException);
+    });
+
+    it('throws TicketNotFoundException when ticket is not found', async () => {
+      reportsRepositoryMock.findById.mockResolvedValue(submittedReport);
+      ticketsRepositoryMock.findById.mockResolvedValue(undefined);
+      const dto = { status: ItemStatus.APPROVED } as any;
+
+      await expect(
+        service.updateAllItemsStatus(requester, 'report-1', 'ticket-1', dto),
+      ).rejects.toThrow(TicketNotFoundException);
     });
   });
 

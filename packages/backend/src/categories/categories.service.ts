@@ -6,7 +6,7 @@ import { Category } from './schemas/category.schema';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly categoriesRepository: CategoriesRepository) { }
+  constructor(private readonly categoriesRepository: CategoriesRepository) {}
 
   async create(dto: CreateCategoryDto): Promise<Category> {
     return this.categoriesRepository.create({
