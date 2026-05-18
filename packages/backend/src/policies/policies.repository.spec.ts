@@ -14,7 +14,7 @@ describe('PoliciesRepository', () => {
       providers: [
         PoliciesRepository,
         {
-          provide: 'DB_CONNECTION', 
+          provide: 'DB_CONNECTION',
           useValue: mockDb,
         },
       ],
@@ -52,10 +52,14 @@ describe('PoliciesRepository', () => {
         return await callback(mockTx);
       });
 
-      const result = await repository.savePolicyAndChunks(companyId, name, chunksWithEmbeddings);
+      const result = await repository.savePolicyAndChunks(
+        companyId,
+        name,
+        chunksWithEmbeddings,
+      );
 
       expect(mockDb.transaction).toHaveBeenCalled();
-      expect(mockTx.insert).toHaveBeenCalledTimes(2); 
+      expect(mockTx.insert).toHaveBeenCalledTimes(2);
       expect(mockTx.values).toHaveBeenCalledTimes(2);
       expect(mockTx.returning).toHaveBeenCalledTimes(1);
 
@@ -79,7 +83,11 @@ describe('PoliciesRepository', () => {
         return await callback(mockTx);
       });
 
-      const result = await repository.savePolicyAndChunks(companyId, name, chunksWithEmbeddings);
+      const result = await repository.savePolicyAndChunks(
+        companyId,
+        name,
+        chunksWithEmbeddings,
+      );
 
       expect(mockDb.transaction).toHaveBeenCalled();
       expect(mockTx.insert).toHaveBeenCalledTimes(1);

@@ -203,7 +203,7 @@ describe('DepartmentService', () => {
         companyRequester,
         'company-1',
         'dept-1',
-        { name: 'Operations' } as any,
+        { name: 'Operations' },
       );
 
       expect(authServiceMock.validateCanManage).toHaveBeenCalledWith(
@@ -220,7 +220,7 @@ describe('DepartmentService', () => {
         companyRequester,
         'company-1',
         'dept-1',
-        {} as any,
+        {},
       );
 
       expect(repositoryMock.update).not.toHaveBeenCalled();

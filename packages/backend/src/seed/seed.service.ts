@@ -35,7 +35,7 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly categoriesRepository: CategoriesRepository,
     @Inject(DB_CONNECTION)
     private readonly db: PostgresJsDatabase<typeof schema>,
-  ) { }
+  ) {}
 
   async onApplicationBootstrap() {
     this.logger.log('--- AUTO MIGRATIONS START ---');
@@ -88,7 +88,7 @@ export class SeedService implements OnApplicationBootstrap {
 
     for (const roleName of rolesToSeed) {
       const existing = existingMap.get(roleName);
-      const hierarchy = ROLE_NAME_TO_HIERARCHY[roleName as keyof typeof ROLE_NAME_TO_HIERARCHY];
+      const hierarchy = ROLE_NAME_TO_HIERARCHY[roleName];
       const description = `System default role: ${roleName}`;
 
       if (existing) {

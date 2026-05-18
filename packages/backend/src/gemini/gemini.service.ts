@@ -6,7 +6,11 @@ import {
 } from '@google/generative-ai';
 import { ConfigService } from '@nestjs/config';
 import { IReceiptExtraction } from '@ticket-registrator/shared';
-import { RECEIPT_SYSTEM_INSTRUCTION, getReceiptUserContext, receiptSchema } from './prompts';
+import {
+  RECEIPT_SYSTEM_INSTRUCTION,
+  getReceiptUserContext,
+  receiptSchema,
+} from './prompts';
 import { GeminiExtractionException } from './exceptions/gemini.exceptions';
 import { CategoriesRepository } from '../categories/categories.repository';
 

@@ -23,7 +23,6 @@ export interface ResourceListMessages {
 interface ResourceListScreenProps<T> {
   // ── Header ────────────────────────────────────────────────────────────────
   title: string;
-  subtitle?: string;
   stats?: PageHeaderStat[];
   headerActions?: ReactNode;
 
@@ -72,7 +71,6 @@ interface ResourceListScreenProps<T> {
  */
 export function ResourceListScreen<T>({
   title,
-  subtitle,
   stats,
   headerActions,
   toolbar,
@@ -132,7 +130,7 @@ export function ResourceListScreen<T>({
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader title={title} subtitle={subtitle} stats={stats} actions={headerActions} />
+      <PageHeader title={title} stats={stats} actions={headerActions} />
 
       <div className="flex flex-col gap-3">
         {toolbar}

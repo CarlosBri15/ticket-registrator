@@ -17,8 +17,6 @@ import { PageHeader } from "../../../components/ui/PageHeader";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { ConfirmDialog } from "../../reports/components/ConfirmDialog";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import { CreateUserModal } from "../../users/components/CreateUserModal";
 import { CreateRoleModal } from "../../roles/components/CreateRoleModal";
 import { AssignPermissionsModal } from "../../users/components/AssignPermissionsModal";
@@ -126,7 +124,6 @@ export const OrganizationDetailScreen = () => {
     <div className="flex flex-col gap-8">
       <PageHeader
         title={org.name}
-        subtitle={`Creada ${format(new Date(org.createdAt), "dd/MM/yyyy", { locale: es })} · Actualizada ${format(new Date(org.updatedAt), "dd/MM/yyyy", { locale: es })}`}
         back={{ label: "Organizaciones", onClick: () => navigate("/organizations") }}
         actions={
           <div className="flex items-center gap-2">

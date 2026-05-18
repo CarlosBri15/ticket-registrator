@@ -10,6 +10,11 @@ import {
 /**
  * Centralises all modal states and mutations for ReportDetailScreen.
  * Keeps the screen component focused on rendering.
+ *
+ * Supervisor approval is done per-item now (see `useItemApproval` consumed by
+ * the ticket detail modal). The report-level "finish review" action transitions
+ * the report to APPROVED and lets the backend recompute requested/approved
+ * amounts from the persisted item statuses.
  */
 export const useReportDetailActions = (reportId: string) => {
   const navigate = useNavigate();
@@ -17,8 +22,7 @@ export const useReportDetailActions = (reportId: string) => {
   // ── Modal visibility states ────────────────────────────────────────────────
   const [submitConfirm, setSubmitConfirm] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [approveConfirm, setApproveConfirm] = useState(false);
-  const [declineConfirm, setDeclineConfirm] = useState(false);
+  const [finishReviewConfirm, setFinishReviewConfirm] = useState(false);
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const submitMutation = useSubmitReportMutation({
@@ -27,8 +31,7 @@ export const useReportDetailActions = (reportId: string) => {
 
   const updateStatusMutation = useUpdateReportStatusMutation({
     onSuccess: () => {
-      setApproveConfirm(false);
-      setDeclineConfirm(false);
+      setFinishReviewConfirm(false);
     },
   });
 
@@ -39,25 +42,26 @@ export const useReportDetailActions = (reportId: string) => {
   // ── Action handlers ────────────────────────────────────────────────────────
   const handleSubmit = () => submitMutation.mutate(reportId);
   const handleDelete = () => deleteReportMutation.mutate(reportId);
-  const handleApprove = () =>
+  /**
+   * Finalises supervisor review. Backend transitions SUBMITTED → APPROVED and
+   * sets `requested_amount` / `approved_amount` from item statuses persisted
+   * during the review. The user sees the resolved report afterwards.
+   */
+  const handleFinishReview = () =>
     updateStatusMutation.mutate({ id: reportId, status: ReportStatus.APPROVED });
-  const handleDecline = () =>
-    updateStatusMutation.mutate({ id: reportId, status: ReportStatus.DECLINED });
 
   return {
     // Modal toggles
     submitConfirm, setSubmitConfirm,
     deleteConfirm, setDeleteConfirm,
-    approveConfirm, setApproveConfirm,
-    declineConfirm, setDeclineConfirm,
+    finishReviewConfirm, setFinishReviewConfirm,
     // Mutation state
     isSubmitting: submitMutation.isPending,
     isDeleting: deleteReportMutation.isPending,
-    isUpdatingStatus: updateStatusMutation.isPending,
+    isFinishingReview: updateStatusMutation.isPending,
     // Handlers
     handleSubmit,
     handleDelete,
-    handleApprove,
-    handleDecline,
+    handleFinishReview,
   };
 };

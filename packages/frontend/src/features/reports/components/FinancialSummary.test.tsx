@@ -42,7 +42,7 @@ describe('FinancialSummary', () => {
     expect(screen.getByText('reportDetail.approved')).toBeInTheDocument();
   });
 
-  it('renders rejected row with negative sign when approved < requested', () => {
+  it('renders rejected row when approved < requested', () => {
     render(
       <FinancialSummary
         {...baseProps}
@@ -53,7 +53,7 @@ describe('FinancialSummary', () => {
       />,
     );
     expect(screen.getByText('reportDetail.rejected')).toBeInTheDocument();
-    expect(screen.getByText('−30.00 EUR')).toBeInTheDocument();
+    expect(screen.getByText('30.00 EUR')).toBeInTheDocument();
   });
 
   it('does not render rejected row when approved equals requested', () => {

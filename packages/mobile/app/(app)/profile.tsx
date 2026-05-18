@@ -5,31 +5,26 @@ import {
   Text,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
   StyleSheet,
   StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { 
-  IconLogout, 
-  IconShield, 
-  IconUser, 
-  IconEdit, 
-  IconX, 
-  IconCheck, 
-  IconCircleCheck, 
-  IconGlobe 
-} from '@tabler/icons-react-native';
+import {
+  LogOut,
+  Shield,
+  User,
+  Pencil,
+  X,
+  Check,
+  CircleCheck,
+  Globe,
+} from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
-import {
-  PixelCard,
-  DARK,
-  CARD_BG,
-  SCREEN_BG,
-  colors,
-} from '../../src/components/ui/PixelCard';
-import { PixelField } from '../../src/components/ui/PixelField';
-import { PixelInput } from '../../src/components/ui/PixelInput';
+import { Card } from '../../src/components/ui/Card';
+import { Input } from '../../src/components/ui/Input';
+import { colors } from '../../src/constants/theme';
 import { useProfileScreen } from '../../src/hooks/useProfileScreen';
 import { userIcon } from '@ticket-registrator/shared/assets';
 
@@ -57,26 +52,28 @@ export default function ProfileScreen() {
     changeLanguage,
   } = useProfileScreen();
 
-  const roleName: string = (user as any)?.roleName ?? '';
+  const roleName: string = (user as { roleName?: string } | null)?.roleName ?? '';
 
   return (
     <View style={s.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor={CARD_BG} />
-      <View style={{ height: insets.top, backgroundColor: CARD_BG }} />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surfaceCard} />
+      <View style={{ height: insets.top, backgroundColor: colors.surfaceCard }} />
 
-      {/* ── Header ── */}
-      <View style={s.header}>
-        <Text style={s.headerTitle}>{t('settings.profile') ?? 'Perfil'}</Text>
-        <PixelCard
-          bg={colors.danger}
-          shadowOffset={3}
-          radius={8}
+      {/* ── Page header ── */}
+      <View style={s.pageHead}>
+        <View style={s.pageHeadText}>
+          <Text style={s.pageTitle}>{t('settings.profile') ?? 'Perfil'}</Text>
+          <Text style={s.pageSubtitle}>Cuenta y preferencias</Text>
+        </View>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="logout"
           onPress={handleLogout}
+          activeOpacity={0.85}
+          style={s.logoutBtn}
         >
-          <View style={s.headerBtn}>
-            <IconLogout size={16} color="white" />
-          </View>
-        </PixelCard>
+          <LogOut size={16} color={colors.danger} strokeWidth={2} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -85,111 +82,102 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* ── Avatar card ── */}
-        <PixelCard bg={CARD_BG} shadowOffset={4} style={s.profileCardWrap}>
+        <Card style={s.profileCardWrap}>
           <View style={s.profileCardInner}>
-            <PixelCard bg={colors.secondary} shadowOffset={3} radius={14}>
-              <View style={s.avatarBubbleInner}>
-                <Image source={userIcon} style={s.avatarImage} />
-              </View>
-            </PixelCard>
+            <View style={s.avatarBubble}>
+              <Image source={userIcon} style={s.avatarImage} />
+            </View>
             <View style={s.profileMeta}>
               <Text style={s.userName}>{user?.name ?? '...'}</Text>
               <Text style={s.userEmail}>{user?.email}</Text>
               {roleName ? (
                 <View style={s.rolePill}>
-                  <IconShield size={9} color={CARD_BG} />
+                  <Shield size={10} color={colors.fgOnBrand} strokeWidth={2} />
                   <Text style={s.rolePillText}>{roleName}</Text>
                 </View>
               ) : null}
             </View>
           </View>
-        </PixelCard>
+        </Card>
 
         {/* ── Personal data ── */}
         <View style={s.section}>
           <View style={s.sectionHeader}>
-            <IconUser size={11} color={DARK} />
+            <User size={12} color={colors.fgSecondary} strokeWidth={2} />
             <Text style={s.sectionTitle}>{t('settings.personalData')}</Text>
             {isEditing ? (
-              <PixelCard
-                bg={CARD_BG}
-                shadowOffset={3}
-                radius={8}
+              <TouchableOpacity
+                accessibilityRole="button"
                 onPress={() => setIsEditing(false)}
+                activeOpacity={0.85}
+                style={s.sectionBtnSecondary}
               >
-                <View style={s.sectionBtnInner}>
-                  <IconX size={13} color={DARK} />
-                  <Text style={s.sectionBtnText}>{t('common.cancel')}</Text>
-                </View>
-              </PixelCard>
+                <X size={13} color={colors.dark} strokeWidth={2} />
+                <Text style={s.sectionBtnText}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
             ) : (
-              <PixelCard
-                bg={colors.brand}
-                shadowOffset={3}
-                radius={8}
+              <TouchableOpacity
+                accessibilityRole="button"
                 onPress={startEdit}
+                activeOpacity={0.85}
+                style={s.sectionBtnPrimary}
               >
-                <View style={s.sectionBtnInner}>
-                  <IconEdit size={13} color="white" />
-                  <Text style={[s.sectionBtnText, { color: 'white' }]}>{t('common.edit')}</Text>
-                </View>
-              </PixelCard>
+                <Pencil size={13} color={colors.fgOnBrand} strokeWidth={2} />
+                <Text style={[s.sectionBtnText, { color: colors.fgOnBrand }]}>{t('common.edit')}</Text>
+              </TouchableOpacity>
             )}
           </View>
 
           <View style={s.formContainer}>
-            <PixelField label={t('common.name')}>
-              <PixelInput
-                value={form.name}
-                onChangeText={(v) => setForm({ ...form, name: v })}
-                placeholder="Tu nombre"
-                editable={isEditing}
-              />
-            </PixelField>
+            <Input
+              label={t('common.name')}
+              value={form.name}
+              onChangeText={(v) => setForm({ ...form, name: v })}
+              placeholder="Tu nombre"
+              editable={isEditing}
+            />
 
-            <PixelField label={t('common.email')}>
-              <PixelInput
-                value={form.email}
-                onChangeText={(v) => setForm({ ...form, email: v })}
-                placeholder="email@ejemplo.com"
-                editable={isEditing}
-                keyboardType="email-address"
-              />
-            </PixelField>
+            <Input
+              label={t('common.email')}
+              value={form.email}
+              onChangeText={(v) => setForm({ ...form, email: v })}
+              placeholder="email@ejemplo.com"
+              editable={isEditing}
+              keyboardType="email-address"
+            />
 
-            {isEditing && (
-              <PixelCard
-                bg={colors.brand}
-                shadowOffset={4}
-                style={isSaving ? s.savingOpacity : undefined}
+            {isEditing ? (
+              <TouchableOpacity
+                accessibilityRole="button"
                 onPress={isSaving ? undefined : handleSave}
+                disabled={isSaving}
+                activeOpacity={0.85}
+                style={[s.saveBtn, isSaving && s.savingOpacity]}
               >
-                <View style={s.saveBtnInner}>
-                  {isSaving ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <>
-                      <IconCheck size={16} color="white" />
-                      <Text style={s.saveBtnText}>{t('common.save')}</Text>
-                    </>
-                  )}
-                </View>
-              </PixelCard>
-            )}
+                {isSaving ? (
+                  <ActivityIndicator size="small" color={colors.fgOnBrand} />
+                ) : (
+                  <>
+                    <Check size={16} color={colors.fgOnBrand} strokeWidth={2} />
+                    <Text style={s.saveBtnText}>{t('common.save')}</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            ) : null}
 
-            {saveOk && !isEditing && (
+            {saveOk && !isEditing ? (
               <View style={s.successMsg}>
-                <IconCircleCheck size={14} color={colors.success} />
+                <CircleCheck size={14} color={colors.success} strokeWidth={2} />
                 <Text style={s.successText}>{t('common.success')}</Text>
               </View>
-            )}
+            ) : null}
           </View>
         </View>
 
         {/* ── Language ── */}
         <View style={s.section}>
           <View style={s.sectionHeader}>
-            <IconGlobe size={11} color={DARK} />
+            <Globe size={12} color={colors.fgSecondary} strokeWidth={2} />
             <Text style={s.sectionTitle}>{t('settings.language')}</Text>
           </View>
 
@@ -197,22 +185,18 @@ export default function ProfileScreen() {
             {LANGUAGES.map((lang) => {
               const active = language === lang.code;
               return (
-                <PixelCard
+                <TouchableOpacity
                   key={lang.code}
-                  bg={active ? colors.brand : CARD_BG}
-                  shadowOffset={active ? 4 : 3}
-                  active={active}
-                  style={s.langCard}
                   onPress={() => changeLanguage(lang.code)}
+                  activeOpacity={0.85}
+                  style={[s.langCard, active && s.langCardActive]}
                 >
-                  <View style={s.langBox}>
-                    <Text style={s.langFlag}>{lang.flag}</Text>
-                    <Text style={[s.langText, active && s.langTextActive]}>
-                      {lang.label}
-                    </Text>
-                    {active && <IconCheck size={14} color="white" />}
-                  </View>
-                </PixelCard>
+                  <Text style={s.langFlag}>{lang.flag}</Text>
+                  <Text style={[s.langText, active && s.langTextActive]}>
+                    {lang.label}
+                  </Text>
+                  {active ? <Check size={14} color={colors.fgOnBrand} strokeWidth={2} /> : null}
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -229,56 +213,70 @@ export default function ProfileScreen() {
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: SCREEN_BG },
+  screen: { flex: 1, backgroundColor: colors.surface },
   scroll: { padding: 20, paddingBottom: 60 },
 
-  // ── Header
-  header: {
+  pageHead: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 10,
-    paddingBottom: 12,
-    backgroundColor: CARD_BG,
-    borderBottomWidth: 4,
-    borderBottomColor: DARK,
+    paddingHorizontal: 22,
+    paddingTop: 14,
+    paddingBottom: 18,
+    backgroundColor: colors.surface,
+    gap: 12,
   },
-  headerTitle: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 24,
-    color: DARK,
-    letterSpacing: 0.5,
+  pageHeadText: { flex: 1, minWidth: 0 },
+  pageTitle: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 34,
+    color: colors.dark,
+    letterSpacing: -1,
+    lineHeight: 36,
   },
-  headerBtn: {
-    width: 34,
-    height: 34,
+  pageSubtitle: {
+    fontFamily: 'Manrope-Medium',
+    fontSize: 13,
+    color: colors.fgSecondary,
+    marginTop: 6,
+  },
+  logoutBtn: {
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 9999,
+    backgroundColor: colors.surfaceSunken,
   },
 
-  // ── Profile card
-  profileCardWrap: { marginBottom: 28 },
+  profileCardWrap: { marginBottom: 24 },
   profileCardInner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-    padding: 16,
+    padding: 18,
   },
-  avatarBubbleInner: { width: 68, height: 68, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  avatarImage: { width: '100%', height: '100%' },
-  avatarText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 26, color: DARK },
+  avatarBubble: {
+    width: 64,
+    height: 64,
+    borderRadius: 9999,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: { width: 56, height: 56 },
   profileMeta: { flex: 1 },
   userName: {
-    fontFamily: 'SpaceGrotesk-Bold',
+    fontFamily: 'Manrope-Bold',
     fontSize: 18,
-    color: DARK,
+    color: colors.dark,
     letterSpacing: -0.3,
   },
   userEmail: {
-    fontFamily: 'SpaceGrotesk-Medium',
-    fontSize: 12,
-    color: `${DARK}50`,
+    fontFamily: 'Manrope-Medium',
+    fontSize: 13,
+    color: colors.fgSecondary,
     marginTop: 2,
   },
   rolePill: {
@@ -287,19 +285,17 @@ const s = StyleSheet.create({
     gap: 4,
     alignSelf: 'flex-start',
     marginTop: 8,
-    backgroundColor: DARK,
-    borderRadius: 4,
-    paddingHorizontal: 8,
+    backgroundColor: colors.brand,
+    borderRadius: 9999,
+    paddingHorizontal: 10,
     paddingVertical: 3,
   },
   rolePillText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 9,
-    color: CARD_BG,
-    letterSpacing: 0.5,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 10,
+    color: colors.fgOnBrand,
   },
 
-  // ── Sections
   section: { marginBottom: 28 },
   sectionHeader: {
     flexDirection: 'row',
@@ -309,49 +305,94 @@ const s = StyleSheet.create({
   },
   sectionTitle: {
     flex: 1,
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 12,
-    color: DARK,
-    letterSpacing: 0.3,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 13,
+    color: colors.dark,
+    letterSpacing: -0.1,
   },
-  sectionBtnInner: {
+  sectionBtnPrimary: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
+    backgroundColor: colors.brand,
+    borderRadius: 9999,
+  },
+  sectionBtnSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: colors.surfaceCard,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 9999,
   },
   sectionBtnText: {
-    fontFamily: 'SpaceGrotesk-Bold',
+    fontFamily: 'Manrope-SemiBold',
     fontSize: 11,
-    color: DARK,
-    letterSpacing: 0.2,
+    color: colors.dark,
   },
 
-  // ── Form
   formContainer: { gap: 0 },
-  saveBtnInner: {
+  saveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 16,
+    paddingVertical: 12,
+    borderRadius: 9999,
+    backgroundColor: colors.brand,
+    marginTop: 4,
   },
-  savingOpacity: { opacity: 0.6 },
-  saveBtnText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 14, color: 'white', letterSpacing: 0.3 },
-  successMsg: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 },
-  successText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 12, color: colors.success },
+  savingOpacity: { opacity: 0.65 },
+  saveBtnText: { fontFamily: 'Manrope-SemiBold', fontSize: 14, color: colors.fgOnBrand },
+  successMsg: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 12,
+  },
+  successText: { fontFamily: 'Manrope-SemiBold', fontSize: 12, color: colors.success },
 
-  // ── Language
-  langRow: { flexDirection: 'row', gap: 12 },
-  langCard: { flex: 1 },
-  langBox: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 16 },
+  langRow: { flexDirection: 'row', gap: 10 },
+  langCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 14,
+    backgroundColor: colors.surfaceCard,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+  },
+  langCardActive: {
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
+  },
   langFlag: { fontSize: 18 },
-  langText: { flex: 1, fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK },
-  langTextActive: { color: 'white' },
+  langText: {
+    flex: 1,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 13,
+    color: colors.dark,
+  },
+  langTextActive: { color: colors.fgOnBrand },
 
-  // ── Version
   versionBox: { alignItems: 'center', marginTop: 8 },
-  versionText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 9, color: `${DARK}30`, letterSpacing: 0.5 },
-  versionNumber: { fontFamily: 'SpaceGrotesk-Medium', fontSize: 10, color: `${DARK}30`, marginTop: 3 },
+  versionText: {
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 11,
+    color: colors.fgQuaternary,
+  },
+  versionNumber: {
+    fontFamily: 'Manrope-Medium',
+    fontSize: 11,
+    color: colors.fgQuaternary,
+    marginTop: 3,
+  },
 });

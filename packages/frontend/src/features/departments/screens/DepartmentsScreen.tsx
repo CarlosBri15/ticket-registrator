@@ -59,7 +59,15 @@ export const DepartmentsScreen = () => {
     <>
       <ResourceListScreen<IDepartment>
         title={t("departments.title")}
-        stats={hasAny ? [{ label: t("departments.total", "Total"), value: totalDepartments }] : undefined}
+        stats={
+          hasAny
+            ? [{
+                label: t("departments.total", "Total"),
+                value: totalDepartments,
+                icon: <Layers className="w-4 h-4" aria-hidden={true} />,
+              }]
+            : undefined
+        }
         headerActions={
           can("create_departments") ? (
             <Button

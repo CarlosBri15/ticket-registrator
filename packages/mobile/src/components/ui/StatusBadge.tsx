@@ -1,42 +1,55 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { 
-  IconEdit, 
-  IconFileText, 
-  IconClock, 
-  IconSend, 
-  IconCircleCheck, 
-  IconCurrencyDollar, 
-  IconCircleX, 
-  IconBan 
-} from '@tabler/icons-react-native';
 import { useTranslation } from 'react-i18next';
-import { BORDER_WIDTH } from './PixelCard';
+import {
+  Pencil,
+  FilePlus,
+  Clock,
+  Send,
+  Check,
+  Wallet,
+  X,
+  type LucideIcon,
+} from 'lucide-react-native';
+import { statusInlineColors } from '@ticket-registrator/shared';
 
-const STATUS_MAP: Record<string, { bg: string; text: string; icon: any }> = {
-  DRAFT:     { bg: 'rgba(26, 26, 26, 0.15)', text: '#FFFFFF', icon: IconEdit },
-  CREATED:   { bg: '#FF7F50', text: '#FFFFFF', icon: IconFileText },
-  PENDING:   { bg: '#E6B800', text: '#FFFFFF', icon: IconClock },
-  SUBMITTED: { bg: '#E6B800', text: '#FFFFFF', icon: IconSend },
-  APPROVED:  { bg: '#00C896', text: '#FFFFFF', icon: IconCircleCheck },
-  PAID:      { bg: '#00C896', text: '#FFFFFF', icon: IconCurrencyDollar },
-  REJECTED:  { bg: '#FF4B4B', text: '#FFFFFF', icon: IconCircleX },
-  DECLINED:  { bg: '#FF4B4B', text: '#FFFFFF', icon: IconBan },
+/**
+ * status enum → lucide icon glyph. The text/dot colour comes from the shared
+ * `statusColors` map (single source of truth for `.st-*` palette across web
+ * and mobile) — never hardcoded here.
+ */
+const STATUS_ICON: Record<string, LucideIcon> = {
+  DRAFT:     Pencil,
+  CREATED:   FilePlus,
+  PENDING:   Clock,
+  SUBMITTED: Send,
+  APPROVED:  Check,
+  PAID:      Wallet,
+  REJECTED:  X,
+  DECLINED:  X,
 };
+
+const FALLBACK_ICON: LucideIcon = Pencil;
+type StatusKey = keyof typeof statusInlineColors;
+const DEFAULT_KEY: StatusKey = 'DRAFT';
 
 interface StatusBadgeProps {
   status: string;
 }
 
+/**
+ * Mirrors the web kit `.status` primitive (`packages/frontend/src/index.css`):
+ * lucide glyph + coloured label, no pill, no background.
+ */
 export const StatusBadge = ({ status }: StatusBadgeProps) => {
   const { t } = useTranslation();
-  const key = status.toUpperCase();
-  const cfg = STATUS_MAP[key] ?? STATUS_MAP.DRAFT;
-  const Icon = cfg.icon;
+  const key = status.toUpperCase() as StatusKey;
+  const tint = statusInlineColors[key] ?? statusInlineColors[DEFAULT_KEY];
+  const Icon = STATUS_ICON[key] ?? FALLBACK_ICON;
 
   return (
-    <View style={[styles.badge, { backgroundColor: cfg.bg, borderColor: 'rgba(26, 26, 26, 0.15)' }]}>
-      <Icon size={11} color={cfg.text} />
-      <Text style={[styles.label, { color: cfg.text }]}>
+    <View style={styles.status}>
+      <Icon size={14} color={tint} strokeWidth={2} />
+      <Text style={[styles.label, { color: tint }]}>
         {t(`status.${key}`, { defaultValue: key })}
       </Text>
     </View>
@@ -44,24 +57,14 @@ export const StatusBadge = ({ status }: StatusBadgeProps) => {
 };
 
 const styles = StyleSheet.create({
-  badge: {
-    alignSelf: 'flex-start',
+  status: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: BORDER_WIDTH,
-    shadowColor: 'rgba(26, 26, 26, 0.15)',
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
+    gap: 6,
   },
   label: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 9,
-    letterSpacing: 0.2,
+    fontFamily: 'Manrope-Medium',
+    fontSize: 13,
+    lineHeight: 14,
   },
 });

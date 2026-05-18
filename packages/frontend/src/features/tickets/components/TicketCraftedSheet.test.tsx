@@ -59,8 +59,6 @@ const baseProps = {
   getItemStatus: () => 'Pending',
   onApprove: vi.fn(),
   onReject: vi.fn(),
-  onSaveItems: vi.fn(),
-  hasItemChanges: false,
   isSavingItems: false,
 };
 

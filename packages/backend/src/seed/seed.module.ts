@@ -15,4 +15,4 @@ import { CategoriesModule } from '../categories/categories.module';
   providers: [SeedService],
   exports: [SeedService],
 })
-export class SeedModule { }
+export class SeedModule {}

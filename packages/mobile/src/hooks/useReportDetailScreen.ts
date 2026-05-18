@@ -7,6 +7,7 @@ import {
   useUploadTicketMutation,
   useUpdateTicketMutation,
   useDeleteTicketMutation,
+  useDeleteReportMutation,
   useSubmitReportMutation,
   type ITicket,
 } from '@ticket-registrator/shared';
@@ -70,6 +71,12 @@ export const useReportDetailScreen = (id: string) => {
       Alert.alert(t('common.error'), error?.response?.data?.message ?? t('common.error')),
   });
 
+  const { mutate: deleteReport, isPending: isDeleting } = useDeleteReportMutation({
+    onSuccess: () => {
+      // navigation back is handled by the screen via `onAfterDelete` callback.
+    },
+  });
+
   const pickFromCamera = useCallback(async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
@@ -121,6 +128,21 @@ export const useReportDetailScreen = (id: string) => {
     );
   }, [id, t, submitReport]);
 
+  const handleDeleteReport = useCallback((onAfterDelete?: () => void) => {
+    Alert.alert(
+      t('common.delete'),
+      t('reportDetail.confirmDelete', { defaultValue: '¿Eliminar este reporte?' }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: () => deleteReport(id, { onSuccess: onAfterDelete }),
+        },
+      ],
+    );
+  }, [id, t, deleteReport]);
+
   const isEditable = useMemo(() =>
     report && ['CREATED', 'DRAFT'].includes(report.status.toUpperCase()),
     [report]);
@@ -141,6 +163,7 @@ export const useReportDetailScreen = (id: string) => {
     isUploading,
     isConfirming,
     isSubmitting,
+    isDeleting,
     isModalOpen,
     setIsModalOpen,
     extractedTicket,
@@ -154,6 +177,7 @@ export const useReportDetailScreen = (id: string) => {
     handleConfirm,
     handleDiscard,
     handleSubmit,
+    handleDeleteReport,
     isEditable,
     canSubmit,
     ticketsTotal,

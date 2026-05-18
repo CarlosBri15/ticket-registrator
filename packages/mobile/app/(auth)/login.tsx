@@ -6,6 +6,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
   StyleSheet,
   StatusBar,
 } from 'react-native';
@@ -14,24 +15,18 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginSchema, useLoginMutation } from '@ticket-registrator/shared';
 import { useRouter } from 'expo-router';
-import { 
-  IconBolt, 
-  IconEye, 
-  IconEyeOff, 
-  IconAlertCircle, 
-  IconArrowRight 
-} from '@tabler/icons-react-native';
+import {
+  Zap,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  ArrowRight,
+} from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
-import {
-  PixelCard,
-  DARK,
-  CARD_BG,
-  SCREEN_BG,
-  colors,
-} from '../../src/components/ui/PixelCard';
-import { PixelField } from '../../src/components/ui/PixelField';
-import { PixelInput } from '../../src/components/ui/PixelInput';
+import { Card } from '../../src/components/ui/Card';
+import { Input } from '../../src/components/ui/Input';
+import { colors } from '../../src/constants/theme';
 import { tokenProvider } from '../../src/api/client';
 
 export default function LoginScreen() {
@@ -41,7 +36,7 @@ export default function LoginScreen() {
   const [passwordVisible, setPasswordVisible] = useState(false);
 
   const { mutate, isPending, isError, error } = useLoginMutation({
-    onSuccess: async (data: any) => {
+    onSuccess: async (data: { access_token: string }) => {
       await tokenProvider.setToken(data.access_token);
       router.replace('/(app)/home');
     },
@@ -59,13 +54,14 @@ export default function LoginScreen() {
   const onSubmit = (data: LoginSchema) => mutate(data);
 
   const serverErrorMessage = isError
-    ? (error as any)?.response?.data?.message || t('common.error')
+    ? (error as { response?: { data?: { message?: string } } })?.response?.data?.message
+      || t('common.error')
     : undefined;
 
   return (
     <View style={s.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor={SCREEN_BG} />
-      <View style={{ height: insets.top, backgroundColor: SCREEN_BG }} />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
+      <View style={{ height: insets.top, backgroundColor: colors.surface }} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -77,107 +73,97 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={s.inner}>
-          {/* ── Brand block ── */}
-          <View style={s.brandBlock}>
-            <PixelCard bg={colors.secondary} shadowOffset={4} radius={20}>
-              <View style={s.logoInner}>
-                <IconBolt size={36} color={DARK} />
+            {/* ── Brand block ── */}
+            <View style={s.brandBlock}>
+              <View style={s.logoCard}>
+                <Zap size={28} color={colors.dark} strokeWidth={2} />
               </View>
-            </PixelCard>
-            <Text style={s.brandName}>TicketReg AI</Text>
-            <Text style={s.brandSub}>{t('auth.loginSubtitle')}</Text>
-          </View>
+              <Text style={s.brandName}>TicketReg AI</Text>
+              <Text style={s.brandSub}>{t('auth.loginSubtitle')}</Text>
+            </View>
 
-          {/* ── Form ── */}
-          <View style={s.form}>
-            <PixelField label={t('auth.emailLabel')}>
+            {/* ── Form ── */}
+            <View style={s.form}>
               <Controller
                 control={control}
                 name="email"
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <PixelInput
+                  <Input
+                    label={t('auth.emailLabel')}
                     value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}
                     placeholder={t('auth.emailPlaceholder')}
                     autoCapitalize="none"
                     keyboardType="email-address"
-                    error={!!errors.email}
+                    error={errors.email?.message}
                   />
                 )}
               />
-              {errors.email && (
-                <Text style={s.fieldError}>{errors.email.message}</Text>
-              )}
-            </PixelField>
 
-            <PixelField label={t('auth.passwordLabel')}>
-              <View style={s.passwordRow}>
-                <View style={s.passwordInput}>
-                  <Controller
-                    control={control}
-                    name="password"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <PixelInput
-                        value={value}
-                        onChangeText={onChange}
-                        onBlur={onBlur}
-                        placeholder="••••••••••"
-                        secureTextEntry={!passwordVisible}
-                        error={!!errors.password}
-                      />
-                    )}
-                  />
-                </View>
-                <PixelCard
-                  bg={CARD_BG}
-                  shadowOffset={3}
-                  radius={8}
-                  onPress={() => setPasswordVisible(v => !v)}
-                >
-                  <View style={s.eyeBtn}>
-                    {passwordVisible ? (
-                      <IconEyeOff size={18} color={`${DARK}60`} />
-                    ) : (
-                      <IconEye size={18} color={`${DARK}60`} />
-                    )}
+              <View>
+                <Text style={s.passwordLabel}>{t('auth.passwordLabel')}</Text>
+                <View style={s.passwordRow}>
+                  <View style={s.passwordInput}>
+                    <Controller
+                      control={control}
+                      name="password"
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <Input
+                          containerClassName="mb-0"
+                          value={value}
+                          onChangeText={onChange}
+                          onBlur={onBlur}
+                          placeholder="••••••••••"
+                          secureTextEntry={!passwordVisible}
+                          error={errors.password?.message}
+                        />
+                      )}
+                    />
                   </View>
-                </PixelCard>
-              </View>
-              {errors.password && (
-                <Text style={s.fieldError}>{errors.password.message}</Text>
-              )}
-            </PixelField>
-
-            {/* Server error */}
-            {serverErrorMessage && (
-              <PixelCard bg="#FEF2F2" shadowOffset={3} style={s.errorCard}>
-                <View style={s.errorInner}>
-                  <IconAlertCircle size={16} color={colors.danger} />
-                  <Text style={s.errorText}>{serverErrorMessage}</Text>
+                  <TouchableOpacity
+                    onPress={() => setPasswordVisible((v) => !v)}
+                    style={s.eyeBtn}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="toggle password visibility"
+                  >
+                    {passwordVisible ? (
+                      <EyeOff size={18} color={colors.fgSecondary} strokeWidth={2} />
+                    ) : (
+                      <Eye size={18} color={colors.fgSecondary} strokeWidth={2} />
+                    )}
+                  </TouchableOpacity>
                 </View>
-              </PixelCard>
-            )}
+              </View>
 
-            {/* Login button */}
-            <PixelCard
-              bg={isPending ? `${colors.brand}99` : colors.brand}
-              shadowOffset={4}
-              style={s.loginCard}
-              onPress={isPending ? undefined : handleSubmit(onSubmit)}
-            >
-              <View style={s.loginBtnInner}>
+              {/* Server error */}
+              {serverErrorMessage ? (
+                <Card style={s.errorCard} bg={colors.dangerBg} borderColor={colors.dangerBorder}>
+                  <View style={s.errorInner}>
+                    <AlertCircle size={16} color={colors.danger} strokeWidth={2} />
+                    <Text style={s.errorText}>{serverErrorMessage}</Text>
+                  </View>
+                </Card>
+              ) : null}
+
+              {/* Login button */}
+              <TouchableOpacity
+                style={[s.loginBtn, isPending && s.loginBtnDisabled]}
+                onPress={isPending ? undefined : handleSubmit(onSubmit)}
+                activeOpacity={0.85}
+                disabled={isPending}
+              >
                 {isPending ? (
-                  <ActivityIndicator size="small" color="white" />
+                  <ActivityIndicator size="small" color={colors.fgOnBrand} />
                 ) : (
                   <>
                     <Text style={s.loginBtnText}>{t('auth.loginButton')}</Text>
-                    <IconArrowRight size={18} color="white" />
+                    <ArrowRight size={16} color={colors.fgOnBrand} strokeWidth={2} />
                   </>
                 )}
-              </View>
-            </PixelCard>
-          </View>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -186,43 +172,55 @@ export default function LoginScreen() {
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: SCREEN_BG },
+  screen: { flex: 1, backgroundColor: colors.surface },
   scroll: { flexGrow: 1 },
   inner: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 40 },
 
-  // ── Brand
   brandBlock: { alignItems: 'center', marginBottom: 40 },
-  logoInner: { width: 80, height: 80, alignItems: 'center', justifyContent: 'center' },
+  logoCard: {
+    width: 64,
+    height: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.accent,
+    borderRadius: 16,
+  },
   brandName: {
-    fontFamily: 'SpaceGrotesk-Bold',
+    fontFamily: 'Manrope-Bold',
     fontSize: 32,
-    color: DARK,
-    letterSpacing: -0.5,
+    color: colors.dark,
+    letterSpacing: -0.6,
     marginTop: 20,
   },
   brandSub: {
-    fontFamily: 'SpaceGrotesk-Medium',
+    fontFamily: 'Manrope-Medium',
     fontSize: 14,
-    color: `${DARK}55`,
+    color: colors.fgSecondary,
     marginTop: 6,
     textAlign: 'center',
   },
 
-  // ── Form
-  form: { width: '100%', marginBottom: 32 },
-  fieldError: {
-    fontFamily: 'SpaceGrotesk-Bold',
+  form: { width: '100%', marginBottom: 24, gap: 4 },
+  passwordLabel: {
+    fontFamily: 'Manrope-SemiBold',
     fontSize: 11,
-    color: colors.danger,
-    marginTop: 6,
-    marginLeft: 2,
+    color: colors.fgSecondary,
+    marginBottom: 6,
   },
-  passwordRow: { flexDirection: 'row', gap: 10 },
+  passwordRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   passwordInput: { flex: 1, minWidth: 0 },
-  eyeBtn: { width: 50, height: 50, alignItems: 'center', justifyContent: 'center' },
+  eyeBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceCard,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 6,
+  },
 
-  // ── Error card
-  errorCard: { marginBottom: 16 },
+  errorCard: { marginBottom: 12 },
   errorInner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -231,25 +229,27 @@ const s = StyleSheet.create({
   },
   errorText: {
     flex: 1,
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 12,
-    color: colors.danger,
+    fontFamily: 'Manrope-Medium',
+    fontSize: 13,
+    color: colors.dangerText,
   },
 
-  // ── Login button
-  loginCard: { marginTop: 8 },
-  loginBtnInner: {
+  loginBtn: {
+    marginTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 18,
+    gap: 8,
+    backgroundColor: colors.brand,
+    paddingVertical: 14,
+    borderRadius: 9999,
+  },
+  loginBtnDisabled: {
+    opacity: 0.65,
   },
   loginBtnText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 16,
-    color: 'white',
-    letterSpacing: 0.3,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 14,
+    color: colors.fgOnBrand,
   },
-
 });

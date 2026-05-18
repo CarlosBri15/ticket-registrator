@@ -139,7 +139,7 @@ describe('ItemsService', () => {
         mockItem,
       ]);
 
-      const result = await service.bulkCreate(insertData as any);
+      const result = await service.bulkCreate(insertData);
 
       expect(itemsRepositoryMock.bulkCreate).toHaveBeenCalledWith(insertData);
       expect(result).toEqual([mockIItem]);

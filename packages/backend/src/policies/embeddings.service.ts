@@ -18,7 +18,9 @@ export class EmbeddingsService {
 
   async generateEmbedding(text: string): Promise<number[]> {
     try {
-      const embeddingModel = this.genAI.getGenerativeModel({ model: 'text-embedding-004' });
+      const embeddingModel = this.genAI.getGenerativeModel({
+        model: 'text-embedding-004',
+      });
       const result = await embeddingModel.embedContent(text);
       return result.embedding.values;
     } catch (error) {

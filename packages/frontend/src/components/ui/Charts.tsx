@@ -9,6 +9,7 @@ import {
   YAxis,
   Tooltip,
 } from "recharts";
+import { CategoryIcon } from "./CategoryIcon";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 // Warm-stone palette mirroring the kit (`--color-stone-*` in index.css).
@@ -70,14 +71,12 @@ const CustomTooltip = ({ active, payload, label, prefix = "", suffix = "" }: Too
 // ─── Donut Chart ──────────────────────────────────────────────────────────────
 
 interface DonutChartProps {
-  data: { name: string; value: number; color?: string | null }[];
+  data: { name: string; value: number; color?: string | null; icon?: string | null }[];
   centerLabel?: string;
   centerValue?: string;
   height?: number;
   showLegend?: boolean;
 }
-
-const FALLBACK_SEGMENT = "var(--color-stone-400)";
 
 export const DonutChart = memo(({ data, centerLabel, centerValue, height = 240, showLegend = false }: DonutChartProps) => {
   const total = data.reduce((sum, d) => sum + (d.value ?? 0), 0);
@@ -132,10 +131,10 @@ export const DonutChart = memo(({ data, centerLabel, centerValue, height = 240, 
               key={d.name}
               className="flex items-center gap-2 text-[12px] font-sans-medium text-dark/80"
             >
-              <span
-                className="w-2.5 h-2.5 rounded-sm shrink-0"
-                style={{ backgroundColor: d.color ?? FALLBACK_SEGMENT }}
-                aria-hidden={true}
+              <CategoryIcon
+                iconName={d.icon}
+                color={d.color}
+                className="w-3.5 h-3.5 shrink-0"
               />
               <span className="truncate flex-1">{d.name}</span>
               <span className="text-dark/45 tabular-nums shrink-0">{pct}%</span>

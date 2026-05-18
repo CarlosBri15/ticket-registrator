@@ -20,8 +20,6 @@ const baseProps = {
   getItemStatus: (i: IItem) => (i as any).status ?? 'Pending',
   onApprove: vi.fn(),
   onReject: vi.fn(),
-  onSave: vi.fn(),
-  hasChanges: false,
   isSaving: false,
 };
 
@@ -90,25 +88,19 @@ describe('ItemsSection', () => {
     expect(screen.queryByText(/Common\.approve/i)).not.toBeInTheDocument();
   });
 
-  it('renders the Save button when hasChanges and canApprove are both true', () => {
-    const onSave = vi.fn();
+  it('does not render a Save button — approve/reject persist immediately', () => {
     const ticket = buildTicket([{ id: 'i1', name: 'Coffee', amount: 5, status: 'Pending' }]);
-    render(<ItemsSection ticket={ticket} {...baseProps} hasChanges onSave={onSave} />);
-    fireEvent.click(screen.getByText(/Common\.save/));
-    expect(onSave).toHaveBeenCalled();
+    render(<ItemsSection ticket={ticket} {...baseProps} />);
+    expect(screen.queryByText(/Common\.save/i)).not.toBeInTheDocument();
   });
 
-  it('disables the Save button while isSaving', () => {
+  it('disables approve/reject buttons while a save is in flight', () => {
     const ticket = buildTicket([{ id: 'i1', name: 'Coffee', amount: 5, status: 'Pending' }]);
-    render(<ItemsSection ticket={ticket} {...baseProps} hasChanges isSaving />);
-    const save = screen.getByText(/Common\.save/).closest('button') as HTMLButtonElement;
-    expect(save.disabled).toBe(true);
-  });
-
-  it('does not render the Save button when there are no changes', () => {
-    const ticket = buildTicket([{ id: 'i1', name: 'Coffee', amount: 5, status: 'Pending' }]);
-    render(<ItemsSection ticket={ticket} {...baseProps} hasChanges={false} />);
-    expect(screen.queryByText(/Common\.save/)).not.toBeInTheDocument();
+    render(<ItemsSection ticket={ticket} {...baseProps} isSaving />);
+    const approve = screen.getByText(/Common\.approve/i).closest('button') as HTMLButtonElement;
+    const reject = screen.getByText(/Common\.reject/i).closest('button') as HTMLButtonElement;
+    expect(approve.disabled).toBe(true);
+    expect(reject.disabled).toBe(true);
   });
 
   it('renders em dash when item has no name', () => {

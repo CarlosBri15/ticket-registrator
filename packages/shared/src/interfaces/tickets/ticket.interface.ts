@@ -14,6 +14,7 @@ export interface ITicket {
   location_name: string | null;
   location_address: string | null;
   amount: number | null;
+  approved_amount: number;
   currency: string | null;
   converted_amount: number | null;
   converted_currency: string | null;

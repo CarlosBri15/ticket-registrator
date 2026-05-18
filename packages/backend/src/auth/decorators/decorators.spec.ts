@@ -12,7 +12,7 @@ describe('Auth Decorators', () => {
       const reflector = new Reflector();
 
       class MockClass {
-        @RequireRoles('Admin' as any, 'Manager' as any)
+        @RequireRoles('Admin', 'Manager')
         mockMethod() {}
       }
 

@@ -36,7 +36,7 @@ export class DepartmentService {
 
     const existing = await this.departmentRepository.findByName(
       companyId,
-      dto.name as string,
+      dto.name,
     );
     if (existing) {
       throw new DepartmentConflictException(
@@ -46,7 +46,7 @@ export class DepartmentService {
 
     const department = await this.departmentRepository.create({
       companyId,
-      departmentName: dto.name as string,
+      departmentName: dto.name,
     });
 
     this.logger.log(

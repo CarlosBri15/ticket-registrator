@@ -3,14 +3,11 @@
  */
 import { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { IconCalendar, IconArrowRight } from '@tabler/icons-react-native';
+import { Calendar, ArrowRight } from 'lucide-react-native';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import {
-  PixelCard,
-  DARK,
-  CARD_BG,
-} from '../ui/PixelCard';
+import { Card } from '../ui/Card';
+import { colors } from '../../constants/theme';
 import { DatePickerModal } from './DatePickerModal';
 
 export interface DateRangePickerProps {
@@ -44,38 +41,36 @@ export function DateRangePicker({
 
   return (
     <View style={styles.container}>
-      <PixelCard
-        bg={error ? '#fff8f8' : CARD_BG}
-        shadowOffset={3}
-        active={open}
+      <Card
+        radius={6}
+        borderColor={error ? colors.danger : colors.border}
         onPress={() => setOpen(true)}
+        accessibilityLabel="select date range"
       >
         <View style={styles.triggerContent}>
-          {/* Inicio */}
           <View style={styles.dateSlot}>
             <View style={styles.slotValueRow}>
-              <IconCalendar size={14} color={startDate ? DARK : `${DARK}30`} />
+              <Calendar size={14} color={startDate ? colors.dark : colors.fgQuaternary} strokeWidth={2} />
               <Text style={[styles.slotValue, !startDate && styles.slotPlaceholder]}>
                 {fmt(startDate) ?? PLACEHOLDER}
               </Text>
             </View>
           </View>
 
-          <IconArrowRight size={14} color={`${DARK}40`} />
+          <ArrowRight size={14} color={colors.fgQuaternary} strokeWidth={2} />
 
-          {/* Fin */}
           <View style={styles.dateSlot}>
             <View style={styles.slotValueRow}>
-              <IconCalendar size={14} color={endDate ? DARK : `${DARK}30`} />
+              <Calendar size={14} color={endDate ? colors.dark : colors.fgQuaternary} strokeWidth={2} />
               <Text style={[styles.slotValue, !endDate && styles.slotPlaceholder]}>
                 {fmt(endDate) ?? PLACEHOLDER}
               </Text>
             </View>
           </View>
         </View>
-      </PixelCard>
+      </Card>
 
-      {!!error && <Text style={styles.errorText}>{error}</Text>}
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <DatePickerModal
         visible={open}
@@ -96,8 +91,8 @@ const styles = StyleSheet.create({
   triggerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     gap: 10,
   },
   dateSlot: {
@@ -109,20 +104,19 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   slotValue: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 13,
-    color: DARK,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 14,
+    color: colors.dark,
   },
   slotPlaceholder: {
-    fontFamily: 'SpaceGrotesk-Medium',
-    color: `${DARK}30`,
+    fontFamily: 'Manrope-Medium',
+    color: colors.fgQuaternary,
   },
   errorText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 10,
-    color: '#ef4444',
-    marginTop: 10,
-    marginLeft: 6,
-    textTransform: 'uppercase',
+    fontFamily: 'Manrope-Medium',
+    fontSize: 11,
+    color: colors.danger,
+    marginTop: 6,
+    marginLeft: 4,
   },
 });

@@ -178,10 +178,7 @@ export const PermissionsScreen = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader
-        title="Gestión de Permisos"
-        subtitle="Configura qué puede hacer cada rol en tu organización."
-      />
+      <PageHeader title="Gestión de Permisos" />
 
       {!canManage && (
         <Alert

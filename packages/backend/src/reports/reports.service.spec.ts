@@ -151,7 +151,25 @@ describe('ReportsService', () => {
   });
 
   describe('updateStatus', () => {
-    it('should update status if report is in SUBMITTED state', async () => {
+    it('should update status to APPROVED and recompute amounts from item statuses', async () => {
+      // findById is called when transitioning to APPROVED so the service can
+      // sum approved/requested amounts from the persisted item statuses.
+      repositoryMock.findById.mockResolvedValue({
+        id: 'report-1',
+        tickets: [
+          {
+            amount: 100,
+            items: [
+              { amount: 60, status: 'Approved' },
+              { amount: 40, status: 'Rejected' },
+            ],
+          },
+          {
+            amount: 50,
+            items: [{ amount: 50, status: 'Approved' }],
+          },
+        ],
+      });
       repositoryMock.updateWithCondition.mockResolvedValue({
         id: 'report-1',
         status: ReportStatus.APPROVED,
@@ -165,6 +183,30 @@ describe('ReportsService', () => {
         status: ReportStatus.APPROVED,
       });
       expect(result.status).toBe(ReportStatus.APPROVED);
+      // Ticket amounts summed → 150 requested; approved items 60 + 50 → 110.
+      const updatePayload = repositoryMock.updateWithCondition.mock.calls[0][1];
+      expect(updatePayload.requestedAmount).toBe(150);
+      expect(updatePayload.approvedAmount).toBe(110);
+    });
+
+    it('should update status without amount recompute when target is not APPROVED', async () => {
+      repositoryMock.updateWithCondition.mockResolvedValue({
+        id: 'report-1',
+        status: ReportStatus.DECLINED,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        startDate: new Date(),
+        endDate: new Date(),
+      });
+
+      const result = await service.updateStatus(requester, 'report-1', {
+        status: ReportStatus.DECLINED,
+      });
+      expect(result.status).toBe(ReportStatus.DECLINED);
+      expect(repositoryMock.findById).not.toHaveBeenCalled();
+      const updatePayload = repositoryMock.updateWithCondition.mock.calls[0][1];
+      expect(updatePayload.requestedAmount).toBeUndefined();
+      expect(updatePayload.approvedAmount).toBeUndefined();
     });
   });
 

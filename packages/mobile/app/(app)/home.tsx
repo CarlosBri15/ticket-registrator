@@ -5,6 +5,7 @@ import {
   ScrollView,
   RefreshControl,
   StatusBar,
+  TouchableOpacity,
   StyleSheet,
   Modal,
   KeyboardAvoidingView,
@@ -14,25 +15,17 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { IconChevronRight, IconClock, IconX, IconCamera, IconPhoto } from '@tabler/icons-react-native';
+import { ChevronRight, Clock, X, Camera, ImageIcon } from 'lucide-react-native';
 
-import {
-  PixelCard,
-  DARK,
-  CARD_BG,
-  SCREEN_BG,
-  BORDER_WIDTH,
-  colors,
-} from '../../src/components/ui/PixelCard';
+import { Card } from '../../src/components/ui/Card';
 import { HeroReportCard, HistoryRow } from '../../src/components/features/ReportListItem';
 import { EmptyState } from '../../src/components/ui/EmptyState';
 import { ScanningOverlay } from '../../src/components/features/ScanningOverlay';
 import { TicketConfirmationForm } from '../../src/components/features/TicketConfirmationForm';
+import { colors } from '../../src/constants/theme';
 
 import { useHomeScreen } from '../../src/hooks/useHomeScreen';
 import { reportIcon, userIcon, cameraIcon } from '@ticket-registrator/shared/assets';
-
-const AVATAR_BG = '#E8E8FF';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -61,23 +54,25 @@ export default function HomeScreen() {
 
   return (
     <View style={s.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor={CARD_BG} />
-      <View style={{ height: insets.top, backgroundColor: CARD_BG }} />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
+      <View style={{ height: insets.top, backgroundColor: colors.surface }} />
 
-      {/* ── Header ── */}
-      <View style={s.header}>
-        <Text style={s.headerTitle}>{firstName}</Text>
+      {/* ── Page header ── */}
+      <View style={s.pageHead}>
+        <View style={s.pageHeadText}>
+          <Text style={s.pageEyebrow}>Hola</Text>
+          <Text style={s.pageTitle} numberOfLines={1}>{firstName}</Text>
+        </View>
 
-        <PixelCard
-          bg={AVATAR_BG}
-          shadowOffset={3}
-          radius={14}
+        <TouchableOpacity
           onPress={() => router.push('/(app)/profile')}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="open profile"
+          style={s.avatarBtn}
         >
-          <View style={s.avatarInner}>
-            <Image source={userIcon} style={s.avatarImage} />
-          </View>
-        </PixelCard>
+          <Image source={userIcon} style={s.avatarImage} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -88,7 +83,7 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />
         }
       >
-        {/* ── Reporte activo + cámara ── */}
+        {/* ── Active report + scan CTA ── */}
         {activeReport ? (
           <View style={s.activeBlock}>
             <HeroReportCard
@@ -96,18 +91,17 @@ export default function HomeScreen() {
               onPress={() => router.push(`/(app)/reports/${activeReport.id}`)}
               dateLocale={dateLocale}
             />
-            <PixelCard
-              bg={colors.brand}
-              shadowOffset={4}
-              style={s.scanCard}
+            <TouchableOpacity
               onPress={() => setScanSheetOpen(true)}
+              activeOpacity={0.85}
+              style={s.scanCard}
+              accessibilityRole="button"
+              accessibilityLabel={t('reportDetail.scanTicket')}
             >
-              <View style={s.scanInner}>
-                <Image source={cameraIcon} style={s.scanIconImage} resizeMode="contain" />
-                <Text style={s.scanTitle}>{t('reportDetail.scanTicket')}</Text>
-                <IconChevronRight size={20} color="rgba(255,255,255,0.6)" />
-              </View>
-            </PixelCard>
+              <Image source={cameraIcon} style={s.scanIconImage} resizeMode="contain" />
+              <Text style={s.scanTitle}>{t('reportDetail.scanTicket')}</Text>
+              <ChevronRight size={18} color={colors.fgOnSidebarSecondary} strokeWidth={2} />
+            </TouchableOpacity>
           </View>
         ) : (
           <View style={s.section}>
@@ -121,35 +115,35 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* ── Stats ── */}
+        {/* ── Stats (kit `.stat--tone-*`) ── */}
         <View style={s.sectionHeader}>
-          <IconClock size={11} color={DARK} />
+          <Clock size={12} color={colors.fgSecondary} strokeWidth={2} />
           <Text style={s.sectionTitle}>En revisión</Text>
         </View>
-        <PixelCard bg={colors.secondary} shadowOffset={4} style={s.statCard}>
-          <View style={s.statCardInner}>
-            <View style={s.statCardBody}>
-              <View style={s.statItem}>
-                <Text style={s.statBigNum}>{stats.inReviewCount}</Text>
-                <Text style={s.statItemLabel}>{stats.inReviewCount === 1 ? 'reporte' : 'reportes'}</Text>
-              </View>
-              <View style={s.statDivider} />
-              <View style={s.statItem}>
-                <Text style={s.statBigNum}>{stats.inReview.toFixed(0)}€</Text>
-                <Text style={s.statItemLabel}>pendiente</Text>
-              </View>
-            </View>
-          </View>
-        </PixelCard>
+        <View style={s.statGrid}>
+          <Card variant="brand" style={s.statTile}>
+            <Text style={s.statTileLabelOnBrand}>Reportes</Text>
+            <Text style={s.statTileValueOnBrand}>{stats.inReviewCount}</Text>
+            <Text style={s.statTileSubOnBrand}>{stats.inReviewCount === 1 ? 'en revisión' : 'en revisión'}</Text>
+          </Card>
+          <Card variant="accent" style={s.statTile}>
+            <Text style={s.statTileLabelOnAccent}>Pendiente</Text>
+            <Text style={s.statTileValueOnAccent}>
+              {stats.inReview.toFixed(0)}
+              <Text style={s.statTileCurrencyOnAccent}> €</Text>
+            </Text>
+            <Text style={s.statTileSubOnAccent}>por aprobar</Text>
+          </Card>
+        </View>
 
-        {/* ── Actividad reciente ── */}
-        {recentCompleted.length > 0 && (
+        {/* ── Recent activity ── */}
+        {recentCompleted.length > 0 ? (
           <View style={s.section}>
             <View style={s.sectionHeader}>
-              <IconClock size={11} color={DARK} />
+              <Clock size={12} color={colors.fgSecondary} strokeWidth={2} />
               <Text style={s.sectionTitle}>{t('home.recentCompleted')}</Text>
             </View>
-            {recentCompleted.map(r => (
+            {recentCompleted.map((r) => (
               <HistoryRow
                 key={r.id}
                 report={r}
@@ -158,10 +152,10 @@ export default function HomeScreen() {
               />
             ))}
           </View>
-        )}
+        ) : null}
       </ScrollView>
 
-      {/* ── Sheet: cámara o galería ── */}
+      {/* ── Scan sheet ── */}
       <Modal
         visible={scanSheetOpen}
         transparent
@@ -175,97 +169,115 @@ export default function HomeScreen() {
           <View style={s.sheetHandle} />
           <View style={s.sheetHeader}>
             <Text style={s.sheetTitle}>{t('reportDetail.scanTicket')}</Text>
-            <PixelCard bg={colors.danger} shadowOffset={3} radius={8} onPress={() => setScanSheetOpen(false)}>
-              <View style={s.iconBtnInner}>
-                <IconX size={15} color="white" />
-              </View>
-            </PixelCard>
+            <TouchableOpacity
+              onPress={() => setScanSheetOpen(false)}
+              style={s.sheetCloseBtn}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="close"
+            >
+              <X size={16} color={colors.fgSecondary} strokeWidth={2} />
+            </TouchableOpacity>
           </View>
           <View style={s.sheetOptions}>
-            <PixelCard bg={CARD_BG} shadowOffset={4} style={{ flex: 1 }} onPress={pickFromCamera}>
-              <View style={s.sheetOption}>
-                <View style={[s.sheetOptionIcon, { backgroundColor: `${colors.brand}15`, borderColor: colors.brand }]}>
-                  <IconCamera size={22} color={colors.brand} />
-                </View>
-                <Text style={s.sheetOptionTitle}>Cámara</Text>
-                <Text style={s.sheetOptionSub}>Toma una foto</Text>
+            <TouchableOpacity onPress={pickFromCamera} activeOpacity={0.85} style={s.sheetOption}>
+              <View style={[s.sheetOptionIcon, { backgroundColor: colors.overlayLight }]}>
+                <Camera size={22} color={colors.dark} strokeWidth={2} />
               </View>
-            </PixelCard>
-            <PixelCard bg={CARD_BG} shadowOffset={4} style={{ flex: 1 }} onPress={pickFromGallery}>
-              <View style={s.sheetOption}>
-                <View style={[s.sheetOptionIcon, { backgroundColor: `${DARK}08`, borderColor: `${DARK}30` }]}>
-                  <IconPhoto size={22} color={DARK} />
-                </View>
-                <Text style={s.sheetOptionTitle}>Galería</Text>
-                <Text style={s.sheetOptionSub}>Elige una imagen</Text>
+              <Text style={s.sheetOptionTitle}>Cámara</Text>
+              <Text style={s.sheetOptionSub}>Toma una foto</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={pickFromGallery} activeOpacity={0.85} style={s.sheetOption}>
+              <View style={[s.sheetOptionIcon, { backgroundColor: colors.overlayLight }]}>
+                <ImageIcon size={22} color={colors.dark} strokeWidth={2} />
               </View>
-            </PixelCard>
+              <Text style={s.sheetOptionTitle}>Galería</Text>
+              <Text style={s.sheetOptionSub}>Elige una imagen</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* ── Modal de confirmación ── */}
+      {/* ── Confirmation modal ── */}
       <Modal
         visible={isModalOpen}
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={handleDiscard}
       >
-        <View style={{ flex: 1, backgroundColor: CARD_BG }}>
+        <View style={{ flex: 1, backgroundColor: colors.surfaceCard }}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
             <View style={s.modalHandle} />
             <View style={s.modalHeader}>
               <Text style={s.modalTitle}>{t('upload.confirmTitle')}</Text>
-              <PixelCard bg={colors.danger} shadowOffset={3} radius={8} onPress={handleDiscard}>
-                <View style={s.iconBtnInner}>
-                  <IconX size={15} color="white" />
-                </View>
-              </PixelCard>
+              <TouchableOpacity
+                onPress={handleDiscard}
+                style={s.sheetCloseBtn}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="close"
+              >
+                <X size={16} color={colors.fgSecondary} strokeWidth={2} />
+              </TouchableOpacity>
             </View>
-            <View style={{ flex: 1, backgroundColor: SCREEN_BG }}>
-              {extractedTicket && (
+            <View style={{ flex: 1, backgroundColor: colors.surface }}>
+              {extractedTicket ? (
                 <TicketConfirmationForm
                   ticket={extractedTicket}
                   onConfirm={handleConfirm}
                   onCancel={handleDiscard}
                   isLoading={isConfirming}
                 />
-              )}
+              ) : null}
             </View>
           </KeyboardAvoidingView>
         </View>
       </Modal>
 
-      {/* ── Scanning overlay ── */}
       <ScanningOverlay visible={isUploading} />
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: SCREEN_BG },
+  screen: { flex: 1, backgroundColor: colors.surface },
 
-  // ── Header
-  header: {
+  // ── Page header
+  pageHead: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 10,
-    paddingBottom: 12,
-    backgroundColor: CARD_BG,
-    borderBottomWidth: 4,
-    borderBottomColor: DARK,
+    paddingHorizontal: 22,
+    paddingTop: 12,
+    paddingBottom: 16,
+    backgroundColor: colors.surface,
+    gap: 12,
   },
-  headerTitle: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 24,
-    color: DARK,
-    letterSpacing: 0.5,
+  pageHeadText: { flex: 1, minWidth: 0 },
+  pageEyebrow: {
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 12,
+    color: colors.fgTertiary,
+    letterSpacing: 0,
+    marginBottom: 2,
   },
-  avatarInner: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  avatarImage: { width: '100%', height: '100%' },
-  avatarText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 18, color: DARK },
+  pageTitle: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 34,
+    color: colors.dark,
+    letterSpacing: -1,
+    lineHeight: 36,
+  },
+  avatarBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 9999,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: { width: 40, height: 40 },
 
   scroll: { padding: 20, paddingBottom: 120 },
 
@@ -273,90 +285,170 @@ const s = StyleSheet.create({
   activeBlock: { marginBottom: 28 },
 
   // ── Scan CTA
-  scanCard: { marginTop: 8 },
-  scanInner: {
+  scanCard: {
+    marginTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
     paddingHorizontal: 16,
-    paddingVertical: 3,
+    paddingVertical: 14,
+    backgroundColor: colors.brand,
+    borderRadius: 14,
   },
-  scanIconImage: { width: 58, height: 58 },
-  scanTitle: { flex: 1, fontFamily: 'SpaceGrotesk-Bold', fontSize: 15, color: 'white', letterSpacing: 0.2 },
+  scanIconImage: { width: 36, height: 36 },
+  scanTitle: { flex: 1, fontFamily: 'Manrope-SemiBold', fontSize: 14, color: colors.fgOnBrand },
 
-  // ── Stats
-  statCard: { marginBottom: 28 },
-  statCardInner: { padding: 16 },
-  statCardBody: { flexDirection: 'row', alignItems: 'center' },
-  statItem: { flex: 1, alignItems: 'center' },
-  statBigNum: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 32, color: DARK, letterSpacing: -1 },
-  statItemLabel: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 10, color: `${DARK}80`, letterSpacing: 0.3, marginTop: 2 },
-  statDivider: { width: 2, height: 44, backgroundColor: `${DARK}15` },
+  // ── Stats (tone tile grid — kit `.stat--tone-brand` / `.stat--tone-accent`)
+  statGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 28,
+  },
+  statTile: {
+    flex: 1,
+    padding: 18,
+    gap: 6,
+  },
+  statTileLabelOnBrand: {
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 11,
+    color: colors.fgOnSidebarSecondary,
+  },
+  statTileValueOnBrand: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 30,
+    color: colors.fgOnBrand,
+    letterSpacing: -1,
+    lineHeight: 32,
+  },
+  statTileSubOnBrand: {
+    fontFamily: 'Manrope-Medium',
+    fontSize: 11,
+    color: colors.fgOnSidebarSecondary,
+  },
+  statTileLabelOnAccent: {
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 11,
+    color: colors.fgSecondary,
+  },
+  statTileValueOnAccent: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 30,
+    color: colors.dark,
+    letterSpacing: -1,
+    lineHeight: 32,
+  },
+  statTileCurrencyOnAccent: {
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 16,
+    color: colors.fgSecondary,
+    letterSpacing: 0,
+  },
+  statTileSubOnAccent: {
+    fontFamily: 'Manrope-Medium',
+    fontSize: 11,
+    color: colors.fgSecondary,
+  },
 
   // ── Sections
-  section: { marginBottom: 28 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  sectionTitle: { flex: 1, fontFamily: 'SpaceGrotesk-Bold', fontSize: 12, color: DARK, letterSpacing: 0.3 },
+  section: { marginBottom: 24 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
+  sectionTitle: {
+    flex: 1,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 13,
+    color: colors.dark,
+    letterSpacing: -0.1,
+  },
 
   // ── Scan sheet
-  sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
+  sheetOverlay: { flex: 1, backgroundColor: colors.overlayStrong },
   sheet: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: CARD_BG,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
+    backgroundColor: colors.surfaceCard,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
   },
   sheetHandle: {
-    width: 48, height: 6,
-    backgroundColor: DARK,
+    width: 36,
+    height: 4,
+    backgroundColor: colors.overlayMedium,
     alignSelf: 'center',
-    marginTop: 14, marginBottom: 0,
+    marginTop: 10,
+    borderRadius: 9999,
   },
   sheetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 4,
-    borderBottomColor: DARK,
+    paddingTop: 14,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  sheetTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 20, color: DARK, letterSpacing: 0.3 },
-  iconBtnInner: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  sheetOptions: { flexDirection: 'row', gap: 12, padding: 20 },
-  sheetOption: { alignItems: 'center', paddingVertical: 20, paddingHorizontal: 12, gap: 8 },
-  sheetOptionIcon: {
-    width: 56, height: 56,
-    borderRadius: 10,
-    borderWidth: BORDER_WIDTH,
+  sheetTitle: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 18,
+    color: colors.dark,
+    letterSpacing: -0.2,
+  },
+  sheetCloseBtn: {
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    borderRadius: 9999,
   },
-  sheetOptionTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK },
-  sheetOptionSub: { fontFamily: 'SpaceGrotesk-Medium', fontSize: 10, color: `${DARK}55` },
+  sheetOptions: { flexDirection: 'row', gap: 12, padding: 20 },
+  sheetOption: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 12,
+    gap: 8,
+    backgroundColor: colors.surfaceCard,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+  },
+  sheetOptionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetOptionTitle: { fontFamily: 'Manrope-SemiBold', fontSize: 14, color: colors.dark },
+  sheetOptionSub: { fontFamily: 'Manrope-Medium', fontSize: 12, color: colors.fgSecondary },
 
   // ── Confirmation modal
   modalHandle: {
-    width: 48, height: 6,
-    backgroundColor: DARK,
+    width: 36,
+    height: 4,
+    backgroundColor: colors.overlayMedium,
     alignSelf: 'center',
-    marginTop: 14,
+    marginTop: 10,
+    borderRadius: 9999,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 16,
-    backgroundColor: CARD_BG,
-    borderBottomWidth: 4,
-    borderBottomColor: DARK,
+    paddingTop: 14,
+    paddingBottom: 12,
+    backgroundColor: colors.surfaceCard,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  modalTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 20, color: DARK, letterSpacing: 0.3 },
+  modalTitle: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 18,
+    color: colors.dark,
+    letterSpacing: -0.2,
+  },
 });

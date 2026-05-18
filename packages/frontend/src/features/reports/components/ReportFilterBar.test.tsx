@@ -75,12 +75,13 @@ describe('ReportFilterBar', () => {
     expect(screen.getByText('status.APPROVED')).toBeInTheDocument();
   });
 
-  it('closes the status dropdown when the overlay is clicked', () => {
+  it('closes the status dropdown when a click happens outside the popover', () => {
     renderBar();
     fireEvent.click(screen.getByText('trips.filterAll'));
-    expect(screen.getByLabelText('Close status filter')).toBeInTheDocument();
-    fireEvent.click(screen.getByLabelText('Close status filter'));
-    expect(screen.queryByLabelText('Close status filter')).not.toBeInTheDocument();
+    // The popover renders its options (e.g. status.SUBMITTED) when open.
+    expect(screen.getByText('status.SUBMITTED')).toBeInTheDocument();
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByText('status.SUBMITTED')).not.toBeInTheDocument();
   });
 
   it('forwards date range changes through onDateRange', () => {

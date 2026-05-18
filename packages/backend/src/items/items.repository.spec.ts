@@ -119,7 +119,7 @@ describe('ItemsRepository', () => {
         },
       ];
 
-      const result = await repository.bulkCreate(insertData as any);
+      const result = await repository.bulkCreate(insertData);
 
       expect(dbMock.insert).toHaveBeenCalled();
       expect(result).toEqual([mockItem]);
@@ -160,7 +160,7 @@ describe('ItemsRepository', () => {
         },
       ];
 
-      const result = await repository.bulkCreate(insertData as any);
+      const result = await repository.bulkCreate(insertData);
 
       expect(result).toHaveLength(2);
     });

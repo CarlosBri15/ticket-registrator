@@ -180,8 +180,8 @@ describe('a11y smoke — kit primitives', () => {
     const { container } = render(
       <CategoryMixBar
         segments={[
-          { categoryId: 'a', categoryName: 'Meals', categoryColor: '#F5C842', amount: 60, percentage: 60 },
-          { categoryId: 'b', categoryName: 'Lodging', categoryColor: '#8A5E89', amount: 40, percentage: 40 },
+          { categoryId: 'a', categoryName: 'Meals', categoryColor: '#F5C842', categoryIcon: 'Utensils', amount: 60, percentage: 60 },
+          { categoryId: 'b', categoryName: 'Lodging', categoryColor: '#8A5E89', categoryIcon: 'Hotel', amount: 40, percentage: 40 },
         ]}
       />,
     );

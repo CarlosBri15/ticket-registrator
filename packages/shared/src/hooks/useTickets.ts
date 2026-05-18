@@ -46,6 +46,51 @@ export const useUpdateTicketMutation = (options?: any) => {
     });
 };
 
+/**
+ * Supervisor per-item review — surgically toggles a single item's status
+ * without rewriting the rest of the ticket. Invalidates the parent report
+ * and ticket queries so the financial summary + item list refetch with the
+ * persisted decisions.
+ */
+export const useUpdateItemStatusMutation = (options?: any) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ reportId, ticketId, itemId, status }: {
+            reportId: string;
+            ticketId: string;
+            itemId: string;
+            status: string;
+        }) => api.tickets().updateItemStatus(reportId, ticketId, itemId, status),
+        onSuccess: (data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['tickets', variables.reportId] });
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
+            if (options?.onSuccess) options.onSuccess(data);
+        },
+        ...options,
+    });
+};
+
+/**
+ * Bulk supervisor review — flips every item of a ticket to the same status in
+ * a single transaction. Backs the "Approve all" / "Reject all" buttons.
+ */
+export const useUpdateAllItemsStatusMutation = (options?: any) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ reportId, ticketId, status }: {
+            reportId: string;
+            ticketId: string;
+            status: string;
+        }) => api.tickets().updateAllItemsStatus(reportId, ticketId, status),
+        onSuccess: (data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['tickets', variables.reportId] });
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
+            if (options?.onSuccess) options.onSuccess(data);
+        },
+        ...options,
+    });
+};
+
 export const useDeleteTicketMutation = (options?: any) => {
     const queryClient = useQueryClient();
     return useMutation({

@@ -194,7 +194,7 @@ describe('TicketsRepository', () => {
 
       await repository.updateWithHistory(
         'ticket-1',
-        { status: 'APPROVED' } as any,
+        { status: 'APPROVED' },
         historyData,
       );
 
@@ -206,12 +206,7 @@ describe('TicketsRepository', () => {
       dbMock.returning.mockResolvedValue([{ id: 'ticket-1' }]);
       const items = [{ name: 'Item 1', amount: 10 }] as any;
 
-      await repository.updateWithHistory(
-        'ticket-1',
-        {} as any,
-        historyData,
-        items,
-      );
+      await repository.updateWithHistory('ticket-1', {}, historyData, items);
 
       expect(dbMock.delete).toHaveBeenCalledWith(schema.items);
       expect(dbMock.insert).toHaveBeenCalledWith(schema.items);
@@ -220,12 +215,7 @@ describe('TicketsRepository', () => {
     it('should delete items but NOT re-insert when itemsToUpdate is empty array', async () => {
       dbMock.returning.mockResolvedValue([{ id: 'ticket-1' }]);
 
-      await repository.updateWithHistory(
-        'ticket-1',
-        {} as any,
-        historyData,
-        [],
-      );
+      await repository.updateWithHistory('ticket-1', {}, historyData, []);
 
       expect(dbMock.delete).toHaveBeenCalledWith(schema.items);
       expect(dbMock.insert).not.toHaveBeenCalledWith(schema.items);
@@ -237,7 +227,7 @@ describe('TicketsRepository', () => {
 
       await repository.updateWithHistory(
         'ticket-1',
-        {} as any,
+        {},
         historyData,
         undefined,
       );

@@ -165,7 +165,6 @@ describe('TicketsController', () => {
   });
 
   describe('getImage', () => {
-
     it('should call service.getTicketImageUrl', async () => {
       const requester = { id: 'user-1' } as any;
       serviceMock.getTicketImageUrl.mockResolvedValue({

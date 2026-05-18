@@ -49,7 +49,10 @@ describe('PoliciesService', () => {
       mockPdfParse.mockResolvedValueOnce({ text: 'parsed pdf text' });
 
       const buffer = Buffer.from('mock pdf content');
-      const result = await service.extractTextFromFile(buffer, 'application/pdf');
+      const result = await service.extractTextFromFile(
+        buffer,
+        'application/pdf',
+      );
 
       expect(mockPdfParse).toHaveBeenCalledWith(buffer);
       expect(result).toBe('parsed pdf text');
@@ -60,7 +63,9 @@ describe('PoliciesService', () => {
       mockPdfParse.mockRejectedValueOnce(new Error('PDF Parse Error'));
 
       const buffer = Buffer.from('mock pdf content');
-      await expect(service.extractTextFromFile(buffer, 'application/pdf')).rejects.toThrow('Failed to parse PDF document');
+      await expect(
+        service.extractTextFromFile(buffer, 'application/pdf'),
+      ).rejects.toThrow('Failed to parse PDF document');
     });
 
     it('should extract text from a non-PDF file using UTF-8', async () => {
@@ -81,32 +86,52 @@ describe('PoliciesService', () => {
   describe('processAndIngestPolicy', () => {
     it('should process and ingest a policy successfully', async () => {
       // Mock extractTextFromFile
-      jest.spyOn(service, 'extractTextFromFile').mockResolvedValue('mock extracted text');
-      
+      jest
+        .spyOn(service, 'extractTextFromFile')
+        .mockResolvedValue('mock extracted text');
+
       // Mock chunkText
-      jest.spyOn(service, 'chunkText').mockResolvedValue(['chunk 1', 'chunk 2']);
-      
+      jest
+        .spyOn(service, 'chunkText')
+        .mockResolvedValue(['chunk 1', 'chunk 2']);
+
       // Mock embeddingsService.generateEmbedding
-      (embeddingsService.generateEmbedding as jest.Mock).mockResolvedValue([0.1, 0.2, 0.3]);
-      
+      (embeddingsService.generateEmbedding as jest.Mock).mockResolvedValue([
+        0.1, 0.2, 0.3,
+      ]);
+
       // Mock policiesRepository.savePolicyAndChunks
-      (policiesRepository.savePolicyAndChunks as jest.Mock).mockResolvedValue({ id: 'policy-123' });
+      (policiesRepository.savePolicyAndChunks as jest.Mock).mockResolvedValue({
+        id: 'policy-123',
+      });
 
       const buffer = Buffer.from('file content');
-      const result = await service.processAndIngestPolicy(buffer, 'text/plain', 'company-1', 'Policy Name');
+      const result = await service.processAndIngestPolicy(
+        buffer,
+        'text/plain',
+        'company-1',
+        'Policy Name',
+      );
 
-      expect(service.extractTextFromFile).toHaveBeenCalledWith(buffer, 'text/plain');
+      expect(service.extractTextFromFile).toHaveBeenCalledWith(
+        buffer,
+        'text/plain',
+      );
       expect(service.chunkText).toHaveBeenCalledWith('mock extracted text');
       expect(embeddingsService.generateEmbedding).toHaveBeenCalledTimes(2);
-      expect(embeddingsService.generateEmbedding).toHaveBeenCalledWith('chunk 1');
-      expect(embeddingsService.generateEmbedding).toHaveBeenCalledWith('chunk 2');
+      expect(embeddingsService.generateEmbedding).toHaveBeenCalledWith(
+        'chunk 1',
+      );
+      expect(embeddingsService.generateEmbedding).toHaveBeenCalledWith(
+        'chunk 2',
+      );
       expect(policiesRepository.savePolicyAndChunks).toHaveBeenCalledWith(
         'company-1',
         'Policy Name',
         [
           { content: 'chunk 1', embedding: [0.1, 0.2, 0.3], chunkIndex: 0 },
           { content: 'chunk 2', embedding: [0.1, 0.2, 0.3], chunkIndex: 1 },
-        ]
+        ],
       );
 
       expect(result).toEqual({ policyId: 'policy-123', chunksProcessed: 2 });

@@ -54,14 +54,18 @@ describe('EmbeddingsService', () => {
       const text = 'test content';
       const result = await service.generateEmbedding(text);
 
-      expect(mockGetGenerativeModel).toHaveBeenCalledWith({ model: 'text-embedding-004' });
+      expect(mockGetGenerativeModel).toHaveBeenCalledWith({
+        model: 'text-embedding-004',
+      });
       expect(mockEmbedContent).toHaveBeenCalledWith(text);
       expect(result).toEqual([0.1, 0.2, 0.3]);
     });
 
     it('should throw error if embedding generation fails', async () => {
       mockEmbedContent.mockRejectedValueOnce(new Error('API Error'));
-      await expect(service.generateEmbedding('test content')).rejects.toThrow('Failed to generate embedding');
+      await expect(service.generateEmbedding('test content')).rejects.toThrow(
+        'Failed to generate embedding',
+      );
     });
   });
 });

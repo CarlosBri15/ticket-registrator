@@ -9,19 +9,14 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { IconFolder, IconChevronRight } from '@tabler/icons-react-native';
+import { Folder, ChevronRight } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 
-import {
-  PixelCard,
-  DARK,
-  CARD_BG,
-  SCREEN_BG,
-  colors,
-} from '../../../src/components/ui/PixelCard';
+import { Card } from '../../../src/components/ui/Card';
 import { TicketDetailModal } from '../../../src/components/features/TicketDetailModal';
 import { TicketsFilterPanel } from '../../../src/components/features/TicketsFilterPanel';
+import { colors } from '../../../src/constants/theme';
 import { useTicketsScreen } from '../../../src/hooks/useTicketsScreen';
 import { ticketIcon } from '@ticket-registrator/shared/assets';
 
@@ -58,7 +53,7 @@ export default function AllTicketsScreen() {
       return (
         <View style={s.centered}>
           <Image source={ticketIcon} style={s.emptyIcon} contentFit="contain" />
-          <Text style={s.emptyTitle}>SIN TICKETS</Text>
+          <Text style={s.emptyTitle}>Sin tickets</Text>
           <Text style={s.emptyText}>
             {hasFilters
               ? 'No hay resultados para los filtros aplicados.'
@@ -68,13 +63,12 @@ export default function AllTicketsScreen() {
       );
     }
 
-    return tickets.map(ticket => (
-      <PixelCard
+    return tickets.map((ticket) => (
+      <Card
         key={ticket.id}
-        bg={CARD_BG}
-        shadowOffset={3}
         style={s.ticketCard}
         onPress={() => handleTicketPress(ticket)}
+        accessibilityLabel={ticket.location_name ?? t('reportDetail.noTicketName')}
       >
         <View style={s.ticketRow}>
           <Image source={ticketIcon} style={s.ticketIcon} contentFit="contain" />
@@ -90,7 +84,7 @@ export default function AllTicketsScreen() {
                 </View>
               ) : null}
               <View style={s.reportPill}>
-                <IconFolder size={8} color={`${DARK}50`} />
+                <Folder size={10} color={colors.fgSecondary} strokeWidth={2} />
                 <Text style={s.reportPillText} numberOfLines={1}>{ticket.reportName}</Text>
               </View>
             </View>
@@ -108,32 +102,30 @@ export default function AllTicketsScreen() {
             </Text>
           </View>
 
-          <IconChevronRight size={16} color={`${DARK}30`} style={{ marginLeft: 4 }} />
+          <ChevronRight size={16} color={colors.fgQuaternary} strokeWidth={2} style={{ marginLeft: 4 }} />
         </View>
-      </PixelCard>
+      </Card>
     ));
   };
 
   return (
     <View style={s.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor={CARD_BG} />
-      <View style={{ height: insets.top, backgroundColor: CARD_BG }} />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surfaceCard} />
+      <View style={{ height: insets.top, backgroundColor: colors.surfaceCard }} />
 
-      {/* ── Header ── */}
-      <View style={s.header}>
-        <Text style={s.headerTitle}>{t('layout.allTickets')}</Text>
-        {tickets.length > 0 && (
-          <View style={s.countPill}>
-            <Text style={s.countPillText}>{tickets.length}</Text>
-          </View>
-        )}
+      <View style={s.pageHead}>
+        <View style={s.pageHeadText}>
+          <Text style={s.pageTitle}>{t('layout.allTickets')}</Text>
+          <Text style={s.pageSubtitle}>
+            {tickets.length} {tickets.length === 1 ? 'ticket' : 'tickets'}
+          </Text>
+        </View>
       </View>
 
-      {/* ── Filters ── */}
       <TicketsFilterPanel
         search={search} onSearch={setSearch}
-        ticketDate={ticketDate} onTicketDate={(s, e) => setTicketDate({ start: s, end: e })}
-        uploadDate={uploadDate} onUploadDate={(s, e) => setUploadDate({ start: s, end: e })}
+        ticketDate={ticketDate} onTicketDate={(start, end) => setTicketDate({ start, end })}
+        uploadDate={uploadDate} onUploadDate={(start, end) => setUploadDate({ start, end })}
         reportFilter={reportFilter} onReportFilter={setReportFilter}
         reports={reportOptions}
         hasFilters={hasFilters}
@@ -149,8 +141,7 @@ export default function AllTicketsScreen() {
         {renderContent()}
       </ScrollView>
 
-
-      {selectedTicket && (
+      {selectedTicket ? (
         <TicketDetailModal
           visible={isDetailOpen}
           onClose={() => { setIsDetailOpen(false); setSelectedTicket(null); }}
@@ -159,114 +150,105 @@ export default function AllTicketsScreen() {
           reportName={selectedTicket.reportName}
           isEditable={false}
         />
-      )}
+      ) : null}
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: SCREEN_BG },
+  screen: { flex: 1, backgroundColor: colors.surface },
 
-  // ── Header
-  header: {
+  pageHead: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 10,
-    paddingBottom: 12,
-    backgroundColor: CARD_BG,
-    borderBottomWidth: 4,
-    borderBottomColor: DARK,
+    paddingHorizontal: 22,
+    paddingTop: 14,
+    paddingBottom: 18,
+    backgroundColor: colors.surface,
+    gap: 12,
   },
-  headerTitle: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 24,
-    color: DARK,
-    letterSpacing: 0.5,
+  pageHeadText: { flex: 1, minWidth: 0 },
+  pageTitle: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 34,
+    color: colors.dark,
+    letterSpacing: -1,
+    lineHeight: 36,
   },
-  countPill: {
-    backgroundColor: DARK,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  countPillText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 10,
-    color: CARD_BG,
+  pageSubtitle: {
+    fontFamily: 'Manrope-Medium',
+    fontSize: 13,
+    color: colors.fgSecondary,
+    marginTop: 6,
   },
 
   scroll: { padding: 20, paddingBottom: 60 },
 
-  // ── Ticket cards
+  // ── Ticket card
   ticketCard: { marginBottom: 10 },
   ticketRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 12,
   },
-  ticketIcon: { width: 44, height: 44, flexShrink: 0 },
+  ticketIcon: { width: 40, height: 40, flexShrink: 0 },
   ticketName: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 13,
-    color: DARK,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 14,
+    color: colors.dark,
     marginBottom: 4,
   },
   pillRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap' },
   expensePill: {
-    backgroundColor: `${colors.brand}18`,
-    paddingHorizontal: 6,
+    backgroundColor: colors.overlayLight,
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderWidth: 1.5,
-    borderColor: colors.brand,
-    borderRadius: 4,
+    borderRadius: 9999,
   },
-  expenseText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 8, color: colors.brand },
+  expenseText: { fontFamily: 'Manrope-SemiBold', fontSize: 10, color: colors.dark },
   reportPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: `${DARK}08`,
-    paddingHorizontal: 6,
+    backgroundColor: colors.overlayFaint,
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 4,
-    maxWidth: 120,
+    borderRadius: 9999,
+    maxWidth: 140,
   },
   reportPillText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 8,
-    color: `${DARK}50`,
+    fontFamily: 'Manrope-Medium',
+    fontSize: 10,
+    color: colors.fgSecondary,
   },
   ticketRight: { alignItems: 'flex-end', flexShrink: 0 },
-  ticketAmount: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK },
-  ticketCurrency: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 9, color: `${DARK}55` },
+  ticketAmount: { fontFamily: 'Manrope-Bold', fontSize: 14, color: colors.dark },
+  ticketCurrency: { fontFamily: 'Manrope-SemiBold', fontSize: 10, color: colors.fgSecondary },
   ticketDate: {
-    fontFamily: 'SpaceGrotesk-Medium',
-    fontSize: 9,
-    color: `${DARK}40`,
+    fontFamily: 'Manrope-Medium',
+    fontSize: 11,
+    color: colors.fgTertiary,
     marginTop: 2,
   },
 
-  // ── Empty / loading
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
-  emptyIcon: { width: 64, height: 64, marginBottom: 12 },
+  emptyIcon: { width: 56, height: 56, marginBottom: 12, opacity: 0.7 },
   emptyTitle: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 13,
-    color: DARK,
-    letterSpacing: 1,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 15,
+    color: colors.dark,
+    letterSpacing: -0.1,
     marginBottom: 6,
   },
   emptyText: {
-    fontFamily: 'SpaceGrotesk-Medium',
-    fontSize: 11,
-    color: `${DARK}50`,
+    fontFamily: 'Manrope-Medium',
+    fontSize: 12,
+    color: colors.fgSecondary,
     textAlign: 'center',
-    lineHeight: 16,
-    maxWidth: 220,
+    lineHeight: 18,
+    maxWidth: 240,
   },
-
 });

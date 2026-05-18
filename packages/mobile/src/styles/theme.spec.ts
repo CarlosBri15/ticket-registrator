@@ -2,14 +2,24 @@ describe('theme', () => {
   const { colors, mt } = require('./theme');
 
   describe('colors', () => {
-    it('exports brand color as valid hex', () => {
-      expect(colors.brand).toMatch(/^#[0-9a-fA-F]{6}$/);
+    it('exports brand color as kit grafito hex', () => {
+      expect(colors.brand).toBe('#1C1917');
     });
 
-    it('exports success, warning and danger colors', () => {
+    it('exports cream surface', () => {
+      expect(colors.surface).toBe('#FFFDF8');
+    });
+
+    it('exports success, warning and danger as valid hex', () => {
       expect(colors.success).toMatch(/^#[0-9a-fA-F]{6}$/);
       expect(colors.warning).toMatch(/^#[0-9a-fA-F]{6}$/);
       expect(colors.danger).toMatch(/^#[0-9a-fA-F]{6}$/);
+    });
+
+    it('exports the extended Chromatic v2 accent palette', () => {
+      expect(colors.accent).toMatch(/^#[0-9a-fA-F]{6}$/);
+      expect(colors.sage).toMatch(/^#[0-9a-fA-F]{6}$/);
+      expect(colors.clay).toMatch(/^#[0-9a-fA-F]{6}$/);
     });
   });
 
@@ -22,7 +32,7 @@ describe('theme', () => {
       expect(mt.screen).toContain('flex-1');
     });
 
-    it('btnPrimary token includes bg-brand', () => {
+    it('btnPrimary token uses bg-brand', () => {
       expect(mt.btnPrimary).toContain('bg-brand');
     });
   });

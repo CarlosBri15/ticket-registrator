@@ -31,13 +31,11 @@ jest.mock('react-native-svg', () => {
   };
 });
 
-jest.mock('../ui/PixelCard', () => {
+jest.mock('../ui/Card', () => {
   const React = require('react');
   const { View } = require('react-native');
   return {
-    PixelCard: ({ children }: any) => React.createElement(View, null, children),
-    DARK: '#1A1A1A',
-    CARD_BG: '#FFFFFF',
+    Card: ({ children }: any) => React.createElement(View, null, children),
   };
 });
 

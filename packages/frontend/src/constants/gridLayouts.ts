@@ -18,8 +18,16 @@ export const REPORT_GRID_WITH_OWNER = "32px 1fr 140px 120px 148px 100px 16px";
 /** Tickets list — 5 columns: icon, name+report, status, payment, chevron. */
 export const TICKET_GRID = "32px 1fr 140px 120px 16px";
 
-/** Tickets table (detail view) — 7 columns with finer breakdown. */
-export const TICKETS_TABLE_GRID = "32px 1fr 100px 120px 120px 100px 16px";
+/** Tickets table (detail view) — 5 columns: name+mix, dates, amount, chevron. */
+export const TICKETS_TABLE_GRID = "1fr 120px 120px 100px 16px";
+
+/**
+ * Tickets table with supervisor review breakdown — 7 columns adding
+ * `approved` and `rejected` amounts after the requested amount, used once
+ * the parent report has left the Created state.
+ */
+export const TICKETS_TABLE_GRID_REVIEW =
+  "1fr 120px 120px 100px 100px 100px 16px";
 
 /** Users list — 5 columns: avatar, name+email, role, scope, chevron. */
 export const USER_GRID = "32px 1fr 1.2fr 140px 16px";

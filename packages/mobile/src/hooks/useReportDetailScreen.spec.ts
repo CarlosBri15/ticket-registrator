@@ -8,6 +8,7 @@ import {
   useUploadTicketMutation,
   useUpdateTicketMutation,
   useDeleteTicketMutation,
+  useDeleteReportMutation,
   useSubmitReportMutation,
 } from '@ticket-registrator/shared';
 
@@ -24,6 +25,7 @@ jest.mock('@ticket-registrator/shared', () => ({
   useUploadTicketMutation: jest.fn(),
   useUpdateTicketMutation: jest.fn(),
   useDeleteTicketMutation: jest.fn(),
+  useDeleteReportMutation: jest.fn(),
   useSubmitReportMutation: jest.fn(),
 }));
 
@@ -58,6 +60,7 @@ describe('useReportDetailScreen', () => {
     (useUploadTicketMutation as jest.Mock).mockReturnValue({ mutate: jest.fn(), isPending: false });
     (useUpdateTicketMutation as jest.Mock).mockReturnValue({ mutate: jest.fn(), isPending: false });
     (useDeleteTicketMutation as jest.Mock).mockReturnValue({ mutate: jest.fn() });
+    (useDeleteReportMutation as jest.Mock).mockReturnValue({ mutate: jest.fn(), isPending: false });
     (useSubmitReportMutation as jest.Mock).mockReturnValue({ mutate: jest.fn(), isPending: false });
   });
 

@@ -38,7 +38,7 @@ describe('UsersService', () => {
   const creator: UserPayload = {
     id: 'creator-1',
     roleId: 'creator-role-id',
-    roleName: 'Admin' as any,
+    roleName: 'Admin',
     roleHierarchy: AUTHORITY_LEVELS.COMPANY,
     companyId: 'company-1',
     departmentIds: ['dept-1'],
@@ -354,7 +354,7 @@ describe('UsersService', () => {
       });
       usersRepositoryMock.update.mockResolvedValue(mockUser);
 
-      await service.update('user-1', { roleId: 'Employee' } as any, creator);
+      await service.update('user-1', { roleId: 'Employee' }, creator);
       expect(usersRepositoryMock.update).toHaveBeenCalledWith(
         'user-1',
         expect.objectContaining({ roleId: 'new-r-id' }),

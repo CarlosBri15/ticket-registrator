@@ -814,19 +814,29 @@ describe('TicketsService', () => {
 
   describe('hardDelete', () => {
     it('should hard delete ticket and remove GCS file', async () => {
-      const ticketWithImage = { ...mockTicket, items: [], cgsBucketLink: 'test-image.webp' };
+      const ticketWithImage = {
+        ...mockTicket,
+        items: [],
+        cgsBucketLink: 'test-image.webp',
+      };
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
       ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsRepositoryMock.findById.mockResolvedValue(ticketWithImage);
 
       await service.hardDelete(requester, 'report-1', 'ticket-1');
 
-      expect(storageServiceMock.removeFile).toHaveBeenCalledWith('test-image.webp');
+      expect(storageServiceMock.removeFile).toHaveBeenCalledWith(
+        'test-image.webp',
+      );
       expect(ticketsRepositoryMock.hardDelete).toHaveBeenCalledWith('ticket-1');
     });
 
     it('should hard delete ticket even if GCS file removal fails', async () => {
-      const ticketWithImage = { ...mockTicket, items: [], cgsBucketLink: 'test-image.webp' };
+      const ticketWithImage = {
+        ...mockTicket,
+        items: [],
+        cgsBucketLink: 'test-image.webp',
+      };
       reportsRepositoryMock.findById.mockResolvedValue(mockReport);
       ticketsAuthMock.validateCanModifyReport.mockResolvedValue(true);
       ticketsRepositoryMock.findById.mockResolvedValue(ticketWithImage);

@@ -110,8 +110,6 @@ export class DepartmentRepository {
   async transaction<T>(
     callback: (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
   ): Promise<T> {
-    return this.db.transaction(
-      callback as (tx: PostgresJsDatabase<typeof schema>) => Promise<T>,
-    );
+    return this.db.transaction(callback);
   }
 }

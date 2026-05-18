@@ -1,8 +1,6 @@
 /**
- * TicketsFilterPanel — chrome fijo entre el header y el scroll de tickets.
- *
- * Fila 1: búsqueda por texto
- * Fila 2: pills → fecha ticket (rango) · fecha subida (rango) · reporte
+ * TicketsFilterPanel — chrome bar (search + 3 chip filters) above the tickets list.
+ * Kit-aligned: pill chips, sunken search, sentence case, no hard shadows.
  */
 import { useState } from 'react';
 import {
@@ -10,22 +8,20 @@ import {
   Modal, FlatList, TouchableWithoutFeedback,
   StyleSheet, Dimensions,
 } from 'react-native';
-import { 
-  IconSearch, 
-  IconX, 
-  IconFileDescription, 
-  IconUpload, 
-  IconFolder, 
-  IconChevronDown, 
-  IconCheck 
-} from '@tabler/icons-react-native';
+import {
+  Search,
+  X,
+  FileText,
+  Upload,
+  Folder,
+  ChevronDown,
+  Check,
+} from 'lucide-react-native';
 import { format } from 'date-fns';
-import { PixelCard, DARK, CARD_BG, BORDER_WIDTH, RADIUS, colors } from '../ui/PixelCard';
+import { colors } from '../../constants/theme';
 import { DatePickerModal } from './DatePickerModal';
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-const PILL_W = Math.floor((SCREEN_W - 40 - 12) / 3);
-const SHADOW = 3;
+const { height: SCREEN_H } = Dimensions.get('window');
 
 type DateRange = { start: Date | null; end: Date | null };
 type Picking = 'ticket' | 'upload' | null;
@@ -52,6 +48,22 @@ const fmtRange = (r: DateRange) => {
   return null;
 };
 
+interface ChipProps {
+  active: boolean;
+  onPress: () => void;
+  children: React.ReactNode;
+}
+
+const Chip = ({ active, onPress, children }: ChipProps) => (
+  <TouchableOpacity
+    onPress={onPress}
+    activeOpacity={0.8}
+    style={[s.chip, active && s.chipActive]}
+  >
+    {children}
+  </TouchableOpacity>
+);
+
 export function TicketsFilterPanel({
   search, onSearch,
   ticketDate, onTicketDate,
@@ -63,96 +75,61 @@ export function TicketsFilterPanel({
   const [picking, setPicking] = useState<Picking>(null);
   const [reportOpen, setReportOpen] = useState(false);
 
-  const activeReport = reports.find(r => r.id === reportFilter);
+  const activeReport = reports.find((r) => r.id === reportFilter);
 
-  const ticketActive  = !!(ticketDate.start || ticketDate.end);
-  const uploadActive  = !!(uploadDate.start || uploadDate.end);
-  const reportActive  = !!reportFilter;
+  const ticketActive = !!(ticketDate.start || ticketDate.end);
+  const uploadActive = !!(uploadDate.start || uploadDate.end);
+  const reportActive = !!reportFilter;
 
   return (
     <View style={s.wrapper}>
-
-      {/* ── Fila 1: búsqueda ── */}
       <View style={s.searchRow}>
-        <IconSearch size={16} color={DARK} />
+        <Search size={16} color={colors.fgSecondary} strokeWidth={2} />
         <TextInput
           style={s.searchInput}
           value={search}
           onChangeText={onSearch}
           placeholder="Buscar tickets..."
-          placeholderTextColor={`${DARK}45`}
+          placeholderTextColor={colors.fgQuaternary}
           returnKeyType="search"
         />
-        <TouchableOpacity
-          onPress={onClear}
-          disabled={!hasFilters}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={{ opacity: hasFilters ? 1 : 0 }}
-        >
-          <IconX size={20} color={colors.danger} />
-        </TouchableOpacity>
+        {hasFilters ? (
+          <TouchableOpacity
+            accessibilityLabel="clear filters"
+            onPress={onClear}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <X size={18} color={colors.fgSecondary} strokeWidth={2} />
+          </TouchableOpacity>
+        ) : null}
       </View>
 
-      {/* ── Fila 2: pills ── */}
-      <View style={s.pillsRow}>
+      <View style={s.chipsRow}>
+        <Chip active={ticketActive} onPress={() => setPicking('ticket')}>
+          <FileText size={11} color={ticketActive ? colors.fgOnBrand : colors.dark} strokeWidth={2} />
+          <Text style={[s.chipText, ticketActive && s.chipTextActive]} numberOfLines={1}>
+            {fmtRange(ticketDate) ?? 'Ticket'}
+          </Text>
+        </Chip>
 
-        {/* Fecha del ticket */}
-        <PixelCard
-          bg={ticketActive ? colors.brand : CARD_BG}
-          shadowOffset={SHADOW}
-          radius={6}
-          active={ticketActive || picking === 'ticket'}
-          onPress={() => setPicking('ticket')}
-          style={{ width: PILL_W }}
-        >
-          <View style={s.pillContent}>
-            <IconFileDescription size={11} color={ticketActive ? '#fff' : DARK} />
-            <Text style={[s.pillText, ticketActive && s.pillTextActive]} numberOfLines={1}>
-              {fmtRange(ticketDate) ?? 'Ticket'}
-            </Text>
-          </View>
-        </PixelCard>
+        <Chip active={uploadActive} onPress={() => setPicking('upload')}>
+          <Upload size={11} color={uploadActive ? colors.fgOnBrand : colors.dark} strokeWidth={2} />
+          <Text style={[s.chipText, uploadActive && s.chipTextActive]} numberOfLines={1}>
+            {fmtRange(uploadDate) ?? 'Subida'}
+          </Text>
+        </Chip>
 
-        {/* Fecha de subida */}
-        <PixelCard
-          bg={uploadActive ? colors.brand : CARD_BG}
-          shadowOffset={SHADOW}
-          radius={6}
-          active={uploadActive || picking === 'upload'}
-          onPress={() => setPicking('upload')}
-          style={{ width: PILL_W }}
-        >
-          <View style={s.pillContent}>
-            <IconUpload size={11} color={uploadActive ? '#fff' : DARK} />
-            <Text style={[s.pillText, uploadActive && s.pillTextActive]} numberOfLines={1}>
-              {fmtRange(uploadDate) ?? 'Subida'}
-            </Text>
-          </View>
-        </PixelCard>
-
-        {/* Reporte */}
-        <PixelCard
-          bg={reportActive ? colors.brand : CARD_BG}
-          shadowOffset={SHADOW}
-          radius={6}
-          active={reportActive || reportOpen}
-          onPress={() => setReportOpen(true)}
-          style={{ width: PILL_W }}
-        >
-          <View style={s.pillContent}>
-            <IconFolder size={11} color={reportActive ? '#fff' : DARK} />
-            <Text style={[s.pillText, reportActive && s.pillTextActive]} numberOfLines={1}>
-              {activeReport ? activeReport.name : 'Reporte'}
-            </Text>
-            <IconChevronDown size={11} color={reportActive ? '#fff' : DARK} />
-          </View>
-        </PixelCard>
-
+        <Chip active={reportActive} onPress={() => setReportOpen(true)}>
+          <Folder size={11} color={reportActive ? colors.fgOnBrand : colors.dark} strokeWidth={2} />
+          <Text style={[s.chipText, reportActive && s.chipTextActive]} numberOfLines={1}>
+            {activeReport ? activeReport.name : 'Reporte'}
+          </Text>
+          <ChevronDown size={11} color={reportActive ? colors.fgOnBrand : colors.dark} strokeWidth={2} />
+        </Chip>
       </View>
 
       <View style={s.bottomBorder} />
 
-      {/* ── Date picker: fecha del ticket ── */}
       <DatePickerModal
         visible={picking === 'ticket'}
         onClose={() => setPicking(null)}
@@ -163,7 +140,6 @@ export function TicketsFilterPanel({
         title="Fecha del ticket"
       />
 
-      {/* ── Date picker: fecha de subida ── */}
       <DatePickerModal
         visible={picking === 'upload'}
         onClose={() => setPicking(null)}
@@ -174,7 +150,6 @@ export function TicketsFilterPanel({
         title="Fecha de subida"
       />
 
-      {/* ── Bottom sheet: reporte ── */}
       <Modal
         visible={reportOpen}
         transparent
@@ -189,30 +164,30 @@ export function TicketsFilterPanel({
           <View style={s.sheetHandle} />
           <View style={s.sheetHeader}>
             <Text style={s.sheetTitle}>Reporte</Text>
-            <PixelCard bg={colors.danger} shadowOffset={3} radius={8} onPress={() => setReportOpen(false)}>
-              <View style={s.sheetCloseBtnInner}>
-                <IconX size={15} color="white" />
-              </View>
-            </PixelCard>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="close"
+              onPress={() => setReportOpen(false)}
+              style={s.sheetCloseBtn}
+              activeOpacity={0.7}
+            >
+              <X size={16} color={colors.fgSecondary} strokeWidth={2} />
+            </TouchableOpacity>
           </View>
           <FlatList
             data={[{ id: '', name: 'Todos' }, ...reports]}
-            keyExtractor={item => item.id}
+            keyExtractor={(item) => item.id}
             contentContainerStyle={s.listContent}
             renderItem={({ item, index }) => {
               const active = (reportFilter ?? '') === item.id;
               return (
                 <TouchableOpacity
                   onPress={() => { onReportFilter(item.id || null); setReportOpen(false); }}
-                  activeOpacity={0.75}
+                  activeOpacity={0.7}
                   style={[s.option, index < reports.length && s.optionBorder]}
                 >
                   <Text style={[s.optionText, active && s.optionTextActive]}>{item.name}</Text>
-                  {active && (
-                    <View style={s.checkBox}>
-                      <IconCheck size={13} color="white" />
-                    </View>
-                  )}
+                  {active ? <Check size={16} color={colors.brand} strokeWidth={2} /> : null}
                 </TouchableOpacity>
               );
             }}
@@ -224,98 +199,108 @@ export function TicketsFilterPanel({
 }
 
 const s = StyleSheet.create({
-  wrapper: { backgroundColor: CARD_BG },
+  wrapper: { backgroundColor: colors.surface },
 
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 10,
+    backgroundColor: colors.surfaceSunken,
+    borderRadius: 6,
+    marginHorizontal: 20,
+    marginTop: 12,
   },
   searchInput: {
     flex: 1,
-    fontFamily: 'SpaceGrotesk-SemiBold',
+    fontFamily: 'Manrope-Medium',
     fontSize: 14,
-    color: DARK,
+    color: colors.dark,
   },
 
-  pillsRow: {
+  chipsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 12,
-    gap: 6,
+    paddingTop: 12,
+    paddingBottom: 14,
+    gap: 8,
+    flexWrap: 'wrap',
   },
-  pillContent: {
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 8,
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceCard,
   },
-  pillText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 10,
-    color: DARK,
-    letterSpacing: 0.2,
+  chipActive: {
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
+  },
+  chipText: {
+    fontFamily: 'Manrope-Medium',
+    fontSize: 12,
+    color: colors.fgSecondary,
     flexShrink: 1,
   },
-  pillTextActive: { color: '#fff' },
+  chipTextActive: { color: colors.fgOnBrand },
 
-  bottomBorder: { height: 4, backgroundColor: DARK },
+  bottomBorder: { height: 1, backgroundColor: colors.border },
 
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  overlay: { flex: 1, backgroundColor: colors.overlayStrong },
   sheet: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: CARD_BG,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
+    backgroundColor: colors.surfaceCard,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     maxHeight: SCREEN_H * 0.6,
-    paddingBottom: 32,
+    paddingBottom: 24,
   },
   sheetHandle: {
-    width: 48,
-    height: 6,
-    backgroundColor: DARK,
+    width: 36,
+    height: 4,
+    backgroundColor: colors.overlayMedium,
     alignSelf: 'center',
-    marginTop: 14,
+    marginTop: 10,
+    borderRadius: 9999,
   },
   sheetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 4,
-    borderBottomColor: DARK,
+    paddingTop: 14,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  sheetTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 20, color: DARK, letterSpacing: 0.3 },
-  sheetCloseBtnInner: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  listContent: { paddingHorizontal: 20, paddingTop: 8 },
+  sheetTitle: { fontFamily: 'Manrope-Bold', fontSize: 18, color: colors.dark, letterSpacing: -0.2 },
+  sheetCloseBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 9999,
+  },
+  listContent: { paddingHorizontal: 12, paddingTop: 6 },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 6,
   },
-  optionBorder: { borderBottomWidth: BORDER_WIDTH, borderBottomColor: `${DARK}10` },
-  optionText: { fontFamily: 'SpaceGrotesk-Medium', fontSize: 15, color: DARK },
-  optionTextActive: { fontFamily: 'SpaceGrotesk-Bold', color: colors.brand },
-  checkBox: {
-    width: 22,
-    height: 22,
-    borderRadius: RADIUS - 4,
-    backgroundColor: colors.brand,
-    borderWidth: BORDER_WIDTH,
-    borderColor: DARK,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  optionBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  optionText: { fontFamily: 'Manrope-Medium', fontSize: 14, color: colors.dark },
+  optionTextActive: { fontFamily: 'Manrope-SemiBold', color: colors.brand },
 });

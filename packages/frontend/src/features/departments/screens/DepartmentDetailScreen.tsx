@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Layers, User, Pencil, Trash2, ChevronRight } from "lucide-react";
+import { Layers, User, Pencil, Trash2, ChevronRight, Users, FileText, Clock } from "lucide-react";
 import {
   useDepartmentsQuery,
   useUsersQuery,
@@ -107,9 +107,21 @@ export const DepartmentDetailScreen = () => {
           onClick: () => navigate("/departments"),
         }}
         stats={[
-          { label: t("departments.members", "Miembros"), value: members.length },
-          { label: t("departments.reports", "Reportes"), value: totalReports },
-          { label: t("departments.pending", "Pendientes"), value: pendingCount },
+          {
+            label: t("departments.members", "Miembros"),
+            value: members.length,
+            icon: <Users className="w-4 h-4" aria-hidden={true} />,
+          },
+          {
+            label: t("departments.reports", "Reportes"),
+            value: totalReports,
+            icon: <FileText className="w-4 h-4" aria-hidden={true} />,
+          },
+          {
+            label: t("departments.pending", "Pendientes"),
+            value: pendingCount,
+            icon: <Clock className="w-4 h-4" aria-hidden={true} />,
+          },
         ]}
         actions={
           <div className="flex items-center gap-1">

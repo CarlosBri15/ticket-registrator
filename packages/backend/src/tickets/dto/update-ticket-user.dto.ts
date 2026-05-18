@@ -3,6 +3,7 @@ import {
   updateTicketFieldsSchema,
   updateTicketStatusSchema,
   updateTicketLlmSchema,
+  updateItemStatusSchema,
 } from '@ticket-registrator/shared';
 
 export class UpdateTicketFieldsDto extends createZodDto(
@@ -12,3 +13,4 @@ export class UpdateTicketStatusDto extends createZodDto(
   updateTicketStatusSchema,
 ) {}
 export class UpdateTicketLlmDto extends createZodDto(updateTicketLlmSchema) {}
+export class UpdateItemStatusDto extends createZodDto(updateItemStatusSchema) {}

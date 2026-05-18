@@ -1,34 +1,40 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
-import { DARK, BORDER_WIDTH } from './PixelCard';
+import type { LucideIcon } from 'lucide-react-native';
+import { colors } from '../../constants/theme';
 
 interface DetailRowProps {
-  icon?: any;
+  icon?: LucideIcon;
   image?: number;
   label: string;
   value?: string | null;
 }
 
 /**
- * DetailRow — Standard row for displaying categorized information in modals.
- * Used for Commerce, Address, and Payment Method details.
+ * DetailRow — Standard row for categorised information in detail sheets.
+ * Kit-aligned (sentence case label, body value), no hard borders.
  */
 export const DetailRow = ({ icon: Icon, image, label, value }: DetailRowProps) => {
-  let content = null;
+  let content: React.ReactNode = null;
   if (image) {
-    content = <Image source={image} style={{ width: 38, height: 38 }} resizeMode="contain" />;
+    content = <Image source={image} style={styles.imageContent} resizeMode="contain" />;
   } else if (Icon) {
-    content = <Icon size={18} color={`${DARK}60`} />;
+    content = <Icon size={18} color={colors.fgSecondary} strokeWidth={2} />;
   }
 
   return (
     <View style={styles.row}>
-      <View style={[styles.iconBox, image ? { borderWidth: 0, width: 38, height: 38 } : null]}>
+      <View
+        style={[
+          styles.iconBox,
+          image ? styles.iconBoxImage : null,
+        ]}
+      >
         {content}
       </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
+      <View style={styles.body}>
         <Text style={styles.label}>{label}</Text>
-        <Text style={styles.value}>{value || '---'}</Text>
+        <Text style={styles.value}>{value || '—'}</Text>
       </View>
     </View>
   );
@@ -40,28 +46,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     paddingHorizontal: 14,
-    paddingVertical: 13,
+    paddingVertical: 12,
   },
   iconBox: {
     width: 36,
     height: 36,
-    borderWidth: BORDER_WIDTH,
-    borderColor: `${DARK}20`,
-    borderRadius: 6,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceSunken,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
+  iconBoxImage: {
+    backgroundColor: 'transparent',
+    width: 38,
+    height: 38,
+  },
+  imageContent: {
+    width: 38,
+    height: 38,
+  },
+  body: {
+    flex: 1,
+    minWidth: 0,
+  },
   label: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 10,
-    color: `${DARK}55`,
-    letterSpacing: 0.3,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 11,
+    color: colors.fgSecondary,
     marginBottom: 3,
   },
   value: {
-    fontFamily: 'SpaceGrotesk-Medium',
-    fontSize: 12,
-    color: DARK,
+    fontFamily: 'Manrope-Medium',
+    fontSize: 13,
+    color: colors.dark,
   },
 });

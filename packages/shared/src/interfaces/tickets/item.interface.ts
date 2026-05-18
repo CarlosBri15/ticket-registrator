@@ -9,5 +9,6 @@ export interface IItem {
   categoryId: string | null;
   categoryName?: string | null;
   categoryColor?: string | null;
+  categoryIcon?: string | null;
 }
 

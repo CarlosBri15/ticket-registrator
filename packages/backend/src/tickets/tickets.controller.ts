@@ -22,6 +22,7 @@ import type { UserPayload } from '../auth/decorators/current-user.decorator';
 import {
   UpdateTicketFieldsDto,
   UpdateTicketStatusDto,
+  UpdateItemStatusDto,
 } from './dto/update-ticket-user.dto';
 
 @UseGuards(AuthGuard('jwt'))
@@ -85,6 +86,53 @@ export class TicketsController {
     @Body() dto: UpdateTicketStatusDto,
   ) {
     return this.ticketsService.updateStatus(requester, reportId, ticketId, dto);
+  }
+
+  /**
+   * Per-item supervisor review endpoint. Updates a single item's status
+   * without touching siblings — used by the ticket detail modal's per-item
+   * approve/reject buttons.
+   */
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(permissions.APPROVE_REPORTS)
+  @Patch(':ticketId/items/:itemId/status')
+  updateItemStatus(
+    @CurrentUser() requester: UserPayload,
+    @Param('reportId', ParseUUIDPipe) reportId: string,
+    @Param('ticketId', ParseUUIDPipe) ticketId: string,
+    @Param('itemId', ParseUUIDPipe) itemId: string,
+    @Body() dto: UpdateItemStatusDto,
+  ) {
+    return this.ticketsService.updateItemStatus(
+      requester,
+      reportId,
+      ticketId,
+      itemId,
+      dto,
+    );
+  }
+
+  /**
+   * Bulk per-ticket review endpoint. Sets every item to the same status in a
+   * single transaction. Backs the "Approve all" / "Reject all" shortcut.
+   * Route is more specific than `:ticketId` but less than `:ticketId/items/:itemId/status`,
+   * so the order in the controller doesn't matter here — Nest resolves by literal.
+   */
+  @UseGuards(PermissionsGuard)
+  @RequireAnyPermission(permissions.APPROVE_REPORTS)
+  @Patch(':ticketId/items/status')
+  updateAllItemsStatus(
+    @CurrentUser() requester: UserPayload,
+    @Param('reportId', ParseUUIDPipe) reportId: string,
+    @Param('ticketId', ParseUUIDPipe) ticketId: string,
+    @Body() dto: UpdateItemStatusDto,
+  ) {
+    return this.ticketsService.updateAllItemsStatus(
+      requester,
+      reportId,
+      ticketId,
+      dto,
+    );
   }
 
   @UseGuards(PermissionsGuard)

@@ -20,7 +20,7 @@ import { permissions } from '@ticket-registrator/shared';
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @Controller('categories')
 export class CategoriesController {
-  constructor(private readonly categoriesService: CategoriesService) { }
+  constructor(private readonly categoriesService: CategoriesService) {}
 
   @RequireAnyPermission(permissions.CREATE_CATEGORIES)
   @Post()
