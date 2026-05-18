@@ -48,24 +48,66 @@ describe('Auth Decorators', () => {
   });
 
   describe('CurrentUser', () => {
+    function getDecoratorFactory(decorator: (...args: any[]) => any): (data: unknown, ctx: ExecutionContext) => any {
+      // createParamDecorator stores the factory under ROUTE_ARGS_METADATA keyed on
+      // the target class/method. We retrieve it by applying the decorator to a
+      // temporary class and reading back the stored metadata entry.
+      class Target {
+        method(@decorator() _user: any) {}
+      }
+      const metadata = Reflect.getMetadata(
+        '__routeArguments__',
+        Target,
+        'method',
+      );
+      // The metadata map key format is `<type>:<index>`, value has a `factory` field.
+      const entry = Object.values(metadata ?? {})[0] as any;
+      return entry.factory;
+    }
+
     it('should extract user from request', () => {
-      const mockUser = { id: 'user-1', roleId: 'role-1' };
+      const mockUser = {
+        id: 'user-1',
+        roleId: 'role-1',
+        roleName: 'Employee' as any,
+        roleHierarchy: 10,
+        companyId: 'company-1',
+        departmentIds: [],
+        permissions: [],
+      };
       const mockRequest = { user: mockUser };
       const mockContext = {
         switchToHttp: () => ({
           getRequest: () => mockRequest,
         }),
-      } as ExecutionContext;
+      } as unknown as ExecutionContext;
 
-      // Create the decorator factory and invoke it
-      const factory = (CurrentUser as any).factory;
-      if (factory) {
-        const result = factory(undefined, mockContext);
-        expect(result).toEqual(mockUser);
-      } else {
-        // CurrentUser is created via createParamDecorator - test the underlying logic
-        expect(mockRequest.user).toEqual(mockUser);
-      }
+      const factory = getDecoratorFactory(CurrentUser);
+      const result = factory(undefined, mockContext);
+
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should return the exact user object reference from the request', () => {
+      const mockUser = {
+        id: 'user-2',
+        roleId: 'role-2',
+        roleName: 'Admin' as any,
+        roleHierarchy: 99,
+        companyId: 'company-2',
+        departmentIds: ['dept-1'],
+        permissions: ['create_users' as any],
+      };
+      const mockContext = {
+        switchToHttp: () => ({
+          getRequest: () => ({ user: mockUser }),
+        }),
+      } as unknown as ExecutionContext;
+
+      const factory = getDecoratorFactory(CurrentUser);
+      const result = factory(undefined, mockContext);
+
+      expect(result).toBe(mockUser);
     });
   });
 });
