@@ -87,4 +87,52 @@ describe('ticketsApi', () => {
             expect(result).toEqual(urlResponse);
         });
     });
+
+    describe('updateItemStatus', () => {
+        it('should call PATCH /reports/:reportId/tickets/:ticketId/items/:itemId/status', async () => {
+            const ticket = { id: 't1' };
+            mockClient.patch.mockResolvedValue({ data: ticket });
+
+            const result = await api.updateItemStatus('r1', 't1', 'item1', 'Approved');
+
+            expect(mockClient.patch).toHaveBeenCalledWith(
+                '/reports/r1/tickets/t1/items/item1/status',
+                { status: 'Approved' },
+            );
+            expect(result).toEqual(ticket);
+        });
+
+        it('should return response.data', async () => {
+            const ticket = { id: 't1', status: 'Rejected' };
+            mockClient.patch.mockResolvedValue({ data: ticket });
+
+            const result = await api.updateItemStatus('r1', 't1', 'item2', 'Rejected');
+
+            expect(result).toEqual(ticket);
+        });
+    });
+
+    describe('updateAllItemsStatus', () => {
+        it('should call PATCH /reports/:reportId/tickets/:ticketId/items/status', async () => {
+            const ticket = { id: 't1' };
+            mockClient.patch.mockResolvedValue({ data: ticket });
+
+            const result = await api.updateAllItemsStatus('r1', 't1', 'Approved');
+
+            expect(mockClient.patch).toHaveBeenCalledWith(
+                '/reports/r1/tickets/t1/items/status',
+                { status: 'Approved' },
+            );
+            expect(result).toEqual(ticket);
+        });
+
+        it('should return response.data', async () => {
+            const ticket = { id: 't1', status: 'Rejected' };
+            mockClient.patch.mockResolvedValue({ data: ticket });
+
+            const result = await api.updateAllItemsStatus('r1', 't1', 'Rejected');
+
+            expect(result).toEqual(ticket);
+        });
+    });
 });

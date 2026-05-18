@@ -151,6 +151,30 @@ describe('ReportsService', () => {
   });
 
   describe('updateStatus', () => {
+    it('throws ReportStatusConflictException when status is APPROVED but findById returns null', async () => {
+      repositoryMock.findById.mockResolvedValue(null);
+
+      await expect(
+        service.updateStatus(requester, 'report-1', {
+          status: ReportStatus.APPROVED,
+        }),
+      ).rejects.toThrow(ReportStatusConflictException);
+    });
+
+    it('throws ReportStatusConflictException when updateWithCondition returns null (report not in SUBMITTED state)', async () => {
+      repositoryMock.findById.mockResolvedValue({
+        id: 'report-1',
+        tickets: [],
+      });
+      repositoryMock.updateWithCondition.mockResolvedValue(null);
+
+      await expect(
+        service.updateStatus(requester, 'report-1', {
+          status: ReportStatus.APPROVED,
+        }),
+      ).rejects.toThrow(ReportStatusConflictException);
+    });
+
     it('should update status to APPROVED and recompute amounts from item statuses', async () => {
       // findById is called when transitioning to APPROVED so the service can
       // sum approved/requested amounts from the persisted item statuses.

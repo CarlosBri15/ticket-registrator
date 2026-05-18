@@ -14,6 +14,9 @@ describe('TicketsRepository', () => {
           findFirst: jest.fn(),
           findMany: jest.fn(),
         },
+        items: {
+          findMany: jest.fn(),
+        },
       },
       insert: jest.fn().mockReturnThis(),
       values: jest.fn().mockReturnThis(),
@@ -262,6 +265,141 @@ describe('TicketsRepository', () => {
       const result = await repository.transaction(callback);
       expect(dbMock.transaction).toHaveBeenCalled();
       expect(callback).toHaveBeenCalledWith(dbMock);
+    });
+  });
+
+  // ─── updateItemStatus ──────────────────────────────────────────────────────
+
+  describe('updateItemStatus', () => {
+    it('happy path: updates item, recomputes aggregate, returns updated item', async () => {
+      const updatedItem = {
+        id: 'item-1',
+        ticketId: 'ticket-1',
+        status: 'Approved',
+        amount: 50,
+      };
+      const refreshedTicket = {
+        id: 'ticket-1',
+        approvedAmount: 50,
+        status: 'Approved',
+      };
+
+      // update(items).set().where().returning() → [updatedItem]
+      dbMock.returning.mockResolvedValueOnce([updatedItem]);
+      // recomputeTicketAggregateTx: tx.query.items.findMany → items list
+      dbMock.query.items.findMany.mockResolvedValueOnce([
+        { status: 'Approved', amount: 50 },
+      ]);
+      // update(tickets).set().where().returning() → [refreshedTicket]
+      dbMock.returning.mockResolvedValueOnce([refreshedTicket]);
+
+      const result = await repository.updateItemStatus(
+        'ticket-1',
+        'item-1',
+        'Approved',
+      );
+
+      expect(dbMock.update).toHaveBeenCalledWith(schema.items);
+      expect(dbMock.update).toHaveBeenCalledWith(schema.tickets);
+      expect(result).toEqual(updatedItem);
+    });
+
+    it('returns undefined and skips recompute when item not found (returning is empty)', async () => {
+      dbMock.returning.mockResolvedValueOnce([]);
+
+      const result = await repository.updateItemStatus(
+        'ticket-1',
+        'nonexistent-item',
+        'Approved',
+      );
+
+      expect(result).toBeUndefined();
+      // recompute should NOT have been called — no second update(tickets)
+      expect(dbMock.query.items.findMany).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── updateAllItemsStatus ──────────────────────────────────────────────────
+
+  describe('updateAllItemsStatus', () => {
+    it('happy path: bulk-updates items, recomputes aggregate, returns refreshed ticket', async () => {
+      const refreshedTicket = {
+        id: 'ticket-1',
+        approvedAmount: 80,
+        status: 'Approved',
+      };
+
+      // update(items).set().where() → resolves (no returning needed for bulk)
+      // The chain terminates with .where() which returns dbMock, then
+      // recomputeTicketAggregateTx calls tx.query.items.findMany
+      dbMock.query.items.findMany.mockResolvedValueOnce([
+        { status: 'Approved', amount: 80 },
+      ]);
+      // update(tickets).set().where().returning() → [refreshedTicket]
+      dbMock.returning.mockResolvedValueOnce([refreshedTicket]);
+
+      const result = await repository.updateAllItemsStatus('ticket-1', 'Approved');
+
+      expect(dbMock.update).toHaveBeenCalledWith(schema.items);
+      expect(dbMock.update).toHaveBeenCalledWith(schema.tickets);
+      expect(result).toEqual(refreshedTicket);
+    });
+  });
+
+  // ─── recomputeTicketAggregateTx (via public methods) ──────────────────────
+
+  describe('recomputeTicketAggregateTx logic', () => {
+    it('approvedAmount sums only Approved items — Pending/Rejected are excluded', async () => {
+      const items = [
+        { status: 'Approved', amount: 60 },
+        { status: 'Rejected', amount: 40 },
+        { status: 'Pending', amount: 20 },
+      ];
+      dbMock.query.items.findMany.mockResolvedValueOnce(items);
+      const refreshedTicket = { id: 'ticket-1', approvedAmount: 60, status: 'Pending' };
+      dbMock.returning.mockResolvedValueOnce([{ id: 'item-1', status: 'Approved' }]);
+      dbMock.returning.mockResolvedValueOnce([refreshedTicket]);
+
+      await repository.updateItemStatus('ticket-1', 'item-1', 'Approved');
+
+      const setCall = dbMock.set.mock.calls.find(
+        (call: any[]) => call[0]?.approvedAmount !== undefined,
+      );
+      expect(setCall[0].approvedAmount).toBe(60);
+    });
+
+    it('ticket status becomes Approved when no items remain in Pending', async () => {
+      const items = [
+        { status: 'Approved', amount: 50 },
+        { status: 'Rejected', amount: 30 },
+      ]; // no Pending
+      dbMock.query.items.findMany.mockResolvedValueOnce(items);
+      dbMock.returning.mockResolvedValueOnce([{ id: 'item-1', status: 'Approved' }]);
+      dbMock.returning.mockResolvedValueOnce([{ id: 'ticket-1', status: 'Approved' }]);
+
+      await repository.updateItemStatus('ticket-1', 'item-1', 'Approved');
+
+      const setCall = dbMock.set.mock.calls.find(
+        (call: any[]) => call[0]?.status !== undefined && call[0]?.approvedAmount !== undefined,
+      );
+      expect(setCall[0].status).toBe('Approved');
+    });
+
+    it('ticket status stays Pending when at least one item is Pending', async () => {
+      const items = [
+        { status: 'Approved', amount: 50 },
+        { status: 'Pending', amount: 30 },
+      ];
+      dbMock.query.items.findMany.mockResolvedValueOnce(items);
+      dbMock.returning.mockResolvedValueOnce([{ id: 'item-1', status: 'Approved' }]);
+      dbMock.returning.mockResolvedValueOnce([{ id: 'ticket-1', status: 'Pending' }]);
+
+      await repository.updateItemStatus('ticket-1', 'item-1', 'Approved');
+
+      const setCall = dbMock.set.mock.calls.find(
+        (call: any[]) => call[0]?.status !== undefined && call[0]?.approvedAmount !== undefined,
+      );
+      expect(setCall[0].status).toBe('Pending');
     });
   });
 });
