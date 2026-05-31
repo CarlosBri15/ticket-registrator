@@ -111,7 +111,11 @@ describe('mapReportToIReport', () => {
         tickets: [
           {
             items: [
-              { categoryId: 'c1', amount: 0, category: { name: 'Meals', color: '#F5C842' } },
+              {
+                categoryId: 'c1',
+                amount: 0,
+                category: { name: 'Meals', color: '#F5C842' },
+              },
             ],
           },
         ],
@@ -125,20 +129,46 @@ describe('mapReportToIReport', () => {
         tickets: [
           {
             items: [
-              { categoryId: 'c1', amount: 30, category: { name: 'Meals', color: '#F5C842' } },
-              { categoryId: 'c2', amount: 70, category: { name: 'Lodging', color: '#8A5E89' } },
+              {
+                categoryId: 'c1',
+                amount: 30,
+                category: { name: 'Meals', color: '#F5C842' },
+              },
+              {
+                categoryId: 'c2',
+                amount: 70,
+                category: { name: 'Lodging', color: '#8A5E89' },
+              },
             ],
           },
           {
             items: [
-              { categoryId: 'c1', amount: 20, category: { name: 'Meals', color: '#F5C842' } },
+              {
+                categoryId: 'c1',
+                amount: 20,
+                category: { name: 'Meals', color: '#F5C842' },
+              },
             ],
           },
         ],
       });
       expect(result.categoryMix).toEqual([
-        { categoryId: 'c2', categoryName: 'Lodging', categoryColor: '#8A5E89', amount: 70, percentage: 58.3 },
-        { categoryId: 'c1', categoryName: 'Meals', categoryColor: '#F5C842', amount: 50, percentage: 41.7 },
+        {
+          categoryId: 'c2',
+          categoryName: 'Lodging',
+          categoryColor: '#8A5E89',
+          categoryIcon: null,
+          amount: 70,
+          percentage: 58.3,
+        },
+        {
+          categoryId: 'c1',
+          categoryName: 'Meals',
+          categoryColor: '#F5C842',
+          categoryIcon: null,
+          amount: 50,
+          percentage: 41.7,
+        },
       ]);
     });
 
@@ -149,15 +179,51 @@ describe('mapReportToIReport', () => {
           {
             items: [
               { categoryId: null, amount: 40, category: null },
-              { categoryId: 'c1', amount: 60, category: { name: 'Meals', color: '#F5C842' } },
+              {
+                categoryId: 'c1',
+                amount: 60,
+                category: { name: 'Meals', color: '#F5C842' },
+              },
             ],
           },
         ],
       });
       expect(result.categoryMix).toEqual([
-        { categoryId: 'c1', categoryName: 'Meals', categoryColor: '#F5C842', amount: 60, percentage: 60 },
-        { categoryId: null, categoryName: 'Uncategorized', categoryColor: null, amount: 40, percentage: 40 },
+        {
+          categoryId: 'c1',
+          categoryName: 'Meals',
+          categoryColor: '#F5C842',
+          categoryIcon: null,
+          amount: 60,
+          percentage: 60,
+        },
+        {
+          categoryId: null,
+          categoryName: 'Uncategorized',
+          categoryColor: null,
+          categoryIcon: null,
+          amount: 40,
+          percentage: 40,
+        },
       ]);
+    });
+
+    it('propagates category.icon when present', () => {
+      const result = mapReportToIReport({
+        ...baseReport,
+        tickets: [
+          {
+            items: [
+              {
+                categoryId: 'c1',
+                amount: 50,
+                category: { name: 'Meals', color: '#F5C842', icon: 'Utensils' },
+              },
+            ],
+          },
+        ],
+      });
+      expect(result.categoryMix[0].categoryIcon).toBe('Utensils');
     });
   });
 });

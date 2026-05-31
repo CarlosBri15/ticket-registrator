@@ -4,33 +4,29 @@ import {
   Text,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
   StyleSheet,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { 
-  IconCpu, 
-  IconCircleCheck, 
-  IconCheck, 
-  IconAlertCircle, 
-  IconList,
-  IconSmartHome,
-  IconMapPin,
-  IconCalendar,
-  IconCurrencyDollar,
-  IconCreditCard
-} from '@tabler/icons-react-native';
+import {
+  Cpu,
+  CircleCheck,
+  Check,
+  AlertCircle,
+  List,
+  Home,
+  MapPin,
+  Calendar,
+  DollarSign,
+  CreditCard,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ITicket } from '@ticket-registrator/shared';
-import {
-  PixelCard,
-  DARK,
-  CARD_BG,
-  BORDER_WIDTH,
-  colors,
-} from '../ui/PixelCard';
-import { PixelField } from '../ui/PixelField';
-import { PixelInput } from '../ui/PixelInput';
+import type { ITicket } from '@ticket-registrator/shared';
+import { Card } from '../ui/Card';
+import { Input } from '../ui/Input';
+import { colors } from '../../constants/theme';
 import { commerceIcon, locationIcon, paymentMethodIcon } from '@ticket-registrator/shared/assets';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -50,10 +46,21 @@ type FieldKey =
   | 'currency'
   | 'payment_type';
 
+interface FieldMeta {
+  label: string;
+  placeholder: string;
+  icon: LucideIcon;
+  image?: number;
+  numeric?: boolean;
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const isExtracted = (value: any): boolean =>
+const isExtracted = (value: unknown): boolean =>
   value !== null && value !== undefined && value !== '';
+
+const GREEN = colors.success;
+const AMBER = colors.warning;
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -86,16 +93,16 @@ export const TicketConfirmationForm = ({
 
   const extractedCount  = Object.values(extracted).filter(Boolean).length;
   const totalFields     = Object.keys(extracted).length;
-  const missingFields   = (Object.keys(extracted) as FieldKey[]).filter(k => !extracted[k]);
-  const extractedFields = (Object.keys(extracted) as FieldKey[]).filter(k =>  extracted[k]);
+  const missingFields   = (Object.keys(extracted) as FieldKey[]).filter((k) => !extracted[k]);
+  const extractedFields = (Object.keys(extracted) as FieldKey[]).filter((k) => extracted[k]);
 
-  const fieldMeta: Record<FieldKey, { label: string; placeholder: string; icon: any; image?: any; numeric?: boolean }> = {
-    location_name:    { label: t('confirmForm.establishment'), placeholder: t('confirmForm.establishmentPlaceholder'), icon: IconSmartHome,        image: commerceIcon },
-    location_address: { label: t('confirmForm.address'),       placeholder: t('confirmForm.addressPlaceholder'),       icon: IconMapPin,     image: locationIcon },
-    date:             { label: t('confirmForm.date'),           placeholder: 'YYYY-MM-DD',                              icon: IconCalendar },
-    amount:           { label: t('confirmForm.amount'),         placeholder: '0.00',                                    icon: IconCurrencyDollar, numeric: true },
-    currency:         { label: t('confirmForm.currency'),       placeholder: 'EUR',                                     icon: IconCreditCard },
-    payment_type:     { label: t('confirmForm.paymentMethod'),  placeholder: t('confirmForm.paymentMethodPlaceholder'), icon: IconCreditCard, image: paymentMethodIcon },
+  const fieldMeta: Record<FieldKey, FieldMeta> = {
+    location_name:    { label: t('confirmForm.establishment'), placeholder: t('confirmForm.establishmentPlaceholder'), icon: Home,        image: commerceIcon as number },
+    location_address: { label: t('confirmForm.address'),       placeholder: t('confirmForm.addressPlaceholder'),       icon: MapPin,      image: locationIcon as number },
+    date:             { label: t('confirmForm.date'),          placeholder: 'YYYY-MM-DD',                              icon: Calendar },
+    amount:           { label: t('confirmForm.amount'),        placeholder: '0.00',                                    icon: DollarSign, numeric: true },
+    currency:         { label: t('confirmForm.currency'),      placeholder: 'EUR',                                     icon: CreditCard },
+    payment_type:     { label: t('confirmForm.paymentMethod'), placeholder: t('confirmForm.paymentMethodPlaceholder'), icon: CreditCard, image: paymentMethodIcon as number },
   };
 
   const formatExtractedValue = (key: FieldKey): string => {
@@ -111,7 +118,7 @@ export const TicketConfirmationForm = ({
   };
 
   const handleChange = (name: FieldKey, value: string) =>
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
   const handleSubmit = () => {
     onConfirm({
@@ -132,7 +139,6 @@ export const TicketConfirmationForm = ({
     bannerColor = AMBER;
   }
 
-
   return (
     <View style={s.container}>
       <ScrollView
@@ -142,32 +148,30 @@ export const TicketConfirmationForm = ({
         keyboardShouldPersistTaps="handled"
       >
         {/* ── AI Banner ── */}
-        <PixelCard bg={CARD_BG} shadowOffset={4} style={s.bannerCard}>
+        <Card style={s.bannerCard}>
           <View style={s.bannerInner}>
-            <PixelCard bg={bannerColor} shadowOffset={3} radius={8}>
-              <View style={s.bannerIconInner}>
-                <IconCpu size={18} color="white" />
-              </View>
-            </PixelCard>
+            <View style={[s.bannerIconBox, { backgroundColor: bannerColor }]}>
+              <Cpu size={16} color={colors.fgOnBrand} strokeWidth={2} />
+            </View>
             <View style={s.bannerMeta}>
               <Text style={s.bannerTitle}>
                 <Text style={[s.bannerCount, { color: bannerColor }]}>{extractedCount}/{totalFields}</Text> campos extraídos
               </Text>
               <View style={s.progressTrack}>
-                <View style={[s.progressFill, { width: `${progress * 100}%` as any, backgroundColor: bannerColor }]} />
+                <View style={[s.progressFill, { width: `${progress * 100}%` as never, backgroundColor: bannerColor }]} />
               </View>
             </View>
           </View>
-        </PixelCard>
+        </Card>
 
         {/* ── Extracted fields (read-only) ── */}
-        {extractedFields.length > 0 && (
+        {extractedFields.length > 0 ? (
           <View style={s.section}>
             <View style={s.sectionHeader}>
-              <IconCircleCheck size={11} color={GREEN} />
+              <CircleCheck size={12} color={GREEN} strokeWidth={2} />
               <Text style={[s.sectionTitle, { color: GREEN }]}>Datos extraídos</Text>
             </View>
-            <PixelCard bg={CARD_BG} shadowOffset={4}>
+            <Card>
               <View style={s.cardInner}>
                 {extractedFields.map((key, idx) => {
                   const Icon = fieldMeta[key].icon;
@@ -176,9 +180,9 @@ export const TicketConfirmationForm = ({
                       <View style={s.extractedRow}>
                         <View style={s.extractedIconBox}>
                           {fieldMeta[key].image ? (
-                            <Image source={fieldMeta[key].image} style={s.fieldImage} contentFit="contain" />
+                            <Image source={fieldMeta[key].image as number} style={s.fieldImage} contentFit="contain" />
                           ) : (
-                            <Icon size={14} color={GREEN} />
+                            <Icon size={16} color={GREEN} strokeWidth={2} />
                           )}
                         </View>
                         <View style={s.extractedMeta}>
@@ -187,52 +191,52 @@ export const TicketConfirmationForm = ({
                             {formatExtractedValue(key)}
                           </Text>
                         </View>
-                        <IconCheck size={16} color={GREEN} />
+                        <Check size={16} color={GREEN} strokeWidth={2} />
                       </View>
-                      {idx < extractedFields.length - 1 && <View style={s.divider} />}
+                      {idx < extractedFields.length - 1 ? <View style={s.divider} /> : null}
                     </View>
                   );
                 })}
               </View>
-            </PixelCard>
+            </Card>
           </View>
-        )}
+        ) : null}
 
         {/* ── Missing fields (editable) ── */}
-        {missingFields.length > 0 && (
+        {missingFields.length > 0 ? (
           <View style={s.section}>
             <View style={s.sectionHeader}>
-              <IconAlertCircle size={11} color={AMBER} />
+              <AlertCircle size={12} color={AMBER} strokeWidth={2} />
               <Text style={[s.sectionTitle, { color: AMBER }]}>Completa estos campos</Text>
             </View>
-            <PixelCard bg={CARD_BG} shadowOffset={4}>
+            <Card>
               <View style={s.missingFormWrap}>
-                {missingFields.map(key => (
-                  <PixelField key={key} label={`${fieldMeta[key].label} *`}>
-                    <PixelInput
-                      value={formData[key]}
-                      onChangeText={v => handleChange(key, v)}
-                      placeholder={fieldMeta[key].placeholder}
-                      keyboardType={fieldMeta[key].numeric ? 'numeric' : 'default'}
-                    />
-                  </PixelField>
+                {missingFields.map((key) => (
+                  <Input
+                    key={key}
+                    label={`${fieldMeta[key].label} *`}
+                    value={formData[key]}
+                    onChangeText={(v) => handleChange(key, v)}
+                    placeholder={fieldMeta[key].placeholder}
+                    keyboardType={fieldMeta[key].numeric ? 'numeric' : 'default'}
+                  />
                 ))}
               </View>
-            </PixelCard>
+            </Card>
           </View>
-        )}
+        ) : null}
 
         {/* ── Items ── */}
-        {ticket.items && ticket.items.length > 0 && (
+        {ticket.items && ticket.items.length > 0 ? (
           <View style={s.section}>
             <View style={s.sectionHeader}>
-              <IconList size={11} color={DARK} />
+              <List size={12} color={colors.dark} strokeWidth={2} />
               <Text style={s.sectionTitle}>{t('confirmForm.itemsSummary')}</Text>
               <View style={s.countPill}>
                 <Text style={s.countPillText}>{ticket.items.length}</Text>
               </View>
             </View>
-            <PixelCard bg={CARD_BG} shadowOffset={4}>
+            <Card>
               <View style={s.cardInner}>
                 {ticket.items.map((item, idx) => (
                   <View key={item.id}>
@@ -243,55 +247,44 @@ export const TicketConfirmationForm = ({
                         {item.currency ? <Text style={s.itemCurrency}> {item.currency}</Text> : null}
                       </Text>
                     </View>
-                    {idx < ticket.items!.length - 1 && <View style={s.divider} />}
+                    {idx < ticket.items!.length - 1 ? <View style={s.divider} /> : null}
                   </View>
                 ))}
               </View>
-            </PixelCard>
+            </Card>
           </View>
-        )}
+        ) : null}
       </ScrollView>
 
       {/* ── Actions ── */}
       <View style={[s.actions, { paddingBottom: 16 + insets.bottom }]}>
-        <PixelCard
-          bg={CARD_BG}
-          shadowOffset={3}
-          style={s.actionBtn}
+        <TouchableOpacity
+          style={[s.actionBtn, s.actionBtnSecondary]}
           onPress={isLoading ? undefined : onCancel}
+          activeOpacity={0.85}
+          disabled={isLoading}
         >
-          <View style={s.actionBtnInner}>
-            <Text style={s.cancelText}>{t('upload.discard')}</Text>
-          </View>
-        </PixelCard>
-        <PixelCard
-          bg={colors.brand}
-          shadowOffset={4}
+          <Text style={s.cancelText}>{t('upload.discard')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[s.actionBtn, s.actionBtnPrimary, isLoading && s.actionDisabled]}
           onPress={isLoading ? undefined : handleSubmit}
+          activeOpacity={0.85}
+          disabled={isLoading}
         >
-          <View style={s.actionBtnInner}>
-            {isLoading ? (
-              <ActivityIndicator color="white" size="small" />
-            ) : (
-              <>
-                <IconCheck size={16} color="white" />
-                <Text style={s.confirmText}>{t('confirmForm.confirm')}</Text>
-              </>
-            )}
-          </View>
-        </PixelCard>
+          {isLoading ? (
+            <ActivityIndicator color={colors.fgOnBrand} size="small" />
+          ) : (
+            <>
+              <Check size={16} color={colors.fgOnBrand} strokeWidth={2} />
+              <Text style={s.confirmText}>{t('confirmForm.confirm')}</Text>
+            </>
+          )}
+        </TouchableOpacity>
       </View>
     </View>
   );
 };
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const GREEN = colors.success;
-const AMBER = colors.secondary;
-
-// ── Styles ────────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
   container: { flex: 1 },
@@ -305,13 +298,19 @@ const s = StyleSheet.create({
     gap: 14,
     padding: 16,
   },
-  bannerIconInner: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  bannerIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   bannerMeta:  { flex: 1 },
-  bannerTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK, marginBottom: 8 },
-  bannerCount: { color: colors.brand },
+  bannerTitle: { fontFamily: 'Manrope-SemiBold', fontSize: 13, color: colors.dark, marginBottom: 8 },
+  bannerCount: { fontFamily: 'Manrope-Bold' },
   progressTrack: {
     height: 6,
-    backgroundColor: `${DARK}10`,
+    backgroundColor: colors.overlayLight,
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -323,20 +322,18 @@ const s = StyleSheet.create({
   // Sections
   section:      { marginBottom: 16 },
   sectionHeader:{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  sectionTitle: { flex: 1, fontFamily: 'SpaceGrotesk-Bold', fontSize: 12, color: DARK, letterSpacing: 0.3 },
+  sectionTitle: { flex: 1, fontFamily: 'Manrope-SemiBold', fontSize: 13, color: colors.dark, letterSpacing: -0.1 },
   countPill: {
-    backgroundColor: CARD_BG,
-    paddingHorizontal: 9,
+    backgroundColor: colors.surfaceSunken,
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderWidth: BORDER_WIDTH,
-    borderColor: DARK,
-    borderRadius: 6,
+    borderRadius: 9999,
   },
-  countPillText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 9, color: DARK },
+  countPillText: { fontFamily: 'Manrope-SemiBold', fontSize: 10, color: colors.dark },
 
   // Card internals
   cardInner: { paddingVertical: 4 },
-  divider:   { height: BORDER_WIDTH, backgroundColor: `${DARK}10`, marginHorizontal: 16 },
+  divider:   { height: 1, backgroundColor: colors.border, marginHorizontal: 14 },
 
   // Extracted rows
   extractedRow: {
@@ -349,17 +346,16 @@ const s = StyleSheet.create({
   extractedIconBox: {
     width: 36,
     height: 36,
-    borderWidth: BORDER_WIDTH,
-    borderColor: `${DARK}20`,
-    borderRadius: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(22,163,74,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  fieldImage:     { width: 22, height: 22 },
+  fieldImage:     { width: 20, height: 20 },
   extractedMeta:  { flex: 1, minWidth: 0 },
-  extractedLabel: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 10, color: `${DARK}55`, letterSpacing: 0.3, marginBottom: 2 },
-  extractedValue: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK },
+  extractedLabel: { fontFamily: 'Manrope-SemiBold', fontSize: 11, color: colors.fgSecondary, marginBottom: 2 },
+  extractedValue: { fontFamily: 'Manrope-SemiBold', fontSize: 13, color: colors.dark },
 
   // Missing fields form
   missingFormWrap: { padding: 16 },
@@ -371,29 +367,35 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  itemName:     { flex: 1, fontFamily: 'SpaceGrotesk-SemiBold', fontSize: 13, color: DARK, marginRight: 8 },
-  itemAmount:   { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK },
-  itemCurrency: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 9, color: `${DARK}55` },
+  itemName:     { flex: 1, fontFamily: 'Manrope-Medium', fontSize: 13, color: colors.dark, marginRight: 8 },
+  itemAmount:   { fontFamily: 'Manrope-Bold', fontSize: 13, color: colors.dark },
+  itemCurrency: { fontFamily: 'Manrope-SemiBold', fontSize: 11, color: colors.fgSecondary },
 
   // Actions
   actions: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
     padding: 16,
-    borderTopWidth: 4,
-    borderTopColor: DARK,
-    backgroundColor: CARD_BG,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.surfaceCard,
   },
-  actionBtn:        { flex: 1 },
-  actionBtnPrimary: { flex: 2 },
-  actionDisabled:   { opacity: 0.6 },
-  actionBtnInner: {
+  actionBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 9999,
   },
-  cancelText:  { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK, letterSpacing: 0.2 },
-  confirmText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: 'white', letterSpacing: 0.2 },
+  actionBtnSecondary: {
+    backgroundColor: colors.surfaceCard,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  actionBtnPrimary:   { flex: 2, backgroundColor: colors.brand },
+  actionDisabled:     { opacity: 0.6 },
+  cancelText:  { fontFamily: 'Manrope-SemiBold', fontSize: 13, color: colors.dark },
+  confirmText: { fontFamily: 'Manrope-SemiBold', fontSize: 13, color: colors.fgOnBrand },
 });

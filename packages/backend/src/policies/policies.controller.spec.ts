@@ -51,14 +51,20 @@ describe('PoliciesController', () => {
     };
 
     it('should throw BadRequestException if file is not provided', async () => {
-      await expect(controller.ingestPolicy(undefined as any, mockDto)).rejects.toThrow(
-        new BadRequestException('No file uploaded. Please upload a file using the "file" form-data field.')
+      await expect(
+        controller.ingestPolicy(undefined as any, mockDto),
+      ).rejects.toThrow(
+        new BadRequestException(
+          'No file uploaded. Please upload a file using the "file" form-data field.',
+        ),
       );
     });
 
     it('should call processAndIngestPolicy and return success result', async () => {
       const mockResult = { policyId: 'policy-1', chunksProcessed: 5 };
-      jest.spyOn(service, 'processAndIngestPolicy').mockResolvedValue(mockResult);
+      jest
+        .spyOn(service, 'processAndIngestPolicy')
+        .mockResolvedValue(mockResult);
 
       const result = await controller.ingestPolicy(mockFile, mockDto);
 

@@ -4,13 +4,14 @@ import { initApi } from "../src/api/client";
 import { useEffect, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { 
+import {
   useFonts,
-  SpaceGrotesk_400Regular,
-  SpaceGrotesk_500Medium,
-  SpaceGrotesk_600SemiBold,
-  SpaceGrotesk_700Bold 
-} from "@expo-google-fonts/space-grotesk";
+  Manrope_400Regular,
+  Manrope_500Medium,
+  Manrope_600SemiBold,
+  Manrope_700Bold,
+} from "@expo-google-fonts/manrope";
+import { colors } from "../src/constants/theme";
 import * as SplashScreen from 'expo-splash-screen';
 import { Asset } from 'expo-asset';
 import { 
@@ -34,10 +35,10 @@ const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    'SpaceGrotesk-Regular': SpaceGrotesk_400Regular,
-    'SpaceGrotesk-Medium': SpaceGrotesk_500Medium,
-    'SpaceGrotesk-SemiBold': SpaceGrotesk_600SemiBold,
-    'SpaceGrotesk-Bold': SpaceGrotesk_700Bold,
+    'Manrope-Regular':  Manrope_400Regular,
+    'Manrope-Medium':   Manrope_500Medium,
+    'Manrope-SemiBold': Manrope_600SemiBold,
+    'Manrope-Bold':     Manrope_700Bold,
   });
 
   const [assetsLoaded, setAssetsLoaded] = useState(false);
@@ -73,8 +74,8 @@ export default function RootLayout() {
 
   if ((!fontsLoaded && !fontError) || !assetsLoaded) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F5F5F5' }}>
-        <ActivityIndicator size="large" color="#4D4DFF" />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface }}>
+        <ActivityIndicator size="large" color={colors.brand} />
       </View>
     );
   }

@@ -12,7 +12,7 @@ describe('mapCompanyToIOrganization', () => {
   };
 
   it('should map all fields correctly', () => {
-    const result = mapCompanyToIOrganization(baseCompany as any);
+    const result = mapCompanyToIOrganization(baseCompany);
 
     expect(result).toEqual({
       id: 'company-1',
@@ -24,32 +24,32 @@ describe('mapCompanyToIOrganization', () => {
 
   it('should use orgName as name (not orgName)', () => {
     const company = { ...baseCompany, orgName: 'My Company' };
-    const result = mapCompanyToIOrganization(company as any);
+    const result = mapCompanyToIOrganization(company);
     expect(result.name).toBe('My Company');
   });
 
   it('should convert createdAt Date to ISO string', () => {
     const date = new Date('2023-06-01T00:00:00.000Z');
     const company = { ...baseCompany, createdAt: date };
-    const result = mapCompanyToIOrganization(company as any);
+    const result = mapCompanyToIOrganization(company);
     expect(result.createdAt).toBe('2023-06-01T00:00:00.000Z');
   });
 
   it('should convert updatedAt Date to ISO string', () => {
     const date = new Date('2023-12-31T23:59:59.000Z');
     const company = { ...baseCompany, updatedAt: date };
-    const result = mapCompanyToIOrganization(company as any);
+    const result = mapCompanyToIOrganization(company);
     expect(result.updatedAt).toBe('2023-12-31T23:59:59.000Z');
   });
 
   it('should preserve the id from the company', () => {
     const company = { ...baseCompany, id: 'specific-uuid-123' };
-    const result = mapCompanyToIOrganization(company as any);
+    const result = mapCompanyToIOrganization(company);
     expect(result.id).toBe('specific-uuid-123');
   });
 
   it('should not include deletedAt or orgName in the output', () => {
-    const result = mapCompanyToIOrganization(baseCompany as any);
+    const result = mapCompanyToIOrganization(baseCompany);
     expect(result).not.toHaveProperty('deletedAt');
     expect(result).not.toHaveProperty('orgName');
   });

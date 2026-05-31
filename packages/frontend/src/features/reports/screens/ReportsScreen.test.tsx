@@ -19,6 +19,7 @@ vi.mock('@ticket-registrator/shared', async (importOriginal) => {
     useReportsPaginatedQuery: vi.fn(),
     useReportFilterState: vi.fn(),
     useScope: vi.fn(),
+    useUserQuery: vi.fn(() => ({ data: undefined })),
   };
 });
 

@@ -50,7 +50,7 @@ export class UsersService {
 
     const targetCompanyId = this.getTargetCompanyId(createUserDto, creator);
     const targetRole = await this.getTargetRole(
-      createUserDto.roleId as string,
+      createUserDto.roleId,
       targetCompanyId,
     );
 
@@ -119,7 +119,7 @@ export class UsersService {
       user.companyId || '',
     );
 
-    return mapUserToICurrentUser(user as UserWithRole, userPermissions);
+    return mapUserToICurrentUser(user, userPermissions);
   }
 
   async findUserRole(userId: string): Promise<{ roleId: string } | undefined> {
@@ -135,14 +135,31 @@ export class UsersService {
         eq(this.usersRepository.schema.users.companyId, requester.companyId!),
       );
 
-      if (
+      // A user at DEPARTMENT level with no assigned departments (Controller)
+      // is treated as company-scoped — mirrors the frontend `useScope` logic
+      // so the backend agrees with what the UI exposes. Only fall into the
+      // dept-restricted branch when the requester actually has departments.
+      const hasDeptScope =
         maxHierarchy >= AUTHORITY_LEVELS.DEPARTMENT &&
-        maxHierarchy < AUTHORITY_LEVELS.COMPANY
-      ) {
+        maxHierarchy < AUTHORITY_LEVELS.COMPANY &&
+        requester.departmentIds.length > 0;
+
+      if (hasDeptScope) {
+        // Build the EXISTS with raw column references inside the subquery
+        // because Drizzle's relational query builder (`findMany`) rewrites
+        // Drizzle column refs to the outer alias, producing the wrong table
+        // qualifier (e.g. `"users"."user_id"` instead of `"ud"."user_id"`).
+        // We also build the IN list manually via `sql.join` to keep each
+        // department id as its own parameter and avoid the previous
+        // `ANY(($1, $2)::uuid[])` cast-to-record postgres error.
+        const deptInList = sql.join(
+          requester.departmentIds.map((id) => sql`${id}::uuid`),
+          sql`, `,
+        );
         userFilters.push(sql`EXISTS (
-          SELECT 1 FROM ${this.usersRepository.schema.usersToDepartments}
-          WHERE ${this.usersRepository.schema.usersToDepartments.userId} = ${this.usersRepository.schema.users.id}
-          AND ${inArray(this.usersRepository.schema.usersToDepartments.departmentId, requester.departmentIds)}
+          SELECT 1 FROM "users_to_departments" "ud"
+          WHERE "ud"."user_id" = "users"."id"
+          AND "ud"."department_id" IN (${deptInList})
         )`);
       } else if (maxHierarchy < AUTHORITY_LEVELS.DEPARTMENT) {
         userFilters.push(
@@ -164,12 +181,7 @@ export class UsersService {
     const userWithRels = await this.usersRepository.findById(id);
     if (!userWithRels) throw new UserNotFoundException(id);
 
-    if (
-      !this.usersAuthService.validateCanUpdateUser(
-        requester,
-        userWithRels as UserWithRole & { role: { hierarchy: number } | null },
-      )
-    ) {
+    if (!this.usersAuthService.validateCanUpdateUser(requester, userWithRels)) {
       throw new UserUnauthorizedException();
     }
 

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Box, Save } from "lucide-react";
+import { Box, Check, X } from "lucide-react";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 import type { ITicket, IItem } from "@ticket-registrator/shared";
 
@@ -11,8 +11,11 @@ interface ItemsSectionProps {
   getItemStatus: (item: IItem) => string;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
-  onSave: () => void;
-  hasChanges: boolean;
+  /** Bulk action — sets every item to `Approved` in a single backend call. */
+  onApproveAll?: () => void;
+  /** Bulk action — sets every item to `Rejected` in a single backend call. */
+  onRejectAll?: () => void;
+  /** Reflects the in-flight ticket update; disables the per-item buttons. */
   isSaving: boolean;
   variant?: ItemsSectionVariant;
 }
@@ -30,14 +33,15 @@ export const ItemsSection = ({
   getItemStatus,
   onApprove,
   onReject,
-  onSave,
-  hasChanges,
+  onApproveAll,
+  onRejectAll,
   isSaving,
   variant = "card",
 }: ItemsSectionProps) => {
   const { t } = useTranslation();
   const items = ticket.items ?? [];
   const isLedger = variant === "ledger";
+  const showBulkActions = canApprove && items.length > 1 && (onApproveAll || onRejectAll);
 
   return (
     <div className={isLedger ? "flex flex-col" : "lg:pl-4 flex flex-col gap-1.5"}>
@@ -49,44 +53,44 @@ export const ItemsSection = ({
             <span className="right">{t("ticketDetail.totalAmount")}</span>
           </>
         ) : (
-          <>
-            <div className="flex items-center gap-2">
-              <p className="text-[11px] font-sans-medium text-dark/45">
-                {t("reportDetail.items")}
-              </p>
-              {items.length > 0 && (
-                <span className="px-1.2 py-0.2 rounded bg-dark/5 text-dark/40 text-[10px] font-sans-bold tabular-nums">
-                  {items.length}
-                </span>
-              )}
-            </div>
-            {hasChanges && canApprove && (
-              <button
-                type="button"
-                onClick={onSave}
-                disabled={isSaving}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-sans-bold text-dark bg-brand hover:bg-brand-hover border border-brand/20 disabled:opacity-50 transition-colors shadow-sm"
-              >
-                <Save className="w-3 h-3" />
-                {formatTitle(t("common.save"))}
-              </button>
+          <div className="flex items-center gap-2">
+            <p className="text-[11px] font-sans-medium text-dark/45">
+              {t("reportDetail.items")}
+            </p>
+            {items.length > 0 && (
+              <span className="px-1.2 py-0.2 rounded bg-dark/5 text-dark/40 text-[10px] font-sans-bold tabular-nums">
+                {items.length}
+              </span>
             )}
-          </>
+          </div>
         )}
       </div>
 
-      {/* Save action for ledger variant (separate row above the list) */}
-      {isLedger && hasChanges && canApprove && (
-        <div className="flex justify-end pb-2">
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={isSaving}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] text-[11px] font-sans-bold text-dark bg-brand-light hover:bg-surface-hover border border-dark/15 disabled:opacity-50 transition-colors"
-          >
-            <Save className="w-3 h-3" />
-            {formatTitle(t("common.save"))}
-          </button>
+      {/* Bulk action row — only shown to supervisors with > 1 items. */}
+      {showBulkActions && (
+        <div className="flex justify-end gap-3 py-2 border-b border-[var(--color-border-main)]/40">
+          {onApproveAll && (
+            <button
+              type="button"
+              onClick={onApproveAll}
+              disabled={isSaving}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-sans-semibold text-success hover:bg-success/10 disabled:opacity-40 transition-colors"
+            >
+              <Check className="w-3.5 h-3.5" aria-hidden={true} />
+              {formatTitle(t("ticketDetail.approveAll", "Aprobar todo"))}
+            </button>
+          )}
+          {onRejectAll && (
+            <button
+              type="button"
+              onClick={onRejectAll}
+              disabled={isSaving}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-sans-semibold text-danger hover:bg-danger/10 disabled:opacity-40 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" aria-hidden={true} />
+              {formatTitle(t("ticketDetail.rejectAll", "Rechazar todo"))}
+            </button>
+          )}
         </div>
       )}
 
@@ -100,6 +104,7 @@ export const ItemsSection = ({
                 item={item}
                 status={getItemStatus(item)}
                 canApprove={canApprove}
+                isSaving={isSaving}
                 onApprove={onApprove}
                 onReject={onReject}
                 t={t}
@@ -110,6 +115,7 @@ export const ItemsSection = ({
                 item={item}
                 status={getItemStatus(item)}
                 canApprove={canApprove}
+                isSaving={isSaving}
                 onApprove={onApprove}
                 onReject={onReject}
                 t={t}
@@ -135,6 +141,7 @@ interface RowProps {
   item: IItem;
   status: string;
   canApprove: boolean;
+  isSaving: boolean;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   t: (key: string) => string;
@@ -145,7 +152,7 @@ const formatAmount = (item: IItem) => {
   return item.amount.toLocaleString();
 };
 
-const LedgerRow = ({ item, status, canApprove, onApprove, onReject, t }: RowProps) => {
+const LedgerRow = ({ item, status, canApprove, isSaving, onApprove, onReject, t }: RowProps) => {
   const isApproved = status === "Approved";
   const isRejected = status === "Rejected";
   const dotColor = item.categoryColor ?? FALLBACK_DOT_COLOR;
@@ -177,6 +184,8 @@ const LedgerRow = ({ item, status, canApprove, onApprove, onReject, t }: RowProp
           <button
             type="button"
             onClick={() => onApprove(item.id)}
+            disabled={isSaving}
+            aria-pressed={isApproved}
             className={
               "sheet-item-action " +
               (isApproved ? "sheet-item-action--approved" : "")
@@ -188,6 +197,8 @@ const LedgerRow = ({ item, status, canApprove, onApprove, onReject, t }: RowProp
           <button
             type="button"
             onClick={() => onReject(item.id)}
+            disabled={isSaving}
+            aria-pressed={isRejected}
             className={
               "sheet-item-action " +
               (isRejected ? "sheet-item-action--rejected" : "")
@@ -206,7 +217,7 @@ const LedgerRow = ({ item, status, canApprove, onApprove, onReject, t }: RowProp
   );
 };
 
-const CardRow = ({ item, status, canApprove, onApprove, onReject, t }: RowProps) => {
+const CardRow = ({ item, status, canApprove, isSaving, onApprove, onReject, t }: RowProps) => {
   const isApproved = status === "Approved";
   const isRejected = status === "Rejected";
   const dotColor = item.categoryColor ?? FALLBACK_DOT_COLOR;
@@ -234,7 +245,9 @@ const CardRow = ({ item, status, canApprove, onApprove, onReject, t }: RowProps)
             <button
               type="button"
               onClick={() => onApprove(item.id)}
-              className={`text-[10px] font-sans-bold transition-colors
+              disabled={isSaving}
+              aria-pressed={isApproved}
+              className={`text-[10px] font-sans-bold transition-colors disabled:opacity-50
                 ${isApproved ? "text-green-600" : "text-dark/20 hover:text-green-600"}`}
             >
               {isApproved ? "✓ " : ""}{formatTitle(t("common.approve"))}
@@ -242,7 +255,9 @@ const CardRow = ({ item, status, canApprove, onApprove, onReject, t }: RowProps)
             <button
               type="button"
               onClick={() => onReject(item.id)}
-              className={`text-[10px] font-sans-bold transition-colors
+              disabled={isSaving}
+              aria-pressed={isRejected}
+              className={`text-[10px] font-sans-bold transition-colors disabled:opacity-50
                 ${isRejected ? "text-red-500" : "text-dark/20 hover:text-red-500"}`}
             >
               {isRejected ? "✕ " : ""}{formatTitle(t("common.reject"))}

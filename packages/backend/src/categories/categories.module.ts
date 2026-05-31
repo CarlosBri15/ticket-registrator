@@ -10,4 +10,4 @@ import { DbModule } from '../db/db.module';
   providers: [CategoriesService, CategoriesRepository],
   exports: [CategoriesService, CategoriesRepository],
 })
-export class CategoriesModule { }
+export class CategoriesModule {}

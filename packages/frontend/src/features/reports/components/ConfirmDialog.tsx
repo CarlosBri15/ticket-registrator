@@ -24,13 +24,10 @@ export const ConfirmDialog = ({
   confirmVariant = 'primary',
   isLoading,
 }: ConfirmDialogProps) => {
-  // Determine icon container color based on confirmVariant
-  // 'primary' (blue) or 'success' (green) -> green box
-  // 'danger' (red) -> red box
+  // Icon container colour mirrors the confirm button's variant.
   const isDestructive = confirmVariant === 'danger';
   const isPrimary = confirmVariant === 'primary';
   const iconBgClass = isDestructive ? 'bg-danger' : isPrimary ? 'bg-brand' : 'bg-success';
-  const iconBorderColor = isDestructive ? 'border-[#DC2626]' : isPrimary ? 'border-[#1E3A8A]' : 'border-[#059669]';
 
   return (
     <div className="modal-overlay">
@@ -45,7 +42,7 @@ export const ConfirmDialog = ({
         <div className="card !p-0 overflow-hidden shadow-[var(--shadow-modal)] w-full">
           <div className="p-8 flex flex-col items-center text-center gap-4">
             <div
-              className={`w-16 h-16 ${iconBgClass} border-2 ${iconBorderColor} rounded-2xl flex items-center justify-center shadow-hard-sm`}
+              className={`w-16 h-16 ${iconBgClass} rounded-2xl flex items-center justify-center`}
             >
               {icon && cloneElement(icon as ReactElement<{ className?: string; style?: React.CSSProperties }>, {
                 className: "w-8 h-8 text-[var(--color-surface-card)]",

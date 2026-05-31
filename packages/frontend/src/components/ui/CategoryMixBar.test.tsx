@@ -11,6 +11,7 @@ const seg = (
     categoryId: string | null;
     categoryName: string;
     categoryColor: string | null;
+    categoryIcon: string | null;
     amount: number;
     percentage: number;
   }> = {},
@@ -18,6 +19,7 @@ const seg = (
   categoryId: "categoryId" in partial ? (partial.categoryId ?? null) : "c1",
   categoryName: partial.categoryName ?? "Meals",
   categoryColor: "categoryColor" in partial ? (partial.categoryColor ?? null) : "#F5C842",
+  categoryIcon: "categoryIcon" in partial ? (partial.categoryIcon ?? null) : null,
   amount: partial.amount ?? 50,
   percentage: partial.percentage ?? 50,
 });

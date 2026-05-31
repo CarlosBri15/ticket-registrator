@@ -60,7 +60,7 @@ describe('RolesRepository', () => {
   });
 
   it('should call create', async () => {
-    await repository.create({ name: 'Role', hierarchy: 1 } as any);
+    await repository.create({ name: 'Role', hierarchy: 1 });
     expect(dbMock.insert).toHaveBeenCalled();
   });
 
@@ -124,7 +124,7 @@ describe('RolesRepository', () => {
 
   describe('bulkInsertPermissions', () => {
     it('should call db.insert when data is not empty', async () => {
-      await repository.bulkInsertPermissions([{ name: 'view_reports' }] as any);
+      await repository.bulkInsertPermissions([{ name: 'view_reports' }]);
       expect(dbMock.insert).toHaveBeenCalled();
     });
 

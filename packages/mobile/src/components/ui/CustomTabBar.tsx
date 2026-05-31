@@ -1,35 +1,43 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { 
-  IconSmartHome, 
-  IconFileDescription, 
-  IconCreditCard, 
-  IconUser, 
-  IconCircle 
-} from '@tabler/icons-react-native';
+import {
+  Home,
+  FileText,
+  CreditCard,
+  User,
+  Circle,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { DARK, CARD_BG, BORDER_WIDTH, colors } from './PixelCard';
+import { colors } from '../../constants/theme';
 
-const SHADOW = 3;
-
-const TAB_ICONS: Record<string, any> = {
-  home:    IconSmartHome,
-  reports: IconFileDescription,
-  tickets: IconCreditCard,
-  profile: IconUser,
+const TAB_ICONS: Record<string, LucideIcon> = {
+  home:    Home,
+  reports: FileText,
+  tickets: CreditCard,
+  profile: User,
 };
 
-export function CustomTabBar({ state, descriptors, navigation }: Readonly<BottomTabBarProps>) {
+/**
+ * Tab bar — mirrors the web kit sidebar (`.sb` family): dark grafito
+ * surface, white labels with opacity, accent dot under the focused icon.
+ */
+export function CustomTabBar({
+  state,
+  descriptors,
+  navigation,
+}: Readonly<BottomTabBarProps>) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[s.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
-        const label     = typeof options.title === 'string' ? options.title : route.name;
+        const label =
+          typeof options.title === 'string' ? options.title : route.name;
         const isFocused = state.index === index;
-        const IconComponent = TAB_ICONS[route.name] ?? IconCircle;
+        const Icon = TAB_ICONS[route.name] ?? Circle;
 
         const onPress = () => {
           const event = navigation.emit({
@@ -43,6 +51,8 @@ export function CustomTabBar({ state, descriptors, navigation }: Readonly<Bottom
         const onLongPress = () =>
           navigation.emit({ type: 'tabLongPress', target: route.key });
 
+        const iconColor = isFocused ? colors.fgOnBrand : colors.fgOnSidebarTertiary;
+
         return (
           <TouchableOpacity
             key={route.key}
@@ -51,24 +61,16 @@ export function CustomTabBar({ state, descriptors, navigation }: Readonly<Bottom
             accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
             onPress={onPress}
             onLongPress={onLongPress}
-            activeOpacity={isFocused ? 0.85 : 0.55}
-            style={s.tabSlot}
+            activeOpacity={0.7}
+            style={styles.tabSlot}
           >
-            {isFocused ? (
-              // ── Recreación manual del look PixelCard ──
-              <View style={s.activeOuter}>
-                <View style={s.activeShadow} />
-                <View style={s.activeInner}>
-                  <IconComponent size={19} color="white" />
-                  <Text style={s.labelActive}>{label}</Text>
-                </View>
-              </View>
-            ) : (
-              <View style={s.inactive}>
-                <IconComponent size={19} color={`${DARK}55`} />
-                <Text style={s.labelInactive}>{label}</Text>
-              </View>
-            )}
+            <View style={styles.tabInner}>
+              <Icon size={20} color={iconColor} strokeWidth={2} />
+              <Text style={isFocused ? styles.labelActive : styles.labelInactive}>
+                {label}
+              </Text>
+              {isFocused ? <View style={styles.activeDot} /> : null}
+            </View>
           </TouchableOpacity>
         );
       })}
@@ -76,64 +78,40 @@ export function CustomTabBar({ state, descriptors, navigation }: Readonly<Bottom
   );
 }
 
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
-    backgroundColor: CARD_BG,
-    borderTopWidth: 4,
-    borderTopColor: DARK,
+    backgroundColor: colors.brand,
+    borderTopWidth: 1,
+    borderTopColor: colors.overlaySidebar,
     paddingTop: 10,
     paddingHorizontal: 8,
-    gap: 6,
   },
-
   tabSlot: {
     flex: 1,
   },
-
-  // ── Active: borde + shadow manual (mismo look que PixelCard)
-  activeOuter: {
-    paddingRight: SHADOW,
-    paddingBottom: SHADOW,
-  },
-  activeShadow: {
-    position: 'absolute',
-    top: SHADOW,
-    left: SHADOW,
-    right: 0,
-    bottom: 0,
-    backgroundColor: DARK,
-    borderRadius: 6,
-  },
-  activeInner: {
+  tabInner: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    paddingVertical: 10,
-    backgroundColor: colors.brand,
-    borderWidth: BORDER_WIDTH,
-    borderColor: DARK,
-    borderRadius: 6,
+    paddingVertical: 6,
+    position: 'relative',
   },
-
-  // ── Inactive: sin card, centrado verticalmente al mismo alto que el active
-  inactive: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 13, // compensa el BORDER_WIDTH×2 + SHADOW del active
-  },
-
   labelActive: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 10,
-    color: 'white',
-    letterSpacing: 0.3,
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 11,
+    color: colors.fgOnBrand,
   },
   labelInactive: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 10,
-    color: `${DARK}55`,
-    letterSpacing: 0.3,
+    fontFamily: 'Manrope-Medium',
+    fontSize: 11,
+    color: colors.fgOnSidebarSecondary,
+  },
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 9999,
+    backgroundColor: colors.accent,
+    marginTop: 2,
   },
 });

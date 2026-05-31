@@ -42,7 +42,7 @@ export class PermissionsService {
   ): Promise<IPermission> {
     this.permissionsAuthService.validateCanManageCatalog(requester.permissions);
 
-    const name = dto.name!;
+    const name = dto.name;
     const existing = await this.permissionsRepository.findByName(name);
     if (existing)
       throw new PermissionConflictException(
@@ -100,11 +100,11 @@ export class PermissionsService {
       requester.permissions,
     );
 
-    await this.findOne(dto.permissionId!);
+    await this.findOne(dto.permissionId);
 
     const mapping = await this.permissionsRepository.assignToRole({
-      roleId: dto.roleId!,
-      permissionId: dto.permissionId!,
+      roleId: dto.roleId,
+      permissionId: dto.permissionId,
       companyId: dto.companyId ?? null,
     });
 

@@ -14,12 +14,12 @@ export class AuthService {
   ) {}
 
   async login(loginDto: LoginDto): Promise<ILoginResponse> {
-    const user = await this.usersService.findByEmail(loginDto.email as string);
+    const user = await this.usersService.findByEmail(loginDto.email);
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const isValid = await this.cryptoService.comparePassword(
-      loginDto.password as string,
+      loginDto.password,
       user.password as string,
     );
 

@@ -17,7 +17,7 @@ const mapItemToIItem = (item: Item): IItem => ({
 export class ItemsService {
   private readonly logger = new Logger(ItemsService.name);
 
-  constructor(private readonly itemsRepository: ItemsRepository) { }
+  constructor(private readonly itemsRepository: ItemsRepository) {}
 
   async findByTicketId(ticketId: string): Promise<IItem[]> {
     const items = await this.itemsRepository.findByTicketId(ticketId);

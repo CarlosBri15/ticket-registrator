@@ -27,7 +27,9 @@ export class PoliciesController {
     @Body() ingestDto: IngestPolicyDto,
   ) {
     if (!file) {
-      throw new BadRequestException('No file uploaded. Please upload a file using the "file" form-data field.');
+      throw new BadRequestException(
+        'No file uploaded. Please upload a file using the "file" form-data field.',
+      );
     }
 
     const result = await this.policiesService.processAndIngestPolicy(

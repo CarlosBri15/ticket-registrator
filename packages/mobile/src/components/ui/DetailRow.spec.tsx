@@ -11,19 +11,19 @@ describe('DetailRow', () => {
     expect(getByText('Test Value')).toBeTruthy();
   });
 
-  it('shows --- for null value', () => {
+  it('shows em dash for null value', () => {
     const { getByText } = render(
       <DetailRow label="Null Value" value={null} />
     );
-    expect(getByText('---')).toBeTruthy();
+    expect(getByText('—')).toBeTruthy();
   });
 
   it('renders icon if provided', () => {
-    const { IconCamera } = require('@tabler/icons-react-native');
+    const { Camera } = require('lucide-react-native');
     const { UNSAFE_getByType } = render(
-      <DetailRow label="Icon Row" value="Value" icon={IconCamera} />
+      <DetailRow label="Icon Row" value="Value" icon={Camera} />
     );
-    expect(UNSAFE_getByType(IconCamera)).toBeTruthy();
+    expect(UNSAFE_getByType(Camera)).toBeTruthy();
   });
 
   it('renders image if provided', () => {

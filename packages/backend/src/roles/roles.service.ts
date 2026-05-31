@@ -21,11 +21,11 @@ export class RolesService {
   async create(companyId: string, dto: CreateRoleDto, requester: UserPayload) {
     this.rolesAuthService.validateHierarchy(
       requester.roleHierarchy,
-      dto.hierarchy!,
+      dto.hierarchy,
     );
 
     const existing = await this.rolesRepository.findByNameAndCompany(
-      dto.name!,
+      dto.name,
       companyId,
     );
     if (existing) {
@@ -35,8 +35,8 @@ export class RolesService {
     }
 
     const role = await this.rolesRepository.create({
-      name: dto.name!,
-      hierarchy: dto.hierarchy!,
+      name: dto.name,
+      hierarchy: dto.hierarchy,
       description: dto.description ?? null,
       companyId,
       isSystem: false,

@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { IReportCategoryMix } from "@ticket-registrator/shared";
+import { CategoryIcon } from "./CategoryIcon";
 
 interface CategoryMixBarProps {
   segments: IReportCategoryMix[] | undefined;
@@ -21,7 +22,7 @@ export const CategoryMixBar = ({
   const overflow = segments.length - visible.length;
 
   return (
-    <div className={`flex flex-col gap-1 ${className}`.trim()}>
+    <div className={`flex flex-col gap-1.5 ${className}`.trim()}>
       <div
         className="flex h-1 w-full overflow-hidden rounded-full"
         role="img"
@@ -40,20 +41,28 @@ export const CategoryMixBar = ({
         ))}
       </div>
 
-      <p className="text-[11px] font-sans-medium text-dark/55 truncate">
+      <div className="flex items-center gap-2 flex-wrap text-[11px] font-sans-medium text-dark/55 min-w-0">
         {visible.map((s, idx) => (
-          <span key={s.categoryId ?? `__legend__${s.categoryName}`}>
-            {idx > 0 && <span className="text-dark/25"> · </span>}
-            <span style={{ color: s.categoryColor ?? undefined }}>
+          <span
+            key={s.categoryId ?? `__legend__${s.categoryName}`}
+            className="inline-flex items-center gap-1 min-w-0"
+          >
+            {idx > 0 && <span aria-hidden="true" className="text-dark/25">·</span>}
+            <CategoryIcon
+              iconName={s.categoryIcon}
+              color={s.categoryColor}
+              className="w-3 h-3 shrink-0"
+            />
+            <span className="truncate" style={{ color: s.categoryColor ?? undefined }}>
               {s.categoryName}
             </span>
-            <span className="text-dark/45"> {s.percentage}%</span>
+            <span className="text-dark/45 tabular-nums">{s.percentage}%</span>
           </span>
         ))}
         {overflow > 0 && (
-          <span className="text-dark/45"> · +{overflow}</span>
+          <span className="text-dark/45">+{overflow}</span>
         )}
-      </p>
+      </div>
     </div>
   );
 };

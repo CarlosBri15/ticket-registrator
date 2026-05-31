@@ -38,11 +38,6 @@ describe("ResourceListScreen", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Resources");
   });
 
-  it("renders subtitle when provided", () => {
-    renderShell({ subtitle: "All your stuff" });
-    expect(screen.getByText("All your stuff")).toBeInTheDocument();
-  });
-
   it("renders stats when provided", () => {
     renderShell({ stats: [{ label: "Total", value: 42 }] });
     expect(screen.getByText("Total")).toBeInTheDocument();

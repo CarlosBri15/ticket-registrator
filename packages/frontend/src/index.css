@@ -1035,7 +1035,7 @@
    }
 
    .st-submitted {
-      color: #2563EB;
+      color: #D97706;
    }
 
    .st-approved {
@@ -1107,7 +1107,7 @@
    }
 
    .row-meta {
-      font-size: 13px;
+      font-size: 14px;
       color: var(--fg-secondary);
       font-weight: 500;
    }
@@ -1118,13 +1118,13 @@
    }
 
    .row-num {
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
    }
 
    .row-num .cur {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 500;
       color: var(--fg-tertiary);
       margin-left: 3px;
@@ -2032,4 +2032,58 @@
 
 .stagger-children>*:nth-child(6) {
    animation-delay: 200ms;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Drawer slide-in / slide-out (consumed by `Drawer.tsx`)
+   Used standalone — Tailwind v4 ships without the legacy `animate-in /
+   slide-in-from-right` utilities, so we define them locally to keep the
+   ticket detail drawer + image side panel slide animations consistent.
+   ──────────────────────────────────────────────────────────────────────────── */
+@keyframes drawer-slide-in-right {
+   from {
+      transform: translateX(100%);
+      opacity: 0;
+   }
+   to {
+      transform: translateX(0);
+      opacity: 1;
+   }
+}
+
+@keyframes drawer-slide-out-right {
+   from {
+      transform: translateX(0);
+      opacity: 1;
+   }
+   to {
+      transform: translateX(100%);
+      opacity: 0;
+   }
+}
+
+@keyframes drawer-fade-in {
+   from { opacity: 0; }
+   to { opacity: 1; }
+}
+
+@keyframes drawer-fade-out {
+   from { opacity: 1; }
+   to { opacity: 0; }
+}
+
+.drawer-slide-in-right {
+   animation: drawer-slide-in-right 300ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.drawer-slide-out-right {
+   animation: drawer-slide-out-right 300ms cubic-bezier(.4,.0,.6,1) both;
+}
+
+.drawer-fade-in {
+   animation: drawer-fade-in 200ms ease-out both;
+}
+
+.drawer-fade-out {
+   animation: drawer-fade-out 200ms ease-in both;
 }

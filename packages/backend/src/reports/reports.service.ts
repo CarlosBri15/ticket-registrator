@@ -8,12 +8,14 @@ import {
   ilike,
   desc,
   isNull,
+  notInArray,
   sql,
   SQL,
 } from 'drizzle-orm';
 import {
   IReport,
   ReportStatus,
+  ItemStatus,
   AUTHORITY_LEVELS,
   PaginatedList,
 } from '@ticket-registrator/shared';
@@ -102,8 +104,13 @@ export class ReportsService {
 
   async findAllReports(requester: UserPayload): Promise<IReport[]> {
     const authorityFilter = this.buildAuthorityFilter(requester);
+    const draftPrivacyFilter = this.buildDraftPrivacyFilter(requester);
     const { data } = await this.reportsRepository.findWithFilters({
-      where: and(authorityFilter, isNull(schema.reports.deletedAt))!,
+      where: and(
+        authorityFilter,
+        isNull(schema.reports.deletedAt),
+        ...(draftPrivacyFilter ? [draftPrivacyFilter] : []),
+      )!,
     });
 
     return data.map((report) => mapReportToIReport(report));
@@ -119,6 +126,7 @@ export class ReportsService {
     const offset = (page - 1) * limit;
 
     const authorityFilter = this.buildAuthorityFilter(requester);
+    const draftPrivacyFilter = this.buildDraftPrivacyFilter(requester);
     const queryFilters: SQL[] = [isNull(schema.reports.deletedAt)];
 
     if (userId) queryFilters.push(eq(schema.reports.userId, userId));
@@ -128,6 +136,7 @@ export class ReportsService {
       queryFilters.push(gte(schema.reports.startDate, new Date(startDate)));
     if (endDate)
       queryFilters.push(lte(schema.reports.endDate, new Date(endDate)));
+    if (draftPrivacyFilter) queryFilters.push(draftPrivacyFilter);
 
     const { data, total } = await this.reportsRepository.findWithFilters({
       where: and(...queryFilters, authorityFilter)!,
@@ -187,9 +196,49 @@ export class ReportsService {
     reportId: string,
     dto: UpdateReportStatusDto,
   ): Promise<IReport> {
+    const updateData: Partial<schema.InsertReport> = {
+      status: dto.status,
+      updatedAt: new Date(),
+    };
+
+    // When the supervisor finishes the review (SUBMITTED → APPROVED), recompute
+    // amounts from item statuses. `requested_amount` is set as the sum of all
+    // ticket amounts (the user's claim) and `approved_amount` as the sum of
+    // amounts of items marked `Approved` (what actually gets reimbursed). The
+    // delta is implicitly "rejected" and displayed by the frontend's financial
+    // summary.
+    if (dto.status === ReportStatus.APPROVED) {
+      const fullReport = await this.reportsRepository.findById(reportId);
+      if (!fullReport) {
+        throw new ReportStatusConflictException(
+          'Report not found or not in SUBMITTED state',
+        );
+      }
+      const tickets = fullReport.tickets ?? [];
+      const requestedAmount = tickets.reduce(
+        (sum, ticket) => sum + (ticket.amount ?? 0),
+        0,
+      );
+      const approvedAmount = tickets.reduce((sum, ticket) => {
+        const items = ticket.items ?? [];
+        return (
+          sum +
+          items.reduce(
+            (itemSum, item) =>
+              item.status === ItemStatus.APPROVED
+                ? itemSum + (item.amount ?? 0)
+                : itemSum,
+            0,
+          )
+        );
+      }, 0);
+      updateData.requestedAmount = requestedAmount;
+      updateData.approvedAmount = approvedAmount;
+    }
+
     const updated = await this.reportsRepository.updateWithCondition(
       reportId,
-      { status: dto.status as string, updatedAt: new Date() },
+      updateData,
       and(
         eq(schema.reports.status, ReportStatus.SUBMITTED),
         isNull(schema.reports.deletedAt),
@@ -258,14 +307,33 @@ export class ReportsService {
 
   private buildAuthorityFilter(requester: UserPayload): SQL {
     const maxHierarchy = requester.roleHierarchy;
+    // A user at DEPARTMENT level with no assigned departments (e.g. a
+    // freshly-promoted Controller) is treated as company-scoped. Mirrors the
+    // frontend `useScope` logic and avoids building an empty `IN ()` list.
+    const hasDeptScope =
+      maxHierarchy >= AUTHORITY_LEVELS.DEPARTMENT &&
+      maxHierarchy < AUTHORITY_LEVELS.COMPANY &&
+      requester.departmentIds.length > 0;
     const conditions: SQL[] = [];
 
     if (maxHierarchy >= AUTHORITY_LEVELS.GLOBAL) {
       conditions.push(isNull(schema.users.deletedAt));
-    } else if (maxHierarchy >= AUTHORITY_LEVELS.COMPANY) {
+    } else if (hasDeptScope) {
+      // Build the EXISTS subquery with raw column refs + explicit alias `ud`
+      // and a manually-joined IN list. We avoid:
+      //   • `ANY(${array}::uuid[])` — Drizzle expanded the JS array as a
+      //     tuple `($1, $2)`, triggering "cannot cast type record to uuid[]".
+      //   • Drizzle column references inside the raw SQL — the outer query
+      //     rewrote them to wrong qualifiers (e.g. `"users"."user_id"` instead
+      //     of `"ud"."user_id"`), causing "column users.user_id does not exist".
+      const deptInList = sql.join(
+        requester.departmentIds.map((id) => sql`${id}::uuid`),
+        sql`, `,
+      );
       conditions.push(
         and(
           eq(schema.users.companyId, requester.companyId!),
+          sql`EXISTS (SELECT 1 FROM "users_to_departments" "ud" WHERE "ud"."user_id" = "users"."id" AND "ud"."department_id" IN (${deptInList}))`,
           isNull(schema.users.deletedAt),
         )!,
       );
@@ -273,7 +341,6 @@ export class ReportsService {
       conditions.push(
         and(
           eq(schema.users.companyId, requester.companyId!),
-          sql`EXISTS (SELECT 1 FROM ${schema.usersToDepartments} ud WHERE ud.user_id = ${schema.users.id} AND ud.department_id = ANY(${requester.departmentIds}::uuid[]))`,
           isNull(schema.users.deletedAt),
         )!,
       );
@@ -282,6 +349,22 @@ export class ReportsService {
     }
 
     return or(eq(schema.users.id, requester.id), ...conditions)!;
+  }
+
+  /**
+   * Hides in-progress drafts (CREATED) from supervisors. Manager and Controller
+   * never create their own reports, so the rule is a flat blanket — no "OR
+   * own" exception needed. Admin and SuperAdmin see every status by default
+   * and can audit drafts when they need to.
+   *
+   * Returns `null` when no filter is needed (Admin, SuperAdmin, Employee).
+   */
+  private buildDraftPrivacyFilter(requester: UserPayload): SQL | null {
+    const isSupervisor =
+      requester.roleHierarchy >= AUTHORITY_LEVELS.DEPARTMENT &&
+      requester.roleHierarchy < AUTHORITY_LEVELS.COMPANY;
+    if (!isSupervisor) return null;
+    return notInArray(schema.reports.status, [ReportStatus.CREATED]);
   }
 
   private prepareUpdateData(

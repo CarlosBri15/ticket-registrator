@@ -127,12 +127,15 @@ export const RolesScreen = () => {
     <>
       <ResourceListScreen<IRole>
         title={t("roles.title", "Roles")}
-        subtitle={
-          companyId
-            ? t("roles.companySubtitle", "Roles personalizados de tu organización.")
-            : t("roles.systemSubtitle", "Roles de sistema.")
+        stats={
+          hasAny
+            ? [{
+                label: t("roles.total", "Total"),
+                value: totalRoles,
+                icon: <Shield className="w-4 h-4" aria-hidden={true} />,
+              }]
+            : undefined
         }
-        stats={hasAny ? [{ label: t("roles.total", "Total"), value: totalRoles }] : undefined}
         headerActions={
           companyId && can("create_roles") ? (
             <Button

@@ -7,42 +7,38 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity,
   StyleSheet,
   StatusBar,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  IconClock,
-  IconAlertCircle,
-  IconArrowLeft,
-  IconSend,
-  IconCalendar,
-  IconCamera,
-  IconPhoto,
-  IconFileDescription,
-  IconChevronRight,
-  IconX
-} from '@tabler/icons-react-native';
+  Clock,
+  AlertCircle,
+  ArrowLeft,
+  Send,
+  Calendar,
+  Camera,
+  ImageIcon,
+  FileText,
+  ChevronRight,
+  Trash2,
+  X,
+} from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
+import { buildCategoryMixFromItems } from '@ticket-registrator/shared';
 
 import { StatusBadge } from '../../../src/components/ui/StatusBadge';
+import { Card } from '../../../src/components/ui/Card';
+import { CategoryMixBar } from '../../../src/components/ui/CategoryMixBar';
 import { TicketConfirmationForm } from '../../../src/components/features/TicketConfirmationForm';
 import { TicketDetailModal } from '../../../src/components/features/TicketDetailModal';
 import { ScanningOverlay } from '../../../src/components/features/ScanningOverlay';
 import { colors } from '../../../src/constants/theme';
-import {
-  PixelCard,
-  SCREEN_BG,
-  DARK,
-  CARD_BG,
-  BORDER_WIDTH,
-} from '../../../src/components/ui/PixelCard';
 
 import { useReportDetailScreen } from '../../../src/hooks/useReportDetailScreen';
-import { reportIcon, ticketIcon } from '@ticket-registrator/shared/assets';
 
 // ── Financial Summary ──────────────────────────────────────────────────────────
 
@@ -57,45 +53,45 @@ type FinancialSummaryProps = {
 const FinancialSummary = React.memo(({
   status, currency, requestedAmount, approvedAmount, ticketsTotal,
 }: FinancialSummaryProps) => {
-  const s = status.toUpperCase();
+  const key = status.toUpperCase();
 
-  if (s === 'CREATED' || s === 'DRAFT') {
+  if (key === 'CREATED' || key === 'DRAFT') {
     return (
       <View style={fs.wrap}>
         <Text style={fs.amountLabel}>Total</Text>
-        <Text style={[fs.amount, { color: DARK }]}>{ticketsTotal.toFixed(2)}</Text>
+        <Text style={[fs.amount, { color: colors.dark }]}>{ticketsTotal.toFixed(2)}</Text>
         <Text style={fs.currency}>{currency}</Text>
       </View>
     );
   }
-  if (s === 'SUBMITTED' || s === 'PENDING') {
+  if (key === 'SUBMITTED' || key === 'PENDING') {
     return (
       <View style={fs.wrap}>
         <Text style={fs.amountLabel}>Solicitado</Text>
-        <Text style={[fs.amount, { color: '#d97706' }]}>{requestedAmount.toFixed(2)}</Text>
+        <Text style={[fs.amount, { color: colors.warning }]}>{requestedAmount.toFixed(2)}</Text>
         <View style={fs.hintRow}>
-          <IconClock size={11} color="#d97706" />
-          <Text style={[fs.currency, { color: '#d97706' }]}>{currency}</Text>
+          <Clock size={11} color={colors.warning} strokeWidth={2} />
+          <Text style={[fs.currency, { color: colors.warning }]}>{currency}</Text>
         </View>
       </View>
     );
   }
-  if (s === 'APPROVED' || s === 'PAID') {
+  if (key === 'APPROVED' || key === 'PAID') {
     const rejected = Math.max(0, requestedAmount - approvedAmount);
     return (
       <View style={fs.splitWrap}>
         <View style={fs.splitCol}>
           <Text style={fs.amountLabel}>Aprobado</Text>
-          <Text style={[fs.amountSplit, { color: '#059669' }]}>{approvedAmount.toFixed(2)}</Text>
-          <Text style={[fs.currency, { color: '#059669' }]}>{currency}</Text>
+          <Text style={[fs.amountSplit, { color: colors.success }]}>{approvedAmount.toFixed(2)}</Text>
+          <Text style={[fs.currency, { color: colors.success }]}>{currency}</Text>
         </View>
         <View style={fs.splitDivider} />
         <View style={fs.splitCol}>
           <Text style={fs.amountLabel}>Rechazado</Text>
-          <Text style={[fs.amountSplit, { color: rejected > 0 ? '#dc2626' : `${DARK}40` }]}>
+          <Text style={[fs.amountSplit, { color: rejected > 0 ? colors.danger : colors.fgQuaternary }]}>
             {rejected.toFixed(2)}
           </Text>
-          <Text style={[fs.currency, { color: rejected > 0 ? '#dc2626' : `${DARK}40` }]}>{currency}</Text>
+          <Text style={[fs.currency, { color: rejected > 0 ? colors.danger : colors.fgQuaternary }]}>{currency}</Text>
         </View>
       </View>
     );
@@ -103,22 +99,23 @@ const FinancialSummary = React.memo(({
   return (
     <View style={fs.wrap}>
       <Text style={fs.amountLabel}>Declinado</Text>
-      <Text style={[fs.amount, { color: '#dc2626' }]}>{requestedAmount.toFixed(2)}</Text>
-      <Text style={[fs.currency, { color: '#dc2626' }]}>{currency}</Text>
+      <Text style={[fs.amount, { color: colors.danger }]}>{requestedAmount.toFixed(2)}</Text>
+      <Text style={[fs.currency, { color: colors.danger }]}>{currency}</Text>
     </View>
   );
 });
+FinancialSummary.displayName = 'FinancialSummary';
 
 const fs = StyleSheet.create({
   wrap: { alignItems: 'flex-end' },
-  amountLabel: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 9, color: `${DARK}55`, letterSpacing: 0.2, marginBottom: 2 },
-  amount: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 28, letterSpacing: -0.8, lineHeight: 32 },
-  amountSplit: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 20, letterSpacing: -0.5, marginBottom: 2 },
-  currency: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 10, color: `${DARK}55`, letterSpacing: 0.2 },
+  amountLabel: { fontFamily: 'Manrope-SemiBold', fontSize: 11, color: colors.fgSecondary, marginBottom: 2 },
+  amount: { fontFamily: 'Manrope-Bold', fontSize: 28, letterSpacing: -0.8, lineHeight: 32 },
+  amountSplit: { fontFamily: 'Manrope-Bold', fontSize: 20, letterSpacing: -0.5, marginBottom: 2 },
+  currency: { fontFamily: 'Manrope-SemiBold', fontSize: 12, color: colors.fgSecondary },
   hintRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   splitWrap: { flexDirection: 'row', alignItems: 'flex-start' },
   splitCol: { alignItems: 'flex-end', paddingHorizontal: 10 },
-  splitDivider: { width: 2, backgroundColor: DARK, alignSelf: 'stretch', opacity: 0.1 },
+  splitDivider: { width: 1, backgroundColor: colors.border, alignSelf: 'stretch' },
 });
 
 // ── Screen ─────────────────────────────────────────────────────────────────────
@@ -149,6 +146,8 @@ export default function ReportDetailScreen() {
     handleConfirm,
     handleDiscard,
     handleSubmit,
+    handleDeleteReport,
+    isDeleting,
     isEditable,
     canSubmit,
     ticketsTotal,
@@ -165,57 +164,77 @@ export default function ReportDetailScreen() {
   if (!report) {
     return (
       <View style={[s.screen, s.centered]}>
-        <PixelCard bg="#FEF2F2" shadowOffset={4}>
+        <Card bg={colors.dangerBg} borderColor={colors.dangerBorder}>
           <View style={s.errorInner}>
-            <IconAlertCircle size={32} color="#dc2626" />
+            <AlertCircle size={28} color={colors.danger} strokeWidth={2} />
             <Text style={s.errorTitle}>{t('reportDetail.errorLoading')}</Text>
             <Text style={s.errorText}>{t('reportDetail.errorDesc')}</Text>
-            <PixelCard bg={colors.brand} shadowOffset={3} onPress={() => router.back()}>
-              <View style={s.errorBtnInner}>
-                <Text style={s.errorBtnText}>{t('common.cancel')}</Text>
-              </View>
-            </PixelCard>
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => router.back()}
+              activeOpacity={0.85}
+              style={s.errorBtn}
+            >
+              <Text style={s.errorBtnText}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
           </View>
-        </PixelCard>
+        </Card>
       </View>
     );
   }
 
   return (
     <View style={s.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor={CARD_BG} />
-      <View style={{ height: insets.top, backgroundColor: CARD_BG }} />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surfaceCard} />
+      <View style={{ height: insets.top, backgroundColor: colors.surfaceCard }} />
 
-      {/* ── Header ── */}
-      <View style={s.header}>
-        <PixelCard bg={CARD_BG} shadowOffset={3} radius={8} onPress={() => router.back()}>
-          <View style={s.iconBtnInner}>
-            <IconArrowLeft size={18} color={DARK} />
+      {/* ── Page header — single row: back · title · delete · submit ── */}
+      <View style={s.pageHead}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="back"
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+          style={s.backBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <ArrowLeft size={18} color={colors.dark} strokeWidth={2} />
+        </TouchableOpacity>
+
+        <Text style={s.pageTitle} numberOfLines={1}>{report.name}</Text>
+
+        {isEditable ? (
+          <View style={s.actionsRow}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={t('common.delete')}
+              onPress={isDeleting ? undefined : () => handleDeleteReport(() => router.back())}
+              disabled={isDeleting}
+              activeOpacity={0.85}
+              style={[s.btnDangerIcon, isDeleting && s.btnDisabled]}
+            >
+              {isDeleting
+                ? <ActivityIndicator size="small" color={colors.fgOnBrand} />
+                : <Trash2 size={16} color={colors.fgOnBrand} strokeWidth={2} />}
+            </TouchableOpacity>
+
+            {canSubmit ? (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={t('common.submit', { defaultValue: 'Enviar' })}
+                onPress={isSubmitting ? undefined : handleSubmit}
+                disabled={isSubmitting}
+                activeOpacity={0.85}
+                style={[s.btnPrimary, isSubmitting && s.btnDisabled]}
+              >
+                {isSubmitting
+                  ? <ActivityIndicator size="small" color={colors.fgOnBrand} />
+                  : <Send size={14} color={colors.fgOnBrand} strokeWidth={2} />}
+                <Text style={s.btnPrimaryText}>{t('common.submit', { defaultValue: 'Enviar' })}</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
-        </PixelCard>
-
-        <Image source={reportIcon} style={s.headerIcon} contentFit="contain" />
-
-        <View style={s.headerMid}>
-          <Text style={s.headerTitle} numberOfLines={1}>{report.name}</Text>
-        </View>
-
-        {canSubmit && (
-          <PixelCard
-            bg={colors.secondary}
-            shadowOffset={3}
-            radius={8}
-            onPress={isSubmitting ? undefined : handleSubmit}
-            style={isSubmitting ? { opacity: 0.65 } : undefined}
-          >
-            <View style={s.iconBtnInner}>
-              {isSubmitting
-                ? <ActivityIndicator size="small" color={DARK} />
-                : <IconSend size={16} color={DARK} />
-              }
-            </View>
-          </PixelCard>
-        )}
+        ) : null}
       </View>
 
       <ScrollView
@@ -223,12 +242,11 @@ export default function ReportDetailScreen() {
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Info card ── */}
-        <PixelCard bg={CARD_BG} shadowOffset={5} style={{ marginBottom: 24 }}>
+        <Card style={{ marginBottom: 24 }}>
           <View style={s.infoTop}>
             <View style={{ flex: 1 }}>
               <View style={s.dateRow}>
-                <IconCalendar size={12} color={`${DARK}80`} />
+                <Calendar size={12} color={colors.fgSecondary} strokeWidth={2} />
                 <Text style={s.dateText}>
                   {format(new Date(report.start_date), 'd MMM', { locale: dateLocale })}
                   {'  →  '}
@@ -248,50 +266,48 @@ export default function ReportDetailScreen() {
             />
           </View>
 
-          {isEditable && (
+          {isEditable ? (
             <>
               <View style={s.infoDivider} />
               <View style={s.uploadRow}>
-                <PixelCard
-                  bg={colors.brand}
-                  shadowOffset={3}
-                  style={[s.uploadPrimary, isUploading && { opacity: 0.55 }]}
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={t('reportDetail.scanTicket')}
                   onPress={isUploading ? undefined : pickFromCamera}
+                  disabled={isUploading}
+                  activeOpacity={0.85}
+                  style={[s.uploadPrimary, isUploading && { opacity: 0.55 }]}
                 >
-                  <View style={s.uploadBtnInner}>
-                    {isUploading ? (
-                      <>
-                        <ActivityIndicator size="small" color="white" />
-                        <Text style={s.uploadPrimaryText}>Procesando...</Text>
-                      </>
-                    ) : (
-                      <>
-                        <IconCamera size={16} color="white" />
-                        <Text style={s.uploadPrimaryText}>{t('reportDetail.scanTicket')}</Text>
-                      </>
-                    )}
-                  </View>
-                </PixelCard>
-                <PixelCard
-                  bg={CARD_BG}
-                  shadowOffset={3}
-                  style={s.uploadSecondary}
+                  {isUploading ? (
+                    <>
+                      <ActivityIndicator size="small" color={colors.fgOnBrand} />
+                      <Text style={s.uploadPrimaryText}>Procesando...</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Camera size={16} color={colors.fgOnBrand} strokeWidth={2} />
+                      <Text style={s.uploadPrimaryText}>{t('reportDetail.scanTicket')}</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="open gallery"
                   onPress={isUploading ? undefined : pickFromGallery}
+                  activeOpacity={0.85}
+                  style={s.uploadSecondary}
                 >
-                  <View style={s.uploadBtnInner}>
-                    <IconPhoto size={16} color={DARK} />
-                    <Text style={s.uploadSecondaryText}>Galería</Text>
-                  </View>
-                </PixelCard>
+                  <ImageIcon size={16} color={colors.dark} strokeWidth={2} />
+                  <Text style={s.uploadSecondaryText}>Galería</Text>
+                </TouchableOpacity>
               </View>
             </>
-          )}
-        </PixelCard>
+          ) : null}
+        </Card>
 
-        {/* ── Tickets ── */}
         <View style={s.section}>
           <View style={s.sectionHeader}>
-            <IconFileDescription size={11} color={DARK} />
+            <FileText size={12} color={colors.fgSecondary} strokeWidth={2} />
             <Text style={s.sectionTitle}>{t('reportDetail.ticketsTitle')}</Text>
             <View style={s.countPill}>
               <Text style={s.countPillText}>{tickets?.length ?? 0}</Text>
@@ -303,62 +319,70 @@ export default function ReportDetailScreen() {
               return <ActivityIndicator color={colors.brand} style={{ marginVertical: 24 }} />;
             }
             if (tickets && tickets.length > 0) {
-              return tickets.map((ticket, idx) => (
-                <PixelCard
-                  key={ticket.id ?? `ticket-${idx}`}
-                  bg={CARD_BG}
-                  shadowOffset={3}
-                  style={{ marginBottom: 8 }}
-                  onPress={() => { setSelectedTicket(ticket); setIsDetailOpen(true); }}
-                >
-                  <View style={s.ticketRow}>
-                    <Image source={ticketIcon} style={s.ticketIcon} contentFit="contain" />
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={s.ticketName} numberOfLines={1}>
-                        {ticket.location_name ?? t('reportDetail.noTicketName')}
-                      </Text>
-                      <View style={s.ticketMeta}>
-                        {ticket.date && (
-                          <Text style={s.ticketDate}>
-                            {format(new Date(ticket.date), 'dd MMM yyyy', { locale: dateLocale })}
-                          </Text>
-                        )}
-                        {ticket.expense_type && (
-                          <View style={s.expensePill}>
-                            <Text style={s.expenseText}>{ticket.expense_type}</Text>
+              return tickets.map((ticket, idx) => {
+                const mix = buildCategoryMixFromItems(
+                  ticket.items,
+                  t('reports.uncategorized', { defaultValue: 'Sin categoría' }),
+                );
+                const itemsLabel = `${ticket.items?.length ?? 0} ${t('reportDetail.items', { defaultValue: 'items' })}`;
+                return (
+                  <Card
+                    key={ticket.id ?? `ticket-${idx}`}
+                    style={s.ticketCardWrap}
+                    onPress={() => { setSelectedTicket(ticket); setIsDetailOpen(true); }}
+                    accessibilityLabel={ticket.location_name ?? t('reportDetail.noTicketName')}
+                  >
+                    <View style={s.ticketRow}>
+                      <View style={s.ticketIconBox}>
+                        <FileText size={18} color={colors.dark} strokeWidth={2} />
+                      </View>
+                      <View style={s.ticketBody}>
+                        <Text style={s.ticketName} numberOfLines={1}>
+                          {ticket.location_name ?? t('reportDetail.noTicketName')}
+                        </Text>
+                        <Text style={s.ticketMeta} numberOfLines={1}>
+                          {itemsLabel}
+                          {ticket.date ? (
+                            <Text>
+                              <Text style={s.ticketMetaSep}> · </Text>
+                              {format(new Date(ticket.date), 'dd MMM yyyy', { locale: dateLocale })}
+                            </Text>
+                          ) : null}
+                        </Text>
+                        {mix.length > 0 ? (
+                          <View style={s.ticketMix}>
+                            <CategoryMixBar segments={mix} maxLegendItems={3} />
                           </View>
-                        )}
+                        ) : null}
+                      </View>
+                      <View style={s.ticketRight}>
+                        <Text style={s.ticketAmount}>
+                          {ticket.amount == null ? '—' : ticket.amount.toLocaleString()}
+                          <Text style={s.ticketCurrency}> {ticket.currency}</Text>
+                        </Text>
+                        <ChevronRight size={16} color={colors.fgQuaternary} strokeWidth={2} />
                       </View>
                     </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={s.ticketAmount}>
-                        {ticket.amount == null ? '—' : ticket.amount.toLocaleString()}
-                        <Text style={s.ticketCurrency}> {ticket.currency}</Text>
-                      </Text>
-                    </View>
-                    <IconChevronRight size={16} color={`${DARK}40`} style={{ marginLeft: 4 }} />
-                  </View>
-                </PixelCard>
-              ));
+                  </Card>
+                );
+              });
             }
             return (
-              <PixelCard
-                bg={CARD_BG}
-                shadowOffset={4}
-                onPress={isEditable ? pickFromCamera : undefined}
-              >
+              <Card onPress={isEditable ? pickFromCamera : undefined}>
                 <View style={s.emptyInner}>
-                  <Image source={ticketIcon} style={s.emptyIcon} contentFit="contain" />
+                  <View style={s.emptyIconBox}>
+                    <FileText size={20} color={colors.fgTertiary} strokeWidth={2} />
+                  </View>
                   <Text style={s.emptyTitle}>{t('reportDetail.startDigitalizing')}</Text>
                   <Text style={s.emptyText}>{t('reportDetail.digitalizeDesc')}</Text>
                 </View>
-              </PixelCard>
+              </Card>
             );
           })()}
         </View>
       </ScrollView>
 
-      {selectedTicket && (
+      {selectedTicket ? (
         <TicketDetailModal
           visible={isDetailOpen}
           onClose={() => { setIsDetailOpen(false); setSelectedTicket(null); }}
@@ -367,7 +391,7 @@ export default function ReportDetailScreen() {
           reportName={report.name}
           isEditable={!!isEditable}
         />
-      )}
+      ) : null}
 
       <Modal
         visible={isModalOpen}
@@ -375,26 +399,30 @@ export default function ReportDetailScreen() {
         presentationStyle="pageSheet"
         onRequestClose={handleDiscard}
       >
-        <View style={{ flex: 1, backgroundColor: CARD_BG }}>
+        <View style={{ flex: 1, backgroundColor: colors.surfaceCard }}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
             <View style={s.modalHandle} />
             <View style={s.modalHeader}>
               <Text style={s.modalTitle}>{t('upload.confirmTitle')}</Text>
-              <PixelCard bg={colors.danger} shadowOffset={3} radius={8} onPress={handleDiscard}>
-                <View style={s.iconBtnInner}>
-                  <IconX size={15} color="white" />
-                </View>
-              </PixelCard>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="close"
+                onPress={handleDiscard}
+                style={s.modalCloseBtn}
+                activeOpacity={0.7}
+              >
+                <X size={16} color={colors.fgSecondary} strokeWidth={2} />
+              </TouchableOpacity>
             </View>
-            <View style={{ flex: 1, backgroundColor: SCREEN_BG }}>
-              {extractedTicket && (
+            <View style={{ flex: 1, backgroundColor: colors.surface }}>
+              {extractedTicket ? (
                 <TicketConfirmationForm
                   ticket={extractedTicket}
                   onConfirm={handleConfirm}
                   onCancel={handleDiscard}
                   isLoading={isConfirming}
                 />
-              )}
+              ) : null}
             </View>
           </KeyboardAvoidingView>
         </View>
@@ -406,31 +434,66 @@ export default function ReportDetailScreen() {
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: SCREEN_BG },
+  screen: { flex: 1, backgroundColor: colors.surface },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   scroll: { padding: 20, paddingBottom: 52 },
 
-  // Header
-  header: {
+  // Page header (single horizontal row: back · title · actions)
+  pageHead: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 12,
-    backgroundColor: CARD_BG,
-    borderBottomWidth: 4,
-    borderBottomColor: DARK,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 16,
+    backgroundColor: colors.surface,
   },
-  iconBtnInner: {
-    width: 34,
-    height: 34,
+  backBtn: {
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  headerIcon: { width: 44, height: 44 },
-  headerMid: { flex: 1, minWidth: 0 },
-  headerTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 18, color: DARK },
+  pageTitle: {
+    flex: 1,
+    minWidth: 0,
+    fontFamily: 'Manrope-Bold',
+    fontSize: 22,
+    color: colors.dark,
+    letterSpacing: -0.5,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+  },
+  btnDangerIcon: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.danger,
+    borderRadius: 9999,
+  },
+  btnPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    backgroundColor: colors.brand,
+    borderRadius: 9999,
+  },
+  btnPrimaryText: {
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 12,
+    color: colors.fgOnBrand,
+  },
+  btnDisabled: {
+    opacity: 0.65,
+  },
 
   // Info card
   infoTop: {
@@ -441,97 +504,156 @@ const s = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 14,
   },
-  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  dateText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 11, color: DARK },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dateText: { fontFamily: 'Manrope-Medium', fontSize: 12, color: colors.dark },
   infoDivider: {
-    height: 4,
-    backgroundColor: DARK,
+    height: 1,
+    backgroundColor: colors.border,
     marginBottom: 14,
-    opacity: 0.06,
   },
-  uploadRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingBottom: 16 },
-  uploadPrimary: { flex: 2 },
-  uploadSecondary: { flex: 1 },
-  uploadBtnInner: {
+  uploadRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 16 },
+  uploadPrimary: {
+    flex: 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
-    paddingVertical: 13,
+    gap: 6,
+    paddingVertical: 12,
+    backgroundColor: colors.brand,
+    borderRadius: 9999,
   },
-  uploadPrimaryText: { color: 'white', fontFamily: 'SpaceGrotesk-Bold', fontSize: 11, letterSpacing: 0.2 },
-  uploadSecondaryText: { color: DARK, fontFamily: 'SpaceGrotesk-Bold', fontSize: 11, letterSpacing: 0.2 },
+  uploadSecondary: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    backgroundColor: colors.surfaceCard,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 9999,
+  },
+  uploadPrimaryText: { color: colors.fgOnBrand, fontFamily: 'Manrope-SemiBold', fontSize: 12 },
+  uploadSecondaryText: { color: colors.dark, fontFamily: 'Manrope-SemiBold', fontSize: 12 },
 
   // Section
   section: { marginBottom: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  sectionTitle: { flex: 1, fontFamily: 'SpaceGrotesk-Bold', fontSize: 12, color: DARK, letterSpacing: 0.3 },
+  sectionTitle: { flex: 1, fontFamily: 'Manrope-SemiBold', fontSize: 13, color: colors.dark, letterSpacing: -0.1 },
   countPill: {
-    backgroundColor: CARD_BG,
+    backgroundColor: colors.surfaceSunken,
     paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderWidth: BORDER_WIDTH,
-    borderColor: DARK,
-    borderRadius: 6,
+    paddingVertical: 2,
+    borderRadius: 9999,
   },
-  countPillText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 10, color: DARK },
+  countPillText: { fontFamily: 'Manrope-SemiBold', fontSize: 11, color: colors.dark },
 
-  // Ticket rows
+  // Ticket rows (stacked cards)
+  ticketCardWrap: { marginBottom: 8 },
   ticketRow: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    gap: 12,
+  },
+  ticketIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 9999,
+    backgroundColor: colors.surfaceSunken,
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    gap: 10,
+    justifyContent: 'center',
+    flexShrink: 0,
   },
-  ticketIcon: { width: 44, height: 44 },
-  ticketName: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 11, color: DARK, marginBottom: 3 },
-  ticketMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  ticketDate: { fontFamily: 'SpaceGrotesk-Medium', fontSize: 9, color: `${DARK}60` },
-  expensePill: {
-    backgroundColor: `${colors.brand}18`,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderWidth: 1.5,
-    borderColor: colors.brand,
-    borderRadius: 4,
+  ticketBody: {
+    flex: 1,
+    minWidth: 0,
+    gap: 6,
   },
-  expenseText: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 8, color: colors.brand },
-  ticketAmount: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK },
-  ticketCurrency: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 8, color: `${DARK}55` },
+  ticketName: {
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 14,
+    color: colors.dark,
+  },
+  ticketMeta: {
+    fontFamily: 'Manrope-Medium',
+    fontSize: 11,
+    color: colors.fgSecondary,
+  },
+  ticketMetaSep: { color: colors.fgQuaternary },
+  ticketMix: { marginTop: 2 },
+  ticketRight: {
+    alignItems: 'flex-end',
+    flexShrink: 0,
+    gap: 4,
+    flexDirection: 'row',
+  },
+  ticketAmount: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 15,
+    color: colors.dark,
+    letterSpacing: -0.2,
+  },
+  ticketCurrency: {
+    fontFamily: 'Manrope-SemiBold',
+    fontSize: 10,
+    color: colors.fgSecondary,
+  },
 
   // Empty state
-  emptyInner: { alignItems: 'center', paddingVertical: 32, paddingHorizontal: 24, gap: 8 },
-  emptyIcon: { width: 64, height: 64, marginBottom: 4 },
-  emptyTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 13, color: DARK, letterSpacing: 0.3 },
-  emptyText: { fontFamily: 'SpaceGrotesk-Medium', fontSize: 11, color: `${DARK}60`, textAlign: 'center', lineHeight: 16 },
+  emptyInner: { alignItems: 'center', paddingVertical: 36, paddingHorizontal: 24, gap: 8 },
+  emptyIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 9999,
+    backgroundColor: colors.surfaceSunken,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  emptyTitle: { fontFamily: 'Manrope-SemiBold', fontSize: 14, color: colors.dark },
+  emptyText: { fontFamily: 'Manrope-Medium', fontSize: 12, color: colors.fgSecondary, textAlign: 'center', lineHeight: 18 },
 
   // Error state
   errorInner: { alignItems: 'center', padding: 24, gap: 10 },
-  errorTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 14, color: DARK, textAlign: 'center' },
-  errorText: { fontFamily: 'SpaceGrotesk-Medium', fontSize: 11, color: `${DARK}60`, textAlign: 'center' },
-  errorBtnInner: { paddingHorizontal: 20, paddingVertical: 10 },
-  errorBtnText: { color: 'white', fontFamily: 'SpaceGrotesk-Bold', fontSize: 12, letterSpacing: 0.2 },
+  errorTitle: { fontFamily: 'Manrope-SemiBold', fontSize: 14, color: colors.dark, textAlign: 'center' },
+  errorText: { fontFamily: 'Manrope-Medium', fontSize: 12, color: colors.fgSecondary, textAlign: 'center' },
+  errorBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: colors.brand,
+    borderRadius: 9999,
+  },
+  errorBtnText: { color: colors.fgOnBrand, fontFamily: 'Manrope-SemiBold', fontSize: 13 },
 
   // Modal confirmation
   modalHandle: {
-    width: 48,
-    height: 6,
-    backgroundColor: DARK,
+    width: 36,
+    height: 4,
+    backgroundColor: colors.overlayMedium,
     alignSelf: 'center',
-    marginTop: 14,
-    marginBottom: 0,
+    marginTop: 10,
+    borderRadius: 9999,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 16,
-    backgroundColor: CARD_BG,
-    borderBottomWidth: 4,
-    borderBottomColor: DARK,
+    paddingTop: 14,
+    paddingBottom: 12,
+    backgroundColor: colors.surfaceCard,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  modalTitle: { fontFamily: 'SpaceGrotesk-Bold', fontSize: 20, color: DARK, letterSpacing: 0.3 },
+  modalTitle: { fontFamily: 'Manrope-Bold', fontSize: 18, color: colors.dark, letterSpacing: -0.2 },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 9999,
+  },
 });

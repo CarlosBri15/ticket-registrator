@@ -39,12 +39,10 @@ export class OrganizationService {
   ): Promise<IOnboardResponse> {
     this.organizationAuthService.validateCanCreate(requester);
 
-    const company = dto.company!;
-    const admins = dto.admins!;
+    const company = dto.company;
+    const admins = dto.admins;
 
-    const existing = await this.organizationRepository.findByName(
-      company.name!,
-    );
+    const existing = await this.organizationRepository.findByName(company.name);
     if (existing) {
       throw new OrganizationConflictException(
         `Organization "${company.name}" already exists`,
@@ -75,14 +73,14 @@ export class OrganizationService {
 
       const [createdCompany] = await tx
         .insert(schema.companies)
-        .values({ orgName: company.name! })
+        .values({ orgName: company.name })
         .returning();
 
       const createdAdmins: IOnboardResponse['admins'] = [];
 
       for (const adminInfo of admins) {
         const emailExists = await tx.query.users.findFirst({
-          where: eq(schema.users.email, adminInfo.email!),
+          where: eq(schema.users.email, adminInfo.email),
         });
         if (emailExists) {
           throw new OrganizationConflictException(

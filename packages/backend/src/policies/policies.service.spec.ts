@@ -61,7 +61,10 @@ describe('PoliciesService', () => {
       } as any);
 
       const buffer = Buffer.from('mock pdf content');
-      const result = await service.extractTextFromFile(buffer, 'application/pdf');
+      const result = await service.extractTextFromFile(
+        buffer,
+        'application/pdf',
+      );
 
       expect(mockExtractBuffer).toHaveBeenCalledWith(buffer, {});
       // Result is now Document[], check the first document's pageContent
@@ -97,7 +100,9 @@ describe('PoliciesService', () => {
       mockExtractBuffer.mockRejectedValueOnce(new Error('PDF Parse Error'));
 
       const buffer = Buffer.from('mock pdf content');
-      await expect(service.extractTextFromFile(buffer, 'application/pdf')).rejects.toThrow('Failed to parse PDF document');
+      await expect(
+        service.extractTextFromFile(buffer, 'application/pdf'),
+      ).rejects.toThrow('Failed to parse PDF document');
     });
 
     it('should extract text from a non-PDF file using UTF-8', async () => {
@@ -284,7 +289,12 @@ describe('PoliciesService', () => {
       (policiesRepository.savePolicyAndChunks as jest.Mock).mockResolvedValue({ id: 'policy-123' });
 
       const buffer = Buffer.from('file content');
-      const result = await service.processAndIngestPolicy(buffer, 'text/plain', 'company-1', 'Policy Name');
+      const result = await service.processAndIngestPolicy(
+        buffer,
+        'text/plain',
+        'company-1',
+        'Policy Name',
+      );
 
       expect(service.extractTextFromFile).toHaveBeenCalledWith(buffer, 'text/plain');
       expect(service.chunkDocuments).toHaveBeenCalledWith(mockDocs);

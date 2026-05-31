@@ -11,7 +11,27 @@ jest.mock('@ticket-registrator/shared', () => ({
   useTicketImageQuery: jest.fn(),
   useUpdateTicketMutation: jest.fn(),
   colors: { brand: '#336b87' },
+  FALLBACK_CATEGORY_ICON_NAME: 'Tag',
+  statusInlineColors: {
+    DRAFT: '#78716C',
+    CREATED: '#1D4ED8',
+    PENDING: '#D97706',
+    SUBMITTED: '#D97706',
+    APPROVED: '#16A34A',
+    PAID: '#047857',
+    REJECTED: '#DC2626',
+    DECLINED: '#DC2626',
+  },
 }));
+
+jest.mock('../ui/CategoryIcon', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    CategoryIcon: (props: any) =>
+      React.createElement(View, { testID: `cat-icon-${props.iconName ?? 'fallback'}` }),
+  };
+});
 
 jest.mock('@ticket-registrator/shared/assets', () => ({
   ticketIcon: 1,
@@ -30,7 +50,7 @@ jest.mock('expo-image', () => {
   return { Image: (props: any) => React.createElement(View, { testID: props.testID ?? 'expo-image', accessibilityLabel: props.source?.uri }) };
 });
 
-jest.mock('@tabler/icons-react-native', () => {
+jest.mock('lucide-react-native', () => {
   const React = require('react');
   const { View } = require('react-native');
   const stub = (name: string) => {
@@ -39,22 +59,22 @@ jest.mock('@tabler/icons-react-native', () => {
     return C;
   };
   return {
-    IconCamera: stub('camera'),
-    IconEdit: stub('edit'),
-    IconX: stub('x'),
-    IconCalendar: stub('calendar'),
-    IconUpload: stub('upload'),
-    IconFolder: stub('folder'),
-    IconList: stub('list'),
-    IconCoffee: stub('coffee'),
-    IconShoppingBag: stub('shopping-bag'),
-    IconNavigation: stub('navigation'),
-    IconSmartHome: stub('smart-home'),
-    IconDeviceDesktop: stub('device-desktop'),
-    IconMusic: stub('music'),
-    IconSun: stub('sun'),
-    IconHeart: stub('heart'),
-    IconPhoto: stub('photo'),
+    Camera: stub('camera'),
+    Pencil: stub('edit'),
+    X: stub('x'),
+    Calendar: stub('calendar'),
+    Upload: stub('upload'),
+    Folder: stub('folder'),
+    List: stub('list'),
+    Coffee: stub('coffee'),
+    ShoppingBag: stub('shopping-bag'),
+    Navigation: stub('navigation'),
+    Home: stub('smart-home'),
+    Monitor: stub('device-desktop'),
+    Music: stub('music'),
+    Sun: stub('sun'),
+    Heart: stub('heart'),
+    Image: stub('photo'),
   };
 });
 
@@ -171,12 +191,13 @@ describe('TicketDetailModal — read-only view', () => {
     expect(getByText('reportDetail.noTicketName')).toBeTruthy();
   });
 
-  it('shows --- for date when ticket.date is null', () => {
+  it('shows em dash for date when ticket.date is null', () => {
     const ticket = { ...baseTicket, date: null };
-    const { getByText } = render(
+    const { getAllByText } = render(
       <TicketDetailModal visible={true} onClose={jest.fn()} ticket={ticket} reportId="r1" />,
     );
-    expect(getByText('---')).toBeTruthy();
+    // Em dash appears in DetailRow placeholder; multiple rows can render it
+    expect(getAllByText('—').length).toBeGreaterThan(0);
   });
 
   it('shows last_four_digits when present', () => {

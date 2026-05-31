@@ -61,9 +61,10 @@ describe('GeminiService', () => {
     const categoriesRepoMock = {
       findByOrganization: jest.fn(),
     } as any;
-    expect(() => new GeminiService(configServiceMockEmpty as any, categoriesRepoMock)).toThrow(
-      'GEMINI_API_KEY is not defined',
-    );
+    expect(
+      () =>
+        new GeminiService(configServiceMockEmpty as any, categoriesRepoMock),
+    ).toThrow('GEMINI_API_KEY is not defined');
   });
 
   // ── extractReceipt ────────────────────────────────────────────────────────────
@@ -96,9 +97,9 @@ describe('GeminiService', () => {
       });
 
       const categoriesRepoMock = {
-        findByOrganization: jest.fn().mockResolvedValue([
-          { id: 'cat-uuid-1', name: 'Food' },
-        ]),
+        findByOrganization: jest
+          .fn()
+          .mockResolvedValue([{ id: 'cat-uuid-1', name: 'Food' }]),
       };
 
       // Mock service specifically for this test to inject categories

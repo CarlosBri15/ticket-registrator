@@ -40,4 +40,4 @@ import { PoliciesModule } from './policies/policies.module';
     PoliciesModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

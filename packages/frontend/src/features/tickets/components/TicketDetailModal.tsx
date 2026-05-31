@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { useTicketImageQuery, type ITicket } from "@ticket-registrator/shared";
+import {
+  useTicketImageQuery,
+  useUserQuery,
+  AUTHORITY_LEVELS,
+  type ITicket,
+} from "@ticket-registrator/shared";
 import { format } from "date-fns";
 import { useDateLocale } from "../../../hooks/useDateLocale";
 import { Drawer } from "../../../components/ui/Drawer";
@@ -37,9 +42,28 @@ export const TicketDetailModal = ({
   canApprove = false,
 }: TicketDetailModalProps) => {
   const dateLocale = useDateLocale();
-  const [imageOpen, setImageOpen] = useState(false);
+  const { data: currentUser } = useUserQuery();
+  // Employees (the report owners) get the image panel collapsed by default —
+  // they took the photo, no need to surface it on every ticket open. Anyone
+  // above DEPARTMENT (Controller / Manager / Admin / SuperAdmin) is reviewing
+  // someone else's expense and benefits from seeing the receipt straight away.
+  const defaultImageOpen =
+    !!currentUser && currentUser.hierarchy >= AUTHORITY_LEVELS.DEPARTMENT;
+  const [imageOpen, setImageOpen] = useState<boolean>(defaultImageOpen);
 
-  const itemApproval = useItemApproval();
+  // Reset image visibility every time the modal opens or the user navigates
+  // to a different ticket — done via the "adjust state during render"
+  // pattern (track the previous session key) so we don't trip
+  // react-hooks/set-state-in-effect. Mid-session manual toggles are
+  // preserved because we only reset when the session key changes.
+  const sessionKey = isOpen ? (ticket?.id ?? null) : null;
+  const [trackedSession, setTrackedSession] = useState<string | null>(null);
+  if (sessionKey !== trackedSession) {
+    setTrackedSession(sessionKey);
+    if (sessionKey) setImageOpen(defaultImageOpen);
+  }
+
+  const itemApproval = useItemApproval(ticket, reportId);
   const ticketForm = useTicketForm();
 
   const { data: imageData, isLoading: isLoadingImage } = useTicketImageQuery(
@@ -60,8 +84,6 @@ export const TicketDetailModal = ({
 
   const handleClose = () => {
     ticketForm.cancelEdit();
-    setImageOpen(false);
-    itemApproval.reset();
     onClose();
   };
 
@@ -100,8 +122,8 @@ export const TicketDetailModal = ({
           getItemStatus={itemApproval.getItemStatus}
           onApprove={itemApproval.approve}
           onReject={itemApproval.reject}
-          onSaveItems={() => itemApproval.save(ticket, reportId)}
-          hasItemChanges={itemApproval.hasItemChanges}
+          onApproveAll={itemApproval.approveAll}
+          onRejectAll={itemApproval.rejectAll}
           isSavingItems={itemApproval.isSaving}
         />
       )}

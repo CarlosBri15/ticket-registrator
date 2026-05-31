@@ -1,29 +1,29 @@
 /**
- * Theme Constants — Standardized visual tokens for the Radiant Neobrutalist design system.
+ * Mobile theme constants — thin re-export of the shared design tokens plus
+ * RN-specific numeric values that `StyleSheet.create` callsites consume.
+ *
+ * Single source of truth for hex/rgba values is
+ * `packages/shared/src/styles/theme.ts`. NEVER inline hex/rgba literals at a
+ * call-site — import a semantic token from here instead.
  */
 
-export const colors = {
-  brand:     '#4D4DFF', // Vibrant Blue
-  secondary: '#FFC83D', // Saturated Yellow
-  success:   '#16a34a', // Emerald Green
-  danger:    '#ef4444', // Red
-  surface:   '#F5F5F5', // Neutral gray screen BG — no color temp, lets content lead
-  dark:      '#1A1A1A', // Deep Contrast
-  shadow:    'rgba(26, 26, 26, 0.15)',
-  white:     '#FFFFFF',
-  card:      '#FFFFFF',
-};
+import { colors as sharedColors } from '@ticket-registrator/shared';
+
+export const colors = sharedColors;
+
+// ── RN-numeric tokens (StyleSheet only) ─────────────────────────────────────
 
 export const UI = {
-  BORDER_WIDTH: 2,
-  RADIUS: 8,
-  SHADOW_OFFSET: 4,
-};
+  BORDER_WIDTH: 1,
+  RADIUS:       14,
+  SHADOW_OFFSET: 1,
+} as const;
 
+/** Soft elevation used by mobile cards / modal containers. */
 export const SHADOW_HARD = {
-  shadowColor: colors.shadow,
-  shadowOffset: { width: UI.SHADOW_OFFSET, height: UI.SHADOW_OFFSET },
-  shadowOpacity: 1,
-  shadowRadius: 0,
-  elevation: 4,
-};
+  shadowColor:   colors.fgPrimary,
+  shadowOffset:  { width: 0, height: UI.SHADOW_OFFSET },
+  shadowOpacity: 0.06,
+  shadowRadius:  3,
+  elevation:     2,
+} as const;
