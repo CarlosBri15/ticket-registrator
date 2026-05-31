@@ -133,62 +133,118 @@ ${chunk.pageContent}
         // Pass 1.5: strip headers/footers before reconstruction
         const cleanedPages = this.filterHeadersAndFooters(data.pages);
 
-        // Pass 2: create one document per page
+        // Pass 2: group items by visual line and reconstruct markdown
         cleanedPages.forEach((page, pageIndex) => {
-          let markdown = '';
+          let pageMarkdown = '';
 
-          const sortedContent = [...page.content].sort(
-            (a, b) => {
-              // sort top-to-bottom, then left-to-right
-              if (Math.abs(a.y - b.y) > 2) {
-                return a.y - b.y;
-              }
+          const sortedContent = [...page.content].sort((a, b) => {
+            if (Math.abs(a.y - b.y) > 2) {
+              return a.y - b.y;
+            }
+            return a.x - b.x;
+          });
 
-              return a.x - b.x;
-            },
-          );
-
-          let currentLineY = -1;
-          let lastItemRightEdge = -1;
+          // Group items by visual line
+          const lineGroups: any[][] = [];
+          let currentLine: any[] = [];
 
           sortedContent.forEach((item) => {
-            const text = item.str.trim();
-
-            if (!text) return;
-
-            if (Math.abs(item.y - currentLineY) > 2) {
-              markdown += '\n';
-
-              currentLineY = item.y;
-              // Fallback width if missing: approx 0.5 * height per char
-              lastItemRightEdge = item.x + (item.width || text.length * (item.height * 0.5));
-
-              if (item.height >= baseFontSize * 1.5) {
-                markdown += '\n# ';
-              } else if (item.height >= baseFontSize * 1.2) {
-                markdown += '\n## ';
-              } else if (item.height >= baseFontSize * 1.1) {
-                markdown += '\n### ';
-              }
+            if (currentLine.length === 0) {
+              currentLine.push(item);
             } else {
-              // Calculate horizontal visual gap between last item and this item
-              const gap = item.x - lastItemRightEdge;
+              const prevItem = currentLine[currentLine.length - 1];
+              if (Math.abs(item.y - prevItem.y) > 2) {
+                lineGroups.push(currentLine);
+                currentLine = [item];
+              } else {
+                currentLine.push(item);
+              }
+            }
+          });
+          if (currentLine.length > 0) {
+            lineGroups.push(currentLine);
+          }
 
-              // If the gap is larger than ~20% of the font height, it is an actual space.
-              // If it's smaller, it's just kerning/tracking within the same word.
-              if (gap > item.height * 0.2) {
-                markdown += ' ';
+          // Process each line group
+          lineGroups.forEach((lineItems) => {
+            let lineText = '';
+            let lastItemRightEdge = -1;
+            let maxItemHeight = 0;
+            let allItemsBold = true;
+            let hasText = false;
+
+            lineItems.forEach((item) => {
+              const text = item.str.trim();
+              if (!text) return;
+
+              hasText = true;
+              maxItemHeight = Math.max(maxItemHeight, item.height);
+
+              // Bold check heuristic for the font name property (nested in item.font.name)
+              const fontName = item.font?.name || item.fontName || '';
+              const isBold = fontName && (
+                fontName.toLowerCase().includes('bold') ||
+                fontName.toLowerCase().includes('bd') ||
+                fontName.toLowerCase().includes('boldmt') ||
+                /-[a-z]*bold/i.test(fontName)
+              );
+              if (!isBold) {
+                allItemsBold = false;
               }
 
+              // Add space between inline items if visual gap is large enough
+              if (lineText.length > 0) {
+                const gap = item.x - lastItemRightEdge;
+                if (gap > item.height * 0.2) {
+                  lineText += ' ';
+                }
+              }
+
+              lineText += text;
               lastItemRightEdge = item.x + (item.width || text.length * (item.height * 0.5));
+            });
+
+            if (!hasText) return;
+
+            // Debug log to trace font names of short standalone lines
+            if (lineText.length < 60 && !/[.!?]$/.test(lineText.trim())) {
+              const fontNames = lineItems
+                .map((i) => {
+                  const name = i.font?.name || i.fontName || 'undefined';
+                  return i.str.trim() && `${i.str.trim()}: ${name}`;
+                })
+                .filter(Boolean)
+                .join(', ');
+              this.logger.log(
+                `Short standalone line: "${lineText}" | Bold: ${allItemsBold} | Fonts: [${fontNames}]`,
+              );
             }
 
-            markdown += text;
+            // Determine if the line starts a new header level
+            let prefix = '';
+            if (maxItemHeight >= baseFontSize * 1.5) {
+              prefix = '\n# ';
+            } else if (maxItemHeight >= baseFontSize * 1.2) {
+              prefix = '\n## ';
+            } else if (maxItemHeight >= baseFontSize * 1.1) {
+              prefix = '\n### ';
+            } else if (
+              allItemsBold &&
+              lineText.length < 60 &&
+              !/[.!?]$/.test(lineText.trim())
+            ) {
+              // Standalone bold sub-heading: H4 (####)
+              prefix = '\n#### ';
+            } else {
+              prefix = '\n';
+            }
+
+            pageMarkdown += prefix + lineText;
           });
 
           documents.push(
             new Document({
-              pageContent: markdown.trim(),
+              pageContent: pageMarkdown.trim(),
               metadata: {
                 startPage: pageIndex + 1,
                 endPage: pageIndex + 1,
@@ -229,20 +285,16 @@ ${chunk.pageContent}
       `Retained ${contentDocuments.length}/${documents.length} pages after cover/structural page filter`,
     );
 
-    const structuralChunks: Document[] = [];
+    // STEP 1: Merge into a single continuous stream with page boundary markers
+    const combinedMarkdown = contentDocuments.map(doc => {
+      const pageNum = doc.metadata.startPage;
+      return `<!-- PAGE_START: ${pageNum} -->\n${doc.pageContent}\n<!-- PAGE_END: ${pageNum} -->`;
+    }).join('\n');
 
-    // STEP 1: split by semantic headers
-    for (const doc of contentDocuments) {
-      const chunks = this.splitMarkdownByHeaders(
-        doc.pageContent,
-        doc.metadata.startPage,
-        doc.metadata.endPage,
-      );
+    // STEP 2: Split the continuous stream by semantic headers
+    const headerChunks = this.splitMarkdownByHeaders(combinedMarkdown);
 
-      structuralChunks.push(...chunks);
-    }
-
-    // STEP 2: recursively split oversized chunks
+    // STEP 3: Recursively split oversized chunks
     const recursiveSplitter =
       new RecursiveCharacterTextSplitter({
         chunkSize: 1500,
@@ -251,7 +303,7 @@ ${chunk.pageContent}
 
     const finalChunks: Document[] = [];
 
-    for (const chunk of structuralChunks) {
+    for (const chunk of headerChunks) {
       if (chunk.pageContent.length > 2000) {
         const subChunks =
           await recursiveSplitter.splitDocuments([chunk]);
@@ -269,6 +321,28 @@ ${chunk.pageContent}
       }
     }
 
+    // STEP 4: Post-process chunks to calculate accurate start/end pages and strip HTML markers
+    for (const chunk of finalChunks) {
+      const content = chunk.pageContent;
+      const startMatches = [...content.matchAll(/<!-- PAGE_START: (\d+) -->/g)];
+      const endMatches = [...content.matchAll(/<!-- PAGE_END: (\d+) -->/g)];
+
+      const pagesCovered: number[] = [];
+      startMatches.forEach((m) => pagesCovered.push(parseInt(m[1], 10)));
+      endMatches.forEach((m) => pagesCovered.push(parseInt(m[1], 10)));
+
+      if (pagesCovered.length > 0) {
+        chunk.metadata.startPage = Math.min(...pagesCovered);
+        chunk.metadata.endPage = Math.max(...pagesCovered);
+      }
+
+      // Strip the markers from final content so they aren't embedded
+      chunk.pageContent = content
+        .replace(/<!-- PAGE_START: \d+ -->\n?/g, '')
+        .replace(/<!-- PAGE_END: \d+ -->\n?/g, '')
+        .trim();
+    }
+
     this.logger.log(
       `Generated ${finalChunks.length} semantic chunks`,
     );
@@ -278,8 +352,6 @@ ${chunk.pageContent}
 
   private splitMarkdownByHeaders(
     text: string,
-    startPage: number,
-    endPage: number,
   ): Document[] {
     const lines = text.split('\n');
 
@@ -288,11 +360,50 @@ ${chunk.pageContent}
     const currentMetadata: Record<string, any> = {};
 
     let currentContent: string[] = [];
+    let currentPage = 1;
+    let chunkStartPage = 1;
 
     const pushChunk = () => {
+      // Find and shift any trailing page markers that belong to the next page/chunk
+      const trailingMarkers: string[] = [];
+      while (currentContent.length > 0) {
+        const lastLine = currentContent[currentContent.length - 1];
+        if (lastLine.startsWith('<!-- PAGE_START:')) {
+          trailingMarkers.unshift(currentContent.pop()!);
+        } else {
+          break;
+        }
+      }
+
       const content = currentContent.join('\n').trim();
 
-      if (!content) return;
+      // Ensure we don't push empty chunks consisting only of page markers
+      const cleaned = content
+        .replace(/<!-- PAGE_START: \d+ -->/g, '')
+        .replace(/<!-- PAGE_END: \d+ -->/g, '')
+        .trim();
+
+      if (!cleaned) {
+        // If this chunk is empty, restore any popped markers so they are not lost
+        currentContent.push(...trailingMarkers);
+        return;
+      }
+
+      // Extract exact pages covered by this chunk from its content
+      const startMatches = [...content.matchAll(/<!-- PAGE_START: (\d+) -->/g)];
+      const endMatches = [...content.matchAll(/<!-- PAGE_END: (\d+) -->/g)];
+
+      const pagesCovered: number[] = [];
+      startMatches.forEach((m) => pagesCovered.push(parseInt(m[1], 10)));
+      endMatches.forEach((m) => pagesCovered.push(parseInt(m[1], 10)));
+
+      let startPage = chunkStartPage;
+      let endPage = currentPage;
+
+      if (pagesCovered.length > 0) {
+        startPage = Math.min(...pagesCovered);
+        endPage = Math.max(...pagesCovered);
+      }
 
       chunks.push(
         new Document({
@@ -305,10 +416,40 @@ ${chunk.pageContent}
         }),
       );
 
-      currentContent = [];
+      // Start the next chunk with any trailing markers shifted from this chunk
+      currentContent = trailingMarkers;
+
+      // Update chunkStartPage if we had a page transition
+      const lastStartMarker = trailingMarkers.find(m => m.startsWith('<!-- PAGE_START:'));
+      if (lastStartMarker) {
+        const match = lastStartMarker.match(/<!-- PAGE_START: (\d+) -->/);
+        if (match) {
+          chunkStartPage = parseInt(match[1], 10);
+        }
+      } else {
+        chunkStartPage = currentPage;
+      }
     };
 
     for (const line of lines) {
+      // Track page transitions in the combined stream
+      const pageStartMatch = line.match(/<!-- PAGE_START: (\d+) -->/);
+      if (pageStartMatch) {
+        currentPage = parseInt(pageStartMatch[1], 10);
+        if (currentContent.length === 0) {
+          chunkStartPage = currentPage;
+        }
+        currentContent.push(line); // Preserve marker for sub-chunk post-processing
+        continue;
+      }
+
+      const pageEndMatch = line.match(/<!-- PAGE_END: (\d+) -->/);
+      if (pageEndMatch) {
+        currentPage = parseInt(pageEndMatch[1], 10);
+        currentContent.push(line);
+        continue;
+      }
+
       const match = line.match(/^(#{1,6})\s+(.*)/);
 
       if (match) {

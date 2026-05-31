@@ -38,18 +38,44 @@ async function testRetrieval() {
     console.log(`   ✅ Question embedded! (Dimension: ${embeddingVector.length})\n`);
 
     // 2. Search the database using pgvector's cosine distance (<=>)
-    console.log("2. Searching the database for the 3 most relevant chunks...");
+    console.log("2. Searching the database using Hybrid Search (Vector + Keyword)...");
     
     // We convert the array to the string literal format pgvector expects: "[0.1, 0.2...]"
     const vectorString = JSON.stringify(embeddingVector);
 
+    // Clean and prepare the keyword query
+    // Split by spaces and join with '|' (OR operator for tsquery)
+    // Remove punctuation to prevent tsquery parsing errors
+    const cleanedQuestion = QUESTION.replace(/[^\\w\\s]/gi, '').trim();
+    const textQuery = cleanedQuestion.split(/\\s+/).filter(w => w.length > 0).join(' | ');
+
     const rows = await sql`
-      SELECT 
-        id, 
-        content, 
-        1 - (embedding <=> ${vectorString}::vector) AS similarity 
-      FROM policy_chunks 
-      ORDER BY embedding <=> ${vectorString}::vector 
+      WITH vector_search AS (
+        SELECT id, content,
+          RANK () OVER (ORDER BY embedding <=> ${vectorString}::vector) AS rank
+        FROM policy_chunks
+        ORDER BY embedding <=> ${vectorString}::vector
+        LIMIT 20
+      ),
+      keyword_search AS (
+        SELECT id, content,
+          RANK () OVER (ORDER BY ts_rank_cd(to_tsvector('simple', content), to_tsquery('simple', ${textQuery})) DESC) as rank
+        FROM policy_chunks
+        WHERE to_tsvector('simple', content) @@ to_tsquery('simple', ${textQuery})
+        ORDER BY ts_rank_cd(to_tsvector('simple', content), to_tsquery('simple', ${textQuery})) DESC
+        LIMIT 20
+      )
+      -- Reciprocal Rank Fusion (RRF) to combine the results
+      SELECT
+        COALESCE(vector_search.id, keyword_search.id) AS id,
+        COALESCE(vector_search.content, keyword_search.content) AS content,
+        (
+            COALESCE(1.0 / (60 + vector_search.rank), 0.0) +
+            COALESCE(1.0 / (60 + keyword_search.rank), 0.0)
+        ) AS rrf_score
+      FROM vector_search
+      FULL OUTER JOIN keyword_search ON vector_search.id = keyword_search.id
+      ORDER BY rrf_score DESC
       LIMIT 3
     `;
 
@@ -58,15 +84,15 @@ async function testRetrieval() {
       return;
     }
 
-    console.log("   ✅ Found relevant chunks!\n");
-    console.log("==================================================\n");
+    console.log("   ✅ Found relevant chunks!\\n");
+    console.log("==================================================\\n");
 
     // 3. Print the results
     rows.forEach((row, i) => {
-      console.log(`🏆 RANK ${i + 1} (Similarity Score: ${(row.similarity * 100).toFixed(2)}%)`);
+      console.log(`🏆 RANK ${i + 1} (RRF Score: ${parseFloat(row.rrf_score).toFixed(4)})`);
       console.log(`--------------------------------------------------`);
       console.log(row.content.trim());
-      console.log(`\n==================================================\n`);
+      console.log(`\\n==================================================\\n`);
     });
 
   } catch (error) {

@@ -63,10 +63,33 @@ describe('PoliciesService', () => {
       const buffer = Buffer.from('mock pdf content');
       const result = await service.extractTextFromFile(buffer, 'application/pdf');
 
-      expect(mockExtractBuffer).toHaveBeenCalledWith(buffer, { disableCombineTextItems: true });
+      expect(mockExtractBuffer).toHaveBeenCalledWith(buffer, {});
       // Result is now Document[], check the first document's pageContent
       expect(result[0].pageContent).toContain('parsed pdf text');
       expect(result[0].metadata.startPage).toBe(1);
+    });
+
+    it('should detect and convert short bold standalone lines into H4 sub-headers', async () => {
+      mockExtractBuffer.mockResolvedValueOnce({
+        pages: [
+          {
+            height: 842,
+            content: [
+              // Standalone bold sub-heading
+              { str: 'Travel Booking', height: 12, y: 300, x: 50, fontName: 'Arial-Bold' },
+              // Paragraph body text
+              { str: 'First word is bold', height: 12, y: 400, x: 50, fontName: 'Arial-Bold' },
+              { str: 'but remainder is normal.', height: 12, y: 400, x: 200, fontName: 'Arial' }
+            ]
+          }
+        ]
+      } as any);
+
+      const buffer = Buffer.from('mock pdf content');
+      const result = await service.extractTextFromFile(buffer, 'application/pdf');
+
+      expect(result[0].pageContent).toContain('#### Travel Booking');
+      expect(result[0].pageContent).toContain('First word is bold but remainder is normal.');
     });
 
 
@@ -142,6 +165,50 @@ describe('PoliciesService', () => {
       const docs = [new Document({ pageContent: 'a'.repeat(4000), metadata: { startPage: 1, endPage: 1 } })];
       const chunks = await service.chunkDocuments(docs);
       expect(chunks.length).toBeGreaterThan(1);
+    });
+
+    it('should stitch together sentences spanning page boundaries without cutoffs', async () => {
+      const page1 = new Document({
+        pageContent: '# Section 1\n\nIf the business expense includes hospitality or payment for more than one staff',
+        metadata: { startPage: 1, endPage: 1 },
+      });
+      const page2 = new Document({
+        pageContent: 'member, the receipt of tax invoice should be annotated to indicate the names of the persons in attendance.',
+        metadata: { startPage: 2, endPage: 2 },
+      });
+
+      const chunks = await service.chunkDocuments([page1, page2]);
+
+      expect(chunks).toHaveLength(1);
+      // Verify complete sentence without HTML comment noise or cutoffs
+      expect(chunks[0].pageContent).toBe(
+        'If the business expense includes hospitality or payment for more than one staff\nmember, the receipt of tax invoice should be annotated to indicate the names of the persons in attendance.'
+      );
+      // Verify correct page range metadata is computed and saved
+      expect(chunks[0].metadata.startPage).toBe(1);
+      expect(chunks[0].metadata.endPage).toBe(2);
+    });
+
+    it('should correctly isolate page metadata for multi-page documents', async () => {
+      const page1 = new Document({
+        pageContent: '# Section 1\n\nThis is some long content on page 1 that exceeds the structural filter minimum body length.',
+        metadata: { startPage: 1, endPage: 1 },
+      });
+      const page2 = new Document({
+        pageContent: '# Section 2\n\nThis is some other long content on page 2 that also exceeds the structural filter minimum body length.',
+        metadata: { startPage: 2, endPage: 2 },
+      });
+
+      const chunks = await service.chunkDocuments([page1, page2]);
+
+      expect(chunks).toHaveLength(2);
+      expect(chunks[0].metadata.startPage).toBe(1);
+      expect(chunks[0].metadata.endPage).toBe(1);
+      expect(chunks[0].pageContent).toBe('This is some long content on page 1 that exceeds the structural filter minimum body length.');
+
+      expect(chunks[1].metadata.startPage).toBe(2);
+      expect(chunks[1].metadata.endPage).toBe(2);
+      expect(chunks[1].pageContent).toBe('This is some other long content on page 2 that also exceeds the structural filter minimum body length.');
     });
   });
 
