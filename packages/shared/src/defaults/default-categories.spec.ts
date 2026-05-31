@@ -1,8 +1,8 @@
 import { DEFAULT_CATEGORIES } from './default-categories';
 
 describe('DEFAULT_CATEGORIES', () => {
-    it('should have 22 categories', () => {
-        expect(DEFAULT_CATEGORIES).toHaveLength(22);
+    it('should have 24 categories', () => {
+        expect(DEFAULT_CATEGORIES).toHaveLength(24);
     });
 
     it('should have legal names and descriptions', () => {

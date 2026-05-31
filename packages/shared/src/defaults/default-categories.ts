@@ -9,6 +9,10 @@ export const DEFAULT_CATEGORIES: IDefaultCategory[] = [
         description: 'Commercial airline travel and flight ticket expenses.',
     },
     {
+        name: 'Alcoholic Beverages',
+        description: 'Drinks containing alcohol, such as beer, wine, or spirits.',
+    },
+    {
         name: 'Marketing',
         description: 'Activities and materials used to promote products or services.',
     },
@@ -87,6 +91,10 @@ export const DEFAULT_CATEGORIES: IDefaultCategory[] = [
     {
         name: 'Train',
         description: 'Expenses for rail travel, including tickets and surcharges.',
+    },
+    {
+        name: 'Tobacco',
+        description: 'Tobacco products, including cigarettes, cigars, or electronic smoking devices.',
     },
     {
         name: 'Miscellaneous',
