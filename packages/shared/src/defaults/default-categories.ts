@@ -94,7 +94,7 @@ export const DEFAULT_CATEGORIES: IDefaultCategory[] = [
     },
     {
         name: 'Tobacco',
-        description: 'Products containing tobacco, such as cigarettes, cigars, or electronic smoking devices.',
+        description: 'Tobacco products, including cigarettes, cigars, or electronic smoking devices.',
     },
     {
         name: 'Miscellaneous',

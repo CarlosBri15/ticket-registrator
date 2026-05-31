@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PoliciesController } from './policies.controller';
 import { PoliciesService } from './policies.service';
+import { RetrievalService } from './retrieval.service';
 
 jest.mock('pdf.js-extract', () => ({
   PDFExtract: jest.fn().mockImplementation(() => ({
@@ -22,6 +23,15 @@ describe('PoliciesController', () => {
           provide: PoliciesService,
           useValue: {
             processAndIngestPolicy: jest.fn(),
+          },
+        },
+        {
+          provide: RetrievalService,
+          useValue: {
+            getRelevantPoliciesForTicket: jest.fn(),
+            generateSearchQueries: jest.fn(),
+            executeHybridSearch: jest.fn(),
+            serializeTicketForLLM: jest.fn(),
           },
         },
       ],
