@@ -30,7 +30,8 @@
   "overrides": {
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-native-web": "0.21.2"
+    "react-native-web": "0.21.2",
+    "hermes-parser": "0.29.1"
   },
   "devDependencies": {
     "husky": "^9.1.7"
